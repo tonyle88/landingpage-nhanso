@@ -1816,6 +1816,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   .section-header { margin-bottom: 48px; }
   .section-title { font-size: 2rem; line-height: 1.18; }
   .section-title-packages { font-size: 2.15rem; }
+  .benefits .section-title { font-size: 2.35rem; line-height: 1.16; }
   .hero-title { font-size: 2.45rem; letter-spacing: 0; }
   .hero-ctas { flex-direction: column; align-items: stretch; }
   .hero-ctas .btn { width: 100%; justify-content: center; }
@@ -1837,9 +1838,72 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   .about-content { text-align: center; }
   .about-content .btn { width: 100%; max-width: 280px; margin: 0 auto; justify-content: center; }
   .benefits-grid, .pain-grid { gap: 24px; }
-  .benefit-card { text-align: center; padding: 32px 20px; }
+  .benefit-card { text-align: center; padding: 36px 24px; min-height: auto; }
   .benefit-number { margin: 0 auto 16px; text-align: center; }
+  .benefit-icon { font-size: 2.15rem; margin-bottom: 18px; }
+  .benefit-card h3 { font-size: 1.35rem; line-height: 1.2; }
+  .benefit-card p {
+    font-size: 1rem;
+    line-height: 1.65;
+    max-width: 28ch;
+    margin: 0 auto;
+  }
   .footer-content { gap: 32px; }
+}
+
+@media (max-width: 640px) {
+  .mentors-grid { gap: 28px; }
+  .mentor-block {
+    gap: 24px;
+    padding: 30px 18px;
+    border-radius: 20px;
+  }
+  .mentor-arch-frame {
+    max-width: 240px;
+  }
+  .mentor-role {
+    font-size: 0.72rem;
+    letter-spacing: 1.8px;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .mentor-role::before,
+  .mentor-role::after {
+    width: 28px;
+  }
+  .mentor-name {
+    font-size: 2rem;
+    line-height: 1.12;
+  }
+  .mentor-desc {
+    font-size: 1rem;
+    line-height: 1.65;
+    max-width: 27ch;
+    margin: 0 auto 26px;
+  }
+  .mentor-features {
+    gap: 14px;
+  }
+  .mentor-feature-card {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 18px 16px;
+  }
+  .mentor-feature-card:hover {
+    transform: none;
+  }
+  .mentor-feature-card i {
+    width: 34px;
+    font-size: 1.15rem;
+  }
+  .mentor-feature-card span {
+    min-width: 0;
+    font-size: 0.98rem;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
 }
 
 /* ===== SCROLL TO TOP BUTTON ===== */
