@@ -808,9 +808,19 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
 .hero-subtitle {
   font-size: clamp(1rem, 2vw, 1.2rem);
-  color: var(--color-white-80);
+  color: rgba(255,255,255,0.95);
+  font-weight: 600;
   line-height: 1.8;
   margin-bottom: 40px;
+  text-wrap: balance;
+}
+
+@media (max-width: 480px) {
+  .hero-subtitle {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding: 0 8px;
+  }
 }
 
 .hero-stats {
@@ -831,7 +841,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-.stat-label { font-size: 0.8rem; color: var(--color-white-60); letter-spacing: 1px; }
+.stat-label { font-size: 0.8rem; color: rgba(255,255,255,0.8); letter-spacing: 1px; font-weight: 500; }
 .stat-divider { color: var(--color-gold); font-size: 1.2rem; opacity: 0.6; }
 
 .hero-ctas {
@@ -908,8 +918,20 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   color: var(--color-orange-bright);
   display: inline-block;
 }
-.pain-card p { color: var(--color-white-80); font-size: 0.95rem; line-height: 1.7; }
+.pain-card p { 
+  color: rgba(255,255,255,0.95); 
+  font-size: 0.95rem; 
+  line-height: 1.6; 
+  text-wrap: balance;
+}
 .pain-card strong { color: var(--color-sunburst-light); }
+
+@media (max-width: 480px) {
+  .pain-card p {
+    font-size: 0.9rem;
+    padding: 0 5px;
+  }
+}
 
 .pain-conclusion {
   position: relative;
@@ -1411,9 +1433,17 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .session-info-divider { color: var(--color-gold); opacity: 0.5; font-size: 1.5rem; }
 .session-info strong { color: var(--color-gold-light); }
 @media (max-width: 600px) {
-  .session-info { flex-direction: row; flex-wrap: nowrap; border-radius: 50px; gap: 8px; padding: 14px 16px; font-size: 0.75rem; justify-content: center; }
-  .session-info-divider { display: block; font-size: 1rem; }
-  .session-info-item { gap: 4px; }
+  .session-info { 
+    flex-direction: column; 
+    border-radius: 24px; 
+    gap: 12px; 
+    padding: 16px 20px; 
+    align-items: flex-start;
+  }
+  .session-info-divider { display: none; }
+  .session-info-item { gap: 10px; align-items: flex-start; text-align: left; }
+  .session-info-item span:last-child { line-height: 1.4; }
+  .session-icon { margin-top: 1px; }
 }
 
 /* ===== PROCESS ===== */
@@ -2432,4 +2462,53 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   .qr-img { width: 200px; height: 200px; }
   .bank-details { width: 100%; }
   .cal-time-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Background Music Button */
+.music-toggle-btn {
+  position: fixed;
+  bottom: 30px;
+  left: 30px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(27,65,73,0.8);
+  border: 1px solid rgba(212, 168, 67, 0.4);
+  color: var(--color-gold-light);
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 999;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.music-toggle-btn:hover {
+  transform: scale(1.1);
+  background: rgba(27,65,73,1);
+  border-color: var(--color-gold);
+}
+
+.music-toggle-btn.playing {
+  animation: pulseMusic 2s infinite;
+}
+
+@keyframes pulseMusic {
+  0% { box-shadow: 0 0 0 0 rgba(212, 168, 67, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(212, 168, 67, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(212, 168, 67, 0); }
+}
+
+@media (max-width: 640px) {
+  .music-toggle-btn {
+    bottom: 20px;
+    left: 20px;
+    width: 45px;
+    height: 45px;
+    font-size: 1rem;
+  }
 }

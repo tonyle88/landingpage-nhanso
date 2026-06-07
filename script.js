@@ -643,3 +643,31 @@ if (scrollTopBtn) {
   });
 }
 
+// ============================================
+// BACKGROUND MUSIC TOGGLE
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+  const bgMusic = document.getElementById('bg-music');
+  const musicToggleBtn = document.getElementById('musicToggleBtn');
+  
+  if (bgMusic && musicToggleBtn) {
+    // Đặt âm lượng nhạc nền vừa phải
+    bgMusic.volume = 0.4;
+    
+    musicToggleBtn.addEventListener('click', () => {
+      if (bgMusic.paused) {
+        bgMusic.play().then(() => {
+          musicToggleBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+          musicToggleBtn.classList.add('playing');
+        }).catch(err => {
+          console.error("Lỗi phát nhạc:", err);
+        });
+      } else {
+        bgMusic.pause();
+        musicToggleBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+        musicToggleBtn.classList.remove('playing');
+      }
+    });
+  }
+});
+
