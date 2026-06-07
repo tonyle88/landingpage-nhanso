@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nhân Số Học Khai Phá Tiềm Năng | Clow Cat Patronus</title>
+  <meta name="description" content="Khám phá bản thân qua Nhân Số Học. Hơn 3 năm kinh nghiệm, 900+ ca tư vấn. Hiểu mình hơn – Sống đúng hướng hơn. Đặt lịch tư vấn ngay!" />
+  <meta property="og:title" content="Nhân Số Học Khai Phá Tiềm Năng | Clow Cat Patronus" />
+  <meta property="og:description" content="Tấm bản đồ giúp bạn hiểu rõ bản thân, tính cách, điểm mạnh và hành trình phát triển của chính mình." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Floating particles canvas -->
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- ========== NAVBAR ========== -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#hero" class="nav-logo">
+        <img src="assets/images/logo.png" alt="Clow Cat Patronus Logo" class="logo-img" />
+        <span class="logo-text">Clow Cat Patronus</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#about" class="nav-link">Về Chúng Tôi</a></li>
+        <li><a href="#benefits" class="nav-link">Lợi Ích</a></li>
+        <li><a href="#packages" class="nav-link">Gói Tư Vấn</a></li>
+        <li><a href="#process" class="nav-link">Quy Trình</a></li>
+        <li><a href="#contact" class="nav-link nav-cta">Đặt Lịch Ngay</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ========== HERO SECTION ========== -->
+  <section class="hero" id="hero">
+    <div class="hero-bg-image"></div>
+    <div class="hero-overlay"></div>
+
+    <!-- Animated number rings -->
+    <div class="number-ring ring-1">
+      <span class="ring-num">1</span><span class="ring-num">2</span><span class="ring-num">3</span>
+      <span class="ring-num">4</span><span class="ring-num">5</span><span class="ring-num">6</span>
+      <span class="ring-num">7</span><span class="ring-num">8</span><span class="ring-num">9</span>
+    </div>
+    <div class="number-ring ring-2">
+      <span class="ring-num">9</span><span class="ring-num">8</span><span class="ring-num">7</span>
+      <span class="ring-num">6</span><span class="ring-num">5</span><span class="ring-num">4</span>
+      <span class="ring-num">3</span><span class="ring-num">2</span><span class="ring-num">1</span>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-badge reveal">✦ Hơn 900 ca tư vấn thực tế ✦</div>
+      <h1 class="hero-title reveal">
+        <span class="title-line title-gradient-anim">NHÂN SỐ HỌC</span>
+        <span class="title-line accent title-glow-anim">KHAI PHÁ</span>
+        <span class="title-line title-gradient-anim">TIỀM NĂNG</span>
+      </h1>
+      <p class="hero-subtitle reveal">
+        Tấm bản đồ giúp bạn hiểu rõ bản thân · tính cách · điểm mạnh<br />
+        và hành trình phát triển của chính mình
+      </p>
+      <div class="hero-stats reveal">
+        <div class="stat-item stat-anim" style="animation-delay: 0s;">
+          <span class="stat-number">3+</span>
+          <span class="stat-label">Năm kinh nghiệm</span>
+        </div>
+        <div class="stat-divider">✦</div>
+        <div class="stat-item stat-anim" style="animation-delay: 0.2s;">
+          <span class="stat-number glow-text">900+</span>
+          <span class="stat-label">Ca tư vấn</span>
+        </div>
+        <div class="stat-divider">✦</div>
+        <div class="stat-item stat-anim" style="animation-delay: 0.4s;">
+          <span class="stat-number">100%</span>
+          <span class="stat-label">Cá nhân hoá</span>
+        </div>
+      </div>
+      <div class="hero-ctas reveal">
+        <a href="#contact" class="btn btn-primary" id="hero-cta-primary">
+          <span>Đặt Lịch Tư Vấn</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="#about" class="btn btn-ghost" id="hero-cta-secondary">Tìm Hiểu Thêm</a>
+      </div>
+    </div>
+
+    <div class="scroll-indicator">
+      <div class="scroll-line"></div>
+      <span>Cuộn xuống</span>
+    </div>
+  </section>
+
+  <!-- ========== PAIN POINTS SECTION ========== -->
+  <section class="pain-points section" id="pain-points">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Bạn Đang Gặp Phải?</span>
+        <h2 class="section-title">Những Câu Hỏi Chưa Có Lời Giải</h2>
+        <div class="section-divider">
+          <span>✦</span><span>✦</span><span>✦</span>
+        </div>
+      </div>
+      <div class="pain-grid">
+        <div class="pain-card reveal" data-delay="0">
+          <div class="pain-icon"><i class="fa-solid fa-compass"></i></div>
+          <p>Mơ hồ về <strong>định hướng học tập, công việc</strong> hay tương lai?</p>
+        </div>
+        <div class="pain-card reveal" data-delay="100">
+          <div class="pain-icon"><i class="fa-solid fa-link-slash"></i></div>
+          <p>Bế tắc trong các <strong>mối quan hệ</strong> và cảm xúc?</p>
+        </div>
+        <div class="pain-card reveal" data-delay="200">
+          <div class="pain-icon"><i class="fa-solid fa-gem"></i></div>
+          <p>Cảm thấy bản thân có nhiều <strong>tiềm năng</strong> nhưng chưa biết cách phát huy?</p>
+        </div>
+        <div class="pain-card reveal" data-delay="300">
+          <div class="pain-icon"><i class="fa-solid fa-code-branch"></i></div>
+          <p>Đứng giữa những <strong>lựa chọn quan trọng</strong> nhưng không biết đâu là hướng đi phù hợp?</p>
+        </div>
+      </div>
+      <div class="pain-conclusion reveal">
+        <div class="conclusion-glow"></div>
+        <p>✨ <strong>Nhân Số Học</strong> là tấm bản đồ giúp bạn hiểu rõ bản thân, tính cách, điểm mạnh, điểm yếu và hành trình phát triển của chính mình.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== ABOUT SECTION ========== -->
+  <section class="about section" id="about">
+    <div class="about-bg-image"></div>
+    <div class="about-overlay"></div>
+    <div class="container">
+      <div class="about-grid">
+        <div class="about-visual reveal">
+          <div class="about-image-wrapper">
+            <img src="assets/images/about_bg.png" alt="Nhân số học tư vấn" class="about-image" />
+            <div class="about-badge-float">
+              <span class="badge-num">900+</span>
+              <span class="badge-txt">Ca tư vấn</span>
+            </div>
+          </div>
+        </div>
+        <div class="about-content reveal">
+          <span class="section-tag">Về Chúng Tôi</span>
+          <h2 class="section-title">Hơn 3 Năm Đồng Hành<br />Cùng Hành Trình Của Bạn</h2>
+          <p class="about-desc">
+            Với hơn <strong>3 năm kinh nghiệm</strong> và hơn <strong>900 ca tư vấn</strong> thực tế, chúng tôi mang đến những góc nhìn sâu sắc, thông điệp chữa lành và lộ trình cá nhân hoá.
+          </p>
+          <div class="about-quote">
+            <span class="quote-mark">"</span>
+            <p>Chúng tôi không nói bạn phải trở thành ai khác. Chỉ giúp bạn <em>hiểu đúng chính mình</em> để sống nhẹ nhàng và đúng hướng hơn.</p>
+          </div>
+          <a href="#contact" class="btn btn-primary" id="about-cta">Bắt Đầu Hành Trình</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== BENEFITS SECTION ========== -->
+  <section class="benefits section" id="benefits">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Những Gì Bạn Nhận Được</span>
+        <h2 class="section-title">Sau Buổi Tư Vấn, Bạn Sẽ</h2>
+        <div class="section-divider">
+          <span>✦</span><span>✦</span><span>✦</span>
+        </div>
+      </div>
+      <div class="benefits-grid">
+        <div class="benefit-card reveal" data-delay="0">
+          <div class="benefit-number">01</div>
+          <div class="benefit-icon"><i class="fa-solid fa-eye"></i></div>
+          <h3>Hiểu Mình Hơn</h3>
+          <p>Khám phá tính cách, điểm mạnh và điểm yếu thực sự của bản thân qua lăng kính Nhân Số Học.</p>
+        </div>
+        <div class="benefit-card reveal" data-delay="150">
+          <div class="benefit-number">02</div>
+          <div class="benefit-icon"><i class="fa-solid fa-key"></i></div>
+          <h3>Gỡ Bỏ Rào Cản</h3>
+          <p>Nhận diện và giải phóng những rào cản nội tâm đang ngăn bạn phát triển và tiến về phía trước.</p>
+        </div>
+        <div class="benefit-card reveal" data-delay="300">
+          <div class="benefit-number">03</div>
+          <div class="benefit-icon"><i class="fa-solid fa-map-location-dot"></i></div>
+          <h3>Định Hướng Rõ Ràng</h3>
+          <p>Có được lộ trình rõ ràng về học tập, công việc và các mối quan hệ quan trọng trong cuộc sống.</p>
+        </div>
+        <div class="benefit-card reveal" data-delay="450">
+          <div class="benefit-number">04</div>
+          <div class="benefit-icon"><i class="fa-solid fa-sun"></i></div>
+          <h3>Tự Tin Quyết Định</h3>
+          <p>Tự tin đưa ra những quyết định quan trọng với sự hiểu biết sâu sắc về bản thân và con đường phía trước.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== PACKAGES SECTION ========== -->
+  <section class="packages section" id="packages">
+    <div class="packages-bg-image"></div>
+    <div class="packages-overlay"></div>
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Gói Tư Vấn</span>
+        <h2 class="section-title">Chọn Hình Thức Phù Hợp</h2>
+        <div class="section-divider">
+          <span>✦</span><span>✦</span><span>✦</span>
+        </div>
+      </div>
+
+      <div class="packages-grid packages-grid-3">
+
+        <!-- Package 1: Dự đoán năm (500k) -->
+        <div class="package-card reveal" data-delay="0">
+          <div class="package-glow glow-orange"></div>
+          <div class="package-header">
+            <div class="package-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+            <h3 class="package-name">Dự Đoán Năm Cá Nhân</h3>
+            <div class="package-price">
+              <span class="price-current">500.000<sup>đ</sup></span>
+              <span class="price-unit">/buổi</span>
+            </div>
+          </div>
+          <div class="package-divider"></div>
+          <ul class="package-features">
+            <li><span class="feature-check">✦</span> <span>Dự đoán xu hướng năm cá nhân</span></li>
+            <li><span class="feature-check">✦</span> <span>Nhận diện cơ hội &amp; thách thức</span></li>
+            <li><span class="feature-check">✦</span> <span>Định hướng theo chu kỳ số</span></li>
+            <li><span class="feature-check">✦</span> <span>Gợi ý hành động phù hợp năm</span></li>
+          </ul>
+          <a href="#contact" class="btn btn-package" id="pkg-year">Đặt Lịch Ngay</a>
+        </div>
+
+        <!-- Package 2: Phân Tích Toàn Diện (2tr) — FEATURED -->
+        <div class="package-card package-featured reveal" data-delay="100">
+          <div class="package-glow glow-gold"></div>
+          <div class="featured-glow-ring"></div>
+          <div class="featured-badge">✨ Toàn Diện Nhất ✨</div>
+          <div class="package-header">
+            <div class="package-icon featured-icon"><i class="fa-solid fa-infinity"></i></div>
+            <h3 class="package-name featured-name">Phân Tích Toàn Diện</h3>
+            <div class="package-price featured-price-wrap">
+              <span class="price-current price-highlight">2.000.000<sup>đ</sup></span>
+              <span class="price-unit">/buổi</span>
+            </div>
+          </div>
+          <div class="package-divider featured-divider"></div>
+          <ul class="package-features">
+            <li><span class="feature-check featured-check">✦</span> <span>7 chỉ số cốt lõi: chủ đạo · linh hồn · sứ mệnh · nhân cách · thái độ · trưởng thành · nợ nghiệp</span></li>
+            <li><span class="feature-check featured-check">✦</span> <span>4 đỉnh cao trong cuộc đời</span></li>
+            <li><span class="feature-check featured-check">✦</span> <span>3 chu kỳ phát triển cá nhân</span></li>
+            <li><span class="feature-check featured-check">✦</span> <span>Sơ đồ mũi tên phẩm chất</span></li>
+            <li><span class="feature-check featured-check">✦</span> <span>Thông điệp chữa lành chuyên sâu</span></li>
+            <li><span class="feature-check gift featured-check">🎁</span> <span>Tặng file PDF tóm tắt đầy đủ</span></li>
+          </ul>
+          <a href="#contact" class="btn btn-primary btn-featured-pkg" id="pkg-big7">Đặt Lịch Ngay</a>
+        </div>
+
+        <!-- Package 3: Phân Tích 3 Chỉ Số (1tr) -->
+        <div class="package-card reveal" data-delay="200">
+          <div class="package-glow glow-teal"></div>
+          <div class="package-header">
+            <div class="package-icon"><i class="fa-solid fa-fingerprint"></i></div>
+            <h3 class="package-name">Phân Tích 3 Chỉ Số<br/>Tính Cách Nổi Bật</h3>
+            <div class="package-price">
+              <span class="price-current">1.000.000<sup>đ</sup></span>
+              <span class="price-unit">/buổi</span>
+            </div>
+          </div>
+          <ul class="package-features">
+            <li><span class="feature-check">✦</span> <span>Phân tích <strong>BIG 3</strong>: chủ đạo · linh hồn · sứ mệnh</span></li>
+            <li><span class="feature-check">✦</span> <span><strong>4 đỉnh cao</strong> trong cuộc đời</span></li>
+            <li><span class="feature-check">✦</span> <span><strong>3 chu kỳ</strong> cuộc đời</span></li>
+            <li><span class="feature-check">✦</span> <span>Định hướng học tập, công việc & quan hệ</span></li>
+            <li><span class="feature-check">✦</span> <span>Thông điệp chữa lành & lộ trình cá nhân</span></li>
+          </ul>
+          <a href="#contact" class="btn btn-package" id="pkg-big3">Đặt Lịch Ngay</a>
+        </div>
+
+      </div>
+
+      <!-- Session Info -->
+      <div class="session-info reveal">
+        <div class="session-info-item">
+          <span class="session-icon">⏱️</span>
+          <span>Thời gian mỗi buổi tư vấn: <strong>tối đa 2 tiếng</strong></span>
+        </div>
+        <div class="session-info-divider">·</div>
+        <div class="session-info-item">
+          <span class="session-icon">📅</span>
+          <span>Yêu cầu sắp xếp lịch trước <strong>ít nhất 1 ngày</strong></span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========== PROCESS SECTION ========== -->
+  <section class="process section" id="process">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Hành Trình</span>
+        <h2 class="section-title">Chỉ 3 Bước Đơn Giản</h2>
+        <div class="section-divider">
+          <span>✦</span><span>✦</span><span>✦</span>
+        </div>
+      </div>
+      <div class="process-steps">
+        <div class="process-step reveal" data-delay="0">
+          <div class="step-connector left-hidden"></div>
+          <div class="step-circle">
+            <span class="step-num">01</span>
+          </div>
+          <div class="step-connector"></div>
+          <div class="step-content">
+            <div class="step-icon">📅</div>
+            <h3>Đặt Lịch</h3>
+            <p>Chọn thời gian phù hợp với lịch trình của bạn. Linh hoạt theo nguyện vọng cá nhân.</p>
+          </div>
+        </div>
+        <div class="process-step reveal" data-delay="200">
+          <div class="step-connector"></div>
+          <div class="step-circle">
+            <span class="step-num">02</span>
+          </div>
+          <div class="step-connector"></div>
+          <div class="step-content">
+            <div class="step-icon">💬</div>
+            <h3>Chia Sẻ</h3>
+            <p>Chia sẻ những điều đang khiến bạn trăn trở, những câu hỏi chưa có lời giải.</p>
+          </div>
+        </div>
+        <div class="process-step reveal" data-delay="400">
+          <div class="step-connector"></div>
+          <div class="step-circle">
+            <span class="step-num">03</span>
+          </div>
+          <div class="step-connector right-hidden"></div>
+          <div class="step-content">
+            <div class="step-icon">✨</div>
+            <h3>Nhận Định Hướng</h3>
+            <p>Nhận thông điệp chữa lành và lộ trình cá nhân hoá để tự tin bước tiếp.</p>
+          </div>
+        </div>
+      </div>
+      <div class="process-quote reveal">
+        <p>✨ Đôi khi, chỉ cần hiểu đúng bản thân, <em>mọi thứ sẽ dần rõ ràng hơn.</em></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CONTACT / CTA SECTION ========== -->
+  <section class="contact section" id="contact">
+    <div class="contact-bg"></div>
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Liên Hệ</span>
+        <h2 class="section-title">Bắt Đầu Hành Trình<br />Khám Phá Bản Thân</h2>
+        <div class="section-divider">
+          <span>✦</span><span>✦</span><span>✦</span>
+        </div>
+      </div>
+      <div class="contact-grid">
+        <div class="contact-info reveal">
+          <div class="contact-card">
+            <h3>✦ Thông Tin Liên Hệ</h3>
+            <div class="contact-item">
+              <span class="contact-icon">📱</span>
+              <div>
+                <strong>Zalo / Facebook</strong>
+                <p>Nhắn tin để đặt lịch nhanh nhất</p>
+              </div>
+            </div>
+            <div class="contact-item">
+              <span class="contact-icon">⏰</span>
+              <div>
+                <strong>Giờ làm việc</strong>
+                <p>Thứ 2 – Chủ Nhật: 8:00 – 21:00</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="contact-form-wrapper reveal">
+          <form class="contact-form" id="booking-form">
+            <h3>📋 Đặt Lịch Tư Vấn</h3>
+            <div class="form-group">
+              <label for="name">Họ và Tên *</label>
+              <input type="text" id="name" name="name" placeholder="Nhập họ và tên của bạn" required />
+            </div>
+            <div class="form-group">
+              <label for="phone">Số Điện Thoại / Zalo *</label>
+              <input type="tel" id="phone" name="phone" placeholder="Số điện thoại liên lạc" required />
+            </div>
+            <div class="form-group">
+              <label for="consultation-type">Hình Thức *</label>
+              <select id="consultation-type" name="consultationType" required>
+                <option value="">-- Chọn hình thức --</option>
+                <option value="online">Online - Google Meet</option>
+                <option value="offline">Offline - Trực tiếp tại TP.HCM</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="package">Gói Tư Vấn *</label>
+              <select id="package" name="package" required>
+                <option value="">-- Chọn gói tư vấn --</option>
+                <option value="year">Dự Đoán Năm Cá Nhân – 500.000đ/buổi</option>
+                <option value="big3">Phân Tích 3 Chỉ Số Tính Cách – 1.000.000đ/buổi</option>
+                <option value="big7">Phân Tích Toàn Diện – 2.000.000đ/buổi</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="concern">Điều Bạn Đang Trăn Trở</label>
+              <textarea id="concern" name="concern" rows="4" placeholder="Chia sẻ những điều bạn muốn tìm hiểu hoặc vấn đề bạn đang gặp phải..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" id="submit-booking">
+              <span>Gửi Yêu Cầu Đặt Lịch</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+            <p class="form-note">Chúng tôi sẽ liên hệ lại trong vòng 2 giờ ✨</p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-col footer-contact-col">
+          <h4 class="footer-title">LIÊN HỆ</h4>
+          <p class="footer-desc">Tìm hiểu thêm qua các nền tảng mạng xã hội của Clow Cat Patronus:</p>
+          <div class="footer-socials">
+            <a href="https://www.facebook.com/clowcatpatronus" target="_blank" rel="noopener noreferrer" class="social-icon fb"><i class="fab fa-facebook-f"></i></a>
+            <a href="https://www.instagram.com/clow_cat_patronus/" target="_blank" rel="noopener noreferrer" class="social-icon ig"><i class="fab fa-instagram"></i></a>
+            <a href="https://www.tiktok.com/@clow_cat_patronus" target="_blank" rel="noopener noreferrer" class="social-icon tk"><i class="fab fa-tiktok"></i></a>
+            <a href="https://www.youtube.com/@ClowCatPatronusOfficial-1340" target="_blank" rel="noopener noreferrer" class="social-icon yt"><i class="fab fa-youtube"></i></a>
+          </div>
+        </div>
+        
+        <div class="footer-col footer-logo-col">
+          <img src="assets/images/logo.png" alt="Clow Cat Patronus" class="footer-logo" />
+          <h3 class="footer-tagline">KHÁM PHÁ BẢN THÂN, BẬT PHÁ TIỀM NĂNG</h3>
+        </div>
+
+        <div class="footer-col footer-links-col">
+          <h4 class="footer-title">DỊCH VỤ</h4>
+          <ul class="footer-links-list">
+            <li><a href="#packages">Gói Khám Phá</a></li>
+            <li><a href="#packages">Gói Kết Nối</a></li>
+            <li><a href="#packages">Gói Toàn Diện</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 ClowCat Patronus. Tất cả quyền được bảo lưu.</p>
+        <p class="footer-made-with">✦ Được tạo ra với tình yêu và năng lượng tích cực ✦</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Floating Social Sidebar -->
+  <div class="floating-socials">
+    <a href="https://www.facebook.com/clowcatpatronus" target="_blank" rel="noopener noreferrer" class="float-icon fb" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+    <a href="https://www.instagram.com/clow_cat_patronus/" target="_blank" rel="noopener noreferrer" class="float-icon ig" title="Instagram"><i class="fab fa-instagram"></i></a>
+    <a href="https://www.tiktok.com/@clow_cat_patronus" target="_blank" rel="noopener noreferrer" class="float-icon tk" title="TikTok"><i class="fab fa-tiktok"></i></a>
+    <a href="https://www.youtube.com/@ClowCatPatronusOfficial-1340" target="_blank" rel="noopener noreferrer" class="float-icon yt" title="YouTube"><i class="fab fa-youtube"></i></a>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
