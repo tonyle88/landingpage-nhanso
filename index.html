@@ -266,7 +266,6 @@
             </div>
           </div>
         </div>
-        </div>
       </div>
       <!-- End Mentors Grid Container -->
 
@@ -515,6 +514,10 @@
               <input type="text" id="name" name="name" placeholder="Nhập họ và tên của bạn" required />
             </div>
             <div class="form-group">
+              <label for="dob">Ngày tháng năm sinh (trên giấy tờ - hoặc có nhiều ngày sinh hãy nhập ngày mà bạn thực sự mong muốn xem) *</label>
+              <input type="date" id="dob" name="dob" required />
+            </div>
+            <div class="form-group">
               <label for="phone">Số Điện Thoại / Zalo *</label>
               <input type="tel" id="phone" name="phone" placeholder="Số điện thoại liên lạc" required />
             </div>
@@ -536,19 +539,160 @@
               </select>
             </div>
             <div class="form-group">
+              <label for="email">Email *</label>
+              <input type="email" id="email" name="email" placeholder="Email để nhận xác nhận đặt lịch" required />
+            </div>
+            <div class="form-group">
               <label for="concern">Điều Bạn Đang Trăn Trở</label>
               <textarea id="concern" name="concern" rows="4" placeholder="Chia sẻ những điều bạn muốn tìm hiểu hoặc vấn đề bạn đang gặp phải..."></textarea>
             </div>
             <button type="submit" class="btn btn-primary btn-full" id="submit-booking">
-              <span>Gửi Yêu Cầu Đặt Lịch</span>
+              <span>Chọn Lịch & Thanh Toán</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>
-            <p class="form-note">Chúng tôi sẽ liên hệ lại trong vòng 2 giờ ✨</p>
+            <p class="form-note">Bước tiếp theo: chọn ngày giờ phù hợp và hoàn tất thanh toán ✨</p>
           </form>
         </div>
       </div>
     </div>
   </section>
+
+  <!-- ========== BOOKING FLOW MODALS ========== -->
+
+  <!-- OVERLAY BACKDROP -->
+  <div class="booking-overlay" id="booking-overlay"></div>
+
+  <!-- MODAL 1: CHỌN LỊCH -->
+  <div class="booking-modal" id="modal-calendar" role="dialog" aria-modal="true" aria-labelledby="modal-cal-title">
+    <div class="bmodal-inner">
+      <button class="bmodal-close" id="close-calendar" aria-label="Đóng">✕</button>
+      <div class="bmodal-header">
+        <div class="bmodal-icon"><i class="fa-regular fa-calendar-check"></i></div>
+        <h2 id="modal-cal-title">Chọn Ngày &amp; Giờ Tư Vấn</h2>
+        <p class="bmodal-sub">Vui lòng chọn thời gian phù hợp với bạn. Lịch hiển thị là các khung giờ còn trống.</p>
+      </div>
+
+      <div class="cal-loading" id="cal-loading">
+        <div class="cal-spinner"></div>
+        <span>Đang tải lịch trống...</span>
+      </div>
+
+      <div class="cal-error" id="cal-error" style="display:none;">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <p>Không thể tải lịch. Vui lòng thử lại.</p>
+        <button class="btn-retry" id="retry-calendar">Thử lại</button>
+      </div>
+
+      <div id="cal-content" style="display:none;">
+        <!-- Date selector -->
+        <div class="cal-date-strip" id="cal-date-strip"></div>
+        <!-- Time slots -->
+        <div class="cal-time-label">Khung giờ còn trống:</div>
+        <div class="cal-time-grid" id="cal-time-grid"></div>
+      </div>
+
+      <div class="bmodal-footer">
+        <div class="selected-slot-info" id="selected-slot-info" style="display:none;">
+          <i class="fa-regular fa-clock"></i>
+          <span id="selected-slot-text"></span>
+        </div>
+        <button class="btn btn-primary btn-full" id="btn-go-payment" disabled>
+          <span>Tiến Hành Thanh Toán</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: THANH TOÁN QR -->
+  <div class="booking-modal" id="modal-payment" role="dialog" aria-modal="true" aria-labelledby="modal-pay-title">
+    <div class="bmodal-inner">
+      <button class="bmodal-close" id="close-payment" aria-label="Đóng">✕</button>
+      <div class="bmodal-header">
+        <div class="bmodal-icon"><i class="fa-solid fa-qrcode"></i></div>
+        <h2 id="modal-pay-title">Thanh Toán Chuyển Khoản</h2>
+        <p class="bmodal-sub">Quét mã QR bên dưới để hoàn tất thanh toán. Vui lòng giữ nguyên nội dung chuyển khoản.</p>
+      </div>
+
+      <div class="payment-layout">
+        <!-- QR code -->
+        <div class="qr-wrap">
+          <img id="qr-img" src="" alt="Mã QR chuyển khoản VietQR" class="qr-img" />
+          <div class="qr-badge"><i class="fa-solid fa-shield-halved"></i> Bảo mật 100%</div>
+        </div>
+
+        <!-- Bank details -->
+        <div class="bank-details">
+          <div class="bank-info-row">
+            <span class="bank-info-label">Ngân hàng</span>
+            <span class="bank-info-val">Vietcombank</span>
+          </div>
+          <div class="bank-info-row">
+            <span class="bank-info-label">Số TK</span>
+            <span class="bank-info-val copyable" id="bank-account" data-copy="0421003904479">0421003904479 <i class="fa-regular fa-copy"></i></span>
+          </div>
+          <div class="bank-info-row">
+            <span class="bank-info-label">Chủ TK</span>
+            <span class="bank-info-val">LÊ CHÍ CƯỜNG</span>
+          </div>
+          <div class="bank-info-row highlight-row">
+            <span class="bank-info-label">Số tiền</span>
+            <span class="bank-info-val gold" id="pay-amount"></span>
+          </div>
+          <div class="bank-info-row">
+            <span class="bank-info-label">Nội dung CK</span>
+            <span class="bank-info-val copyable small" id="pay-content" data-copy=""></span>
+          </div>
+          <div class="bank-info-row">
+            <span class="bank-info-label">Lịch hẹn</span>
+            <span class="bank-info-val" id="pay-slot"></span>
+          </div>
+          <div class="bank-info-row">
+            <span class="bank-info-label">Gói tư vấn</span>
+            <span class="bank-info-val" id="pay-package"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pay-note">
+        <i class="fa-solid fa-circle-info"></i>
+        Sau khi chuyển khoản, nhấn nút bên dưới để hoàn tất. Chúng tôi sẽ xác nhận và gửi email cho bạn ngay.
+      </div>
+
+      <button class="btn btn-primary btn-full" id="btn-confirm-payment">
+        <span>✓ Tôi Đã Chuyển Khoản Thành Công</span>
+      </button>
+      <button class="btn-back-text" id="btn-back-calendar">← Quay lại chọn lịch</button>
+    </div>
+  </div>
+
+  <!-- MODAL 3: THÀNH CÔNG -->
+  <div class="booking-modal" id="modal-success" role="dialog" aria-modal="true" aria-labelledby="modal-suc-title">
+    <div class="bmodal-inner success-inner">
+      <div class="success-anim">
+        <div class="success-circle">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        <div class="success-stars">
+          <span>✦</span><span>★</span><span>✦</span>
+        </div>
+      </div>
+      <h2 id="modal-suc-title">Đặt Lịch Thành Công! 🎉</h2>
+      <p class="success-greeting" id="success-greeting"></p>
+      <div class="success-summary" id="success-summary"></div>
+      <div class="success-email-note">
+        <i class="fa-regular fa-envelope"></i>
+        Email xác nhận đã được gửi đến hộp thư của bạn. Vui lòng kiểm tra cả mục Spam nếu không thấy trong hộp thư đến.
+      </div>
+      <div class="success-action-buttons" style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">
+        <p style="font-size:0.9rem; color:rgba(255,255,255,0.7); margin-bottom:4px;">Bạn vui lòng nhắn tin cho Clow Cat Patronus để báo đã chuyển khoản thành công nhé:</p>
+        <a href="https://m.me/clowcatpatronus" target="_blank" class="btn btn-primary" style="background:#0084ff; border-color:#0084ff; text-decoration:none;">
+          <i class="fab fa-facebook-messenger" style="margin-right:8px;"></i> Nhắn tin Fanpage
+        </a>
+        <button class="btn btn-secondary" id="btn-success-close" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:white;">Về trang chính</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ========== FOOTER ========== -->
   <footer class="footer">
