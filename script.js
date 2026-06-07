@@ -161,6 +161,13 @@ function isConfiguredGoogleScriptUrl() {
 
 async function submitBookingForm(form) {
   const formData = new FormData(form);
+  
+  // Prevent Google Sheets from dropping the leading zero in phone numbers
+  const phone = formData.get('phone');
+  if (phone) {
+    formData.set('phone', "'" + phone);
+  }
+
   const packageValue = formData.get('package');
   const consultationTypeValue = formData.get('consultationType');
   formData.append('packageLabel', PACKAGE_LABELS[packageValue] || packageValue || '');
@@ -280,3 +287,90 @@ function initParticles() {
     canvas.height = H;
   }, { passive: true });
 }
+
+
+/* ===== SCROLL PROGRESS BAR WITH TITLE ===== */
+window.addEventListener('scroll', () => {
+  const scrollProgress = document.getElementById('scrollProgress');
+  const scrollTitle = document.getElementById('scrollTitle');
+  
+  if(scrollProgress) {
+    const totalHeight = document.body.scrollHeight - window.innerHeight;
+    const scrollY = window.scrollY;
+    const progressWidth = (scrollY / totalHeight) * 100;
+    scrollProgress.style.width = progressWidth + '%';
+
+    // Update Title based on scroll position
+    if (scrollTitle) {
+      const sections = document.querySelectorAll('section');
+      let currentSectionId = '';
+      
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop - 100; // offset for navbar
+        if (scrollY >= sectionTop) {
+          currentSectionId = section.getAttribute('id');
+        }
+      });
+
+      const sectionTitles = {
+        'hero': 'Khám Phá',
+        'about': 'Về Chúng Tôi',
+        'pain-points': 'Bạn Đang Gặp Phải?',
+        'benefits': 'Những Gì Bạn Nhận Được',
+        'packages': 'Gói Tư Vấn',
+        'process': 'Hành Trình',
+        'contact': 'Liên Hệ'
+      };
+
+      if (currentSectionId && sectionTitles[currentSectionId]) {
+        scrollTitle.textContent = sectionTitles[currentSectionId];
+        scrollTitle.style.opacity = '1';
+      } else {
+        scrollTitle.textContent = 'Trang Chủ';
+      }
+
+      // Hide title when at the very top to avoid cluttering
+      if (scrollY < 50) {
+        scrollTitle.style.opacity = '0';
+      }
+
+      // Clamp title position so it tracks the tip but doesn't overflow screen
+      const titleWidth = scrollTitle.offsetWidth;
+      const barRight = scrollProgress.getBoundingClientRect().right;
+      let desiredCenter = barRight;
+      let leftEdge = desiredCenter - titleWidth / 2;
+      let rightEdge = desiredCenter + titleWidth / 2;
+      
+      let xOffset = titleWidth / 2; // Default: centered on tip (equivalent to translateX(50%))
+      if (leftEdge < 10) {
+        xOffset += (10 - leftEdge); // Push right if off left edge
+      } else if (rightEdge > window.innerWidth - 10) {
+        xOffset -= (rightEdge - (window.innerWidth - 10)); // Push left if off right edge
+      }
+      scrollTitle.style.transform = `translateX(${xOffset}px)`;
+    }
+  }
+
+  // Scroll to Top Button Visibility
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  if (scrollTopBtn) {
+    if (window.scrollY > document.body.scrollHeight / 2) {
+      scrollTopBtn.classList.add('show');
+    } else {
+      scrollTopBtn.classList.remove('show');
+    }
+  }
+
+}, { passive: true });
+
+// ===== SCROLL TO TOP CLICK =====
+const scrollTopBtn = document.getElementById('scrollTopBtn');
+if (scrollTopBtn) {
+  scrollTopBtn.addEventListener('click', () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  });
+}
+

@@ -15,6 +15,8 @@
 </head>
 <body>
 
+
+
   <!-- Floating particles canvas -->
   <canvas id="particles-canvas"></canvas>
 
@@ -27,20 +29,28 @@
       </a>
       <ul class="nav-links" id="nav-links">
         <li><a href="#about" class="nav-link">Về Chúng Tôi</a></li>
-        <li><a href="#benefits" class="nav-link">Lợi Ích</a></li>
+        <li><a href="#benefits" class="nav-link">Những Gì Bạn Nhận Được</a></li>
         <li><a href="#packages" class="nav-link">Gói Tư Vấn</a></li>
-        <li><a href="#process" class="nav-link">Quy Trình</a></li>
+        <li><a href="#process" class="nav-link">Hành Trình</a></li>
         <li><a href="#contact" class="nav-link nav-cta">Đặt Lịch Ngay</a></li>
       </ul>
       <button class="hamburger" id="hamburger" aria-label="Toggle menu">
         <span></span><span></span><span></span>
       </button>
     </div>
+
+    <!-- Horizontal Scroll Progress with Title -->
+    <div class="scroll-progress-container">
+      <div class="scroll-progress-bar" id="scrollProgress">
+        <div class="scroll-progress-title" id="scrollTitle">Khám Phá</div>
+      </div>
+    </div>
   </nav>
 
   <!-- ========== HERO SECTION ========== -->
   <section class="hero" id="hero">
     <div class="hero-bg-image"></div>
+    <div class="twinkling-stars"></div>
     <div class="hero-overlay"></div>
 
     <!-- Animated number rings -->
@@ -54,12 +64,57 @@
       <span class="ring-num">6</span><span class="ring-num">5</span><span class="ring-num">4</span>
       <span class="ring-num">3</span><span class="ring-num">2</span><span class="ring-num">1</span>
     </div>
+    <div class="number-ring ring-3">
+      <span class="ring-num">3</span><span class="ring-num">7</span><span class="ring-num">1</span>
+      <span class="ring-num">9</span><span class="ring-num">4</span><span class="ring-num">2</span>
+      <span class="ring-num">8</span><span class="ring-num">5</span><span class="ring-num">6</span>
+    </div>
+    <div class="number-ring ring-4">
+      <span class="ring-num">2</span><span class="ring-num">5</span><span class="ring-num">8</span>
+      <span class="ring-num">1</span><span class="ring-num">4</span><span class="ring-num">7</span>
+      <span class="ring-num">3</span><span class="ring-num">6</span><span class="ring-num">9</span>
+    </div>
+    <div class="number-ring ring-5">
+      <span class="ring-num">1</span><span class="ring-num">1</span><span class="ring-num">2</span>
+      <span class="ring-num">2</span><span class="ring-num">2</span><span class="ring-num">4</span>
+      <span class="ring-num">3</span><span class="ring-num">3</span><span class="ring-num">6</span>
+    </div>
+    <div class="number-ring ring-6">
+      <span class="ring-num">6</span><span class="ring-num">3</span><span class="ring-num">9</span>
+      <span class="ring-num">2</span><span class="ring-num">8</span><span class="ring-num">4</span>
+      <span class="ring-num">7</span><span class="ring-num">5</span><span class="ring-num">1</span>
+    </div>
+
+    <!-- Floating ambient numerology numbers -->
+    <div class="hero-floats" aria-hidden="true">
+      <!-- Single digits: large & prominent -->
+      <span class="float-num fn-1" style="top:8%;left:3%;font-size:5rem;opacity:0.13;animation-delay:0s;">1</span>
+      <span class="float-num fn-2" style="top:72%;left:5%;font-size:7rem;opacity:0.10;animation-delay:1.5s;">2</span>
+      <span class="float-num fn-3" style="top:15%;right:4%;font-size:5.5rem;opacity:0.12;animation-delay:0.8s;">5</span>
+      <span class="float-num fn-4" style="top:55%;right:5%;font-size:6rem;opacity:0.11;animation-delay:2.2s;">7</span>
+      <span class="float-num fn-5" style="top:40%;left:2%;font-size:4rem;opacity:0.09;animation-delay:3s;">8</span>
+      <span class="float-num fn-6" style="bottom:8%;right:12%;font-size:4.5rem;opacity:0.10;animation-delay:1.2s;">9</span>
+      <!-- Medium scattered -->
+      <span class="float-num fn-teal" style="top:25%;left:8%;font-size:2.8rem;opacity:0.14;animation-delay:0.4s;">1</span>
+      <span class="float-num fn-gold" style="top:80%;left:20%;font-size:3rem;opacity:0.12;animation-delay:2.8s;">5</span>
+      <span class="float-num fn-teal" style="top:10%;right:18%;font-size:2.4rem;opacity:0.15;animation-delay:1.8s;">7</span>
+      <span class="float-num fn-gold" style="top:65%;right:22%;font-size:2.6rem;opacity:0.11;animation-delay:0.6s;">2</span>
+      <span class="float-num fn-1" style="bottom:15%;left:35%;font-size:2.2rem;opacity:0.10;animation-delay:3.5s;">8</span>
+      <span class="float-num fn-3" style="top:48%;right:15%;font-size:2rem;opacity:0.13;animation-delay:2s;">9</span>
+      <!-- Master numbers: styled differently, teal accent -->
+      <span class="float-num fn-master" style="top:6%;left:40%;font-size:1.8rem;opacity:0.22;animation-delay:1s;">11/2</span>
+      <span class="float-num fn-master" style="bottom:12%;right:30%;font-size:1.6rem;opacity:0.20;animation-delay:2.5s;">22/4</span>
+      <span class="float-num fn-master" style="top:75%;left:55%;font-size:1.7rem;opacity:0.18;animation-delay:0.3s;">33/6</span>
+      <span class="float-num fn-master" style="top:32%;right:38%;font-size:1.4rem;opacity:0.16;animation-delay:3.8s;">11/2</span>
+      <span class="float-num fn-master" style="bottom:25%;left:12%;font-size:1.5rem;opacity:0.17;animation-delay:1.7s;">22/4</span>
+      <span class="float-num fn-master" style="top:88%;right:48%;font-size:1.4rem;opacity:0.15;animation-delay:4.2s;">33/6</span>
+    </div>
 
     <div class="hero-content">
       <div class="hero-badge reveal">✦ Hơn 900 ca tư vấn thực tế ✦</div>
       <h1 class="hero-title reveal">
         <span class="title-line title-gradient-anim">NHÂN SỐ HỌC</span>
-        <span class="title-line accent title-glow-anim">KHAI PHÁ</span>
+        <span class="title-line accent">KHAI PHÁ</span>
         <span class="title-line title-gradient-anim">TIỀM NĂNG</span>
       </h1>
       <p class="hero-subtitle reveal">
@@ -91,6 +146,7 @@
       </div>
     </div>
 
+
     <div class="scroll-indicator">
       <div class="scroll-line"></div>
       <span>Cuộn xuống</span>
@@ -99,6 +155,7 @@
 
   <!-- ========== PAIN POINTS SECTION ========== -->
   <section class="pain-points section" id="pain-points">
+    <div class="section-bg-shared bg-img-2"></div>
     <div class="container">
       <div class="section-header reveal">
         <span class="section-tag">Bạn Đang Gặp Phải?</span>
@@ -127,44 +184,96 @@
       </div>
       <div class="pain-conclusion reveal">
         <div class="conclusion-glow"></div>
-        <p>✨ <strong>Nhân Số Học</strong> là tấm bản đồ giúp bạn hiểu rõ bản thân, tính cách, điểm mạnh, điểm yếu và hành trình phát triển của chính mình.</p>
+        <p><i class="fa-solid fa-sparkles" style="color: var(--color-gold-light); margin-right: 8px;"></i> <strong>Nhân Số Học</strong> là tấm bản đồ giúp bạn hiểu rõ bản thân, tính cách, điểm mạnh, điểm yếu và hành trình phát triển của chính mình.</p>
       </div>
     </div>
   </section>
 
   <!-- ========== ABOUT SECTION ========== -->
   <section class="about section" id="about">
-    <div class="about-bg-image"></div>
+    <div class="section-bg-shared bg-img-3"></div>
     <div class="about-overlay"></div>
     <div class="container">
-      <div class="about-grid">
-        <div class="about-visual reveal">
-          <div class="about-image-wrapper">
-            <img src="assets/images/about_bg.png" alt="Nhân số học tư vấn" class="about-image" />
-            <div class="about-badge-float">
-              <span class="badge-num">900+</span>
-              <span class="badge-txt">Ca tư vấn</span>
+      <div class="section-header reveal">
+        <span class="section-tag">Về Chúng Tôi</span>
+        <h2 class="section-title">Những Người Đồng Hành</h2>
+        <div class="section-divider">
+          <span>✦</span><span>✦</span><span>✦</span>
+        </div>
+      </div>
+
+      <!-- Mentors Grid Container -->
+      <div class="mentors-grid">
+        <!-- Mentor 1: Phan Thái Bảo -->
+        <div class="mentor-block reveal">
+        <div class="mentor-image-col">
+          <div class="mentor-arch-frame">
+            <img src="assets/images/mentor_bao.png" alt="Phan Thái Bảo" id="mentor1-img" />
+          </div>
+        </div>
+        <div class="mentor-content-col">
+          <div class="mentor-role">NGƯỜI HƯỚNG DẪN</div>
+          <h3 class="mentor-name">Phan Thái Bảo</h3>
+          <p class="mentor-desc">Người đồng hành cùng hàng ngàn tâm hồn trên hành trình khám phá bản thân qua ngôn ngữ của những lá bài Clow huyền bí.</p>
+          
+          <div class="mentor-features">
+            <div class="mentor-feature-card">
+              <i class="fa-solid fa-star"></i>
+              <span>Hơn <strong>10 năm</strong> nghiên cứu Huyền Học, đặc biệt bộ bài Clow</span>
+            </div>
+            <div class="mentor-feature-card">
+              <i class="fa-solid fa-users"></i>
+              <span>Đã tư vấn cho hơn <strong>1.000 khách hàng</strong></span>
+            </div>
+            <div class="mentor-feature-card">
+              <i class="fa-solid fa-graduation-cap"></i>
+              <span>Khai giảng từ <strong>2019</strong>, hơn <strong>20 khoá học</strong> với <strong>120+ học viên</strong></span>
+            </div>
+            <div class="mentor-feature-card">
+              <i class="fa-solid fa-microphone-lines"></i>
+              <span>Tổ chức hơn <strong>10 buổi workshop</strong> từ 2024 với chủ đề Ứng dụng Huyền Học và Bài Clow để HIỂU & THƯƠNG</span>
             </div>
           </div>
         </div>
-        <div class="about-content reveal">
-          <span class="section-tag">Về Chúng Tôi</span>
-          <h2 class="section-title">Hơn 3 Năm Đồng Hành<br />Cùng Hành Trình Của Bạn</h2>
-          <p class="about-desc">
-            Với hơn <strong>3 năm kinh nghiệm</strong> và hơn <strong>900 ca tư vấn</strong> thực tế, chúng tôi mang đến những góc nhìn sâu sắc, thông điệp chữa lành và lộ trình cá nhân hoá.
-          </p>
-          <div class="about-quote">
-            <span class="quote-mark">"</span>
-            <p>Chúng tôi không nói bạn phải trở thành ai khác. Chỉ giúp bạn <em>hiểu đúng chính mình</em> để sống nhẹ nhàng và đúng hướng hơn.</p>
+      </div>
+
+      <!-- Mentor 2: Lê Chí Cường -->
+      <div class="mentor-block reveal">
+        <div class="mentor-image-col">
+          <div class="mentor-arch-frame">
+            <img src="assets/images/mentor_cuong.png" alt="Lê Chí Cường" id="mentor2-img" />
           </div>
-          <a href="#contact" class="btn btn-primary" id="about-cta">Bắt Đầu Hành Trình</a>
+        </div>
+        <div class="mentor-content-col">
+          <div class="mentor-role">NGƯỜI HƯỚNG DẪN</div>
+          <h3 class="mentor-name">Lê Chí Cường</h3>
+          <p class="mentor-desc">Người đồng hành cùng hàng ngàn tâm hồn trên hành trình khám phá bản thân qua ngôn ngữ của nhân số học.</p>
+          
+          <div class="mentor-features">
+            <div class="mentor-feature-card">
+              <i class="fa-solid fa-book-open"></i>
+              <span>Hơn <strong>3 năm</strong> nghiên cứu Huyền Học, đặc biệt bộ môn nhân số học</span>
+            </div>
+            <div class="mentor-feature-card">
+              <i class="fa-solid fa-users"></i>
+              <span>Đã tư vấn nhân số cho hơn <strong>900 khách hàng</strong></span>
+            </div>
+            <div class="mentor-feature-card">
+              <i class="fa-solid fa-handshake-angle"></i>
+              <span>Luôn hỗ trợ và đồng hành cùng các buổi Workshop của Clow Cat Patronus</span>
+            </div>
+          </div>
+        </div>
         </div>
       </div>
+      <!-- End Mentors Grid Container -->
+
     </div>
   </section>
 
   <!-- ========== BENEFITS SECTION ========== -->
   <section class="benefits section" id="benefits">
+    <div class="section-bg-shared bg-img-1"></div>
     <div class="container">
       <div class="section-header reveal">
         <span class="section-tag">Những Gì Bạn Nhận Được</span>
@@ -204,12 +313,15 @@
 
   <!-- ========== PACKAGES SECTION ========== -->
   <section class="packages section" id="packages">
-    <div class="packages-bg-image"></div>
+    <div class="section-bg-shared bg-img-2"></div>
     <div class="packages-overlay"></div>
     <div class="container">
       <div class="section-header reveal">
         <span class="section-tag">Gói Tư Vấn</span>
-        <h2 class="section-title">Chọn Hình Thức Phù Hợp</h2>
+        <h2 class="section-title section-title-packages">
+          <span>Chọn Hình Thức</span>
+          <span>Phù Hợp</span>
+        </h2>
         <div class="section-divider">
           <span>✦</span><span>✦</span><span>✦</span>
         </div>
@@ -289,12 +401,12 @@
       <!-- Session Info -->
       <div class="session-info reveal">
         <div class="session-info-item">
-          <span class="session-icon">⏱️</span>
+          <span class="session-icon"><i class="fa-regular fa-hourglass-half"></i></span>
           <span>Thời gian mỗi buổi tư vấn: <strong>tối đa 2 tiếng</strong></span>
         </div>
         <div class="session-info-divider">·</div>
         <div class="session-info-item">
-          <span class="session-icon">📅</span>
+          <span class="session-icon"><i class="fa-regular fa-calendar-check"></i></span>
           <span>Yêu cầu sắp xếp lịch trước <strong>ít nhất 1 ngày</strong></span>
         </div>
       </div>
@@ -304,6 +416,7 @@
 
   <!-- ========== PROCESS SECTION ========== -->
   <section class="process section" id="process">
+    <div class="section-bg-shared bg-img-3"></div>
     <div class="container">
       <div class="section-header reveal">
         <span class="section-tag">Hành Trình</span>
@@ -320,7 +433,7 @@
           </div>
           <div class="step-connector"></div>
           <div class="step-content">
-            <div class="step-icon">📅</div>
+            <div class="step-icon"><i class="fa-regular fa-calendar-check"></i></div>
             <h3>Đặt Lịch</h3>
             <p>Chọn thời gian phù hợp với lịch trình của bạn. Linh hoạt theo nguyện vọng cá nhân.</p>
           </div>
@@ -332,7 +445,7 @@
           </div>
           <div class="step-connector"></div>
           <div class="step-content">
-            <div class="step-icon">💬</div>
+            <div class="step-icon"><i class="fa-regular fa-comments"></i></div>
             <h3>Chia Sẻ</h3>
             <p>Chia sẻ những điều đang khiến bạn trăn trở, những câu hỏi chưa có lời giải.</p>
           </div>
@@ -344,20 +457,25 @@
           </div>
           <div class="step-connector right-hidden"></div>
           <div class="step-content">
-            <div class="step-icon">✨</div>
+            <div class="step-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
             <h3>Nhận Định Hướng</h3>
             <p>Nhận thông điệp chữa lành và lộ trình cá nhân hoá để tự tin bước tiếp.</p>
           </div>
         </div>
       </div>
       <div class="process-quote reveal">
-        <p>✨ Đôi khi, chỉ cần hiểu đúng bản thân, <em>mọi thứ sẽ dần rõ ràng hơn.</em></p>
+        <p>
+          <i class="fa-solid fa-sparkles"></i>
+          <span>Đôi khi, chỉ cần hiểu đúng bản thân,</span>
+          <em>mọi thứ sẽ dần rõ ràng hơn.</em>
+        </p>
       </div>
     </div>
   </section>
 
   <!-- ========== CONTACT / CTA SECTION ========== -->
   <section class="contact section" id="contact">
+    <div class="section-bg-shared bg-img-1"></div>
     <div class="contact-bg"></div>
     <div class="container">
       <div class="section-header reveal">
@@ -370,16 +488,16 @@
       <div class="contact-grid">
         <div class="contact-info reveal">
           <div class="contact-card">
-            <h3>✦ Thông Tin Liên Hệ</h3>
+            <h3><i class="fa-solid fa-sparkles" style="color: var(--color-gold-light); margin-right: 8px;"></i>Thông Tin Liên Hệ</h3>
             <div class="contact-item">
-              <span class="contact-icon">📱</span>
+              <span class="contact-icon"><i class="fa-solid fa-comments"></i></span>
               <div>
                 <strong>Zalo / Facebook</strong>
                 <p>Nhắn tin để đặt lịch nhanh nhất</p>
               </div>
             </div>
             <div class="contact-item">
-              <span class="contact-icon">⏰</span>
+              <span class="contact-icon"><i class="fa-regular fa-clock"></i></span>
               <div>
                 <strong>Giờ làm việc</strong>
                 <p>Thứ 2 – Chủ Nhật: 8:00 – 21:00</p>
@@ -389,7 +507,7 @@
         </div>
         <div class="contact-form-wrapper reveal">
           <form class="contact-form" id="booking-form">
-            <h3>📋 Đặt Lịch Tư Vấn</h3>
+            <h3><i class="fa-regular fa-calendar-check" style="color: var(--color-gold-light); margin-right: 8px;"></i>Đặt Lịch Tư Vấn</h3>
             <div class="form-group">
               <label for="name">Họ và Tên *</label>
               <input type="text" id="name" name="name" placeholder="Nhập họ và tên của bạn" required />
@@ -476,6 +594,11 @@
 
   <!-- Toast notification -->
   <div class="toast" id="toast"></div>
+
+  <!-- Scroll to Top Button -->
+  <button id="scrollTopBtn" class="scroll-top-btn" aria-label="Lên đầu trang">
+    <i class="fa-solid fa-arrow-up"></i>
+  </button>
 
   <script src="script.js"></script>
 </body>
