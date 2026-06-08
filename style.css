@@ -1419,16 +1419,21 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   justify-content: center;
   gap: 20px;
   flex-wrap: wrap;
-  max-width: 700px;
+  max-width: 980px;
   margin: 32px auto 0;
   padding: 20px 32px;
   background: rgba(27,65,73,0.3);
   border: 1px solid rgba(212, 168, 67, 0.2);
-  border-radius: 50px;
+  border-radius: 32px;
   font-size: 0.9rem;
   color: var(--color-white-80);
 }
 .session-info-item { display: flex; align-items: center; gap: 8px; }
+.session-info-item:last-child {
+  flex-basis: 100%;
+  justify-content: center;
+  text-align: center;
+}
 .session-icon { font-size: 1.1rem; }
 .session-info-divider { color: var(--color-gold); opacity: 0.5; font-size: 1.5rem; }
 .session-info strong { color: var(--color-gold-light); }
@@ -1442,6 +1447,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   }
   .session-info-divider { display: none; }
   .session-info-item { gap: 10px; align-items: flex-start; text-align: left; }
+  .session-info-item:last-child { justify-content: flex-start; text-align: left; }
   .session-info-item span:last-child { line-height: 1.4; }
   .session-icon { margin-top: 1px; }
 }

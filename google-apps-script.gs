@@ -8,7 +8,9 @@
 const SPREADSHEET_ID = 'PASTE_GOOGLE_SHEET_ID_HERE';
 const SHEET_NAME     = 'Dang ky tu van';
 const CALENDAR_ID    = 'primary'; // Dùng Google Calendar chính của bạn (hoặc thay bằng ID lịch riêng)
-const OWNER_EMAIL    = 'PASTE_YOUR_GMAIL_HERE'; // Gmail của bạn để nhận thông báo
+const OWNER_EMAIL    = 'PASTE_YOUR_GMAIL_HERE'; // Gmail nhận thông báo (để trống sẽ dùng Gmail triển khai script)
+const EMAIL_SENDER_NAME = 'Tony Le – Nhân Số Học';
+const EMAIL_LOG_SHEET = 'Email log';
 
 const HEADERS = [
   'Ngày giờ Việt Nam',
@@ -17,11 +19,36 @@ const HEADERS = [
   'Số điện thoại / Zalo',
   'Email',
   'Hình thức',
-  'Khoá học',
+  'Gói tư vấn',
   'Lịch hẹn',
   'Số tiền',
   'Lời nhắn',
+  'Mã gói',
+  'Email khách',
+  'Email chủ',
 ];
+
+const CONSULTATION_TYPE_LABELS = {
+  online: 'Online - Google Meet',
+  offline: 'Offline - Trực tiếp tại TP.HCM',
+};
+
+const PACKAGE_OPTIONS = {
+  online: {
+    year: { label: 'Dự Đoán Năm Cá Nhân – 500.000 vnđ/buổi', price: 500000 },
+    big3: { label: 'Phân Tích 3 Chỉ Số Tính Cách – 1.000.000 vnđ/buổi', price: 1000000 },
+    big7: { label: 'Phân Tích Toàn Diện – 2.000.000 vnđ/buổi', price: 2000000 },
+  },
+  offline: {
+    year: { label: 'Dự Đoán Năm Cá Nhân – 550.000 vnđ/buổi', price: 550000 },
+    big3: { label: 'Phân Tích 3 Chỉ Số Tính Cách – 1.050.000 vnđ/buổi', price: 1050000 },
+    big7: { label: 'Phân Tích Toàn Diện – 2.050.000 vnđ/buổi', price: 2050000 },
+  },
+};
+
+const OFFLINE_TRAVEL_FEE = 50000;
+const PRICE_NUMBER_FORMAT = '#,##0';
+const SCRIPT_VERSION = '2026-06-08-v5';
 
 // =============================================
 //  doGet – Trả về danh sách slot đã đặt (30 ngày tới)
@@ -36,19 +63,40 @@ function doGet(e) {
       const cal   = CalendarApp.getCalendarById(CALENDAR_ID) || CalendarApp.getDefaultCalendar();
       const events = cal.getEvents(now, end);
 
-      const booked = events.map(ev => ({
+      const calendarBooked = events.map((ev) => ({
         start: ev.getStartTime().toISOString(),
-        end:   ev.getEndTime().toISOString(),
+        end: ev.getEndTime().toISOString(),
         title: ev.getTitle(),
+        source: 'calendar',
       }));
 
-      return jsonResponse({ ok: true, booked });
+      const sheetBooked = getBookedSlotsFromSheet();
+      const booked = mergeBookedSlots(calendarBooked, sheetBooked);
+
+      return jsonResponse({ ok: true, booked, scriptVersion: SCRIPT_VERSION });
     } catch (err) {
       return jsonResponse({ ok: false, booked: [], error: err.message });
     }
   }
 
-  return jsonResponse({ ok: true, message: 'Nhân Số Học – Apps Script đang chạy ✓' });
+  if (params.action === 'version') {
+    return jsonResponse({
+      ok: true,
+      scriptVersion: SCRIPT_VERSION,
+      sender: getScriptSenderEmail(),
+      owner: getOwnerEmail(),
+    });
+  }
+
+  if (params.action === 'completeBooking') {
+    try {
+      return handleCompleteBooking(params);
+    } catch (error) {
+      return jsonResponse({ ok: false, message: error.message, scriptVersion: SCRIPT_VERSION });
+    }
+  }
+
+  return jsonResponse({ ok: true, message: 'Nhân Số Học – Apps Script đang chạy ✓', scriptVersion: SCRIPT_VERSION });
 }
 
 // =============================================
@@ -56,10 +104,10 @@ function doGet(e) {
 // =============================================
 function doPost(e) {
   try {
-    const params = e ? (e.parameter || {}) : {};
+    const params = getPostParams(e);
 
-    if (params.action === 'finalizeBooking') {
-      return handleFinalizeBooking(params);
+    if (params.action === 'saveBooking' || params.action === 'finalizeBooking') {
+      return handleSaveBooking(params);
     }
 
     // Legacy fallback (nếu còn dùng form cũ)
@@ -70,68 +118,330 @@ function doPost(e) {
   }
 }
 
+function getPostParams(e) {
+  const params = {};
+  if (!e) return params;
+
+  if (e.parameter) {
+    Object.keys(e.parameter).forEach((key) => {
+      params[key] = e.parameter[key];
+    });
+  }
+
+  if (e.parameters) {
+    Object.keys(e.parameters).forEach((key) => {
+      const value = e.parameters[key];
+      params[key] = Array.isArray(value) ? value[0] : value;
+    });
+  }
+
+  if (Object.keys(params).length || !e.postData || !e.postData.contents) {
+    return params;
+  }
+
+  const contentType = String(e.postData.type || '').toLowerCase();
+  const body = e.postData.contents;
+
+  if (contentType.indexOf('application/json') !== -1) {
+    return Object.assign(params, JSON.parse(body));
+  }
+
+  if (contentType.indexOf('application/x-www-form-urlencoded') !== -1) {
+    body.split('&').forEach((pair) => {
+      const parts = pair.split('=');
+      const key = decodeURIComponent(parts[0] || '');
+      const value = decodeURIComponent((parts[1] || '').replace(/\+/g, ' '));
+      if (key) params[key] = value;
+    });
+  }
+
+  return params;
+}
+
 // =============================================
-//  handleFinalizeBooking
+//  POST – chỉ lưu Sheet (nhanh, dùng với no-cors từ website)
 // =============================================
-function handleFinalizeBooking(params) {
+function handleSaveBooking(params) {
   const sheet = getTargetSheet();
   ensureHeaderRow(sheet);
+  const booking = resolveBookingDetails(params);
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
 
-  let calendarEventId = '';
+  let rowNumber = 0;
   try {
-    // 1. Tạo sự kiện trên Google Calendar
-    if (params.slotStart && params.slotEnd) {
-      const startDt = new Date(params.slotStart);
-      const endDt   = new Date(params.slotEnd);
-      const cal     = CalendarApp.getCalendarById(CALENDAR_ID) || CalendarApp.getDefaultCalendar();
-
-      const eventTitle = `[Nhân Số] ${cleanValue(params.name)} – ${cleanValue(params.packageLabel)}`;
-      const eventDesc  = [
-        `Khách hàng: ${cleanValue(params.name)}`,
-        `SĐT/Zalo: ${cleanValue(params.phone)}`,
-        `Email: ${cleanValue(params.email)}`,
-        `Ngày sinh: ${cleanValue(params.dob)}`,
-        `Gói: ${cleanValue(params.packageLabel)}`,
-        `Hình thức: ${cleanValue(params.consultationTypeLabel)}`,
-        `Lời nhắn: ${cleanValue(params.concern)}`,
-      ].join('\n');
-
-      const ev = cal.createEvent(eventTitle, startDt, endDt, { description: eventDesc });
-      calendarEventId = ev.getId();
-    }
-
-    // 2. Lưu vào Google Sheet
-    sheet.appendRow([
-      getVietnamDateTime(params.submittedAt),
-      cleanValue(params.name),
-      cleanValue(params.dob),
-      cleanValue(params.phone),
-      cleanValue(params.email),
-      cleanValue(params.consultationTypeLabel),
-      cleanValue(params.packageLabel),
-      cleanValue(params.slotLabel),
-      formatPrice(params.packagePrice),
-      cleanValue(params.concern),
-    ]);
-
+    sheet.appendRow(buildSheetRow(params, booking));
+    rowNumber = sheet.getLastRow();
+    formatInsertedRow(sheet, rowNumber);
   } finally {
     lock.releaseLock();
   }
 
-  // 3. Gửi Email xác nhận cho khách
-  if (params.email) {
-    sendConfirmationEmail(params);
+  return jsonResponse({
+    ok: true,
+    message: 'Da luu Sheet',
+    scriptVersion: SCRIPT_VERSION,
+    rowNumber: rowNumber,
+  });
+}
+
+// =============================================
+//  GET – gửi email + tạo Calendar (chạy đủ, website đọc được kết quả)
+// =============================================
+function handleCompleteBooking(params) {
+  const sheet = getTargetSheet();
+  const booking = resolveBookingDetails(params);
+  const rowNumber = findLatestBookingRow(sheet, params);
+  const payload = Object.assign({}, params, booking);
+
+  const emailStatus = sendBookingEmails(payload, sheet, rowNumber);
+
+  let calendarEventId = '';
+  let calendarNote = '';
+  try {
+    calendarEventId = createCalendarEventIfNeeded(params, booking);
+    calendarNote = calendarEventId ? 'created' : 'skipped';
+  } catch (calendarErr) {
+    calendarNote = calendarErr.message || String(calendarErr);
+    console.error('Calendar error:', calendarErr);
   }
 
-  // 4. Gửi thông báo cho chủ
-  if (OWNER_EMAIL && !OWNER_EMAIL.includes('PASTE_YOUR_GMAIL')) {
-    sendOwnerNotification(params);
+  return jsonResponse({
+    ok: true,
+    message: 'Hoan tat dat lich',
+    scriptVersion: SCRIPT_VERSION,
+    rowNumber: rowNumber,
+    emailStatus: emailStatus,
+    calendarEventId: calendarEventId,
+    calendarNote: calendarNote,
+  });
+}
+
+function findLatestBookingRow(sheet, params) {
+  const phone = cleanValue(params.phone).replace(/^'/, '');
+  const slotLabel = cleanValue(params.slotLabel);
+  const email = cleanValue(params.email);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 0;
+
+  const phoneCol = HEADERS.indexOf('Số điện thoại / Zalo');
+  const slotCol = HEADERS.indexOf('Lịch hẹn');
+  const emailCol = HEADERS.indexOf('Email');
+  const data = sheet.getRange(2, 1, lastRow, HEADERS.length).getValues();
+
+  for (let i = data.length - 1; i >= 0; i--) {
+    const row = data[i];
+    const rowPhone = String(row[phoneCol] || '').replace(/^'/, '');
+    const rowSlot = String(row[slotCol] || '');
+    const rowEmail = String(row[emailCol] || '');
+    if (rowPhone === phone && rowSlot === slotLabel && rowEmail === email) {
+      return i + 2;
+    }
   }
 
-  return jsonResponse({ ok: true, message: 'Đặt lịch thành công!', calendarEventId });
+  return lastRow;
+}
+
+function createCalendarEventIfNeeded(params, booking) {
+  if (!params.slotStart || !params.slotEnd) return '';
+
+  const startDt = new Date(params.slotStart);
+  const endDt = new Date(params.slotEnd);
+  const cal = CalendarApp.getCalendarById(CALENDAR_ID) || CalendarApp.getDefaultCalendar();
+  const existing = cal.getEvents(startDt, endDt);
+  const marker = `[Nhân Số] ${booking.name}`;
+
+  const alreadyExists = existing.some((ev) => ev.getTitle().indexOf(booking.name) !== -1);
+  if (alreadyExists) return 'exists';
+
+  return createCalendarEvent(params, booking);
+}
+
+function handleFinalizeBooking(params) {
+  return handleSaveBooking(params);
+}
+
+function sendBookingEmails(payload, sheet, rowNumber) {
+  const status = {
+    sender: getScriptSenderEmail(),
+    customer: { attempted: false, sent: false, to: '', error: '' },
+    owner: { attempted: false, sent: false, to: '', error: '' },
+  };
+
+  if (!status.sender) {
+    const deployError = 'Chua gui duoc email: Apps Script can trien khai voi "Thuc thi tuoi la: Toi".';
+    status.customer.error = deployError;
+    status.owner.error = deployError;
+    logEmailAttempt('he thong', '', false, deployError);
+    writeEmailStatusToRow(sheet, rowNumber, status);
+    return status;
+  }
+
+  const customerEmail = cleanValue(resolveBookingDetails(payload).email);
+  if (isValidEmail(customerEmail)) {
+    status.customer.attempted = true;
+    status.customer.to = customerEmail;
+    try {
+      sendConfirmationEmail(payload);
+      status.customer.sent = true;
+      logEmailAttempt('khach', customerEmail, true, '');
+    } catch (customerErr) {
+      status.customer.error = customerErr.message || String(customerErr);
+      logEmailAttempt('khach', customerEmail, false, status.customer.error);
+    }
+  } else {
+    status.customer.error = 'Email khach khong hop le: ' + (customerEmail || '(trong)');
+    logEmailAttempt('khach', customerEmail, false, status.customer.error);
+  }
+
+  const ownerEmail = getOwnerEmail();
+  if (isValidEmail(ownerEmail)) {
+    status.owner.attempted = true;
+    status.owner.to = ownerEmail;
+    try {
+      sendOwnerNotification(payload, ownerEmail);
+      status.owner.sent = true;
+      logEmailAttempt('chu', ownerEmail, true, '');
+    } catch (ownerErr) {
+      status.owner.error = ownerErr.message || String(ownerErr);
+      logEmailAttempt('chu', ownerEmail, false, status.owner.error);
+    }
+  } else {
+    status.owner.error = 'Khong xac dinh duoc email chu trang';
+    logEmailAttempt('chu', ownerEmail, false, status.owner.error);
+  }
+
+  writeEmailStatusToRow(sheet, rowNumber, status);
+  return status;
+}
+
+function writeEmailStatusToRow(sheet, rowNumber, status) {
+  if (!sheet || !rowNumber || rowNumber < 2) return;
+
+  const customerCol = HEADERS.indexOf('Email khách') + 1;
+  const ownerCol = HEADERS.indexOf('Email chủ') + 1;
+  if (customerCol < 1 || ownerCol < 1) return;
+
+  const customerCell = status.customer.sent
+    ? 'DA GUI'
+    : ('LOI: ' + (status.customer.error || 'CHUA GUI'));
+  const ownerCell = status.owner.sent
+    ? 'DA GUI'
+    : ('LOI: ' + (status.owner.error || 'CHUA GUI'));
+
+  sheet.getRange(rowNumber, customerCol).setValue(customerCell);
+  sheet.getRange(rowNumber, ownerCol).setValue(ownerCell);
+}
+
+function buildSheetRow(params, booking) {
+  return [
+    getVietnamDateTime(params.submittedAt),
+    booking.name,
+    booking.dob,
+    booking.phone,
+    booking.email,
+    booking.consultationTypeLabel,
+    booking.packageLabel,
+    cleanValue(params.slotLabel),
+    booking.packagePrice || '',
+    booking.concern,
+    booking.package,
+    '',
+    '',
+  ];
+}
+
+function getBookedSlotsFromSheet() {
+  try {
+    const sheet = getTargetSheet();
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return [];
+
+    const slotCol = HEADERS.indexOf('Lịch hẹn') + 1;
+    if (slotCol < 1) return [];
+
+    const values = sheet.getRange(2, slotCol, lastRow, slotCol).getValues();
+    const booked = [];
+
+    values.forEach((row) => {
+      const parsed = parseSlotLabelVN(String(row[0] || ''));
+      if (parsed) booked.push(parsed);
+    });
+
+    return booked;
+  } catch (error) {
+    console.error('Sheet booked slots error:', error);
+    return [];
+  }
+}
+
+function parseSlotLabelVN(label) {
+  const match = label.match(/(\d{2})\/(\d{2})\/(\d{4}).*?(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+
+  const dd = parseInt(match[1], 10);
+  const mm = parseInt(match[2], 10);
+  const yyyy = parseInt(match[3], 10);
+  const sh = parseInt(match[4], 10);
+  const sm = parseInt(match[5], 10);
+  const eh = parseInt(match[6], 10);
+  const em = parseInt(match[7], 10);
+
+  const start = new Date(Date.UTC(yyyy, mm - 1, dd, sh - 7, sm, 0));
+  const end = new Date(Date.UTC(yyyy, mm - 1, dd, eh - 7, em, 0));
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) return null;
+
+  return {
+    start: start.toISOString(),
+    end: end.toISOString(),
+    title: 'Sheet: ' + label,
+    source: 'sheet',
+  };
+}
+
+function mergeBookedSlots() {
+  const merged = [];
+  const seen = {};
+
+  Array.prototype.slice.call(arguments).forEach((list) => {
+    (list || []).forEach((slot) => {
+      const key = slot.start + '|' + slot.end;
+      if (!seen[key]) {
+        seen[key] = true;
+        merged.push(slot);
+      }
+    });
+  });
+
+  return merged;
+}
+
+function createCalendarEvent(params, booking) {
+  if (!params.slotStart || !params.slotEnd) return '';
+
+  const startDt = new Date(params.slotStart);
+  const endDt   = new Date(params.slotEnd);
+  const cal     = CalendarApp.getCalendarById(CALENDAR_ID) || CalendarApp.getDefaultCalendar();
+
+  const eventTitle = `[Nhân Số] ${booking.name} – ${booking.packageLabel}`;
+  const eventDescLines = [
+    `Khách hàng: ${booking.name}`,
+    `SĐT/Zalo: ${booking.phone}`,
+    `Email: ${booking.email}`,
+    `Ngày sinh: ${booking.dob}`,
+    `Gói: ${booking.packageLabel}`,
+    `Hình thức: ${booking.consultationTypeLabel}`,
+    `Số tiền: ${formatPrice(booking.packagePrice)}`,
+  ];
+  if (booking.isOffline) {
+    eventDescLines.push(`Phụ phí xăng xe: ${formatPrice(OFFLINE_TRAVEL_FEE)} (đã tính trong giá gói offline)`);
+    eventDescLines.push('Địa điểm offline sẽ được thông báo qua Zalo trước buổi tư vấn.');
+  }
+  eventDescLines.push(`Lời nhắn: ${booking.concern}`);
+
+  const ev = cal.createEvent(eventTitle, startDt, endDt, { description: eventDescLines.join('\n') });
+  return ev.getId();
 }
 
 // =============================================
@@ -140,43 +450,38 @@ function handleFinalizeBooking(params) {
 function handleLegacyBooking(params) {
   const sheet = getTargetSheet();
   ensureHeaderRow(sheet);
+  const booking = resolveBookingDetails(params);
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
+  let rowNumber = 0;
   try {
-    sheet.appendRow([
-      getVietnamDateTime(params.submittedAt),
-      cleanValue(params.name),
-      cleanValue(params.dob),
-      cleanValue(params.phone),
-      cleanValue(params.email),
-      cleanValue(params.consultationTypeLabel),
-      cleanValue(params.packageLabel),
-      '',
-      '',
-      cleanValue(params.concern),
-    ]);
+    sheet.appendRow(buildSheetRow(Object.assign({}, params, { slotLabel: '' }), booking));
+    rowNumber = sheet.getLastRow();
+    formatInsertedRow(sheet, rowNumber);
   } finally {
     lock.releaseLock();
   }
-  return jsonResponse({ ok: true, message: 'Saved (legacy)' });
+  return jsonResponse({ ok: true, message: 'Saved (legacy)', rowNumber: rowNumber });
 }
 
 // =============================================
 //  Email gửi khách
 // =============================================
 function sendConfirmationEmail(p) {
-  const name        = cleanValue(p.name);
+  const booking     = resolveBookingDetails(p);
+  const name        = booking.name;
   const slotLabel   = cleanValue(p.slotLabel);
-  const pkgLabel    = cleanValue(p.packageLabel);
-  const typeLabel   = cleanValue(p.consultationTypeLabel);
-  const price       = formatPrice(p.packagePrice);
-  const phone       = cleanValue(p.phone).replace(/^'/, '');
-  const isOffline   = (p.consultationType || '').toLowerCase().includes('offline');
-  
-  // HTML entities cho Emoji để tránh lỗi dấu chấm hỏi đen
-  // Location note for offline
-  const locationNote = isOffline
-    ? '<p style="color:#e8a878;">&#128205; <strong>Địa điểm:</strong> Địa điểm cụ thể sẽ được thông báo qua Zalo trước buổi tư vấn.</p>'
+  const pkgLabel    = booking.packageLabel;
+  const typeLabel   = booking.consultationTypeLabel;
+  const price       = formatPrice(booking.packagePrice);
+  const phone       = booking.phone.replace(/^'/, '');
+  const isOffline   = booking.isOffline;
+
+  const offlineNotes = isOffline
+    ? [
+      '<p style="margin:0 0 8px;color:#e8a878;">&#128663; <strong>Phụ phí xăng xe:</strong> Giá gói offline đã bao gồm phụ phí di chuyển ' + formatPrice(OFFLINE_TRAVEL_FEE) + '.</p>',
+      '<p style="margin:0;color:#e8a878;">&#128205; <strong>Địa điểm:</strong> Địa điểm cụ thể sẽ được thông báo qua Zalo trước buổi tư vấn.</p>',
+    ].join('')
     : '';
 
   const html = `
@@ -225,7 +530,7 @@ function sendConfirmationEmail(p) {
         </table>
       </td></tr>
 
-      ${isOffline ? `<tr><td style="padding:0 36px 20px;">${locationNote}</td></tr>` : ''}
+      ${isOffline ? `<tr><td style="padding:0 36px 20px;">${offlineNotes}</td></tr>` : ''}
 
       <!-- Contact info -->
       <tr><td style="padding:0 36px 24px;">
@@ -265,51 +570,213 @@ function sendConfirmationEmail(p) {
 
   // Sử dụng text thuần tuý hoặc icon cơ bản cho Subject để tránh lỗi font email
   const subjectStr = '[Thành Công] Xác nhận đặt lịch tư vấn Nhân Số Học – Clow Cat Patronus';
-  const textBody = 'Chào ' + name + ',\nBạn đã đặt lịch thành công!\nLịch hẹn: ' + slotLabel + '\nGói: ' + pkgLabel + '\nHình thức: ' + typeLabel + '\nSố tiền: ' + price + '\n\nHẹn gặp bạn tại buổi tư vấn!\nTony Le – Numerology\nMột đối tác của Clow Cat Patronus';
+  const offlineText = isOffline
+    ? '\nPhụ phí xăng xe: ' + formatPrice(OFFLINE_TRAVEL_FEE) + ' (đã tính trong giá gói offline)\nĐịa điểm offline sẽ được thông báo qua Zalo trước buổi tư vấn.'
+    : '';
+  const textBody = 'Chào ' + name + ',\nBạn đã đặt lịch thành công!\nLịch hẹn: ' + slotLabel + '\nGói: ' + pkgLabel + '\nHình thức: ' + typeLabel + '\nSố tiền: ' + price + offlineText + '\n\nHẹn gặp bạn tại buổi tư vấn!\nTony Le – Numerology\nMột đối tác của Clow Cat Patronus';
 
-  GmailApp.sendEmail(
-    cleanValue(p.email),
+  sendMailSafe(
+    booking.email,
     subjectStr,
     textBody,
-    { htmlBody: html, name: 'Tony Le – Nhân Số Học' }
+    { htmlBody: html, name: EMAIL_SENDER_NAME }
   );
 }
 
 // =============================================
 //  Thông báo cho chủ trang
 // =============================================
-function sendOwnerNotification(p) {
-  const name   = cleanValue(p.name);
-  const phone  = cleanValue(p.phone).replace(/^'/, '');
-  const pkg    = cleanValue(p.packageLabel);
-  const slot   = cleanValue(p.slotLabel);
-  const price  = formatPrice(p.packagePrice);
+function sendOwnerNotification(p, ownerEmail) {
+  const booking = resolveBookingDetails(p);
+  const slot    = cleanValue(p.slotLabel);
+  const offlineText = booking.isOffline
+    ? '\nPhụ phí xăng xe: ' + formatPrice(OFFLINE_TRAVEL_FEE) + ' (đã tính trong giá gói offline)'
+    : '';
 
-  GmailApp.sendEmail(
-    OWNER_EMAIL,
-    '[Đặt lịch mới] ' + name + ' – ' + pkg,
-    'Có khách đặt lịch mới!\n\nTên: ' + name + '\nSĐT: ' + phone + '\nGói: ' + pkg + '\nLịch: ' + slot + '\nSố tiền: ' + price + '\nEmail: ' + cleanValue(p.email) + '\nNgày sinh: ' + cleanValue(p.dob) + '\nLời nhắn: ' + cleanValue(p.concern),
+  sendMailSafe(
+    ownerEmail || getOwnerEmail(),
+    '[Đặt lịch mới] ' + booking.name + ' – ' + booking.packageLabel,
+    'Có khách đặt lịch mới!\n\nTên: ' + booking.name +
+      '\nSĐT: ' + booking.phone.replace(/^'/, '') +
+      '\nHình thức: ' + booking.consultationTypeLabel +
+      '\nGói: ' + booking.packageLabel +
+      '\nMã gói: ' + booking.package +
+      '\nLịch: ' + slot +
+      '\nSố tiền: ' + formatPrice(booking.packagePrice) +
+      offlineText +
+      '\nEmail: ' + booking.email +
+      '\nNgày sinh: ' + booking.dob +
+      '\nLời nhắn: ' + booking.concern,
     { name: 'Hệ thống đặt lịch Nhân Số Học' }
   );
+}
+
+function sendMailSafe(to, subject, body, options) {
+  const mailOptions = Object.assign({ name: EMAIL_SENDER_NAME }, options || {});
+  const htmlBody = mailOptions.htmlBody || '';
+  delete mailOptions.htmlBody;
+
+  try {
+    if (htmlBody) {
+      GmailApp.sendEmail(to, subject, body, Object.assign({}, mailOptions, { htmlBody: htmlBody }));
+    } else {
+      GmailApp.sendEmail(to, subject, body, mailOptions);
+    }
+    return;
+  } catch (gmailHtmlErr) {
+    try {
+      GmailApp.sendEmail(to, subject, body, mailOptions);
+      return;
+    } catch (gmailTextErr) {
+      try {
+        MailApp.sendEmail({
+          to: to,
+          subject: subject,
+          body: body,
+          htmlBody: htmlBody,
+          name: mailOptions.name || EMAIL_SENDER_NAME,
+        });
+        return;
+      } catch (mailErr) {
+        throw new Error(
+          'Gmail HTML: ' + gmailHtmlErr.message +
+          ' | Gmail text: ' + gmailTextErr.message +
+          ' | MailApp: ' + mailErr.message
+        );
+      }
+    }
+  }
+}
+
+function getOwnerEmail() {
+  if (OWNER_EMAIL && !OWNER_EMAIL.includes('PASTE_YOUR_GMAIL')) {
+    return cleanValue(OWNER_EMAIL);
+  }
+  return getScriptSenderEmail();
+}
+
+function getScriptSenderEmail() {
+  try {
+    return cleanValue(Session.getEffectiveUser().getEmail());
+  } catch (error) {
+    return '';
+  }
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanValue(value));
+}
+
+function getSpreadsheet() {
+  return getTargetSheet().getParent();
+}
+
+function logEmailAttempt(type, recipient, success, errorMessage) {
+  try {
+    const spreadsheet = getSpreadsheet();
+    if (!spreadsheet) return;
+
+    let logSheet = spreadsheet.getSheetByName(EMAIL_LOG_SHEET);
+    if (!logSheet) {
+      logSheet = spreadsheet.insertSheet(EMAIL_LOG_SHEET);
+      logSheet.appendRow(['Thoi gian', 'Loai', 'Nguoi nhan', 'Thanh cong', 'Loi']);
+      logSheet.setFrozenRows(1);
+    }
+
+    logSheet.appendRow([
+      getVietnamDateTime(),
+      type,
+      recipient,
+      success ? 'YES' : 'NO',
+      errorMessage || '',
+    ]);
+  } catch (error) {
+    console.error('Email log error:', error);
+  }
 }
 
 // =============================================
 //  Utility functions
 // =============================================
 function getTargetSheet() {
-  const spreadsheet = SPREADSHEET_ID && !SPREADSHEET_ID.includes('PASTE_GOOGLE_SHEET_ID')
-    ? SpreadsheetApp.openById(SPREADSHEET_ID)
-    : SpreadsheetApp.getActiveSpreadsheet();
+  const spreadsheet = getSpreadsheetByIdOrActive();
   if (!spreadsheet) throw new Error('Khong tim thay Google Sheet. Hay dien SPREADSHEET_ID.');
-  return spreadsheet.getSheetByName(SHEET_NAME) || spreadsheet.insertSheet(SHEET_NAME);
+
+  const namedSheet = spreadsheet.getSheetByName(SHEET_NAME);
+  if (namedSheet) return namedSheet;
+
+  const sheets = spreadsheet.getSheets();
+  if (sheets.length === 1) return sheets[0];
+
+  throw new Error('Khong tim thay sheet "' + SHEET_NAME + '". Hay doi SHEET_NAME cho dung ten tab.');
+}
+
+function getSpreadsheetByIdOrActive() {
+  if (SPREADSHEET_ID && !SPREADSHEET_ID.includes('PASTE_GOOGLE_SHEET_ID')) {
+    return SpreadsheetApp.openById(SPREADSHEET_ID);
+  }
+
+  return SpreadsheetApp.getActiveSpreadsheet();
 }
 
 function ensureHeaderRow(sheet) {
   trimExtraColumns(sheet);
   sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
-  if (sheet.getLastRow() === 0) sheet.setFrozenRows(1);
-  sheet.getRange(1, 1, Math.max(sheet.getMaxRows(), 1), HEADERS.length).setNumberFormat('@');
+  if (sheet.getLastRow() <= 1) sheet.setFrozenRows(1);
   sheet.autoResizeColumns(1, HEADERS.length);
+}
+
+function getPriceColumnIndex() {
+  return HEADERS.indexOf('Số tiền') + 1;
+}
+
+function formatInsertedRow(sheet, rowNumber) {
+  if (!rowNumber || rowNumber < 2) return;
+
+  const priceCol = getPriceColumnIndex();
+  sheet.getRange(rowNumber, 1, rowNumber, HEADERS.length).setNumberFormat('@');
+  sheet.getRange(rowNumber, priceCol).setNumberFormat(PRICE_NUMBER_FORMAT);
+  normalizeLegacyPriceCells(sheet);
+}
+
+// Chạy thủ công 1 lần trong Apps Script nếu cần format lại toàn bộ cột
+function repairSheetFormats() {
+  const sheet = getTargetSheet();
+  ensureHeaderRow(sheet);
+  const lastRow = Math.max(sheet.getLastRow(), 1);
+  for (let col = 1; col <= HEADERS.length; col++) {
+    const range = sheet.getRange(1, col, lastRow, col);
+    range.setNumberFormat(col === getPriceColumnIndex() ? PRICE_NUMBER_FORMAT : '@');
+  }
+  normalizeLegacyPriceCells(sheet);
+}
+
+function normalizeLegacyPriceCells(sheet) {
+  const col = getPriceColumnIndex();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+
+  const range = sheet.getRange(2, col, lastRow, col);
+  const values = range.getValues();
+  let changed = false;
+
+  const normalized = values.map((row) => {
+    const val = row[0];
+    if (typeof val === 'number' && !isNaN(val)) return [val];
+    const parsed = parsePriceNumber(val);
+    if (parsed > 0) {
+      changed = true;
+      return [parsed];
+    }
+    return [val];
+  });
+
+  if (changed) range.setValues(normalized);
+}
+
+function parsePriceNumber(value) {
+  const digits = String(value || '').replace(/[^\d]/g, '');
+  return digits ? parseInt(digits, 10) : 0;
 }
 
 function trimExtraColumns(sheet) {
@@ -324,6 +791,40 @@ function getVietnamDateTime(value) {
 
 function cleanValue(value) {
   return String(value || '').trim();
+}
+
+function normalizeConsultationType(value) {
+  const raw = cleanValue(value).toLowerCase();
+  if (raw === 'online' || raw.includes('online') || raw.includes('google meet')) return 'online';
+  if (raw === 'offline' || raw.includes('offline') || raw.includes('tp.hcm') || raw.includes('truc tiep')) return 'offline';
+  return '';
+}
+
+function resolveBookingDetails(params) {
+  const consultationType = normalizeConsultationType(params.consultationType || params.consultationTypeLabel);
+  const packageCode = cleanValue(params.package);
+  const packageOption = PACKAGE_OPTIONS[consultationType] && PACKAGE_OPTIONS[consultationType][packageCode];
+
+  const packageLabel = packageOption
+    ? packageOption.label
+    : cleanValue(params.packageLabel);
+  const packagePrice = packageOption
+    ? packageOption.price
+    : parseInt(params.packagePrice || '0', 10);
+
+  return {
+    name: cleanValue(params.name),
+    dob: cleanValue(params.dob),
+    phone: cleanValue(params.phone),
+    email: cleanValue(params.email),
+    concern: cleanValue(params.concern),
+    consultationType: consultationType,
+    consultationTypeLabel: CONSULTATION_TYPE_LABELS[consultationType] || cleanValue(params.consultationTypeLabel),
+    package: packageCode,
+    packageLabel: packageLabel,
+    packagePrice: packagePrice,
+    isOffline: consultationType === 'offline',
+  };
 }
 
 function formatDateVN(value) {
@@ -348,4 +849,59 @@ function jsonResponse(payload) {
 function testAuth() {
   CalendarApp.getDefaultCalendar();
   GmailApp.getInboxUnreadCount();
+}
+
+function testSaveRow() {
+  const params = {
+    submittedAt: new Date().toISOString(),
+    name: 'TEST KHACH',
+    dob: '01/01/1990',
+    phone: "'0900000000",
+    email: getOwnerEmail() || 'test@example.com',
+    consultationType: 'online',
+    package: 'year',
+    concern: 'Dong test tu Apps Script',
+    slotLabel: 'TEST - khong tao lich',
+    slotStart: '',
+    slotEnd: '',
+  };
+  Logger.log(handleSaveBooking(params).getContent());
+  Logger.log(handleCompleteBooking(params).getContent());
+}
+
+function testSendEmails() {
+  const ownerEmail = getOwnerEmail();
+  const senderEmail = getScriptSenderEmail();
+  Logger.log('Sender: ' + senderEmail);
+  Logger.log('Owner: ' + ownerEmail);
+  Logger.log('Script version: ' + SCRIPT_VERSION);
+
+  if (!senderEmail) {
+    throw new Error('Khong lay duoc email nguoi gui. Hay trien khai Web App voi "Thuc thi tuoi la: Toi".');
+  }
+
+  const testTo = ownerEmail || senderEmail;
+  sendMailSafe(
+    testTo,
+    '[TEST] Email dat lich Nhan So Hoc',
+    'Day la email test tu Apps Script.\nNeu ban nhan duoc email nay thi he thong gui mail dang hoat dong.',
+    { name: EMAIL_SENDER_NAME }
+  );
+  Logger.log('Da gui email test den: ' + testTo);
+}
+
+function testCustomerEmail() {
+  const ownerEmail = getOwnerEmail();
+  const params = {
+    name: 'TEST KHACH EMAIL',
+    dob: '01/01/1990',
+    phone: "'0900000000",
+    email: ownerEmail,
+    consultationType: 'offline',
+    package: 'big7',
+    concern: 'Test email khach day du',
+    slotLabel: 'Thu Bay, 13/06/2026 | 13:00 - 15:00',
+  };
+  sendConfirmationEmail(params);
+  Logger.log('Da gui email khach test den: ' + ownerEmail);
 }

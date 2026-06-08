@@ -1,0 +1,40 @@
+{
+  "source": "Local icon set for the landing page",
+  "favicon": "site-favicon.png",
+  "sprite": "site-icons.svg",
+  "icons": [
+    { "id": "icon-sparkles", "fontAwesome": "fa-solid fa-sparkles", "usedIn": ["section highlights", "contact headings", "process quote"] },
+    { "id": "icon-calendar-check", "fontAwesome": "fa-regular fa-calendar-check", "usedIn": ["process step", "contact form heading", "booking modal"] },
+    { "id": "icon-comments", "fontAwesome": "fa-solid fa-comments / fa-regular fa-comments", "usedIn": ["contact card", "process step"] },
+    { "id": "icon-clock", "fontAwesome": "fa-regular fa-clock", "usedIn": ["contact hours", "booking modal"] },
+    { "id": "icon-star", "fontAwesome": "fa-solid fa-star", "usedIn": ["mentor feature"] },
+    { "id": "icon-users", "fontAwesome": "fa-solid fa-users", "usedIn": ["mentor feature"] },
+    { "id": "icon-graduation-cap", "fontAwesome": "fa-solid fa-graduation-cap", "usedIn": ["mentor feature"] },
+    { "id": "icon-microphone", "fontAwesome": "fa-solid fa-microphone-lines", "usedIn": ["mentor feature"] },
+    { "id": "icon-book-open", "fontAwesome": "fa-solid fa-book-open", "usedIn": ["mentor feature"] },
+    { "id": "icon-handshake", "fontAwesome": "fa-solid fa-handshake-angle", "usedIn": ["mentor feature"] },
+    { "id": "icon-eye", "fontAwesome": "fa-solid fa-eye", "usedIn": ["benefit card"] },
+    { "id": "icon-key", "fontAwesome": "fa-solid fa-key", "usedIn": ["benefit card"] },
+    { "id": "icon-map-location", "fontAwesome": "fa-solid fa-map-location-dot", "usedIn": ["benefit card"] },
+    { "id": "icon-sun", "fontAwesome": "fa-solid fa-sun", "usedIn": ["benefit card"] },
+    { "id": "icon-hourglass", "fontAwesome": "fa-solid/fa-regular fa-hourglass-half", "usedIn": ["package card", "session info"] },
+    { "id": "icon-infinity", "fontAwesome": "fa-solid fa-infinity", "usedIn": ["featured package"] },
+    { "id": "icon-fingerprint", "fontAwesome": "fa-solid fa-fingerprint", "usedIn": ["package card"] },
+    { "id": "icon-arrow-up", "fontAwesome": "fa-solid fa-arrow-up", "usedIn": ["scroll to top button"] },
+    { "id": "icon-copy", "fontAwesome": "fa-regular fa-copy", "usedIn": ["booking modal copy action"] },
+    { "id": "icon-check", "fontAwesome": "fa-solid fa-check", "usedIn": ["booking modal success"] },
+    { "id": "icon-info", "fontAwesome": "fa-solid fa-circle-info", "usedIn": ["booking modal note"] },
+    { "id": "icon-envelope", "fontAwesome": "fa-regular fa-envelope", "usedIn": ["booking modal email"] },
+    { "id": "icon-warning", "fontAwesome": "fa-solid fa-triangle-exclamation", "usedIn": ["booking modal warning"] },
+    { "id": "icon-qrcode", "fontAwesome": "fa-solid fa-qrcode", "usedIn": ["booking modal QR section"] },
+    { "id": "icon-shield", "fontAwesome": "fa-solid fa-shield-halved", "usedIn": ["booking modal QR badge"] },
+    { "id": "icon-volume-xmark", "fontAwesome": "fa-solid fa-volume-xmark", "usedIn": ["audio toggle"] }
+  ],
+  "externalBrandIconsStillLoadedFromFontAwesome": [
+    "fab fa-facebook-f",
+    "fab fa-instagram",
+    "fab fa-tiktok",
+    "fab fa-youtube",
+    "fab fa-facebook-messenger"
+  ]
+}

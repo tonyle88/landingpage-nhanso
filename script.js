@@ -3,15 +3,17 @@
    ============================================= */
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOlNPUunzX4gJvtpKvvXYdBQRMXEKyEqB4L_39CLu-qt4trPzgDoLXRRmauCk2iA2P/exec';
-const PACKAGE_LABELS = {
-  year: 'Dự Đoán Năm Cá Nhân – 500.000đ/buổi',
-  big3: 'Phân Tích 3 Chỉ Số Tính Cách – 1.000.000đ/buổi',
-  big7: 'Phân Tích Toàn Diện – 2.000.000đ/buổi',
-};
-const PACKAGE_PRICES = {
-  year: 500000,
-  big3: 1000000,
-  big7: 2000000,
+const PACKAGE_OPTIONS = {
+  online: {
+    year: { label: 'Dự Đoán Năm Cá Nhân – 500.000 vnđ/buổi', price: 500000 },
+    big3: { label: 'Phân Tích 3 Chỉ Số Tính Cách – 1.000.000 vnđ/buổi', price: 1000000 },
+    big7: { label: 'Phân Tích Toàn Diện – 2.000.000 vnđ/buổi', price: 2000000 },
+  },
+  offline: {
+    year: { label: 'Dự Đoán Năm Cá Nhân – 550.000 vnđ/buổi', price: 550000 },
+    big3: { label: 'Phân Tích 3 Chỉ Số Tính Cách – 1.050.000 vnđ/buổi', price: 1050000 },
+    big7: { label: 'Phân Tích Toàn Diện – 2.050.000 vnđ/buổi', price: 2050000 },
+  },
 };
 const CONSULTATION_TYPE_LABELS = {
   online: 'Online - Google Meet',
@@ -94,11 +96,28 @@ document.addEventListener('DOMContentLoaded', () => {
   sections.forEach(s => activeObserver.observe(s));
 
   // ===== PACKAGE QUICK SELECT =====
+  const consultationTypeSelect = document.getElementById('consultation-type');
+  const packageSelect = document.getElementById('package');
+  populatePackageOptions(consultationTypeSelect?.value || '');
+  consultationTypeSelect?.addEventListener('change', () => {
+    populatePackageOptions(consultationTypeSelect.value, '', true);
+  });
+  packageSelect?.addEventListener('focus', () => {
+    populatePackageOptions(consultationTypeSelect?.value || '', packageSelect.value);
+  });
+  packageSelect?.addEventListener('pointerdown', () => {
+    populatePackageOptions(consultationTypeSelect?.value || '', packageSelect.value);
+  });
+
   document.querySelectorAll('a[href="#contact"][id^="pkg-"]').forEach(link => {
     link.addEventListener('click', () => {
-      const packageSelect = document.getElementById('package');
       const packageValue = link.id.replace('pkg-', '');
-      if (packageSelect && PACKAGE_LABELS[packageValue]) {
+      const selectedType = consultationTypeSelect?.value || 'online';
+      if (consultationTypeSelect && !consultationTypeSelect.value) {
+        consultationTypeSelect.value = selectedType;
+        populatePackageOptions(selectedType);
+      }
+      if (packageSelect && getPackageOptions(selectedType)[packageValue]) {
         packageSelect.value = packageValue;
       }
     });
@@ -114,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (this.validity.valueMissing) this.setCustomValidity('Vui lòng nhập thông tin');
     });
     input.addEventListener('input', function() { this.setCustomValidity(''); });
+    input.addEventListener('change', function() { this.setCustomValidity(''); });
   });
 
   form?.addEventListener('submit', async (e) => {
@@ -172,6 +192,106 @@ function isConfiguredGoogleScriptUrl() {
   return GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes('PASTE_GOOGLE_APPS_SCRIPT');
 }
 
+function getBookingDataObject() {
+  return {
+    name: bookingState.name,
+    dob: formatDobForSheet(bookingState.dob),
+    phone: "'" + bookingState.phone,
+    email: bookingState.email,
+    consultationType: bookingState.consultationType,
+    consultationTypeLabel: CONSULTATION_TYPE_LABELS[bookingState.consultationType] || bookingState.consultationType,
+    package: bookingState.package,
+    packageLabel: getPackageLabel(bookingState.package, bookingState.consultationType),
+    packagePrice: String(getPackagePrice(bookingState.package, bookingState.consultationType)),
+    concern: bookingState.concern,
+    slotLabel: bookingState.fullSlotLabel || '',
+    slotStart: buildSlotISO(bookingState.selectedDate, bookingState.selectedTime),
+    slotEnd: buildSlotISO(bookingState.selectedDate, bookingState.selectedTime, WORKING_HOURS.slotDurationHrs),
+    submittedAt: new Date().toISOString(),
+    pageUrl: window.location.href,
+  };
+}
+
+function bookingDataToUrlParams(data, action) {
+  const params = new URLSearchParams();
+  params.append('action', action);
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      params.append(key, String(value));
+    }
+  });
+  return params;
+}
+
+async function saveBookingToSheet(data) {
+  const body = bookingDataToUrlParams(data, 'saveBooking').toString();
+  await fetch(GOOGLE_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  });
+}
+
+async function completeBookingOnServer(data) {
+  const query = bookingDataToUrlParams(data, 'completeBooking').toString();
+  const res = await fetch(`${GOOGLE_SCRIPT_URL}?${query}`, {
+    method: 'GET',
+    mode: 'cors',
+    cache: 'no-store',
+  });
+  const result = await res.json();
+  if (!result.ok) {
+    throw new Error(result.message || 'Không hoàn tất được email và lịch Calendar');
+  }
+  return result;
+}
+
+function getPackageOptions(consultationType) {
+  return PACKAGE_OPTIONS[consultationType] || {};
+}
+
+function getPackageLabel(packageValue, consultationType) {
+  return getPackageOptions(consultationType)[packageValue]?.label || packageValue || '';
+}
+
+function getPackagePrice(packageValue, consultationType) {
+  return getPackageOptions(consultationType)[packageValue]?.price || 0;
+}
+
+function populatePackageOptions(consultationType, selectedValue = '', openPicker = false) {
+  const packageSelect = document.getElementById('package');
+  if (!packageSelect) return;
+
+  const currentValue = selectedValue || packageSelect.value;
+  const options = getPackageOptions(consultationType);
+  packageSelect.innerHTML = '';
+
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = consultationType ? '-- Chọn gói tư vấn --' : '-- Chọn hình thức trước --';
+  packageSelect.appendChild(placeholder);
+
+  Object.entries(options).forEach(([value, option]) => {
+    const item = document.createElement('option');
+    item.value = value;
+    item.textContent = option.label;
+    packageSelect.appendChild(item);
+  });
+
+  packageSelect.value = options[currentValue] ? currentValue : '';
+  packageSelect.disabled = !consultationType;
+
+  if (openPicker && consultationType && typeof packageSelect.showPicker === 'function') {
+    packageSelect.focus();
+    try {
+      packageSelect.showPicker();
+    } catch (error) {
+      packageSelect.focus();
+    }
+  }
+}
+
 // ============================================
 // BOOKING FLOW STATE & HELPERS
 // ============================================
@@ -218,6 +338,7 @@ function initBookingModals() {
   document.getElementById('btn-success-close').addEventListener('click', () => {
     closeAllModals();
     document.getElementById('booking-form').reset();
+    populatePackageOptions('');
   });
 
   document.getElementById('retry-calendar').addEventListener('click', loadCalendar);
@@ -232,7 +353,53 @@ function initBookingModals() {
 
 // ============================================
 // CALENDAR – generate slots locally + check booked from API
+// Luôn tính giờ theo Asia/Ho_Chi_Minh (UTC+7)
 // ============================================
+function getVnDateParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false,
+  }).formatToParts(date);
+
+  const get = (type) => parseInt(parts.find((p) => p.type === type).value, 10);
+  return {
+    year: get('year'),
+    month: get('month'),
+    day: get('day'),
+    hour: get('hour'),
+    minute: get('minute'),
+  };
+}
+
+function makeVnDateTime(year, month, day, hour = 0, minute = 0) {
+  return new Date(Date.UTC(year, month - 1, day, hour - 7, minute, 0));
+}
+
+function makeVnDateTimeFromDate(date, hour, minute = 0) {
+  const { year, month, day } = getVnDateParts(date);
+  return makeVnDateTime(year, month, day, hour, minute);
+}
+
+function addDaysToVnParts(year, month, day, daysToAdd) {
+  const anchor = makeVnDateTime(year, month, day, 12);
+  anchor.setUTCDate(anchor.getUTCDate() + daysToAdd);
+  return getVnDateParts(anchor);
+}
+
+function getVnDayOfWeek(year, month, day) {
+  return makeVnDateTime(year, month, day, 12).getUTCDay();
+}
+
+function slotsOverlap(slotStart, slotEnd, bookedStart, bookedEnd) {
+  return slotStart < bookedEnd && slotEnd > bookedStart;
+}
+
 async function loadCalendar() {
   const loading = document.getElementById('cal-loading');
   const errBox  = document.getElementById('cal-error');
@@ -247,13 +414,19 @@ async function loadCalendar() {
   document.getElementById('selected-slot-info').style.display = 'none';
 
   try {
-    // Fetch already-booked slots from Apps Script
-    const res = await fetch(GOOGLE_SCRIPT_URL + '?action=getBookedSlots', { mode: 'cors' });
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=getBookedSlots&_=${Date.now()}`, {
+      mode: 'cors',
+      cache: 'no-store',
+    });
     const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Không tải được lịch đã đặt');
     bookingState.bookedSlots = json.booked || [];
   } catch (e) {
-    // If CORS fails (no-cors mode) just proceed with no booked slots data
+    console.error('getBookedSlots error:', e);
     bookingState.bookedSlots = [];
+    errBox.style.display = 'block';
+    const errText = errBox.querySelector('p') || errBox;
+    errText.textContent = 'Không tải được lịch trống từ Google. Vui lòng thử lại hoặc nhắn Zalo để đặt lịch.';
   }
 
   loading.style.display = 'none';
@@ -261,32 +434,29 @@ async function loadCalendar() {
   renderDateStrip();
 }
 
-function getWorkingHours(date) {
-  const day = date.getDay(); // 0=Sun,6=Sat
-  return (day === 0 || day === 6) ? WORKING_HOURS.weekend : WORKING_HOURS.weekday;
-}
-
 function generateSlotsForDate(date) {
-  const { start, end, slotDurationHrs } = { ...getWorkingHours(date), slotDurationHrs: WORKING_HOURS.slotDurationHrs };
+  const { year, month, day } = getVnDateParts(date);
+  const dayOfWeek = getVnDayOfWeek(year, month, day);
+  const hours = (dayOfWeek === 0 || dayOfWeek === 6) ? WORKING_HOURS.weekend : WORKING_HOURS.weekday;
+  const { start, end } = hours;
+  const slotDurationHrs = WORKING_HOURS.slotDurationHrs;
   const slots = [];
-  for (let h = start; h + slotDurationHrs <= end; h += slotDurationHrs) {
-    const label = `${String(h).padStart(2,'0')}:00 – ${String(h+slotDurationHrs).padStart(2,'0')}:00`;
-    const slotStart = new Date(date);
-    slotStart.setHours(h, 0, 0, 0);
-    const slotEnd = new Date(date);
-    slotEnd.setHours(h + slotDurationHrs, 0, 0, 0);
+  const now = new Date();
 
-    // Check if booked
-    const isBooked = bookingState.bookedSlots.some(b => {
-      const bs = new Date(b.start), be = new Date(b.end);
-      return slotStart < be && slotEnd > bs;
+  for (let h = start; h + slotDurationHrs <= end; h += slotDurationHrs) {
+    const label = `${String(h).padStart(2, '0')}:00 – ${String(h + slotDurationHrs).padStart(2, '0')}:00`;
+    const slotStart = makeVnDateTime(year, month, day, h, 0);
+    const slotEnd = makeVnDateTime(year, month, day, h + slotDurationHrs, 0);
+
+    const isBooked = bookingState.bookedSlots.some((b) => {
+      const bookedStart = new Date(b.start);
+      const bookedEnd = new Date(b.end);
+      return slotsOverlap(slotStart, slotEnd, bookedStart, bookedEnd);
     });
 
-    // Must be in the future (at least 1 hour ahead)
-    const now = new Date();
     const isFuture = slotStart > new Date(now.getTime() + 3600000);
 
-    if (!isBooked && isFuture) slots.push({ label, hour: h });
+    if (!isBooked && isFuture) slots.push({ label, hour: h, year, month, day });
   }
   return slots;
 }
@@ -294,23 +464,22 @@ function generateSlotsForDate(date) {
 function renderDateStrip() {
   const strip = document.getElementById('cal-date-strip');
   strip.innerHTML = '';
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const DAY_NAMES = ['CN','T2','T3','T4','T5','T6','T7'];
+  const todayParts = getVnDateParts();
+  const DAY_NAMES = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
   for (let i = 0; i < 21; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
+    const parts = addDaysToVnParts(todayParts.year, todayParts.month, todayParts.day, i);
+    const d = makeVnDateTime(parts.year, parts.month, parts.day, 0);
     const btn = document.createElement('button');
     btn.className = 'cal-date-btn';
     btn.innerHTML = `
-      <span class="day-name">${DAY_NAMES[d.getDay()]}</span>
-      <span class="day-num">${d.getDate()}</span>
-      <span class="month">Th${d.getMonth()+1}</span>`;
+      <span class="day-name">${DAY_NAMES[getVnDayOfWeek(parts.year, parts.month, parts.day)]}</span>
+      <span class="day-num">${parts.day}</span>
+      <span class="month">Th${parts.month}</span>`;
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.cal-date-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('.cal-date-btn').forEach((b) => b.classList.remove('selected'));
       btn.classList.add('selected');
-      bookingState.selectedDate = new Date(d);
+      bookingState.selectedDate = d;
       bookingState.selectedTime = null;
       document.getElementById('btn-go-payment').disabled = true;
       document.getElementById('selected-slot-info').style.display = 'none';
@@ -338,9 +507,9 @@ function renderTimeSlots(date) {
       bookingState.selectedTime = `${String(slot.hour).padStart(2,'0')}:00`;
       bookingState.selectedSlotLabel = slot.label;
 
-      const DAY_VN = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
-      const d = bookingState.selectedDate;
-      const dateStr = `${DAY_VN[d.getDay()]}, ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+      const DAY_VN = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+      const parts = getVnDateParts(bookingState.selectedDate);
+      const dateStr = `${DAY_VN[getVnDayOfWeek(parts.year, parts.month, parts.day)]}, ${String(parts.day).padStart(2, '0')}/${String(parts.month).padStart(2, '0')}/${parts.year}`;
       const fullSlot = `${dateStr} | ${slot.label}`;
       bookingState.fullSlotLabel = fullSlot;
 
@@ -357,8 +526,8 @@ function renderTimeSlots(date) {
 // ============================================
 function openPaymentModal() {
   const pkg = bookingState.package;
-  const price = PACKAGE_PRICES[pkg] || 0;
-  const pkgLabel = PACKAGE_LABELS[pkg] || pkg;
+  const price = getPackagePrice(pkg, bookingState.consultationType);
+  const pkgLabel = getPackageLabel(pkg, bookingState.consultationType);
   const priceStr = price.toLocaleString('vi-VN') + 'đ';
   const transferContent = `DATLICHTV ${bookingState.phone}`;
 
@@ -384,30 +553,22 @@ async function finalizeBooking() {
   btn.disabled = true;
 
   try {
-    const formData = new FormData();
-    formData.append('action', 'finalizeBooking');
-    formData.append('name', bookingState.name);
-    formData.append('dob', formatDobForSheet(bookingState.dob));
-    formData.append('phone', "'" + bookingState.phone);
-    formData.append('email', bookingState.email);
-    formData.append('consultationType', bookingState.consultationType);
-    formData.append('consultationTypeLabel', CONSULTATION_TYPE_LABELS[bookingState.consultationType] || bookingState.consultationType);
-    formData.append('package', bookingState.package);
-    formData.append('packageLabel', PACKAGE_LABELS[bookingState.package] || bookingState.package);
-    formData.append('packagePrice', PACKAGE_PRICES[bookingState.package] || 0);
-    formData.append('concern', bookingState.concern);
-    formData.append('slotLabel', bookingState.fullSlotLabel || '');
-    formData.append('slotStart', buildSlotISO(bookingState.selectedDate, bookingState.selectedTime));
-    formData.append('slotEnd',   buildSlotISO(bookingState.selectedDate, bookingState.selectedTime, WORKING_HOURS.slotDurationHrs));
-    formData.append('submittedAt', new Date().toISOString());
-    formData.append('pageUrl', window.location.href);
+    const data = getBookingDataObject();
 
-    await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: formData });
+    // Bước 1: Lưu Sheet (POST no-cors – thường chỉ chạy được phần này)
+    await saveBookingToSheet(data);
 
-    // Show success modal
+    // Bước 2: Gửi email + tạo Google Calendar (GET cors – chạy đủ và có phản hồi)
+    const result = await completeBookingOnServer(data);
+
+    if (result.emailStatus && !result.emailStatus.customer?.sent) {
+      const errMsg = result.emailStatus.customer?.error || 'chưa xác định';
+      console.warn('Customer email failed:', errMsg);
+      showToast('Đã lưu đăng ký. Email xác nhận chưa gửi được — kiểm tra Spam hoặc nhắn Zalo.');
+    }
+
     closeAllModals();
     showSuccessModal();
-
   } catch (err) {
     console.error(err);
     showToast('Có lỗi khi xử lý. Vui lòng chụp màn hình và liên hệ qua Zalo/Facebook để được hỗ trợ.');
@@ -418,10 +579,8 @@ async function finalizeBooking() {
 
 function buildSlotISO(date, timeStr, addHours = 0) {
   if (!date || !timeStr) return '';
-  const [h] = timeStr.split(':').map(Number);
-  const d = new Date(date);
-  d.setHours(h + addHours, 0, 0, 0);
-  return d.toISOString();
+  const [h, m = 0] = timeStr.split(':').map(Number);
+  return makeVnDateTimeFromDate(date, h + addHours, m).toISOString();
 }
 
 function formatDobForSheet(val) {
@@ -439,7 +598,7 @@ function showSuccessModal() {
     `Chào mừng ${bookingState.name}! Lịch tư vấn của bạn đã được xác nhận.`;
 
   const typeLabel = CONSULTATION_TYPE_LABELS[bookingState.consultationType] || bookingState.consultationType;
-  const pkgLabel  = PACKAGE_LABELS[bookingState.package] || bookingState.package;
+  const pkgLabel  = getPackageLabel(bookingState.package, bookingState.consultationType);
 
   document.getElementById('success-summary').innerHTML = `
     <div class="success-summary-row"><i class="fa-regular fa-clock"></i><span><strong>Thời gian:</strong> ${bookingState.fullSlotLabel}</span></div>
@@ -670,4 +829,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
-
