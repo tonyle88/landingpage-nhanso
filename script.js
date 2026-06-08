@@ -12,7 +12,7 @@ const PACKAGE_OPTIONS = {
   offline: {
     year: { label: 'Dự Đoán Năm Cá Nhân – 550.000 vnđ/buổi', price: 550000 },
     big3: { label: 'Phân Tích 3 Chỉ Số Tính Cách – 1.050.000 vnđ/buổi', price: 1050000 },
-    big7: { label: 'Phân Tích Toàn Diện – 2.050.000 vnđ/buổi', price: 2050000 },
+    big7: { label: 'Phân Tích Toàn Diện – 2.000.000 vnđ/buổi', price: 2000000 },
   },
 };
 const CONSULTATION_TYPE_LABELS = {
@@ -810,21 +810,67 @@ document.addEventListener('DOMContentLoaded', () => {
   const musicToggleBtn = document.getElementById('musicToggleBtn');
   
   if (bgMusic && musicToggleBtn) {
-    // Đặt âm lượng nhạc nền vừa phải
-    bgMusic.volume = 0.4;
-    
+    const interactionEvents = ['pointerdown', 'touchstart', 'keydown', 'scroll'];
+    let shouldPlayMusic = true;
+    let isWaitingForInteraction = false;
+
+    const setMusicButtonState = (isPlaying) => {
+      musicToggleBtn.innerHTML = isPlaying
+        ? '<i class="fa-solid fa-volume-high"></i>'
+        : '<i class="fa-solid fa-volume-xmark"></i>';
+      musicToggleBtn.classList.toggle('playing', isPlaying);
+      musicToggleBtn.setAttribute('aria-label', isPlaying ? 'Tắt nhạc' : 'Bật nhạc');
+      musicToggleBtn.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
+    };
+
+    const removeAutoplayListeners = () => {
+      interactionEvents.forEach((eventName) => {
+        document.removeEventListener(eventName, handleFirstInteraction);
+      });
+      isWaitingForInteraction = false;
+    };
+
+    const addAutoplayListeners = () => {
+      if (isWaitingForInteraction) return;
+      isWaitingForInteraction = true;
+      interactionEvents.forEach((eventName) => {
+        document.addEventListener(eventName, handleFirstInteraction, { passive: true });
+      });
+    };
+
+    const tryPlayMusic = () => {
+      if (!shouldPlayMusic) return Promise.resolve();
+
+      return bgMusic.play()
+        .then(() => {
+          setMusicButtonState(true);
+          removeAutoplayListeners();
+        })
+        .catch(() => {
+          setMusicButtonState(false);
+          addAutoplayListeners();
+        });
+    };
+
+    function handleFirstInteraction(event) {
+      if (musicToggleBtn.contains(event.target)) return;
+      removeAutoplayListeners();
+      tryPlayMusic();
+    }
+
+    bgMusic.volume = 0.35;
+    setMusicButtonState(true);
+    tryPlayMusic();
+
     musicToggleBtn.addEventListener('click', () => {
       if (bgMusic.paused) {
-        bgMusic.play().then(() => {
-          musicToggleBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
-          musicToggleBtn.classList.add('playing');
-        }).catch(err => {
-          console.error("Lỗi phát nhạc:", err);
-        });
+        shouldPlayMusic = true;
+        tryPlayMusic();
       } else {
+        shouldPlayMusic = false;
         bgMusic.pause();
-        musicToggleBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
-        musicToggleBtn.classList.remove('playing');
+        removeAutoplayListeners();
+        setMusicButtonState(false);
       }
     });
   }

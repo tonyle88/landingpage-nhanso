@@ -104,11 +104,13 @@ Ví dụ tổng doanh thu **tháng hiện tại** (cột A lưu dạng `dd/MM/yy
 
 ## Bảng Giá Theo Hình Thức
 
-| Gói | Online | Offline (+50.000đ phí xăng xe) |
-|-----|--------|--------------------------------|
+| Gói | Online | Offline |
+|-----|--------|---------|
 | Dự Đoán Năm Cá Nhân | 500.000 vnđ/buổi | 550.000 vnđ/buổi |
 | Phân Tích 3 Chỉ Số Tính Cách | 1.000.000 vnđ/buổi | 1.050.000 vnđ/buổi |
-| Phân Tích Toàn Diện | 2.000.000 vnđ/buổi | 2.050.000 vnđ/buổi |
+| Phân Tích Toàn Diện | 2.000.000 vnđ/buổi | 2.000.000 vnđ/buổi |
+
+Phí xăng xe 50.000đ chỉ áp dụng cho các gói offline dưới 2.000.000đ. Gói Phân Tích Toàn Diện offline không cộng phụ phí này.
 
 Apps Script sẽ tự kiểm tra `consultationType` + `package` từ form và lưu đúng giá, kể cả khi dữ liệu gửi lên bị sai.
 
