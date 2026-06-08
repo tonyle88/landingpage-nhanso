@@ -420,12 +420,36 @@ function initBookingModals() {
     populatePackageOptions('');
   });
 
+  document.getElementById('btn-message-fanpage')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    const fanpageBtn = event.currentTarget;
+    const message = fanpageBtn.dataset.message;
+    const isMobile = window.matchMedia('(max-width: 640px)').matches;
+
+    copyTextToClipboard(message)
+      .then(() => {
+        showToast('Đã sao chép nội dung tin nhắn. Bạn chỉ cần dán vào Messenger.');
+      })
+      .catch(() => {
+        showToast('Bạn vui lòng dán nội dung: Khách hàng đã chuyển khoản thanh toán, vui lòng kiểm tra.');
+      })
+      .finally(() => {
+        setTimeout(() => {
+          if (isMobile) {
+            window.location.href = fanpageBtn.href;
+            return;
+          }
+          window.open(fanpageBtn.href, '_blank', 'noopener');
+        }, 1200);
+      });
+  });
+
   document.getElementById('retry-calendar').addEventListener('click', loadCalendar);
 
   document.querySelectorAll('.copyable').forEach(el => {
     el.addEventListener('click', () => {
       const text = el.dataset.copy || el.textContent.replace(/\s+/g,'').replace('📋','').trim();
-      navigator.clipboard.writeText(text).then(() => showToast('Đã sao chép!'));
+      copyTextToClipboard(text).then(() => showToast('Đã sao chép!'));
     });
   });
 }
@@ -523,7 +547,7 @@ function generateSlotsForDate(date) {
   const now = new Date();
 
   for (let h = start; h + slotDurationHrs <= end; h += slotDurationHrs) {
-    const label = `${String(h).padStart(2, '0')}:00 – ${String(h + slotDurationHrs).padStart(2, '0')}:00`;
+    const label = `${String(h).padStart(2, '0')}:00\u00a0–\u00a0${String(h + slotDurationHrs).padStart(2, '0')}:00`;
     const slotStart = makeVnDateTime(year, month, day, h, 0);
     const slotEnd = makeVnDateTime(year, month, day, h + slotDurationHrs, 0);
 
@@ -705,6 +729,23 @@ function animateCounter(el, start, end, suffix, duration) {
 }
 
 // ===== TOAST =====
+function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+  return Promise.resolve();
+}
+
 function showToast(message) {
   const toast = document.getElementById('toast');
   if (!toast) return;

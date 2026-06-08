@@ -769,12 +769,21 @@
         <i class="fa-regular fa-envelope"></i>
         Email xác nhận đã được gửi đến hộp thư của bạn. Vui lòng kiểm tra cả mục Spam nếu không thấy trong hộp thư đến.
       </div>
-      <div class="success-action-buttons" style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">
-        <p style="font-size:0.9rem; color:rgba(255,255,255,0.7); margin-bottom:4px;">Bạn vui lòng nhắn tin cho Clow Cat Patronus để báo đã chuyển khoản thành công nhé:</p>
-        <a href="https://m.me/clowcatpatronus" target="_blank" class="btn btn-primary" style="background:#0084ff; border-color:#0084ff; text-decoration:none;">
-          <i class="fab fa-facebook-messenger" style="margin-right:8px;"></i> Nhắn tin Fanpage
+      <div class="success-action-buttons">
+        <p>Bạn vui lòng nhắn tin cho Clow Cat Patronus để báo đã chuyển khoản thành công nhé:</p>
+        <a
+          href="https://m.me/clowcatpatronus"
+          target="_blank"
+          class="btn success-fanpage-btn"
+          id="btn-message-fanpage"
+          data-message="Khách hàng đã chuyển khoản thanh toán, vui lòng kiểm tra."
+        >
+          <i class="fab fa-facebook-messenger"></i>
+          <span>Nhắn tin Fanpage</span>
         </a>
-        <button class="btn btn-secondary" id="btn-success-close" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:white;">Về trang chính</button>
+        <button class="btn success-home-btn" id="btn-success-close">
+          <span>Về trang chính</span>
+        </button>
       </div>
     </div>
   </div>
