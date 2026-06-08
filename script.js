@@ -101,18 +101,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const centerTestimonial = (index, behavior = 'smooth') => {
       const card = testimonialCards[index];
       if (!card) return;
-      const left = card.offsetLeft - (testimonialsTrack.clientWidth - card.clientWidth) / 2;
+      const trackRect = testimonialsTrack.getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
+      const left = testimonialsTrack.scrollLeft
+        + cardRect.left
+        - trackRect.left
+        - (trackRect.width - cardRect.width) / 2;
       testimonialsTrack.scrollTo({ left, behavior });
       setActiveTestimonial(index);
     };
 
     const updateActiveFromScroll = () => {
-      const trackCenter = testimonialsTrack.scrollLeft + testimonialsTrack.clientWidth / 2;
+      const trackRect = testimonialsTrack.getBoundingClientRect();
+      const trackCenter = trackRect.left + trackRect.width / 2;
       let nearestIndex = activeTestimonialIndex;
       let nearestDistance = Infinity;
 
       testimonialCards.forEach((card, index) => {
-        const cardCenter = card.offsetLeft + card.clientWidth / 2;
+        const cardRect = card.getBoundingClientRect();
+        const cardCenter = cardRect.left + cardRect.width / 2;
         const distance = Math.abs(cardCenter - trackCenter);
         if (distance < nearestDistance) {
           nearestDistance = distance;
