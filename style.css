@@ -317,19 +317,19 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 
 .nav-container {
-  max-width: var(--container-max);
+  max-width: 1360px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 22px;
 }
 
 .nav-logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex-shrink: 0;
 }
 .logo-img {
@@ -349,13 +349,18 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: flex-end;
+  gap: 10px;
+  flex: 1;
 }
 .nav-link {
-  font-size: 0.82rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.84rem;
   font-weight: 600;
   color: var(--color-white-80);
-  padding: 8px 10px;
+  padding: 8px 11px;
   border-radius: 8px;
   transition: all var(--transition-fast);
   letter-spacing: 0.3px;
@@ -365,7 +370,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .nav-cta {
   background: linear-gradient(135deg, var(--color-orange-mid), var(--color-orange-deep));
   color: white !important;
-  padding: 10px 18px;
+  padding: 10px 22px;
   border-radius: 50px;
   box-shadow: 0 4px 16px rgba(217, 78, 31, 0.35);
 }
@@ -373,6 +378,26 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(217, 78, 31, 0.5);
   background: var(--color-white-10) !important;
+}
+
+@media (max-width: 1180px) {
+  .nav-container {
+    padding: 0 18px;
+    gap: 12px;
+  }
+  .logo-text {
+    font-size: 0.78rem;
+  }
+  .nav-links {
+    gap: 3px;
+  }
+  .nav-link {
+    font-size: 0.76rem;
+    padding: 7px 8px;
+  }
+  .nav-cta {
+    padding: 9px 15px;
+  }
 }
 
 .hamburger {
@@ -2100,7 +2125,23 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     border-bottom: 1px solid rgba(232, 168, 120, 0.15);
     z-index: 999;
   }
-  .nav-link { padding: 12px 16px; border-radius: 8px; }
+  .nav-links.open li {
+    width: 100%;
+  }
+  .nav-link {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    white-space: normal;
+  }
+  .nav-cta {
+    margin-top: 6px;
+    padding: 13px 18px;
+    justify-content: center;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2109,6 +2150,61 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   .section-header { margin-bottom: 48px; }
   .section-title { font-size: 2rem; line-height: 1.18; }
   .section-title-packages { font-size: 2.15rem; }
+  .testimonials {
+    padding-top: 66px;
+    padding-bottom: 66px;
+  }
+  .testimonials-header {
+    max-width: 100%;
+    margin-bottom: 30px;
+  }
+  .testimonials .section-tag {
+    font-size: 0.72rem;
+    letter-spacing: 2.2px;
+    padding: 6px 14px;
+    max-width: 100%;
+    white-space: normal;
+  }
+  .testimonials-title {
+    font-size: clamp(1.75rem, 8vw, 2.35rem);
+    line-height: 1.14;
+    max-width: 11ch;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .testimonials-track {
+    gap: 18px;
+    padding: 8px 18px 26px;
+  }
+  .testimonial-card {
+    flex-basis: min(84vw, 330px);
+    padding: 10px;
+  }
+  .testimonial-image-wrap img {
+    height: min(450px, 105vw);
+  }
+  .testimonials-controls {
+    gap: 18px;
+  }
+  .testimonial-nav {
+    width: 54px;
+    height: 54px;
+    font-size: 1.25rem;
+  }
+  .testimonial-arrows {
+    gap: 16px;
+  }
+  .testimonials-dots {
+    gap: 8px;
+    max-width: 240px;
+  }
+  .testimonial-dot {
+    width: 12px;
+    height: 12px;
+  }
+  .testimonial-dot.is-active {
+    width: 34px;
+  }
   .benefits .section-title { font-size: 2.35rem; line-height: 1.16; }
   .hero-title { font-size: 2.45rem; letter-spacing: 0; }
   .hero-ctas { flex-direction: column; align-items: stretch; }
@@ -2142,6 +2238,23 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     margin: 0 auto;
   }
   .footer-content { gap: 32px; }
+}
+
+@media (max-width: 480px) {
+  .testimonials .section-tag {
+    font-size: 0.68rem;
+    letter-spacing: 1.8px;
+  }
+  .testimonials-title {
+    font-size: 1.9rem;
+    max-width: 10.5ch;
+  }
+  .testimonial-card {
+    flex-basis: 86vw;
+  }
+  .testimonial-image-wrap img {
+    height: min(410px, 104vw);
+  }
 }
 
 @media (max-width: 640px) {
