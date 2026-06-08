@@ -77,6 +77,78 @@ document.addEventListener('DOMContentLoaded', () => {
     revealObserver.observe(el);
   });
 
+  // ===== TESTIMONIALS CAROUSEL =====
+  const testimonialsTrack = document.getElementById('testimonials-track');
+  if (testimonialsTrack) {
+    const testimonialCards = Array.from(testimonialsTrack.querySelectorAll('.testimonial-card'));
+    const prevTestimonialBtn = document.querySelector('.testimonial-nav-prev');
+    const nextTestimonialBtn = document.querySelector('.testimonial-nav-next');
+    const testimonialDots = document.getElementById('testimonials-dots');
+    let activeTestimonialIndex = 0;
+    let testimonialScrollTimer;
+
+    const setActiveTestimonial = (index) => {
+      activeTestimonialIndex = (index + testimonialCards.length) % testimonialCards.length;
+      testimonialCards.forEach((card, cardIndex) => {
+        card.classList.toggle('is-active', cardIndex === activeTestimonialIndex);
+      });
+      testimonialDots?.querySelectorAll('.testimonial-dot').forEach((dot, dotIndex) => {
+        dot.classList.toggle('is-active', dotIndex === activeTestimonialIndex);
+        dot.setAttribute('aria-current', dotIndex === activeTestimonialIndex ? 'true' : 'false');
+      });
+    };
+
+    const centerTestimonial = (index, behavior = 'smooth') => {
+      const card = testimonialCards[index];
+      if (!card) return;
+      const left = card.offsetLeft - (testimonialsTrack.clientWidth - card.clientWidth) / 2;
+      testimonialsTrack.scrollTo({ left, behavior });
+      setActiveTestimonial(index);
+    };
+
+    const updateActiveFromScroll = () => {
+      const trackCenter = testimonialsTrack.scrollLeft + testimonialsTrack.clientWidth / 2;
+      let nearestIndex = activeTestimonialIndex;
+      let nearestDistance = Infinity;
+
+      testimonialCards.forEach((card, index) => {
+        const cardCenter = card.offsetLeft + card.clientWidth / 2;
+        const distance = Math.abs(cardCenter - trackCenter);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestIndex = index;
+        }
+      });
+
+      setActiveTestimonial(nearestIndex);
+    };
+
+    testimonialCards.forEach((_, index) => {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'testimonial-dot';
+      dot.setAttribute('aria-label', `Xem feedback ${index + 1}`);
+      dot.addEventListener('click', () => centerTestimonial(index));
+      testimonialDots?.appendChild(dot);
+    });
+
+    prevTestimonialBtn?.addEventListener('click', () => {
+      centerTestimonial(activeTestimonialIndex - 1);
+    });
+
+    nextTestimonialBtn?.addEventListener('click', () => {
+      centerTestimonial(activeTestimonialIndex + 1);
+    });
+
+    testimonialsTrack.addEventListener('scroll', () => {
+      window.clearTimeout(testimonialScrollTimer);
+      testimonialScrollTimer = window.setTimeout(updateActiveFromScroll, 90);
+    }, { passive: true });
+
+    setActiveTestimonial(0);
+    window.requestAnimationFrame(() => centerTestimonial(0, 'auto'));
+  }
+
   // ===== ACTIVE NAV LINK =====
   const sections = document.querySelectorAll('section[id]');
   const navLinkEls = document.querySelectorAll('.nav-link:not(.nav-cta)');
@@ -747,6 +819,7 @@ window.addEventListener('scroll', () => {
         'benefits': 'Những Gì Bạn Nhận Được',
         'packages': 'Gói Tư Vấn',
         'process': 'Hành Trình',
+        'testimonials': 'Khách Hàng Nói Gì?',
         'contact': 'Liên Hệ'
       };
 
