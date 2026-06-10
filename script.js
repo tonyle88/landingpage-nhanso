@@ -204,6 +204,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ===== FORM SUBMIT → OPEN CALENDAR MODAL =====
   const form = document.getElementById('booking-form');
+  const dobInput = document.getElementById('dob');
+
+  if (dobInput) {
+    dobInput.max = getTodayDateInputValue();
+    const clearDobError = () => {
+      const validation = validateDobValue(dobInput.value);
+      dobInput.setCustomValidity(validation.valid || !dobInput.value ? '' : validation.message);
+    };
+    dobInput.addEventListener('input', clearDobError);
+    dobInput.addEventListener('change', clearDobError);
+  }
 
   // Custom validation messages
   const requiredInputs = form?.querySelectorAll('[required]');
@@ -211,12 +222,27 @@ document.addEventListener('DOMContentLoaded', () => {
     input.addEventListener('invalid', function() {
       if (this.validity.valueMissing) this.setCustomValidity('Vui lòng nhập thông tin');
     });
-    input.addEventListener('input', function() { this.setCustomValidity(''); });
-    input.addEventListener('change', function() { this.setCustomValidity(''); });
+    input.addEventListener('input', function() {
+      if (this.id !== 'dob') this.setCustomValidity('');
+    });
+    input.addEventListener('change', function() {
+      if (this.id !== 'dob') this.setCustomValidity('');
+    });
   });
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (dobInput) {
+      const dobValidation = validateDobValue(dobInput.value);
+      dobInput.setCustomValidity(dobValidation.valid ? '' : dobValidation.message);
+      if (!dobValidation.valid) {
+        dobInput.reportValidity();
+        dobInput.focus();
+        return;
+      }
+    }
+    if (!form.reportValidity()) return;
+
     if (!isConfiguredGoogleScriptUrl()) {
       showToast('Vui lòng cấu hình Google Apps Script URL.');
       return;
@@ -272,6 +298,8 @@ function isConfiguredGoogleScriptUrl() {
 }
 
 function getBookingDataObject() {
+  const transferContent = buildTransferContent(bookingState.package, bookingState.phone);
+
   return {
     name: bookingState.name,
     dob: formatDobForSheet(bookingState.dob),
@@ -282,6 +310,7 @@ function getBookingDataObject() {
     package: bookingState.package,
     packageLabel: getPackageLabel(bookingState.package, bookingState.consultationType),
     packagePrice: String(getPackagePrice(bookingState.package, bookingState.consultationType)),
+    transferContent: transferContent,
     concern: bookingState.concern,
     slotLabel: bookingState.fullSlotLabel || '',
     slotStart: buildSlotISO(bookingState.selectedDate, bookingState.selectedTime),
@@ -289,6 +318,12 @@ function getBookingDataObject() {
     submittedAt: new Date().toISOString(),
     pageUrl: window.location.href,
   };
+}
+
+function buildTransferContent(packageCode, phone) {
+  const cleanPackageCode = String(packageCode || '').trim().toUpperCase();
+  const cleanPhone = String(phone || '').replace(/\s+/g, '');
+  return `${cleanPackageCode} ${cleanPhone}`.trim();
 }
 
 function bookingDataToUrlParams(data, action) {
@@ -632,7 +667,7 @@ function openPaymentModal() {
   const price = getPackagePrice(pkg, bookingState.consultationType);
   const pkgLabel = getPackageLabel(pkg, bookingState.consultationType);
   const priceStr = price.toLocaleString('vi-VN') + 'đ';
-  const transferContent = `DATLICHTV ${bookingState.phone}`;
+  const transferContent = buildTransferContent(pkg, bookingState.phone);
 
   // Build VietQR URL  
   const qrUrl = `https://img.vietqr.io/image/${BANK_BIN}-${BANK_ACCOUNT}-compact2.jpg?amount=${price}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(BANK_NAME_DISPLAY)}`;
@@ -691,6 +726,46 @@ function formatDobForSheet(val) {
   const parts = val.split('-');
   if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
   return val;
+}
+
+function getTodayDateInputValue() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function validateDobValue(value) {
+  if (!value) {
+    return { valid: false, message: 'Vui lòng nhập ngày tháng năm sinh.' };
+  }
+
+  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    return { valid: false, message: 'Ngày sinh chưa đúng định dạng dd/mm/yyyy, năm phải gồm 4 số.' };
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const today = new Date();
+
+  if (year < 1900 || year > today.getFullYear()) {
+    return { valid: false, message: 'Năm sinh chưa hợp lệ. Vui lòng nhập năm sinh gồm 4 số.' };
+  }
+
+  const dob = new Date(year, month - 1, day);
+  const isRealDate = dob.getFullYear() === year && dob.getMonth() === month - 1 && dob.getDate() === day;
+  if (!isRealDate) {
+    return { valid: false, message: 'Ngày sinh không hợp lệ. Vui lòng kiểm tra lại ngày, tháng, năm.' };
+  }
+
+  if (dob > today) {
+    return { valid: false, message: 'Ngày sinh không được lớn hơn ngày hiện tại.' };
+  }
+
+  return { valid: true, message: '' };
 }
 
 // ============================================

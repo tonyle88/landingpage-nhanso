@@ -26,6 +26,7 @@ const HEADERS = [
   'Mã gói',
   'Email khách',
   'Email chủ',
+  'Nội dung chuyển khoản',
 ];
 
 const CONSULTATION_TYPE_LABELS = {
@@ -48,7 +49,7 @@ const PACKAGE_OPTIONS = {
 
 const OFFLINE_TRAVEL_FEE = 50000;
 const PRICE_NUMBER_FORMAT = '#,##0';
-const SCRIPT_VERSION = '2026-06-08-v6';
+const SCRIPT_VERSION = '2026-06-10-v7';
 
 // =============================================
 //  doGet – Trả về danh sách slot đã đặt (30 ngày tới)
@@ -349,6 +350,7 @@ function buildSheetRow(params, booking) {
     booking.package,
     '',
     '',
+    booking.transferContent,
   ];
 }
 
@@ -433,6 +435,7 @@ function createCalendarEvent(params, booking) {
     `Gói: ${booking.packageLabel}`,
     `Hình thức: ${booking.consultationTypeLabel}`,
     `Số tiền: ${formatPrice(booking.packagePrice)}`,
+    `Nội dung chuyển khoản: ${booking.transferContent}`,
   ];
   if (booking.hasOfflineTravelFee) {
     eventDescLines.push(`Phụ phí xăng xe: ${formatPrice(OFFLINE_TRAVEL_FEE)} (đã tính trong giá gói offline)`);
@@ -533,6 +536,10 @@ function sendConfirmationEmail(p) {
             <span style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px;">&#128176; Số tiền đã thanh toán</span><br/>
             <strong style="color:#f0c96a;font-size:18px;">${price}</strong>
           </td></tr>
+          <tr><td style="padding:16px 20px;border-top:1px solid rgba(255,255,255,0.07);">
+            <span style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px;">&#127974; Nội dung chuyển khoản</span><br/>
+            <strong style="color:#ffffff;font-size:15px;">${booking.transferContent}</strong>
+          </td></tr>
         </table>
       </td></tr>
 
@@ -579,7 +586,7 @@ function sendConfirmationEmail(p) {
   const offlineText = isOffline
     ? '\n' + getOfflineNoteText(booking) + '\nĐịa điểm offline sẽ được thông báo qua Zalo trước buổi tư vấn.'
     : '';
-  const textBody = 'Chào ' + name + ',\nBạn đã đặt lịch thành công!\nLịch hẹn: ' + slotLabel + '\nGói: ' + pkgLabel + '\nHình thức: ' + typeLabel + '\nSố tiền: ' + price + offlineText + '\n\nHẹn gặp bạn tại buổi tư vấn!\nTony Le – Numerology\nMột đối tác của Clow Cat Patronus';
+  const textBody = 'Chào ' + name + ',\nBạn đã đặt lịch thành công!\nLịch hẹn: ' + slotLabel + '\nGói: ' + pkgLabel + '\nHình thức: ' + typeLabel + '\nSố tiền: ' + price + '\nNội dung chuyển khoản: ' + booking.transferContent + offlineText + '\n\nHẹn gặp bạn tại buổi tư vấn!\nTony Le – Numerology\nMột đối tác của Clow Cat Patronus';
 
   sendMailSafe(
     booking.email,
@@ -605,6 +612,7 @@ function sendOwnerNotification(p, ownerEmail) {
       '\nHình thức: ' + booking.consultationTypeLabel +
       '\nGói: ' + booking.packageLabel +
       '\nMã gói: ' + booking.package +
+      '\nNội dung chuyển khoản: ' + booking.transferContent +
       '\nLịch: ' + slot +
       '\nSố tiền: ' + formatPrice(booking.packagePrice) +
       offlineText +
@@ -797,6 +805,12 @@ function cleanValue(value) {
   return String(value || '').trim();
 }
 
+function buildTransferContent(packageCode, phone) {
+  const code = cleanValue(packageCode).toUpperCase();
+  const cleanPhone = cleanValue(phone).replace(/^'/, '').replace(/\s+/g, '');
+  return (code + ' ' + cleanPhone).trim();
+}
+
 function normalizeConsultationType(value) {
   const raw = cleanValue(value).toLowerCase();
   if (raw === 'online' || raw.includes('online') || raw.includes('google meet')) return 'online';
@@ -815,6 +829,7 @@ function resolveBookingDetails(params) {
   const packagePrice = packageOption
     ? packageOption.price
     : parseInt(params.packagePrice || '0', 10);
+  const transferContent = cleanValue(params.transferContent) || buildTransferContent(packageCode, params.phone);
 
   return {
     name: cleanValue(params.name),
@@ -827,6 +842,7 @@ function resolveBookingDetails(params) {
     package: packageCode,
     packageLabel: packageLabel,
     packagePrice: packagePrice,
+    transferContent: transferContent,
     isOffline: consultationType === 'offline',
     hasOfflineTravelFee: consultationType === 'offline' && packageCode !== 'big7',
   };

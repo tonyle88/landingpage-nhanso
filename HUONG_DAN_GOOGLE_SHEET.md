@@ -81,8 +81,11 @@ Sau khi cập nhật, dòng tiêu đề (hàng 1) sẽ là:
 | I | Số tiền (định dạng **số**, ví dụ `500000`) |
 | J | Lời nhắn |
 | K | Mã gói (`year` / `big3` / `big7`) |
+| L | Email khách |
+| M | Email chủ |
+| N | Nội dung chuyển khoản (`YEAR 090...` / `BIG3 090...` / `BIG7 090...`) |
 
-> Cột A–J giữ nguyên vị trí như Sheet cũ (cột **Khoá học** đổi tên thành **Gói tư vấn**). Cột **Mã gói** được thêm ở cuối để không làm lệch dữ liệu cũ.
+> Cột A–J giữ nguyên vị trí như Sheet cũ (cột **Khoá học** đổi tên thành **Gói tư vấn**). Cột **Nội dung chuyển khoản** dùng để đối soát QR theo mã gói + số điện thoại khách.
 
 ### Tính tổng doanh thu
 
