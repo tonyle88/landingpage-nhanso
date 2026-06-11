@@ -7,7 +7,8 @@ const BOOKING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOlNPUunzX4
 // Sheet mới: cấu hình nội dung từng section của landing page.
 const LANDING_CONTENT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3m9zkv9mX-BgMtB7DZj2rMrZtkAAOFDQow2UKxttXRz8G5Zlc4qponSGrvPBxJwEO/exec';
 const LANDING_CONTENT_ENABLED = true;
-const LANDING_CONTENT_TIMEOUT_MS = 4500;
+const LANDING_CONTENT_TIMEOUT_MS = 3500;
+const LANDING_CONTENT_LOADING_CLASS = 'landing-content-loading';
 const LANDING_CONTENT_ITEM_OVERRIDES = {
   'hero.badge': { selector: '.hero-badge', type: 'text' },
   'hero.title_1': { selector: '.hero-title .title-line:nth-child(1)', type: 'text' },
@@ -47,6 +48,8 @@ const CONSULTATION_TYPE_LABELS = {
   offline: 'Offline - Trực tiếp tại TP.HCM',
 };
 
+const landingContentReady = loadLandingContentFromSheet();
+
 // Bank info for VietQR
 const BANK_BIN = '970436'; // Vietcombank BIN
 const BANK_ACCOUNT = '0421003904479';
@@ -61,9 +64,6 @@ const WORKING_HOURS = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  // ===== LANDING CONTENT FROM GOOGLE SHEET =====
-  const landingContentReady = loadLandingContentFromSheet();
-
   // ===== PARTICLES CANVAS =====
   initParticles();
 
@@ -308,7 +308,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function loadLandingContentFromSheet() {
-  if (!LANDING_CONTENT_ENABLED || !isConfiguredScriptUrl(LANDING_CONTENT_SCRIPT_URL)) return;
+  if (!LANDING_CONTENT_ENABLED || !isConfiguredScriptUrl(LANDING_CONTENT_SCRIPT_URL)) {
+    finishLandingContentLoading();
+    return;
+  }
 
   let timeoutId;
   try {
@@ -326,10 +329,17 @@ async function loadLandingContentFromSheet() {
     if (!payload.ok || !Array.isArray(payload.items)) return;
     applyLandingContentItems(payload.items);
   } catch (error) {
-    console.warn('Không tải được nội dung từ Google Sheet, dùng nội dung mặc định trong HTML.', error);
+    console.warn('Không tải được nội dung từ Google Sheet, dùng nội dung dự phòng trong HTML.', error);
   } finally {
     if (timeoutId) window.clearTimeout(timeoutId);
+    finishLandingContentLoading();
   }
+}
+
+function finishLandingContentLoading() {
+  window.requestAnimationFrame(() => {
+    document.body?.classList.remove(LANDING_CONTENT_LOADING_CLASS);
+  });
 }
 
 function applyLandingContentItems(items) {

@@ -120,6 +120,123 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 /* ===== SECTION BASE ===== */
 .section { padding: var(--section-padding); position: relative; overflow: hidden; }
 
+/* ===== SHEET CONTENT LOADING ===== */
+.landing-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(circle at center, rgba(13, 43, 48, 0.45), rgba(5, 15, 18, 0.78));
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.landing-content-loading .landing-loader {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.landing-loader-card {
+  width: min(360px, 100%);
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  background: linear-gradient(145deg, rgba(13, 43, 48, 0.92), rgba(9, 28, 32, 0.95));
+  border: 1px solid rgba(212, 168, 67, 0.42);
+  border-radius: 24px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), 0 0 45px rgba(212, 168, 67, 0.16);
+}
+
+.landing-loader-spinner {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.16);
+  border-top-color: var(--color-gold-light);
+  border-right-color: var(--color-orange-bright);
+  animation: loaderSpin 0.95s linear infinite;
+}
+
+.landing-loader-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-white);
+  letter-spacing: 0.4px;
+}
+
+.landing-loader-subtitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 2.8px;
+  text-transform: uppercase;
+  color: var(--color-gold-light);
+  opacity: 0.78;
+}
+
+@keyframes loaderSpin {
+  to { transform: rotate(360deg); }
+}
+
+.landing-content-loading :where(
+  .hero-badge,
+  .hero-title .title-line,
+  .hero-subtitle,
+  .hero-stats .stat-number,
+  .hero-stats .stat-label,
+  #hero-cta-primary span,
+  #hero-cta-secondary,
+  .scroll-indicator span,
+  .section-tag,
+  .section-title,
+  #pain-points .pain-card p,
+  #pain-points .pain-conclusion p,
+  #about .mentor-name,
+  #about .mentor-desc,
+  #about .mentor-feature-card span,
+  #benefits .benefit-card h3,
+  #benefits .benefit-card p,
+  #testimonials .testimonial-title-main,
+  #testimonials .testimonial-title-accent,
+  #packages .featured-badge,
+  #packages .package-name,
+  #packages .price-current,
+  #packages .price-unit,
+  #packages .package-features li span:last-child,
+  #packages .session-info-item span:last-child,
+  #packages .package-card .btn,
+  #process .process-step h3,
+  #process .process-step p,
+  #process .process-quote span,
+  #process .process-quote em,
+  #contact .contact-card h3,
+  #contact .contact-item strong,
+  #contact .contact-item p,
+  #booking-form h3,
+  #booking-form label,
+  #submit-booking span,
+  #booking-form .form-note,
+  .footer-contact-col .footer-title,
+  .footer-contact-col .footer-desc,
+  .footer-tagline,
+  .footer-links-col .footer-title,
+  .footer-links-list a,
+  .footer-bottom p
+) {
+  visibility: hidden;
+}
+
 /* ===== SCROLL REVEAL ===== */
 .reveal {
   opacity: 0;

@@ -11,12 +11,21 @@
   <link rel="apple-touch-icon" href="assets/images/logo2.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://script.google.com" />
+  <link rel="preconnect" href="https://script.googleusercontent.com" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body class="landing-content-loading">
 
+  <div class="landing-loader" aria-live="polite" aria-label="Đang tải trang">
+    <div class="landing-loader-card">
+      <div class="landing-loader-spinner"></div>
+      <div class="landing-loader-title">Đang tải nội dung...</div>
+      <div class="landing-loader-subtitle">Clow Cat Patronus</div>
+    </div>
+  </div>
 
 
   <!-- Floating particles canvas -->
@@ -846,6 +855,6 @@
     <i class="fa-solid fa-volume-high"></i>
   </button>
 
-  <script src="script.js?v=20260611-landing-content-fix"></script>
+  <script src="script.js?v=20260611-loading-popup"></script>
 </body>
 </html>
