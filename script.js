@@ -2,7 +2,28 @@
    JAVASCRIPT FOR NHÂN SỐ HỌC LANDING PAGE
    ============================================= */
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOlNPUunzX4gJvtpKvvXYdBQRMXEKyEqB4L_39CLu-qt4trPzgDoLXRRmauCk2iA2P/exec';
+// Sheet cũ: đặt lịch, Calendar, Email, lưu booking.
+const BOOKING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOlNPUunzX4gJvtpKvvXYdBQRMXEKyEqB4L_39CLu-qt4trPzgDoLXRRmauCk2iA2P/exec';
+// Sheet mới: cấu hình nội dung từng section của landing page.
+const LANDING_CONTENT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3m9zkv9mX-BgMtB7DZj2rMrZtkAAOFDQow2UKxttXRz8G5Zlc4qponSGrvPBxJwEO/exec';
+const LANDING_CONTENT_ENABLED = true;
+const LANDING_CONTENT_TIMEOUT_MS = 4500;
+const LANDING_CONTENT_ITEM_OVERRIDES = {
+  'hero.badge': { selector: '.hero-badge', type: 'text' },
+  'hero.title_1': { selector: '.hero-title .title-line:nth-child(1)', type: 'text' },
+  'hero.title_2': { selector: '.hero-title .title-line:nth-child(2)', type: 'text' },
+  'hero.title_3': { selector: '.hero-title .title-line:nth-child(3)', type: 'text' },
+  'hero.subtitle': { selector: '.hero-subtitle', type: 'text' },
+  'hero.stat_1_number': { selector: '.hero-stats .stat-item:nth-child(1) .stat-number', type: 'text' },
+  'hero.stat_1_label': { selector: '.hero-stats .stat-item:nth-child(1) .stat-label', type: 'text' },
+  'hero.stat_2_number': { selector: '.hero-stats .stat-item:nth-child(3) .stat-number', type: 'text' },
+  'hero.stat_2_label': { selector: '.hero-stats .stat-item:nth-child(3) .stat-label', type: 'text' },
+  'hero.stat_3_number': { selector: '.hero-stats .stat-item:nth-child(5) .stat-number', type: 'text' },
+  'hero.stat_3_label': { selector: '.hero-stats .stat-item:nth-child(5) .stat-label', type: 'text' },
+  'hero.cta_primary': { selector: '#hero-cta-primary span', type: 'text' },
+  'hero.cta_secondary': { selector: '#hero-cta-secondary', type: 'text' },
+  'hero.scroll_label': { selector: '.scroll-indicator span', type: 'text' },
+};
 const PACKAGE_OPTIONS = {
   online: {
     year: { label: 'Dự Đoán Năm Cá Nhân – 500.000 vnđ/buổi', price: 500000 },
@@ -15,6 +36,12 @@ const PACKAGE_OPTIONS = {
     big7: { label: 'Phân Tích Toàn Diện – 2.000.000 vnđ/buổi', price: 2000000 },
   },
 };
+const PACKAGE_CONTENT_KEYS = {
+  year: { name: 'packages.year_name', price: 'packages.year_price' },
+  big3: { name: 'packages.big3_name', price: 'packages.big3_price' },
+  big7: { name: 'packages.big7_name', price: 'packages.big7_price' },
+};
+const OFFLINE_TRAVEL_FEE = 50000;
 const CONSULTATION_TYPE_LABELS = {
   online: 'Online - Google Meet',
   offline: 'Offline - Trực tiếp tại TP.HCM',
@@ -34,6 +61,8 @@ const WORKING_HOURS = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  // ===== LANDING CONTENT FROM GOOGLE SHEET =====
+  const landingContentReady = loadLandingContentFromSheet();
 
   // ===== PARTICLES CANVAS =====
   initParticles();
@@ -262,7 +291,161 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ===== BOOKING MODAL LOGIC =====
   initBookingModals();
+
   // ===== SMOOTH COUNTER ANIMATION =====
+  landingContentReady.finally(initStatCounters);
+
+  // ===== PACKAGE CARD GLOW ON HOVER =====
+  document.querySelectorAll('.package-card').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      card.style.setProperty('--mouse-x', `${x}%`);
+      card.style.setProperty('--mouse-y', `${y}%`);
+    });
+  });
+});
+
+async function loadLandingContentFromSheet() {
+  if (!LANDING_CONTENT_ENABLED || !isConfiguredScriptUrl(LANDING_CONTENT_SCRIPT_URL)) return;
+
+  let timeoutId;
+  try {
+    const controller = new AbortController();
+    timeoutId = window.setTimeout(() => controller.abort(), LANDING_CONTENT_TIMEOUT_MS);
+    const url = `${LANDING_CONTENT_SCRIPT_URL}?action=getLandingContent&_=${Date.now()}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+
+    const payload = await response.json();
+    if (!payload.ok || !Array.isArray(payload.items)) return;
+    applyLandingContentItems(payload.items);
+  } catch (error) {
+    console.warn('Không tải được nội dung từ Google Sheet, dùng nội dung mặc định trong HTML.', error);
+  } finally {
+    if (timeoutId) window.clearTimeout(timeoutId);
+  }
+}
+
+function applyLandingContentItems(items) {
+  items.forEach(applyLandingContentItem);
+  syncHeroConsultationBadge();
+  syncPackageOptionsFromLandingContent(items);
+}
+
+function applyLandingContentItem(item) {
+  if (!item || item.enabled === false) return;
+  const key = String(item.key || '').trim();
+  const override = LANDING_CONTENT_ITEM_OVERRIDES[key] || {};
+  const selector = String(override.selector || item.selector || '').trim();
+  const value = normalizeLandingContentValue(key, item.value, item);
+  if (!selector || value == null || value === '') return;
+
+  const type = String(override.type || item.type || 'text').trim().toLowerCase();
+  const attribute = String(override.attribute || item.attribute || '').trim();
+  const elements = document.querySelectorAll(selector);
+  if (!elements.length) return;
+
+  elements.forEach((element) => {
+    if (type === 'html') {
+      element.innerHTML = value;
+      return;
+    }
+    if (type === 'attr' || type === 'attribute') {
+      if (attribute) element.setAttribute(attribute, value);
+      return;
+    }
+    if (type === 'placeholder') {
+      element.setAttribute('placeholder', value);
+      return;
+    }
+    if (type === 'href' || type === 'src' || type === 'alt' || type === 'aria-label') {
+      element.setAttribute(type, value);
+      return;
+    }
+    element.textContent = value;
+  });
+}
+
+function normalizeLandingContentValue(key, rawValue, item) {
+  const value = rawValue == null ? '' : String(rawValue);
+  const trimmed = value.trim();
+  const selector = String(item?.selector || '').trim();
+
+  if (key === 'hero.stat_3_number' && trimmed === '1') {
+    return '100%';
+  }
+
+  if ((key === 'hero.subtitle' || selector === '.hero-subtitle') && /^[\d\s+%.,/]+$/.test(trimmed)) {
+    return null;
+  }
+
+  return value;
+}
+
+function syncHeroConsultationBadge() {
+  const consultationNumber = document.querySelector('.hero-stats .stat-item:nth-child(3) .stat-number')?.textContent.trim();
+  const badge = document.querySelector('.hero-badge');
+  const number = consultationNumber?.match(/\d+/)?.[0];
+  if (!badge || !number || !/Hơn\s*\d+/i.test(badge.textContent)) return;
+
+  badge.textContent = badge.textContent.replace(/Hơn\s*\d+\+?/i, `Hơn ${number}`);
+}
+
+function syncPackageOptionsFromLandingContent(items) {
+  const valuesByKey = new Map(items.map((item) => [String(item.key || '').trim(), item.value]));
+
+  Object.entries(PACKAGE_CONTENT_KEYS).forEach(([packageCode, keys]) => {
+    const name = stripHtmlToText(valuesByKey.get(keys.name));
+    const price = parsePriceFromContent(valuesByKey.get(keys.price));
+    if (!name || !price) return;
+
+    updatePackageOption('online', packageCode, name, price);
+    updatePackageOption(
+      'offline',
+      packageCode,
+      name,
+      packageCode === 'big7' ? price : price + OFFLINE_TRAVEL_FEE
+    );
+  });
+
+  const consultationTypeSelect = document.getElementById('consultation-type');
+  const packageSelect = document.getElementById('package');
+  if (consultationTypeSelect?.value && packageSelect) {
+    populatePackageOptions(consultationTypeSelect.value, packageSelect.value);
+  }
+}
+
+function updatePackageOption(consultationType, packageCode, name, price) {
+  const option = PACKAGE_OPTIONS[consultationType]?.[packageCode];
+  if (!option) return;
+
+  option.price = price;
+  option.label = `${name} – ${formatPackagePriceLabel(price)}/buổi`;
+}
+
+function parsePriceFromContent(value) {
+  const digits = stripHtmlToText(value).replace(/[^\d]/g, '');
+  return digits ? parseInt(digits, 10) : 0;
+}
+
+function stripHtmlToText(value) {
+  return String(value || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function formatPackagePriceLabel(price) {
+  return Number(price || 0).toLocaleString('vi-VN') + ' vnđ';
+}
+
+function initStatCounters() {
   const statNumbers = document.querySelectorAll('.stat-number');
   const counterObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -280,21 +463,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }, { threshold: 0.5 });
   statNumbers.forEach(el => counterObserver.observe(el));
-
-  // ===== PACKAGE CARD GLOW ON HOVER =====
-  document.querySelectorAll('.package-card').forEach(card => {
-    card.addEventListener('mousemove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      card.style.setProperty('--mouse-x', `${x}%`);
-      card.style.setProperty('--mouse-y', `${y}%`);
-    });
-  });
-});
+}
 
 function isConfiguredGoogleScriptUrl() {
-  return GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes('PASTE_GOOGLE_APPS_SCRIPT');
+  return isConfiguredScriptUrl(BOOKING_SCRIPT_URL);
+}
+
+function isConfiguredScriptUrl(url) {
+  return Boolean(url)
+    && !url.includes('PASTE_')
+    && !url.includes('URL_MOI')
+    && /^https?:\/\//.test(url);
 }
 
 function getBookingDataObject() {
@@ -339,7 +518,7 @@ function bookingDataToUrlParams(data, action) {
 
 async function saveBookingToSheet(data) {
   const body = bookingDataToUrlParams(data, 'saveBooking').toString();
-  await fetch(GOOGLE_SCRIPT_URL, {
+  await fetch(BOOKING_SCRIPT_URL, {
     method: 'POST',
     mode: 'no-cors',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -349,7 +528,7 @@ async function saveBookingToSheet(data) {
 
 async function completeBookingOnServer(data) {
   const query = bookingDataToUrlParams(data, 'completeBooking').toString();
-  const res = await fetch(`${GOOGLE_SCRIPT_URL}?${query}`, {
+  const res = await fetch(`${BOOKING_SCRIPT_URL}?${query}`, {
     method: 'GET',
     mode: 'cors',
     cache: 'no-store',
@@ -552,7 +731,7 @@ async function loadCalendar() {
   document.getElementById('selected-slot-info').style.display = 'none';
 
   try {
-    const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=getBookedSlots&_=${Date.now()}`, {
+    const res = await fetch(`${BOOKING_SCRIPT_URL}?action=getBookedSlots&_=${Date.now()}`, {
       mode: 'cors',
       cache: 'no-store',
     });
