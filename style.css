@@ -1112,6 +1112,59 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   background: linear-gradient(135deg, rgba(9,28,32,0.9) 0%, rgba(9,28,32,0.7) 100%);
 }
 
+.about-video {
+  position: relative;
+  width: min(920px, 100%);
+  margin: -18px auto 64px;
+  padding: 14px;
+  border-radius: 26px;
+  background: linear-gradient(145deg, rgba(13, 43, 48, 0.72), rgba(9, 28, 32, 0.88));
+  border: 1px solid rgba(212, 168, 67, 0.32);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34), 0 0 46px rgba(0, 229, 204, 0.08);
+  overflow: hidden;
+}
+
+.about-video::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(212,168,67,0.5), rgba(0,229,204,0.22), rgba(217,78,31,0.32));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.about-video-glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  right: -70px;
+  top: -70px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212,168,67,0.18), transparent 70%);
+  filter: blur(12px);
+  pointer-events: none;
+}
+
+.about-video-frame {
+  position: relative;
+  z-index: 1;
+  aspect-ratio: 16 / 9;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(5, 15, 18, 0.74);
+}
+
+.about-video-frame iframe {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+}
+
 /* Mentors Grid */
 .mentors-grid {
   display: grid;
@@ -2437,6 +2490,14 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 
 @media (max-width: 640px) {
+  .about-video {
+    margin: -20px auto 40px;
+    padding: 9px;
+    border-radius: 20px;
+  }
+  .about-video-frame {
+    border-radius: 14px;
+  }
   .mentors-grid { gap: 28px; }
   .mentor-block {
     gap: 24px;

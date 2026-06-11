@@ -7,6 +7,42 @@ Mục tiêu: khi cần tạo PDF mới, người dùng chỉ cần chép 2 file 
 
 Sau khi xử lý xong, PDF thành phẩm bắt buộc lưu vào `Pdf files/output`.
 
+## Tóm Tắt Siêu Nhanh
+
+Mỗi lần tạo PDF mới:
+
+1. Xóa hoặc dọn file cũ trong `Pdf files/input`.
+2. Chép vào `Pdf files/input` đúng 2 file:
+   - 1 file PDF nguồn.
+   - 1 ảnh map viết tay của khách.
+3. AI đọc file hướng dẫn này.
+4. AI cập nhật nội dung khách mới trong `Pdf create/build_vietnamese_report_pdf.py`.
+5. Chạy script.
+6. Kiểm tra preview.
+7. Lấy PDF thành phẩm trong `Pdf files/output`.
+
+Nếu thiếu PDF hoặc ảnh map trong `input`, script phải báo lỗi ngay, không được tự lấy file khách cũ.
+
+## Mang Sang Dự Án Khác
+
+Copy nguyên bộ này sang project mới:
+
+- `Pdf create/build_vietnamese_report_pdf.py`
+- `Pdf create/HUONG_DAN_TAO_PDF_MAU_CLOWCAT.md`
+- `Pdf create/assets/images/logo.png`
+- `Pdf create/assets/images/hero_bg.png`
+- `Pdf create/assets/images/hero_bg_a4_cover.jpg`
+- `Pdf files/input`
+- `Pdf files/output`
+
+Sau khi copy:
+
+1. Đổi logo/background trong `Pdf create/assets/images` nếu dự án mới dùng brand khác.
+2. Giữ nguyên luồng `input -> build script -> output`.
+3. Không hardcode đường dẫn ngoài project.
+4. Nếu chạy trên Windows/Linux, kiểm tra lại phần font trong script vì hiện template dùng font Arial của macOS.
+5. Với khách mới, chỉ cập nhật nội dung trong script, không đổi cấu trúc thư mục.
+
 ## Cấu Trúc Thư Mục Chuẩn
 
 - `Pdf files/input`: nơi người dùng đặt file PDF gốc và ảnh map viết tay.

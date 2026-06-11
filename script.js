@@ -64,6 +64,8 @@ const WORKING_HOURS = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  initYouTubeEmbeds();
+
   // ===== PARTICLES CANVAS =====
   initParticles();
 
@@ -346,6 +348,24 @@ function applyLandingContentItems(items) {
   items.forEach(applyLandingContentItem);
   syncHeroConsultationBadge();
   syncPackageOptionsFromLandingContent(items);
+}
+
+function initYouTubeEmbeds() {
+  const origin = window.location.origin;
+  const canUseOrigin = origin && /^https?:\/\//.test(origin);
+
+  document.querySelectorAll('iframe[data-youtube-embed]').forEach((iframe) => {
+    const videoId = iframe.dataset.youtubeEmbed;
+    if (!videoId) return;
+
+    const url = new URL(`https://www.youtube.com/embed/${videoId}`);
+    url.searchParams.set('rel', '0');
+    url.searchParams.set('modestbranding', '1');
+    url.searchParams.set('playsinline', '1');
+    if (canUseOrigin) url.searchParams.set('origin', origin);
+
+    iframe.src = url.toString();
+  });
 }
 
 function applyLandingContentItem(item) {

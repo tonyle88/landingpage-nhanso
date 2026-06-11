@@ -65,23 +65,11 @@ OUTPUT = os.path.join(OUTPUT_DIR, f"{output_slug_from_input(INPUT_PDF)}_VietHoa_
 LOGO = os.path.join(BASE_DIR, "assets/images/logo.png")
 HERO_BG = os.path.join(BASE_DIR, "assets/images/hero_bg.png")
 COVER_BG_A4 = os.path.join(BASE_DIR, "assets/images/hero_bg_a4_cover.jpg")
-HANDWRITTEN_MAP = os.path.join(BASE_DIR, "handwritten_map.jpg")
 INPUT_MAP_CANDIDATES = []
 for pattern in ("*.jpg", "*.jpeg", "*.png", "*.webp", "*.JPG", "*.JPEG", "*.PNG", "*.WEBP"):
     INPUT_MAP_CANDIDATES.extend(glob.glob(os.path.join(INPUT_DIR, pattern)))
 INPUT_MAP_CANDIDATES = sorted(INPUT_MAP_CANDIDATES, key=os.path.getmtime, reverse=True)
-HANDWRITTEN_MAP_CANDIDATES = ([INPUT_MAP] if INPUT_MAP else []) + INPUT_MAP_CANDIDATES + [
-    os.path.join(BASE_DIR, "NGO THI DUONG.jpg"),
-    os.path.join(BASE_DIR, "handwritten_map.jpg"),
-    os.path.join(BASE_DIR, "handwritten_map.png"),
-    os.path.join(BASE_DIR, "assets/images/handwritten_map.jpg"),
-    os.path.join(BASE_DIR, "assets/images/handwritten_map.png"),
-    os.path.join(BASE_DIR, "map_viet_tay.jpg"),
-    os.path.join(BASE_DIR, "map_viet_tay.png"),
-    os.path.join(ROOT_DIR, "Tran Gia Khanh.jpg"),
-    os.path.join(ROOT_DIR, "handwritten_map.jpg"),
-    os.path.join(ROOT_DIR, "handwritten_map.png"),
-]
+HANDWRITTEN_MAP_CANDIDATES = ([INPUT_MAP] if INPUT_MAP else []) + INPUT_MAP_CANDIDATES
 
 TEAL_DARKEST = colors.HexColor("#091C20")
 TEAL_DARK = colors.HexColor("#0D2B30")
@@ -415,6 +403,20 @@ def find_handwritten_map():
         if os.path.exists(path):
             return path
     return None
+
+
+def validate_input_files():
+    missing = []
+    if not INPUT_PDF:
+        missing.append("- 1 file PDF nguon trong `Pdf files/input`")
+    if not find_handwritten_map():
+        missing.append("- 1 file anh map viet tay trong `Pdf files/input` (.jpg/.jpeg/.png/.webp)")
+    if missing:
+        raise FileNotFoundError(
+            "Thieu file dau vao de tao PDF mau Clow Cat:\n"
+            + "\n".join(missing)
+            + "\nHay de dung 1 PDF va 1 anh map cua khach vao thu muc `Pdf files/input`."
+        )
 
 
 def bg(canvas, doc):
@@ -893,6 +895,7 @@ def step_blocks(rows):
 def build():
     os.makedirs(INPUT_DIR, exist_ok=True)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+    validate_input_files()
     prepare_cover_background()
     handwritten_map = find_handwritten_map()
     doc = SimpleDocTemplate(
