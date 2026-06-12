@@ -834,7 +834,6 @@ a {
     backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--line);
     overflow: hidden;
-    transition: height var(--transition-fast);
   }
 
   .sidebar-header {
@@ -854,7 +853,8 @@ a {
     display: flex;
     opacity: 0;
     visibility: hidden;
-    transition: opacity var(--transition-fast);
+    transform: translateY(15px);
+    transition: opacity 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0.35s;
   }
 
   .section-nav {
@@ -889,6 +889,7 @@ a {
   .sidebar.is-open .sidebar-actions {
     opacity: 1;
     visibility: visible;
+    transform: translateY(0);
   }
 
   .workspace {
