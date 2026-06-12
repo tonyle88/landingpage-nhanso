@@ -247,6 +247,10 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   opacity: 1;
   transform: translateY(0);
 }
+.packages-grid .package-card.reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
 .reveal[data-delay="100"] { transition-delay: 0.1s; }
 .reveal[data-delay="150"] { transition-delay: 0.15s; }
 .reveal[data-delay="200"] { transition-delay: 0.2s; }

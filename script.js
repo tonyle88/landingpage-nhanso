@@ -296,7 +296,11 @@ function renderPackages(packages) {
   grid.innerHTML = '';
   grid.classList.toggle('packages-grid-3', packages.length === 3);
   packages.forEach((pkg, index) => {
-    grid.appendChild(createPackageCard(pkg, index));
+    const card = createPackageCard(pkg, index);
+    grid.appendChild(card);
+    window.setTimeout(() => {
+      card.classList.add('visible');
+    }, 80 + index * 80);
   });
 
   bindPackageCardGlow();
