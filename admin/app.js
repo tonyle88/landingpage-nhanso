@@ -669,35 +669,17 @@ function renderFeedbackImages() {
       const base64 = await resizeAndCompressImage(file);
       const cleanBase64 = base64.split('base64,')[1];
       
-      const formData = new FormData();
-      formData.append('key', 'dbbeb2a25359362e9e9df73c5a9adb24');
-      formData.append('image', cleanBase64);
-      formData.append('name', file.name);
-      
-      const imgbbRes = await fetch('https://api.imgbb.com/1/upload', {
-        method: 'POST',
-        body: formData
-      });
-      
-      const imgbbData = await imgbbRes.json();
-      if (!imgbbData.success) {
-        throw new Error('Lỗi từ ImgBB: ' + (imgbbData.error ? imgbbData.error.message : 'Unknown'));
-      }
-      
-      const url = imgbbData.data.display_url;
-      const fileId = imgbbData.data.id;
-
-      await api('saveFeedbackImage', {
+      const payload = await api('uploadFeedbackImage', {
         token: state.token,
         filename: file.name,
-        url: url,
-        fileId: fileId
+        imageBase64: cleanBase64
       });
       
       toast('Tải ảnh lên thành công!');
       input.value = '';
       btn.disabled = true;
       msg.textContent = '';
+      if (payload.feedbackImages) state.feedbackImages = payload.feedbackImages;
       loadContent(true);
     } catch(err) {
       msg.textContent = 'Lỗi: ' + err.message;
@@ -744,7 +726,8 @@ function renderFeedbackImages() {
         if (!confirm('Bạn có chắc muốn xóa ảnh này khỏi Landing Page không?')) return;
         setBusy(delBtn, true);
         try {
-          await api('deleteFeedbackImage', { token: state.token, fileId: img.fileId });
+          const payload = await api('deleteFeedbackImage', { token: state.token, fileId: img.fileId });
+          if (payload.feedbackImages) state.feedbackImages = payload.feedbackImages;
           toast('Đã xóa ảnh.');
           loadContent(true);
         } catch(err) {

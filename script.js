@@ -9,6 +9,9 @@ const LANDING_CONTENT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3m
 const LANDING_CONTENT_ENABLED = true;
 const LANDING_CONTENT_TIMEOUT_MS = 3500;
 const LANDING_CONTENT_LOADING_CLASS = 'landing-content-loading';
+const DEFAULT_TESTIMONIAL_IMAGES = Array.from({ length: 10 }, (_, index) => ({
+  url: `assets/images/testimonials/testimonial-${String(index + 1).padStart(2, '0')}.png`,
+}));
 const LANDING_CONTENT_ITEM_OVERRIDES = {
   'hero.badge': { selector: '.hero-badge', type: 'text' },
   'hero.title_1': { selector: '.hero-title .title-line:nth-child(1)', type: 'text' },
@@ -65,6 +68,7 @@ const WORKING_HOURS = {
 
 document.addEventListener('DOMContentLoaded', () => {
   initYouTubeEmbeds();
+  renderTestimonials(DEFAULT_TESTIMONIAL_IMAGES);
 
   // ===== PARTICLES CANVAS =====
   initParticles();
@@ -269,19 +273,30 @@ function applyLandingContent(payload) {
   payload.items.forEach(applyLandingContentItem);
   syncHeroConsultationBadge();
   syncPackageOptionsFromLandingContent(payload.items);
-  
-  if (payload.feedbackImages && payload.feedbackImages.length > 0) {
-    renderTestimonials(payload.feedbackImages);
+
+  const feedbackImages = normalizeFeedbackImages(payload.feedbackImages);
+  if (feedbackImages.length > 0) {
+    renderTestimonials(feedbackImages);
   }
+}
+
+function normalizeFeedbackImages(images) {
+  if (!Array.isArray(images)) return [];
+  return images
+    .map((img) => ({ ...img, url: String(img?.url || '').trim() }))
+    .filter((img) => img.url);
 }
 
 function renderTestimonials(images) {
   const track = document.getElementById('testimonials-track');
   if (!track) return;
-  
+
+  const validImages = normalizeFeedbackImages(images);
+  if (validImages.length === 0) return;
+
   track.innerHTML = '';
-  
-  images.forEach((img, index) => {
+
+  validImages.forEach((img, index) => {
     const card = document.createElement('figure');
     card.className = 'testimonial-card' + (index === 0 ? ' is-active' : '');
     
@@ -292,6 +307,13 @@ function renderTestimonials(images) {
     imgEl.src = img.url;
     imgEl.alt = 'Cảm nhận của khách hàng ' + (index + 1);
     imgEl.loading = 'lazy';
+    imgEl.onerror = () => {
+      const fallback = DEFAULT_TESTIMONIAL_IMAGES[index % DEFAULT_TESTIMONIAL_IMAGES.length]?.url;
+      if (fallback && imgEl.dataset.fallbackApplied !== 'true') {
+        imgEl.dataset.fallbackApplied = 'true';
+        imgEl.src = fallback;
+      }
+    };
     
     wrap.appendChild(imgEl);
     card.appendChild(wrap);
@@ -300,8 +322,6 @@ function renderTestimonials(images) {
   
   initTestimonialsCarousel();
 }
-
-let testimonialListenersAdded = false;
 
 function initTestimonialsCarousel() {
   const testimonialsTrack = document.getElementById('testimonials-track');
@@ -371,22 +391,22 @@ function initTestimonialsCarousel() {
     testimonialDots?.appendChild(dot);
   });
 
-  if (!testimonialListenersAdded) {
-    prevTestimonialBtn?.addEventListener('click', () => {
+  if (prevTestimonialBtn) {
+    prevTestimonialBtn.onclick = () => {
       centerTestimonial(activeTestimonialIndex - 1);
-    });
-
-    nextTestimonialBtn?.addEventListener('click', () => {
-      centerTestimonial(activeTestimonialIndex + 1);
-    });
-
-    testimonialsTrack.addEventListener('scroll', () => {
-      window.clearTimeout(testimonialScrollTimer);
-      testimonialScrollTimer = window.setTimeout(updateActiveFromScroll, 90);
-    }, { passive: true });
-    
-    testimonialListenersAdded = true;
+    };
   }
+
+  if (nextTestimonialBtn) {
+    nextTestimonialBtn.onclick = () => {
+      centerTestimonial(activeTestimonialIndex + 1);
+    };
+  }
+
+  testimonialsTrack.onscroll = () => {
+    window.clearTimeout(testimonialScrollTimer);
+    testimonialScrollTimer = window.setTimeout(updateActiveFromScroll, 90);
+  };
 
   setActiveTestimonial(0);
   window.requestAnimationFrame(() => centerTestimonial(0, 'auto'));

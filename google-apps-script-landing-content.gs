@@ -6,7 +6,7 @@
 const SPREADSHEET_ID = '1hxBpzJwNO470xqoHBuaZF26anCGir5pnpQk0iPTxz4k';
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
 const ADMIN_USERS_SHEET_NAME = 'Admin users';
-const SCRIPT_VERSION = '2026-06-12-v12-vietnam-admin-time';
+const SCRIPT_VERSION = '2026-06-12-v13-imgbb-feedback-upload';
 const ADMIN_DEFAULT_USERNAME = 'admin';
 const ADMIN_DEFAULT_PASSWORD = 'admin123';
 const ADMIN_SESSION_SECONDS = 21600;
@@ -88,6 +88,7 @@ function doPost(e) {
     if (action === 'createAdminUser') return handleCreateAdminUser(params);
     if (action === 'setAdminUserStatus') return handleSetAdminUserStatus(params);
     if (action === 'syncLandingContentTemplate') return handleSyncLandingContentTemplate(params);
+    if (action === 'uploadFeedbackImage') return handleUploadFeedbackImage(params);
     if (action === 'saveFeedbackImage') return handleSaveFeedbackImage(params);
     if (action === 'deleteFeedbackImage') return handleDeleteFeedbackImage(params);
 
@@ -127,24 +128,11 @@ function handleGetLandingContent() {
     .map((row, rowIndex) => landingContentRowToItem(row, displayValues[rowIndex], indexes, templateRowsByKey))
     .filter((item) => item.enabled && item.selector && item.value !== '');
 
-  const feedbackSheet = spreadsheet.getSheetByName(FEEDBACK_IMAGES_SHEET_NAME);
-  let feedbackImages = [];
-  if (feedbackSheet) {
-    const fbLastRow = feedbackSheet.getLastRow();
-    if (fbLastRow >= 2) {
-      const fbValues = feedbackSheet.getRange(2, 1, fbLastRow - 1, FEEDBACK_IMAGES_HEADERS.length).getValues();
-      feedbackImages = fbValues.map(row => ({
-        url: row[2],
-        fileId: row[3]
-      })).filter(img => img.url);
-    }
-  }
-
   return jsonResponse({
     ok: true,
     items: items,
     count: items.length,
-    feedbackImages: feedbackImages,
+    feedbackImages: getFeedbackImages(),
     scriptVersion: SCRIPT_VERSION,
   });
 }
@@ -200,6 +188,7 @@ function handleGetAdminContent(params) {
     items: items,
     sections: Object.keys(sectionsMap).map((key) => sectionsMap[key]),
     count: items.length,
+    feedbackImages: getFeedbackImages(),
     scriptVersion: SCRIPT_VERSION,
   });
 }
@@ -936,6 +925,85 @@ function ensureFeedbackImagesSheet() {
   return sheet;
 }
 
+function getFeedbackImages() {
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  const sheet = spreadsheet.getSheetByName(FEEDBACK_IMAGES_SHEET_NAME);
+  if (!sheet) return [];
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const values = sheet.getRange(2, 1, lastRow - 1, FEEDBACK_IMAGES_HEADERS.length).getValues();
+  return values.map(row => ({
+    createdAt: formatAdminDate(row[0]),
+    filename: cleanValue(row[1]),
+    url: cleanValue(row[2]),
+    fileId: cleanValue(row[3]),
+    uploadedBy: cleanValue(row[4]),
+  })).filter(img => img.url);
+}
+
+function getImgBbApiKey() {
+  const fromProperties = PropertiesService.getScriptProperties().getProperty('IMGBB_API_KEY');
+  return cleanValue(fromProperties || IMGBB_API_KEY);
+}
+
+function handleUploadFeedbackImage(params) {
+  const session = requireAdminSession(params.token, ['admin', 'editor']);
+  const imageBase64 = cleanValue(params.imageBase64);
+  const filename = cleanValue(params.filename) || 'feedback_' + new Date().getTime() + '.jpg';
+  const apiKey = getImgBbApiKey();
+
+  if (!apiKey) throw new Error('Chua cau hinh ImgBB API Key.');
+  if (!imageBase64) throw new Error('Thieu du lieu anh can upload.');
+
+  const response = UrlFetchApp.fetch('https://api.imgbb.com/1/upload', {
+    method: 'post',
+    payload: {
+      key: apiKey,
+      image: imageBase64,
+      name: filename,
+    },
+    muteHttpExceptions: true,
+  });
+  const status = response.getResponseCode();
+  const body = response.getContentText();
+  let data;
+  try {
+    data = JSON.parse(body);
+  } catch (error) {
+    throw new Error('ImgBB tra ve du lieu khong hop le.');
+  }
+
+  if (status < 200 || status >= 300 || !data.success) {
+    const message = data && data.error && data.error.message ? data.error.message : 'Unknown';
+    throw new Error('Loi tu ImgBB: ' + message);
+  }
+
+  const url = cleanValue(data.data && (data.data.display_url || data.data.url));
+  const fileId = cleanValue(data.data && data.data.id);
+  if (!url || !fileId) throw new Error('Thieu URL hoac File ID tu ImgBB.');
+
+  const sheet = ensureFeedbackImagesSheet();
+  sheet.appendRow([
+    getVietnamNow(),
+    filename,
+    url,
+    fileId,
+    session.username
+  ]);
+  sheet.getRange(sheet.getLastRow(), 1).setNumberFormat(ADMIN_SHEET_DATE_FORMAT);
+
+  return jsonResponse({
+    ok: true,
+    message: 'Upload len ImgBB thanh cong',
+    url: url,
+    fileId: fileId,
+    feedbackImages: getFeedbackImages(),
+    scriptVersion: SCRIPT_VERSION
+  });
+}
+
 function handleSaveFeedbackImage(params) {
   const session = requireAdminSession(params.token);
   const url = cleanValue(params.url);
@@ -960,6 +1028,7 @@ function handleSaveFeedbackImage(params) {
     message: 'Upload lên ImgBB thành công',
     url: url,
     fileId: fileId,
+    feedbackImages: getFeedbackImages(),
     scriptVersion: SCRIPT_VERSION
   });
 }
@@ -974,7 +1043,7 @@ function handleDeleteFeedbackImage(params) {
   if (lastRow >= 2) {
     const values = sheet.getRange(2, 4, lastRow - 1, 1).getValues();
     for (let i = 0; i < values.length; i++) {
-      if (values[i][0] === fileId) {
+      if (cleanValue(values[i][0]) === fileId) {
         sheet.deleteRow(i + 2);
         break;
       }
@@ -985,6 +1054,7 @@ function handleDeleteFeedbackImage(params) {
     ok: true,
     message: 'Xóa thành công khỏi hệ thống',
     fileId: fileId,
+    feedbackImages: getFeedbackImages(),
     scriptVersion: SCRIPT_VERSION
   });
 }
