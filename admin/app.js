@@ -667,12 +667,33 @@ function renderFeedbackImages() {
     
     try {
       const base64 = await resizeAndCompressImage(file);
-      await api('uploadFeedbackImage', {
+      const cleanBase64 = base64.split('base64,')[1];
+      
+      const formData = new FormData();
+      formData.append('key', 'dbbeb2a25359362e9e9df73c5a9adb24');
+      formData.append('image', cleanBase64);
+      formData.append('name', file.name);
+      
+      const imgbbRes = await fetch('https://api.imgbb.com/1/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const imgbbData = await imgbbRes.json();
+      if (!imgbbData.success) {
+        throw new Error('Lỗi từ ImgBB: ' + (imgbbData.error ? imgbbData.error.message : 'Unknown'));
+      }
+      
+      const url = imgbbData.data.display_url;
+      const fileId = imgbbData.data.id;
+
+      await api('saveFeedbackImage', {
         token: state.token,
         filename: file.name,
-        mimeType: file.type,
-        base64Data: base64
+        url: url,
+        fileId: fileId
       });
+      
       toast('Tải ảnh lên thành công!');
       input.value = '';
       btn.disabled = true;
@@ -767,7 +788,12 @@ function resizeAndCompressImage(file) {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
         
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        let dataUrl;
+        if (file.type === 'image/png') {
+          dataUrl = canvas.toDataURL('image/png');
+        } else {
+          dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        }
         resolve(dataUrl);
       };
       img.onerror = () => reject(new Error('Khong the doc file anh.'));

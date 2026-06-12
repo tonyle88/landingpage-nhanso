@@ -88,7 +88,7 @@ function doPost(e) {
     if (action === 'createAdminUser') return handleCreateAdminUser(params);
     if (action === 'setAdminUserStatus') return handleSetAdminUserStatus(params);
     if (action === 'syncLandingContentTemplate') return handleSyncLandingContentTemplate(params);
-    if (action === 'uploadFeedbackImage') return handleUploadFeedbackImage(params);
+    if (action === 'saveFeedbackImage') return handleSaveFeedbackImage(params);
     if (action === 'deleteFeedbackImage') return handleDeleteFeedbackImage(params);
 
     return jsonResponse({ ok: false, message: 'Action khong hop le', scriptVersion: SCRIPT_VERSION });
@@ -936,43 +936,13 @@ function ensureFeedbackImagesSheet() {
   return sheet;
 }
 
-function handleUploadFeedbackImage(params) {
+function handleSaveFeedbackImage(params) {
   const session = requireAdminSession(params.token);
-  const base64Data = params.base64Data;
+  const url = cleanValue(params.url);
+  const fileId = cleanValue(params.fileId);
   const filename = cleanValue(params.filename) || 'feedback_' + new Date().getTime() + '.jpg';
   
-  if (!base64Data) throw new Error('Thiếu dữ liệu ảnh.');
-  
-  let cleanBase64 = base64Data;
-  if (cleanBase64.indexOf('base64,') !== -1) {
-    cleanBase64 = cleanBase64.split('base64,')[1];
-  }
-  
-  const payload = {
-    key: IMGBB_API_KEY,
-    image: cleanBase64,
-    name: filename
-  };
-  
-  const options = {
-    method: 'post',
-    payload: payload
-  };
-  
-  let response;
-  try {
-    response = UrlFetchApp.fetch('https://api.imgbb.com/1/upload', options);
-  } catch(e) {
-    throw new Error('Không thể kết nối đến máy chủ ImgBB: ' + e.toString());
-  }
-  
-  const result = JSON.parse(response.getContentText());
-  if (!result.success) {
-    throw new Error('Lỗi từ ImgBB: ' + (result.error ? result.error.message : 'Unknown'));
-  }
-  
-  const url = result.data.display_url;
-  const fileId = result.data.id;
+  if (!url || !fileId) throw new Error('Thiếu dữ liệu URL hoặc File ID từ ImgBB.');
   
   const sheet = ensureFeedbackImagesSheet();
   sheet.appendRow([
