@@ -144,19 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
     populatePackageOptions(consultationTypeSelect?.value || '', packageSelect.value);
   });
 
-  document.querySelectorAll('a[href="#contact"][id^="pkg-"]').forEach(link => {
-    link.addEventListener('click', () => {
-      const packageValue = link.id.replace('pkg-', '');
-      const selectedType = consultationTypeSelect?.value || 'online';
-      if (consultationTypeSelect && !consultationTypeSelect.value) {
-        consultationTypeSelect.value = selectedType;
-        populatePackageOptions(selectedType);
-      }
-      if (packageSelect && getPackageOptions(selectedType)[packageValue]) {
-        packageSelect.value = packageValue;
-      }
-    });
-  });
+  document.addEventListener('click', handlePackageCtaClick);
 
   // ===== FORM SUBMIT → OPEN CALENDAR MODAL =====
   const form = document.getElementById('booking-form');
@@ -223,15 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
   landingContentReady.finally(initStatCounters);
 
   // ===== PACKAGE CARD GLOW ON HOVER =====
-  document.querySelectorAll('.package-card').forEach(card => {
-    card.addEventListener('mousemove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      card.style.setProperty('--mouse-x', `${x}%`);
-      card.style.setProperty('--mouse-y', `${y}%`);
-    });
-  });
+  bindPackageCardGlow();
 });
 
 async function loadLandingContentFromSheet() {
@@ -272,12 +252,174 @@ function finishLandingContentLoading() {
 function applyLandingContent(payload) {
   payload.items.forEach(applyLandingContentItem);
   syncHeroConsultationBadge();
-  syncPackageOptionsFromLandingContent(payload.items);
+
+  const packages = normalizePackages(payload.packages);
+  if (packages.length > 0) {
+    renderPackages(packages);
+    syncPackageOptionsFromPackages(packages);
+  } else {
+    syncPackageOptionsFromLandingContent(payload.items);
+  }
 
   const feedbackImages = normalizeFeedbackImages(payload.feedbackImages);
   if (feedbackImages.length > 0) {
     renderTestimonials(feedbackImages);
   }
+}
+
+function normalizePackages(packages) {
+  if (!Array.isArray(packages)) return [];
+  return packages
+    .map((pkg, index) => ({
+      enabled: pkg.enabled !== false,
+      code: String(pkg.code || '').trim(),
+      name: String(pkg.name || '').trim(),
+      onlinePrice: Number(pkg.onlinePrice || 0),
+      offlinePrice: Number(pkg.offlinePrice || pkg.onlinePrice || 0),
+      unit: String(pkg.unit || '/buổi').trim(),
+      icon: String(pkg.icon || 'sparkles').trim(),
+      accent: String(pkg.accent || 'teal').trim(),
+      featured: pkg.featured === true,
+      badge: String(pkg.badge || '').trim(),
+      features: Array.isArray(pkg.features) ? pkg.features.filter(Boolean) : [],
+      buttonText: String(pkg.buttonText || 'Đặt Lịch Ngay').trim(),
+      sortOrder: Number(pkg.sortOrder || index + 1),
+    }))
+    .filter((pkg) => pkg.enabled && pkg.code && pkg.name && pkg.onlinePrice > 0)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+function renderPackages(packages) {
+  const grid = document.querySelector('#packages .packages-grid');
+  if (!grid) return;
+
+  grid.innerHTML = '';
+  grid.classList.toggle('packages-grid-3', packages.length === 3);
+  packages.forEach((pkg, index) => {
+    grid.appendChild(createPackageCard(pkg, index));
+  });
+
+  bindPackageCardGlow();
+}
+
+function createPackageCard(pkg, index) {
+  const card = document.createElement('div');
+  card.className = `package-card reveal${pkg.featured ? ' package-featured' : ''}`;
+  card.dataset.delay = String(index * 100);
+
+  const glow = document.createElement('div');
+  glow.className = `package-glow ${getPackageGlowClass(pkg)}`;
+  card.appendChild(glow);
+
+  if (pkg.featured) {
+    const ring = document.createElement('div');
+    ring.className = 'featured-glow-ring';
+    card.appendChild(ring);
+  }
+
+  if (pkg.badge) {
+    const badge = document.createElement('div');
+    badge.className = 'featured-badge';
+    badge.textContent = pkg.badge;
+    card.appendChild(badge);
+  }
+
+  const header = document.createElement('div');
+  header.className = 'package-header';
+  header.innerHTML = `
+    <div class="package-icon${pkg.featured ? ' featured-icon' : ''}"><i class="${getPackageIconClass(pkg.icon)}"></i></div>
+    <h3 class="package-name${pkg.featured ? ' featured-name' : ''}"></h3>
+    <div class="package-price${pkg.featured ? ' featured-price-wrap' : ''}">
+      <span class="price-current${pkg.featured ? ' price-highlight' : ''}">${formatPackagePriceHtml(pkg.onlinePrice)}</span>
+      <span class="price-unit"></span>
+    </div>
+  `;
+  header.querySelector('.package-name').innerHTML = pkg.name;
+  header.querySelector('.price-unit').textContent = pkg.unit;
+  card.appendChild(header);
+
+  const divider = document.createElement('div');
+  divider.className = `package-divider${pkg.featured ? ' featured-divider' : ''}`;
+  card.appendChild(divider);
+
+  const features = document.createElement('ul');
+  features.className = 'package-features';
+  pkg.features.forEach((feature) => {
+    const item = document.createElement('li');
+    item.innerHTML = `<span class="feature-check${pkg.featured ? ' featured-check' : ''}">✦</span> <span>${feature}</span>`;
+    features.appendChild(item);
+  });
+  card.appendChild(features);
+
+  const cta = document.createElement('a');
+  cta.href = '#contact';
+  cta.className = pkg.featured ? 'btn btn-primary btn-featured-pkg' : 'btn btn-package';
+  cta.id = `pkg-${pkg.code}`;
+  cta.dataset.packageCode = pkg.code;
+  cta.textContent = pkg.buttonText;
+  card.appendChild(cta);
+
+  return card;
+}
+
+function getPackageIconClass(icon) {
+  const cleanIcon = String(icon || 'sparkles').replace(/^fa-/, '');
+  return `fa-solid fa-${cleanIcon}`;
+}
+
+function getPackageGlowClass(pkg) {
+  const accent = String(pkg.accent || '').toLowerCase();
+  if (accent === 'gold') return 'glow-gold';
+  if (accent === 'orange') return 'glow-orange';
+  return 'glow-teal';
+}
+
+function formatPackagePriceHtml(price) {
+  return `${Number(price || 0).toLocaleString('vi-VN')}<sup>đ</sup>`;
+}
+
+function syncPackageOptionsFromPackages(packages) {
+  PACKAGE_OPTIONS.online = {};
+  PACKAGE_OPTIONS.offline = {};
+  packages.forEach((pkg) => {
+    updatePackageOption('online', pkg.code, stripHtmlToText(pkg.name), pkg.onlinePrice);
+    updatePackageOption('offline', pkg.code, stripHtmlToText(pkg.name), pkg.offlinePrice || pkg.onlinePrice);
+  });
+
+  const consultationTypeSelect = document.getElementById('consultation-type');
+  const packageSelect = document.getElementById('package');
+  if (consultationTypeSelect?.value && packageSelect) {
+    populatePackageOptions(consultationTypeSelect.value, packageSelect.value);
+  }
+}
+
+function handlePackageCtaClick(event) {
+  const link = event.target.closest('a[href="#contact"][id^="pkg-"], a[data-package-code]');
+  if (!link) return;
+
+  const packageValue = link.dataset.packageCode || link.id.replace('pkg-', '');
+  const consultationTypeSelect = document.getElementById('consultation-type');
+  const packageSelect = document.getElementById('package');
+  const selectedType = consultationTypeSelect?.value || 'online';
+  if (consultationTypeSelect && !consultationTypeSelect.value) {
+    consultationTypeSelect.value = selectedType;
+    populatePackageOptions(selectedType);
+  }
+  if (packageSelect && getPackageOptions(selectedType)[packageValue]) {
+    packageSelect.value = packageValue;
+  }
+}
+
+function bindPackageCardGlow() {
+  document.querySelectorAll('.package-card').forEach(card => {
+    card.onmousemove = (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      card.style.setProperty('--mouse-x', `${x}%`);
+      card.style.setProperty('--mouse-y', `${y}%`);
+    };
+  });
 }
 
 function normalizeFeedbackImages(images) {
@@ -514,8 +656,9 @@ function syncPackageOptionsFromLandingContent(items) {
 }
 
 function updatePackageOption(consultationType, packageCode, name, price) {
-  const option = PACKAGE_OPTIONS[consultationType]?.[packageCode];
-  if (!option) return;
+  if (!PACKAGE_OPTIONS[consultationType]) PACKAGE_OPTIONS[consultationType] = {};
+  if (!PACKAGE_OPTIONS[consultationType][packageCode]) PACKAGE_OPTIONS[consultationType][packageCode] = {};
+  const option = PACKAGE_OPTIONS[consultationType][packageCode];
 
   option.price = price;
   option.label = `${name} – ${formatPackagePriceLabel(price)}/buổi`;
@@ -650,14 +793,17 @@ function populatePackageOptions(consultationType, selectedValue = '', openPicker
 
   const currentValue = selectedValue || packageSelect.value;
   const options = getPackageOptions(consultationType);
+  const optionEntries = Object.entries(options);
   packageSelect.innerHTML = '';
 
   const placeholder = document.createElement('option');
   placeholder.value = '';
-  placeholder.textContent = consultationType ? '-- Chọn gói tư vấn --' : '-- Chọn hình thức trước --';
+  placeholder.textContent = consultationType
+    ? (optionEntries.length ? '-- Chọn gói tư vấn --' : '-- Chưa có gói tư vấn --')
+    : '-- Chọn hình thức trước --';
   packageSelect.appendChild(placeholder);
 
-  Object.entries(options).forEach(([value, option]) => {
+  optionEntries.forEach(([value, option]) => {
     const item = document.createElement('option');
     item.value = value;
     item.textContent = option.label;
@@ -665,7 +811,7 @@ function populatePackageOptions(consultationType, selectedValue = '', openPicker
   });
 
   packageSelect.value = options[currentValue] ? currentValue : '';
-  packageSelect.disabled = !consultationType;
+  packageSelect.disabled = !consultationType || optionEntries.length === 0;
 
   if (openPicker && consultationType && typeof packageSelect.showPicker === 'function') {
     packageSelect.focus();

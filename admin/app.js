@@ -11,6 +11,7 @@ const state = {
   search: '',
   savingKeys: new Set(),
   feedbackImages: [],
+  packages: [],
 };
 
 const els = {
@@ -135,6 +136,7 @@ async function loadContent(showNotice = false) {
     state.items = (payload.items || []).map(normalizeItem);
     state.sections = payload.sections || [];
     state.feedbackImages = payload.feedbackImages || [];
+    state.packages = payload.packages || [];
     state.originals = new Map(state.items.map((item) => [item.key, snapshotItem(item)]));
     render();
     if (showNotice) toast('Đã tải lại nội dung mới nhất.');
@@ -198,6 +200,7 @@ function renderSections() {
   const buttons = [
     { name: 'all', label: 'Tất cả', count: state.items.length },
     ...groups.map((group) => ({ name: group.name, label: group.name, count: group.count })),
+    { name: 'packages-manager', label: 'Gói Tư Vấn', count: state.packages ? state.packages.length : 0 },
     { name: 'feedback-images', label: 'Ảnh Feedback', count: state.feedbackImages ? state.feedbackImages.length : 0 }
   ];
 
@@ -228,6 +231,11 @@ function renderHeading() {
     title = 'Quản lý ảnh Feedback';
     count = state.feedbackImages ? state.feedbackImages.length : 0;
     desc = `${count} ảnh đang hiển thị. Ảnh sẽ tự động thêm vào mục "Khách hàng nghĩ gì?" trên trang chủ.`;
+  } else if (state.selectedSection === 'packages-manager') {
+    label = 'Gói tư vấn';
+    title = 'Quản lý gói tư vấn';
+    count = state.packages ? state.packages.length : 0;
+    desc = `${count} gói đang được quản lý. Các gói bật sẽ tự hiển thị trong section "Gói Tư Vấn" và dropdown đặt lịch.`;
   } else {
     label = state.selectedSection === 'all' ? 'Tất cả section' : state.selectedSection;
     count = getFilteredItems().length;
@@ -242,6 +250,10 @@ function renderHeading() {
 function renderCards() {
   if (state.selectedSection === 'feedback-images') {
     renderFeedbackImages();
+    return;
+  }
+  if (state.selectedSection === 'packages-manager') {
+    renderPackagesManager();
     return;
   }
 
@@ -625,6 +637,208 @@ function formatDate(value) {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(date);
+}
+
+// =============================================
+//  Packages Manager
+// =============================================
+function renderPackagesManager() {
+  els.editorGrid.innerHTML = `
+    <form class="content-card package-editor-card" id="package-form" style="grid-column: 1/-1;">
+      <div class="card-top">
+        <div>
+          <div class="content-key">Thêm hoặc sửa gói tư vấn</div>
+          <p class="content-desc">Nhập mã gói không dấu, ví dụ: big3, big7, year, couple-reading. Quyền lợi nhập mỗi dòng một ý.</p>
+        </div>
+      </div>
+      <div class="package-form-grid">
+        <label>Mã gói<input name="code" required placeholder="vd: big3" /></label>
+        <label>Tên gói<input name="name" required placeholder="Tên hiển thị trên card" /></label>
+        <label>Giá online<input name="onlinePrice" required inputmode="numeric" placeholder="500000" /></label>
+        <label>Giá offline<input name="offlinePrice" inputmode="numeric" placeholder="550000" /></label>
+        <label>Đơn vị<input name="unit" value="/buổi" /></label>
+        <label>Icon<input name="icon" placeholder="sparkles, infinity, fingerprint..." /></label>
+        <label>Màu nhấn
+          <select name="accent">
+            <option value="orange">Cam</option>
+            <option value="gold">Vàng</option>
+            <option value="teal">Xanh</option>
+          </select>
+        </label>
+        <label>Thứ tự<input name="sortOrder" inputmode="numeric" placeholder="10" /></label>
+        <label class="toggle package-toggle">
+          <input type="checkbox" name="enabled" checked />
+          <span class="switch"></span>
+          <span>Bật gói</span>
+        </label>
+        <label class="toggle package-toggle">
+          <input type="checkbox" name="featured" />
+          <span class="switch"></span>
+          <span>Gói nổi bật</span>
+        </label>
+        <label>Badge<input name="badge" placeholder="✨ Toàn Diện Nhất ✨" /></label>
+        <label>Nút CTA<input name="buttonText" value="Đặt Lịch Ngay" /></label>
+        <label class="package-features-field">Quyền lợi<textarea name="features" placeholder="Mỗi dòng là một quyền lợi"></textarea></label>
+      </div>
+      <div class="card-actions">
+        <span class="save-state" id="package-form-message"></span>
+        <button type="button" class="ghost-button" id="package-reset-btn"><i class="fa-solid fa-rotate-left"></i><span>Làm mới</span></button>
+        <button type="submit" class="primary-button" id="package-save-btn"><i class="fa-solid fa-floppy-disk"></i><span>Lưu gói</span></button>
+      </div>
+    </form>
+  `;
+
+  const form = document.getElementById('package-form');
+  const resetBtn = document.getElementById('package-reset-btn');
+  form.addEventListener('submit', savePackageFromForm);
+  resetBtn.addEventListener('click', () => fillPackageForm());
+
+  const gallery = document.createElement('div');
+  gallery.className = 'packages-admin-grid';
+  gallery.style.gridColumn = '1 / -1';
+
+  if (state.packages && state.packages.length) {
+    state.packages
+      .slice()
+      .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
+      .forEach((pkg) => gallery.appendChild(createAdminPackageCard(pkg)));
+  } else {
+    gallery.innerHTML = '<p style="grid-column: 1/-1; color: var(--text-dim);">Chưa có gói tư vấn nào.</p>';
+  }
+
+  els.editorGrid.appendChild(gallery);
+  els.emptyState.classList.add('is-hidden');
+}
+
+function createAdminPackageCard(pkg) {
+  const card = document.createElement('article');
+  card.className = 'content-card admin-package-card';
+
+  const title = document.createElement('div');
+  title.className = 'card-top';
+  const info = document.createElement('div');
+  info.innerHTML = '<div class="content-key"></div><p class="content-desc"></p>';
+  info.querySelector('.content-key').textContent = `${pkg.code} · ${pkg.enabled ? 'Đang bật' : 'Đang tắt'}`;
+  info.querySelector('.content-desc').innerHTML = pkg.name || '';
+  const status = document.createElement('span');
+  status.className = 'pill';
+  status.textContent = pkg.featured ? 'Nổi bật' : `Thứ tự ${pkg.sortOrder || ''}`;
+  title.append(info, status);
+
+  const meta = document.createElement('div');
+  meta.className = 'content-meta';
+  [
+    `Online ${formatMoney(pkg.onlinePrice)}`,
+    `Offline ${formatMoney(pkg.offlinePrice)}`,
+    pkg.accent || 'teal',
+  ].forEach((text) => {
+    const pill = document.createElement('span');
+    pill.className = 'pill';
+    pill.textContent = text;
+    meta.appendChild(pill);
+  });
+
+  const features = document.createElement('ul');
+  features.className = 'admin-package-features';
+  (pkg.features || []).slice(0, 5).forEach((feature) => {
+    const item = document.createElement('li');
+    item.innerHTML = feature;
+    features.appendChild(item);
+  });
+
+  const actions = document.createElement('div');
+  actions.className = 'card-actions';
+  const editBtn = document.createElement('button');
+  editBtn.type = 'button';
+  editBtn.className = 'ghost-button';
+  editBtn.innerHTML = '<i class="fa-solid fa-pen"></i><span>Sửa</span>';
+  editBtn.addEventListener('click', () => fillPackageForm(pkg));
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.type = 'button';
+  deleteBtn.className = 'ghost-button';
+  deleteBtn.style.color = 'var(--danger)';
+  deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i><span>Xóa</span>';
+  deleteBtn.addEventListener('click', () => deletePackage(pkg.code));
+  actions.append(editBtn, deleteBtn);
+
+  card.append(title, meta, features, actions);
+  return card;
+}
+
+function fillPackageForm(pkg = {}) {
+  const form = document.getElementById('package-form');
+  if (!form) return;
+  const fields = form.elements;
+  fields.code.value = pkg.code || '';
+  fields.name.value = pkg.name || '';
+  fields.onlinePrice.value = pkg.onlinePrice || '';
+  fields.offlinePrice.value = pkg.offlinePrice || '';
+  fields.unit.value = pkg.unit || '/buổi';
+  fields.icon.value = pkg.icon || 'sparkles';
+  fields.accent.value = pkg.accent || 'teal';
+  fields.sortOrder.value = pkg.sortOrder || '';
+  fields.enabled.checked = pkg.enabled !== false;
+  fields.featured.checked = pkg.featured === true;
+  fields.badge.value = pkg.badge || '';
+  fields.buttonText.value = pkg.buttonText || 'Đặt Lịch Ngay';
+  fields.features.value = Array.isArray(pkg.features) ? pkg.features.join('\n') : '';
+  document.getElementById('package-form-message').textContent = pkg.code ? `Đang sửa gói ${pkg.code}` : '';
+  form.code.focus();
+}
+
+async function savePackageFromForm(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = document.getElementById('package-save-btn');
+  const message = document.getElementById('package-form-message');
+  setBusy(button, true);
+  message.textContent = 'Đang lưu gói...';
+
+  try {
+    const fields = form.elements;
+    const payload = await api('savePackage', {
+      token: state.token,
+      code: fields.code.value,
+      name: fields.name.value,
+      onlinePrice: fields.onlinePrice.value,
+      offlinePrice: fields.offlinePrice.value,
+      unit: fields.unit.value,
+      icon: fields.icon.value,
+      accent: fields.accent.value,
+      sortOrder: fields.sortOrder.value,
+      enabled: fields.enabled.checked ? 'true' : 'false',
+      featured: fields.featured.checked ? 'true' : 'false',
+      badge: fields.badge.value,
+      buttonText: fields.buttonText.value,
+      features: fields.features.value,
+    });
+    state.packages = payload.packages || state.packages;
+    toast('Đã lưu gói tư vấn.');
+    fillPackageForm();
+    render();
+  } catch (error) {
+    message.textContent = error.message;
+    message.style.color = 'var(--danger)';
+  } finally {
+    setBusy(button, false);
+  }
+}
+
+async function deletePackage(code) {
+  if (!confirm(`Xóa gói ${code}?`)) return;
+  try {
+    const payload = await api('deletePackage', { token: state.token, code });
+    state.packages = payload.packages || state.packages;
+    toast('Đã xóa gói tư vấn.');
+    render();
+  } catch (error) {
+    handleSessionError(error);
+  }
+}
+
+function formatMoney(value) {
+  return Number(value || 0).toLocaleString('vi-VN') + 'đ';
 }
 
 // =============================================

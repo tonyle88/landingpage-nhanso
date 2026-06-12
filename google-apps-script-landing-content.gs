@@ -6,7 +6,7 @@
 const SPREADSHEET_ID = '1hxBpzJwNO470xqoHBuaZF26anCGir5pnpQk0iPTxz4k';
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
 const ADMIN_USERS_SHEET_NAME = 'Admin users';
-const SCRIPT_VERSION = '2026-06-12-v14-imgbb-drive-fallback';
+const SCRIPT_VERSION = '2026-06-12-v15-dynamic-packages';
 const ADMIN_DEFAULT_USERNAME = 'admin';
 const ADMIN_DEFAULT_PASSWORD = 'admin123';
 const ADMIN_SESSION_SECONDS = 21600;
@@ -16,6 +16,22 @@ const IMGBB_API_KEY = 'dbbeb2a25359362e9e9df73c5a9adb24';
 const FEEDBACK_IMAGES_SHEET_NAME = 'Feedback images';
 const FEEDBACK_IMAGES_HEADERS = ['Ngày tạo', 'Tên file', 'URL', 'File ID', 'Người upload'];
 const FEEDBACK_DRIVE_FOLDER_NAME = 'ClowCat Landing Feedback Images';
+const PACKAGES_SHEET_NAME = 'Packages';
+const PACKAGES_HEADERS = [
+  'Bật',
+  'Mã gói',
+  'Tên gói',
+  'Giá online',
+  'Giá offline',
+  'Đơn vị',
+  'Icon',
+  'Màu nhấn',
+  'Nổi bật',
+  'Badge',
+  'Quyền lợi',
+  'Nút',
+  'Thứ tự',
+];
 const LANDING_CONTENT_HEADERS = [
   'Bật',
   'Khóa',
@@ -89,6 +105,8 @@ function doPost(e) {
     if (action === 'createAdminUser') return handleCreateAdminUser(params);
     if (action === 'setAdminUserStatus') return handleSetAdminUserStatus(params);
     if (action === 'syncLandingContentTemplate') return handleSyncLandingContentTemplate(params);
+    if (action === 'savePackage') return handleSavePackage(params);
+    if (action === 'deletePackage') return handleDeletePackage(params);
     if (action === 'uploadFeedbackImage') return handleUploadFeedbackImage(params);
     if (action === 'saveFeedbackImage') return handleSaveFeedbackImage(params);
     if (action === 'deleteFeedbackImage') return handleDeleteFeedbackImage(params);
@@ -109,6 +127,8 @@ function handleGetLandingContent() {
     return jsonResponse({
       ok: true,
       items: [],
+      packages: getPackages(false),
+      feedbackImages: getFeedbackImages(),
       message: 'Chua co tab Landing content. Hay chay initializeLandingContentSheet mot lan trong Apps Script.',
       scriptVersion: SCRIPT_VERSION,
     });
@@ -117,7 +137,7 @@ function handleGetLandingContent() {
   ensureLandingContentHeaderRow(sheet);
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
-    return jsonResponse({ ok: true, items: [], scriptVersion: SCRIPT_VERSION });
+    return jsonResponse({ ok: true, items: [], packages: getPackages(false), scriptVersion: SCRIPT_VERSION });
   }
 
   const range = sheet.getRange(2, 1, lastRow - 1, LANDING_CONTENT_HEADERS.length);
@@ -134,6 +154,7 @@ function handleGetLandingContent() {
     items: items,
     count: items.length,
     feedbackImages: getFeedbackImages(),
+    packages: getPackages(false),
     scriptVersion: SCRIPT_VERSION,
   });
 }
@@ -147,6 +168,8 @@ function handleGetAdminContent(params) {
       ok: true,
       items: [],
       sections: [],
+      packages: getPackages(true),
+      feedbackImages: getFeedbackImages(),
       message: 'Chua co tab Landing content. Hay chay initializeLandingContentSheet mot lan.',
       scriptVersion: SCRIPT_VERSION,
     });
@@ -155,7 +178,7 @@ function handleGetAdminContent(params) {
   ensureLandingContentHeaderRow(sheet);
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
-    return jsonResponse({ ok: true, items: [], sections: [], scriptVersion: SCRIPT_VERSION });
+    return jsonResponse({ ok: true, items: [], sections: [], packages: getPackages(true), feedbackImages: getFeedbackImages(), scriptVersion: SCRIPT_VERSION });
   }
 
   const range = sheet.getRange(2, 1, lastRow - 1, LANDING_CONTENT_HEADERS.length);
@@ -190,6 +213,7 @@ function handleGetAdminContent(params) {
     sections: Object.keys(sectionsMap).map((key) => sectionsMap[key]),
     count: items.length,
     feedbackImages: getFeedbackImages(),
+    packages: getPackages(true),
     scriptVersion: SCRIPT_VERSION,
   });
 }
@@ -265,6 +289,7 @@ function handleSaveLandingContentBatch(params) {
 function handleSyncLandingContentTemplate(params) {
   requireAdminSession(params.token);
   const result = syncLandingContentSheet();
+  ensurePackagesSheet();
   return jsonResponse({
     ok: true,
     result: result,
@@ -338,6 +363,7 @@ function writeLandingContentTemplate(resetSheet) {
   if (resetSheet || sheet.getLastRow() < 2) {
     sheet.getRange(2, 1, rows.length, LANDING_CONTENT_HEADERS.length).setValues(rows);
     sheet.autoResizeColumns(1, LANDING_CONTENT_HEADERS.length);
+    ensurePackagesSheet();
     return { ok: true, mode: resetSheet ? 'initialized' : 'filled-empty-sheet', rows: rows.length };
   }
 
@@ -368,6 +394,7 @@ function writeLandingContentTemplate(resetSheet) {
   }
 
   sheet.autoResizeColumns(1, LANDING_CONTENT_HEADERS.length);
+  ensurePackagesSheet();
   return { ok: true, mode: 'synced', added: rowsToAppend.length, totalTemplateRows: rows.length };
 }
 
@@ -905,10 +932,228 @@ function cleanValue(value) {
   return String(value || '').trim();
 }
 
+function parsePriceNumber(value) {
+  const digits = String(value || '').replace(/[^\d]/g, '');
+  return digits ? parseInt(digits, 10) : 0;
+}
+
 function jsonResponse(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// =============================================
+//  Packages – quản lý gói tư vấn động
+// =============================================
+function defaultPackageRows() {
+  return [
+    [
+      true,
+      'year',
+      'Dự Đoán Năm Cá Nhân',
+      500000,
+      550000,
+      '/buổi',
+      'hourglass-half',
+      'orange',
+      false,
+      '',
+      [
+        'Dự đoán xu hướng năm cá nhân',
+        'Nhận diện cơ hội & thách thức',
+        'Định hướng theo chu kỳ số',
+        'Gợi ý hành động phù hợp năm',
+      ].join('\n'),
+      'Đặt Lịch Ngay',
+      10,
+    ],
+    [
+      true,
+      'big7',
+      'Phân Tích Toàn Diện',
+      2000000,
+      2000000,
+      '/buổi',
+      'infinity',
+      'gold',
+      true,
+      '✨ Toàn Diện Nhất ✨',
+      [
+        '<strong>7 chỉ số cốt lõi</strong>: chủ đạo · linh hồn · sứ mệnh · nhân cách · thái độ · trưởng thành · nợ nghiệp',
+        '<strong>4 đỉnh cao</strong> trong cuộc đời',
+        '<strong>3 chu kỳ</strong> cuộc đời lớn',
+        'Sơ đồ mũi tên phẩm chất',
+        'Thông điệp chữa lành chuyên sâu',
+        'Tặng file PDF tóm tắt đầy đủ',
+      ].join('\n'),
+      'Đặt Lịch Ngay',
+      20,
+    ],
+    [
+      true,
+      'big3',
+      'Phân Tích 3 Chỉ Số<br/>Tính Cách Nổi Bật',
+      1000000,
+      1050000,
+      '/buổi',
+      'fingerprint',
+      'teal',
+      false,
+      '',
+      [
+        'Phân tích <strong>BIG 3</strong>: chủ đạo · linh hồn · sứ mệnh',
+        '<strong>4 đỉnh cao</strong> trong cuộc đời',
+        '<strong>3 chu kỳ</strong> cuộc đời lớn',
+        'Định hướng học tập, công việc & quan hệ',
+        'Thông điệp chữa lành & lộ trình cá nhân',
+      ].join('\n'),
+      'Đặt Lịch Ngay',
+      30,
+    ],
+  ];
+}
+
+function ensurePackagesSheet() {
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  let sheet = spreadsheet.getSheetByName(PACKAGES_SHEET_NAME);
+  if (!sheet) sheet = spreadsheet.insertSheet(PACKAGES_SHEET_NAME);
+
+  sheet.getRange(1, 1, 1, PACKAGES_HEADERS.length).setValues([PACKAGES_HEADERS]);
+  sheet.setFrozenRows(1);
+
+  if (sheet.getLastRow() < 2) {
+    const rows = defaultPackageRows();
+    sheet.getRange(2, 1, rows.length, PACKAGES_HEADERS.length).setValues(rows);
+  }
+  sheet.autoResizeColumns(1, PACKAGES_HEADERS.length);
+  return sheet;
+}
+
+function getPackageHeaderIndexes() {
+  const indexes = {};
+  PACKAGES_HEADERS.forEach((header, index) => {
+    indexes[header] = index;
+  });
+  return indexes;
+}
+
+function getPackages(includeDisabled) {
+  const sheet = ensurePackagesSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const indexes = getPackageHeaderIndexes();
+  const values = sheet.getRange(2, 1, lastRow - 1, PACKAGES_HEADERS.length).getValues();
+  return values
+    .map((row, index) => packageRowToObject(row, indexes, index + 2))
+    .filter((pkg) => pkg.code && (includeDisabled || pkg.enabled))
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.rowNumber - b.rowNumber);
+}
+
+function packageRowToObject(row, indexes, rowNumber) {
+  const onlinePrice = parsePriceNumber(row[indexes['Giá online']]);
+  const offlinePrice = parsePriceNumber(row[indexes['Giá offline']]) || onlinePrice;
+  return {
+    enabled: isTruthy(row[indexes['Bật']]),
+    code: cleanPackageCode(row[indexes['Mã gói']]),
+    name: cleanValue(row[indexes['Tên gói']]),
+    onlinePrice: onlinePrice,
+    offlinePrice: offlinePrice,
+    unit: cleanValue(row[indexes['Đơn vị']]) || '/buổi',
+    icon: cleanValue(row[indexes['Icon']]) || 'sparkles',
+    accent: cleanValue(row[indexes['Màu nhấn']]) || 'teal',
+    featured: isTruthy(row[indexes['Nổi bật']]),
+    badge: cleanValue(row[indexes['Badge']]),
+    features: splitPackageFeatures(row[indexes['Quyền lợi']]),
+    buttonText: cleanValue(row[indexes['Nút']]) || 'Đặt Lịch Ngay',
+    sortOrder: Number(row[indexes['Thứ tự']]) || rowNumber,
+    rowNumber: rowNumber,
+  };
+}
+
+function splitPackageFeatures(value) {
+  return String(value || '')
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function cleanPackageCode(value) {
+  return cleanValue(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function findPackageRowNumberByCode(sheet, code) {
+  const targetCode = cleanPackageCode(code);
+  if (!targetCode || sheet.getLastRow() < 2) return 0;
+
+  const codeColumn = getPackageHeaderIndexes()['Mã gói'] + 1;
+  const values = sheet.getRange(2, codeColumn, sheet.getLastRow() - 1, 1).getValues();
+  for (let i = 0; i < values.length; i++) {
+    if (cleanPackageCode(values[i][0]) === targetCode) return i + 2;
+  }
+  return 0;
+}
+
+function handleSavePackage(params) {
+  requireAdminSession(params.token);
+  const code = cleanPackageCode(params.code);
+  const name = cleanValue(params.name);
+  const onlinePrice = parsePriceNumber(params.onlinePrice);
+  const offlinePrice = parsePriceNumber(params.offlinePrice) || onlinePrice;
+  if (!code) throw new Error('Thieu ma goi.');
+  if (!name) throw new Error('Thieu ten goi.');
+  if (!onlinePrice) throw new Error('Gia online phai lon hon 0.');
+
+  const sheet = ensurePackagesSheet();
+  const rowNumber = findPackageRowNumberByCode(sheet, code) || sheet.getLastRow() + 1;
+  const row = [
+    isTruthy(params.enabled),
+    code,
+    name,
+    onlinePrice,
+    offlinePrice,
+    cleanValue(params.unit) || '/buổi',
+    cleanValue(params.icon) || 'sparkles',
+    cleanValue(params.accent) || 'teal',
+    isTruthy(params.featured),
+    cleanValue(params.badge),
+    String(params.features || '').trim(),
+    cleanValue(params.buttonText) || 'Đặt Lịch Ngay',
+    Number(params.sortOrder) || rowNumber,
+  ];
+
+  sheet.getRange(rowNumber, 1, 1, PACKAGES_HEADERS.length).setValues([row]);
+  sheet.autoResizeColumns(1, PACKAGES_HEADERS.length);
+
+  return jsonResponse({
+    ok: true,
+    message: 'Da luu goi tu van',
+    packages: getPackages(true),
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function handleDeletePackage(params) {
+  requireAdminSession(params.token);
+  const code = cleanPackageCode(params.code);
+  if (!code) throw new Error('Thieu ma goi can xoa.');
+
+  const sheet = ensurePackagesSheet();
+  const rowNumber = findPackageRowNumberByCode(sheet, code);
+  if (!rowNumber) throw new Error('Khong tim thay goi: ' + code);
+  sheet.deleteRow(rowNumber);
+
+  return jsonResponse({
+    ok: true,
+    message: 'Da xoa goi tu van',
+    packages: getPackages(true),
+    scriptVersion: SCRIPT_VERSION,
+  });
 }
 
 // =============================================

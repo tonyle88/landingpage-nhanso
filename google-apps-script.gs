@@ -15,6 +15,7 @@
 const SPREADSHEET_ID = '1hxBpzJwNO470xqoHBuaZF26anCGir5pnpQk0iPTxz4k';
 const SHEET_NAME     = 'Dang ky tu van';
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
+const PACKAGES_SHEET_NAME = 'Packages';
 const CALENDAR_ID    = 'primary'; // Dùng Google Calendar chính của bạn (hoặc thay bằng ID lịch riêng)
 const OWNER_EMAIL    = 'PASTE_YOUR_GMAIL_HERE'; // Gmail nhận thông báo (để trống sẽ dùng Gmail triển khai script)
 const EMAIL_SENDER_NAME = 'Tony Le – Nhân Số Học';
@@ -55,9 +56,16 @@ const PACKAGE_OPTIONS = {
   },
 };
 
+const PACKAGE_CONTENT_KEYS = {
+  year: { name: 'packages.year_name', price: 'packages.year_price' },
+  big3: { name: 'packages.big3_name', price: 'packages.big3_price' },
+  big7: { name: 'packages.big7_name', price: 'packages.big7_price' },
+};
+
 const OFFLINE_TRAVEL_FEE = 50000;
 const PRICE_NUMBER_FORMAT = '#,##0';
-const SCRIPT_VERSION = '2026-06-11-v8-content-config';
+const SCRIPT_VERSION = '2026-06-12-v9-dynamic-payment-packages';
+let LANDING_CONTENT_VALUE_CACHE = null;
 const LANDING_CONTENT_HEADERS = [
   'Bật',
   'Khóa',
@@ -467,7 +475,7 @@ function createCalendarEvent(params, booking) {
     eventDescLines.push(`Phụ phí xăng xe: ${formatPrice(OFFLINE_TRAVEL_FEE)} (đã tính trong giá gói offline)`);
     eventDescLines.push('Địa điểm offline sẽ được thông báo qua Zalo trước buổi tư vấn.');
   } else if (booking.isOffline) {
-    eventDescLines.push('Phụ phí xăng xe: Không áp dụng cho gói Phân Tích Toàn Diện.');
+    eventDescLines.push('Phụ phí xăng xe: Không áp dụng cho gói này.');
     eventDescLines.push('Địa điểm offline sẽ được thông báo qua Zalo trước buổi tư vấn.');
   }
   eventDescLines.push(`Lời nhắn: ${booking.concern}`);
@@ -514,7 +522,7 @@ function sendConfirmationEmail(p) {
     ? [
       hasOfflineTravelFee
         ? '<p style="margin:0 0 8px;color:#e8a878;">&#128663; <strong>Phụ phí xăng xe:</strong> Giá gói offline đã bao gồm phụ phí di chuyển ' + formatPrice(OFFLINE_TRAVEL_FEE) + '.</p>'
-        : '<p style="margin:0 0 8px;color:#e8a878;">&#128663; <strong>Phụ phí xăng xe:</strong> Không áp dụng cho gói Phân Tích Toàn Diện.</p>',
+        : '<p style="margin:0 0 8px;color:#e8a878;">&#128663; <strong>Phụ phí xăng xe:</strong> Không áp dụng cho gói này.</p>',
       '<p style="margin:0;color:#e8a878;">&#128205; <strong>Địa điểm:</strong> Địa điểm cụ thể sẽ được thông báo qua Zalo trước buổi tư vấn.</p>',
     ].join('')
     : '';
@@ -1116,10 +1124,151 @@ function normalizeConsultationType(value) {
   return '';
 }
 
+function getPackageOption(consultationType, packageCode) {
+  const packageFromSheet = getPackageBaseFromPackagesSheet(packageCode);
+  if (packageFromSheet) {
+    const price = consultationType === 'offline'
+      ? packageFromSheet.offlinePrice || packageFromSheet.onlinePrice
+      : packageFromSheet.onlinePrice;
+    return {
+      label: packageFromSheet.name + ' – ' + formatPackagePriceLabel(price) + (packageFromSheet.unit || '/buổi'),
+      price: price,
+      onlinePrice: packageFromSheet.onlinePrice,
+      offlinePrice: packageFromSheet.offlinePrice,
+    };
+  }
+
+  const packageBase = getPackageBaseFromLandingContent(packageCode);
+  if (packageBase) {
+    const price = consultationType === 'offline' && packageCode !== 'big7'
+      ? packageBase.price + OFFLINE_TRAVEL_FEE
+      : packageBase.price;
+
+    return {
+      label: packageBase.name + ' – ' + formatPackagePriceLabel(price) + '/buổi',
+      price: price,
+    };
+  }
+
+  return PACKAGE_OPTIONS[consultationType] && PACKAGE_OPTIONS[consultationType][packageCode];
+}
+
+function getPackageBaseFromPackagesSheet(packageCode) {
+  const targetCode = cleanPackageCode(packageCode);
+  if (!targetCode) return null;
+
+  try {
+    const spreadsheet = getSpreadsheetByIdOrActive();
+    const sheet = spreadsheet.getSheetByName(PACKAGES_SHEET_NAME);
+    if (!sheet || sheet.getLastRow() < 2) return null;
+
+    const values = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn()).getDisplayValues();
+    const headers = values[0];
+    const enabledCol = headers.indexOf('Bật');
+    const codeCol = headers.indexOf('Mã gói');
+    const nameCol = headers.indexOf('Tên gói');
+    const onlinePriceCol = headers.indexOf('Giá online');
+    const offlinePriceCol = headers.indexOf('Giá offline');
+    const unitCol = headers.indexOf('Đơn vị');
+    if (enabledCol < 0 || codeCol < 0 || nameCol < 0 || onlinePriceCol < 0) return null;
+
+    for (let i = 1; i < values.length; i++) {
+      const row = values[i];
+      const enabled = row[enabledCol] === true || String(row[enabledCol]).toUpperCase() === 'TRUE' || String(row[enabledCol]).trim() === '1';
+      if (!enabled || cleanPackageCode(row[codeCol]) !== targetCode) continue;
+      const name = stripHtmlToText(row[nameCol]);
+      const onlinePrice = parsePriceNumber(row[onlinePriceCol]);
+      const offlinePrice = parsePriceNumber(row[offlinePriceCol]) || onlinePrice;
+      if (!name || !onlinePrice) return null;
+      return {
+        name: name,
+        onlinePrice: onlinePrice,
+        offlinePrice: offlinePrice,
+        unit: cleanValue(row[unitCol]) || '/buổi',
+      };
+    }
+  } catch (error) {
+    console.warn('Khong doc duoc Sheet Packages, dung cau hinh goi cu:', error);
+  }
+
+  return null;
+}
+
+function cleanPackageCode(value) {
+  return cleanValue(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function getPackageBaseFromLandingContent(packageCode) {
+  const keys = PACKAGE_CONTENT_KEYS[packageCode];
+  if (!keys) return null;
+
+  const values = getLandingContentValues();
+  const name = stripHtmlToText(values[keys.name]);
+  const price = parsePriceFromContent(values[keys.price]);
+  if (!name || !price) return null;
+
+  return { name: name, price: price };
+}
+
+function getLandingContentValues() {
+  if (LANDING_CONTENT_VALUE_CACHE) return LANDING_CONTENT_VALUE_CACHE;
+
+  const valuesByKey = {};
+  try {
+    const spreadsheet = getSpreadsheetByIdOrActive();
+    const sheet = spreadsheet.getSheetByName(LANDING_CONTENT_SHEET_NAME);
+    if (!sheet || sheet.getLastRow() < 2) {
+      LANDING_CONTENT_VALUE_CACHE = valuesByKey;
+      return valuesByKey;
+    }
+
+    const values = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn()).getDisplayValues();
+    const headers = values[0];
+    const enabledCol = headers.indexOf('Bật');
+    const keyCol = headers.indexOf('Khóa');
+    const valueCol = headers.indexOf('Nội dung');
+    if (enabledCol < 0 || keyCol < 0 || valueCol < 0) {
+      LANDING_CONTENT_VALUE_CACHE = valuesByKey;
+      return valuesByKey;
+    }
+
+    values.slice(1).forEach((row) => {
+      const enabled = row[enabledCol] === true || String(row[enabledCol]).toUpperCase() === 'TRUE' || String(row[enabledCol]).trim() === '1';
+      const key = cleanValue(row[keyCol]);
+      if (enabled && key) valuesByKey[key] = row[valueCol];
+    });
+  } catch (error) {
+    console.warn('Khong doc duoc Sheet noi dung de lay gia, dung gia mac dinh:', error);
+  }
+
+  LANDING_CONTENT_VALUE_CACHE = valuesByKey;
+  return valuesByKey;
+}
+
+function parsePriceFromContent(value) {
+  const digits = stripHtmlToText(value).replace(/[^\d]/g, '');
+  return digits ? parseInt(digits, 10) : 0;
+}
+
+function stripHtmlToText(value) {
+  return String(value || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function formatPackagePriceLabel(price) {
+  return Number(price || 0).toLocaleString('vi-VN') + ' vnđ';
+}
+
 function resolveBookingDetails(params) {
   const consultationType = normalizeConsultationType(params.consultationType || params.consultationTypeLabel);
   const packageCode = cleanValue(params.package);
-  const packageOption = PACKAGE_OPTIONS[consultationType] && PACKAGE_OPTIONS[consultationType][packageCode];
+  const packageOption = getPackageOption(consultationType, packageCode);
 
   const packageLabel = packageOption
     ? packageOption.label
@@ -1142,14 +1291,18 @@ function resolveBookingDetails(params) {
     packagePrice: packagePrice,
     transferContent: transferContent,
     isOffline: consultationType === 'offline',
-    hasOfflineTravelFee: consultationType === 'offline' && packageCode !== 'big7',
+    hasOfflineTravelFee: consultationType === 'offline'
+      && packageOption
+      && packageOption.offlinePrice
+      && packageOption.onlinePrice
+      && packageOption.offlinePrice > packageOption.onlinePrice,
   };
 }
 
 function getOfflineNoteText(booking) {
   return booking.hasOfflineTravelFee
     ? 'Phụ phí xăng xe: ' + formatPrice(OFFLINE_TRAVEL_FEE) + ' (đã tính trong giá gói offline)'
-    : 'Phụ phí xăng xe: Không áp dụng cho gói Phân Tích Toàn Diện';
+    : 'Phụ phí xăng xe: Không áp dụng cho gói này';
 }
 
 function fixOfflineBig7PricingRows() {
@@ -1178,8 +1331,9 @@ function fixOfflineBig7PricingRows() {
     const isBig7 = code === 'big7' || packageName.indexOf('toàn diện') !== -1 || packageName.indexOf('toan dien') !== -1;
 
     if (type === 'offline' && isBig7) {
-      sheet.getRange(rowNumber, packageCol).setValue(PACKAGE_OPTIONS.offline.big7.label);
-      sheet.getRange(rowNumber, priceCol).setValue(PACKAGE_OPTIONS.offline.big7.price);
+      const big7Option = getPackageOption('offline', 'big7') || PACKAGE_OPTIONS.offline.big7;
+      sheet.getRange(rowNumber, packageCol).setValue(big7Option.label);
+      sheet.getRange(rowNumber, priceCol).setValue(big7Option.price);
       sheet.getRange(rowNumber, priceCol).setNumberFormat(PRICE_NUMBER_FORMAT);
       updated += 1;
     }
@@ -1214,7 +1368,7 @@ function fixOfflineBig7CalendarEvents() {
       .replace(/2[.,]050[.,]000\s*vnđ\/buổi/g, '2.000.000 vnđ/buổi')
       .replace(/2[.,]050[.,]000đ/g, '2.000.000đ')
       .replace(/Số tiền:\s*2[.,]050[.,]000đ/g, 'Số tiền: 2.000.000đ')
-      .replace(/Phụ phí xăng xe: 50[.,]000đ \(đã tính trong giá gói offline\)/g, 'Phụ phí xăng xe: Không áp dụng cho gói Phân Tích Toàn Diện');
+      .replace(/Phụ phí xăng xe: 50[.,]000đ \(đã tính trong giá gói offline\)/g, 'Phụ phí xăng xe: Không áp dụng cho gói này');
 
     ev.setTitle(newTitle);
     ev.setDescription(newDesc);

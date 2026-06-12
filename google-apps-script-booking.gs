@@ -10,6 +10,7 @@ const SPREADSHEET_ID = '1KO6b5v9WPbYg2cJv25EM-ZN-tyjXfYJF3ZK7iKB3Bkc';
 const SHEET_NAME     = 'Dang ky tu van';
 const LANDING_CONTENT_SPREADSHEET_ID = '1hxBpzJwNO470xqoHBuaZF26anCGir5pnpQk0iPTxz4k';
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
+const PACKAGES_SHEET_NAME = 'Packages';
 const CALENDAR_ID    = '80668f888da8f3c3ffadd0d0e0e6b49bfba8734a6f0514c8c9143c1127200d04@group.calendar.google.com';
 const OWNER_EMAIL    = 'cuongck3@gmail.com';
 const EMAIL_SENDER_NAME = 'Tony Le – Nhân Số Học';
@@ -58,7 +59,7 @@ const PACKAGE_CONTENT_KEYS = {
 
 const OFFLINE_TRAVEL_FEE = 50000;
 const PRICE_NUMBER_FORMAT = '#,##0';
-const SCRIPT_VERSION = '2026-06-11-v10-booking-pricing-from-content-sheet';
+const SCRIPT_VERSION = '2026-06-12-v11-booking-dynamic-packages';
 let LANDING_CONTENT_VALUE_CACHE = null;
 // =============================================
 //  doGet – Trả về danh sách slot đã đặt (30 ngày tới)
@@ -450,7 +451,7 @@ function createCalendarEvent(params, booking) {
     eventDescLines.push(`Phụ phí xăng xe: ${formatPrice(OFFLINE_TRAVEL_FEE)} (đã tính trong giá gói offline)`);
     eventDescLines.push('Địa điểm offline sẽ được thông báo qua Zalo trước buổi tư vấn.');
   } else if (booking.isOffline) {
-    eventDescLines.push('Phụ phí xăng xe: Không áp dụng cho gói Phân Tích Toàn Diện.');
+    eventDescLines.push('Phụ phí xăng xe: Không áp dụng cho gói này.');
     eventDescLines.push('Địa điểm offline sẽ được thông báo qua Zalo trước buổi tư vấn.');
   }
   eventDescLines.push(`Lời nhắn: ${booking.concern}`);
@@ -497,7 +498,7 @@ function sendConfirmationEmail(p) {
     ? [
       hasOfflineTravelFee
         ? '<p style="margin:0 0 8px;color:#e8a878;">&#128663; <strong>Phụ phí xăng xe:</strong> Giá gói offline đã bao gồm phụ phí di chuyển ' + formatPrice(OFFLINE_TRAVEL_FEE) + '.</p>'
-        : '<p style="margin:0 0 8px;color:#e8a878;">&#128663; <strong>Phụ phí xăng xe:</strong> Không áp dụng cho gói Phân Tích Toàn Diện.</p>',
+        : '<p style="margin:0 0 8px;color:#e8a878;">&#128663; <strong>Phụ phí xăng xe:</strong> Không áp dụng cho gói này.</p>',
       '<p style="margin:0;color:#e8a878;">&#128205; <strong>Địa điểm:</strong> Địa điểm cụ thể sẽ được thông báo qua Zalo trước buổi tư vấn.</p>',
     ].join('')
     : '';
@@ -828,6 +829,19 @@ function normalizeConsultationType(value) {
 }
 
 function getPackageOption(consultationType, packageCode) {
+  const packageFromSheet = getPackageBaseFromPackagesSheet(packageCode);
+  if (packageFromSheet) {
+    const price = consultationType === 'offline'
+      ? packageFromSheet.offlinePrice || packageFromSheet.onlinePrice
+      : packageFromSheet.onlinePrice;
+    return {
+      label: packageFromSheet.name + ' – ' + formatPackagePriceLabel(price) + (packageFromSheet.unit || '/buổi'),
+      price: price,
+      onlinePrice: packageFromSheet.onlinePrice,
+      offlinePrice: packageFromSheet.offlinePrice,
+    };
+  }
+
   const packageBase = getPackageBaseFromLandingContent(packageCode);
   if (packageBase) {
     const price = consultationType === 'offline' && packageCode !== 'big7'
@@ -841,6 +855,55 @@ function getPackageOption(consultationType, packageCode) {
   }
 
   return PACKAGE_OPTIONS[consultationType] && PACKAGE_OPTIONS[consultationType][packageCode];
+}
+
+function getPackageBaseFromPackagesSheet(packageCode) {
+  const targetCode = cleanPackageCode(packageCode);
+  if (!targetCode) return null;
+
+  try {
+    const spreadsheet = SpreadsheetApp.openById(LANDING_CONTENT_SPREADSHEET_ID);
+    const sheet = spreadsheet.getSheetByName(PACKAGES_SHEET_NAME);
+    if (!sheet || sheet.getLastRow() < 2) return null;
+
+    const values = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn()).getDisplayValues();
+    const headers = values[0];
+    const enabledCol = headers.indexOf('Bật');
+    const codeCol = headers.indexOf('Mã gói');
+    const nameCol = headers.indexOf('Tên gói');
+    const onlinePriceCol = headers.indexOf('Giá online');
+    const offlinePriceCol = headers.indexOf('Giá offline');
+    const unitCol = headers.indexOf('Đơn vị');
+    if (enabledCol < 0 || codeCol < 0 || nameCol < 0 || onlinePriceCol < 0) return null;
+
+    for (let i = 1; i < values.length; i++) {
+      const row = values[i];
+      const enabled = row[enabledCol] === true || String(row[enabledCol]).toUpperCase() === 'TRUE' || String(row[enabledCol]).trim() === '1';
+      if (!enabled || cleanPackageCode(row[codeCol]) !== targetCode) continue;
+      const name = stripHtmlToText(row[nameCol]);
+      const onlinePrice = parsePriceNumber(row[onlinePriceCol]);
+      const offlinePrice = parsePriceNumber(row[offlinePriceCol]) || onlinePrice;
+      if (!name || !onlinePrice) return null;
+      return {
+        name: name,
+        onlinePrice: onlinePrice,
+        offlinePrice: offlinePrice,
+        unit: cleanValue(row[unitCol]) || '/buổi',
+      };
+    }
+  } catch (error) {
+    console.warn('Khong doc duoc Sheet Packages, dung cau hinh goi cu:', error);
+  }
+
+  return null;
+}
+
+function cleanPackageCode(value) {
+  return cleanValue(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 function getPackageBaseFromLandingContent(packageCode) {
@@ -932,14 +995,18 @@ function resolveBookingDetails(params) {
     packagePrice: packagePrice,
     transferContent: transferContent,
     isOffline: consultationType === 'offline',
-    hasOfflineTravelFee: consultationType === 'offline' && packageCode !== 'big7',
+    hasOfflineTravelFee: consultationType === 'offline'
+      && packageOption
+      && packageOption.offlinePrice
+      && packageOption.onlinePrice
+      && packageOption.offlinePrice > packageOption.onlinePrice,
   };
 }
 
 function getOfflineNoteText(booking) {
   return booking.hasOfflineTravelFee
     ? 'Phụ phí xăng xe: ' + formatPrice(OFFLINE_TRAVEL_FEE) + ' (đã tính trong giá gói offline)'
-    : 'Phụ phí xăng xe: Không áp dụng cho gói Phân Tích Toàn Diện';
+    : 'Phụ phí xăng xe: Không áp dụng cho gói này';
 }
 
 function fixOfflineBig7PricingRows() {
@@ -1005,7 +1072,7 @@ function fixOfflineBig7CalendarEvents() {
       .replace(/2[.,]050[.,]000\s*vnđ\/buổi/g, '2.000.000 vnđ/buổi')
       .replace(/2[.,]050[.,]000đ/g, '2.000.000đ')
       .replace(/Số tiền:\s*2[.,]050[.,]000đ/g, 'Số tiền: 2.000.000đ')
-      .replace(/Phụ phí xăng xe: 50[.,]000đ \(đã tính trong giá gói offline\)/g, 'Phụ phí xăng xe: Không áp dụng cho gói Phân Tích Toàn Diện');
+      .replace(/Phụ phí xăng xe: 50[.,]000đ \(đã tính trong giá gói offline\)/g, 'Phụ phí xăng xe: Không áp dụng cho gói này');
 
     ev.setTitle(newTitle);
     ev.setDescription(newDesc);
