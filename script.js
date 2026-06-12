@@ -108,85 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
     revealObserver.observe(el);
   });
 
-  // ===== TESTIMONIALS CAROUSEL =====
-  const testimonialsTrack = document.getElementById('testimonials-track');
-  if (testimonialsTrack) {
-    const testimonialCards = Array.from(testimonialsTrack.querySelectorAll('.testimonial-card'));
-    const prevTestimonialBtn = document.querySelector('.testimonial-nav-prev');
-    const nextTestimonialBtn = document.querySelector('.testimonial-nav-next');
-    const testimonialDots = document.getElementById('testimonials-dots');
-    let activeTestimonialIndex = 0;
-    let testimonialScrollTimer;
-
-    const setActiveTestimonial = (index) => {
-      activeTestimonialIndex = (index + testimonialCards.length) % testimonialCards.length;
-      testimonialCards.forEach((card, cardIndex) => {
-        card.classList.toggle('is-active', cardIndex === activeTestimonialIndex);
-      });
-      testimonialDots?.querySelectorAll('.testimonial-dot').forEach((dot, dotIndex) => {
-        dot.classList.toggle('is-active', dotIndex === activeTestimonialIndex);
-        dot.setAttribute('aria-current', dotIndex === activeTestimonialIndex ? 'true' : 'false');
-      });
-    };
-
-    const centerTestimonial = (index, behavior = 'smooth') => {
-      const card = testimonialCards[index];
-      if (!card) return;
-      const trackRect = testimonialsTrack.getBoundingClientRect();
-      const cardRect = card.getBoundingClientRect();
-      const left = testimonialsTrack.scrollLeft
-        + cardRect.left
-        - trackRect.left
-        - (trackRect.width - cardRect.width) / 2;
-      testimonialsTrack.scrollTo({ left, behavior });
-      setActiveTestimonial(index);
-    };
-
-    const updateActiveFromScroll = () => {
-      const trackRect = testimonialsTrack.getBoundingClientRect();
-      const trackCenter = trackRect.left + trackRect.width / 2;
-      let nearestIndex = activeTestimonialIndex;
-      let nearestDistance = Infinity;
-
-      testimonialCards.forEach((card, index) => {
-        const cardRect = card.getBoundingClientRect();
-        const cardCenter = cardRect.left + cardRect.width / 2;
-        const distance = Math.abs(cardCenter - trackCenter);
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
-          nearestIndex = index;
-        }
-      });
-
-      setActiveTestimonial(nearestIndex);
-    };
-
-    testimonialCards.forEach((_, index) => {
-      const dot = document.createElement('button');
-      dot.type = 'button';
-      dot.className = 'testimonial-dot';
-      dot.setAttribute('aria-label', `Xem feedback ${index + 1}`);
-      dot.addEventListener('click', () => centerTestimonial(index));
-      testimonialDots?.appendChild(dot);
-    });
-
-    prevTestimonialBtn?.addEventListener('click', () => {
-      centerTestimonial(activeTestimonialIndex - 1);
-    });
-
-    nextTestimonialBtn?.addEventListener('click', () => {
-      centerTestimonial(activeTestimonialIndex + 1);
-    });
-
-    testimonialsTrack.addEventListener('scroll', () => {
-      window.clearTimeout(testimonialScrollTimer);
-      testimonialScrollTimer = window.setTimeout(updateActiveFromScroll, 90);
-    }, { passive: true });
-
-    setActiveTestimonial(0);
-    window.requestAnimationFrame(() => centerTestimonial(0, 'auto'));
-  }
-
   // ===== ACTIVE NAV LINK =====
   const sections = document.querySelectorAll('section[id]');
   const navLinkEls = document.querySelectorAll('.nav-link:not(.nav-cta)');
@@ -329,7 +250,7 @@ async function loadLandingContentFromSheet() {
 
     const payload = await response.json();
     if (!payload.ok || !Array.isArray(payload.items)) return;
-    applyLandingContentItems(payload.items);
+    applyLandingContent(payload);
   } catch (error) {
     console.warn('Không tải được nội dung từ Google Sheet, dùng nội dung dự phòng trong HTML.', error);
   } finally {
@@ -344,10 +265,131 @@ function finishLandingContentLoading() {
   });
 }
 
-function applyLandingContentItems(items) {
-  items.forEach(applyLandingContentItem);
+function applyLandingContent(payload) {
+  payload.items.forEach(applyLandingContentItem);
   syncHeroConsultationBadge();
-  syncPackageOptionsFromLandingContent(items);
+  syncPackageOptionsFromLandingContent(payload.items);
+  
+  if (payload.feedbackImages && payload.feedbackImages.length > 0) {
+    renderTestimonials(payload.feedbackImages);
+  }
+}
+
+function renderTestimonials(images) {
+  const track = document.getElementById('testimonials-track');
+  if (!track) return;
+  
+  track.innerHTML = '';
+  
+  images.forEach((img, index) => {
+    const card = document.createElement('figure');
+    card.className = 'testimonial-card' + (index === 0 ? ' is-active' : '');
+    
+    const wrap = document.createElement('div');
+    wrap.className = 'testimonial-image-wrap';
+    
+    const imgEl = document.createElement('img');
+    imgEl.src = img.url;
+    imgEl.alt = 'Cảm nhận của khách hàng ' + (index + 1);
+    imgEl.loading = 'lazy';
+    
+    wrap.appendChild(imgEl);
+    card.appendChild(wrap);
+    track.appendChild(card);
+  });
+  
+  initTestimonialsCarousel();
+}
+
+let testimonialListenersAdded = false;
+
+function initTestimonialsCarousel() {
+  const testimonialsTrack = document.getElementById('testimonials-track');
+  if (!testimonialsTrack) return;
+  
+  const testimonialCards = Array.from(testimonialsTrack.querySelectorAll('.testimonial-card'));
+  if (testimonialCards.length === 0) return;
+  
+  const prevTestimonialBtn = document.querySelector('.testimonial-nav-prev');
+  const nextTestimonialBtn = document.querySelector('.testimonial-nav-next');
+  const testimonialDots = document.getElementById('testimonials-dots');
+  
+  if (testimonialDots) testimonialDots.innerHTML = '';
+  
+  let activeTestimonialIndex = 0;
+  let testimonialScrollTimer;
+
+  const setActiveTestimonial = (index) => {
+    activeTestimonialIndex = (index + testimonialCards.length) % testimonialCards.length;
+    testimonialCards.forEach((card, cardIndex) => {
+      card.classList.toggle('is-active', cardIndex === activeTestimonialIndex);
+    });
+    testimonialDots?.querySelectorAll('.testimonial-dot').forEach((dot, dotIndex) => {
+      dot.classList.toggle('is-active', dotIndex === activeTestimonialIndex);
+      dot.setAttribute('aria-current', dotIndex === activeTestimonialIndex ? 'true' : 'false');
+    });
+  };
+
+  const centerTestimonial = (index, behavior = 'smooth') => {
+    const card = testimonialCards[index];
+    if (!card) return;
+    const trackRect = testimonialsTrack.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    const left = testimonialsTrack.scrollLeft
+      + cardRect.left
+      - trackRect.left
+      - (trackRect.width - cardRect.width) / 2;
+    testimonialsTrack.scrollTo({ left, behavior });
+    setActiveTestimonial(index);
+  };
+
+  const updateActiveFromScroll = () => {
+    const trackRect = testimonialsTrack.getBoundingClientRect();
+    const trackCenter = trackRect.left + trackRect.width / 2;
+    let nearestIndex = activeTestimonialIndex;
+    let nearestDistance = Infinity;
+
+    testimonialCards.forEach((card, index) => {
+      const cardRect = card.getBoundingClientRect();
+      const cardCenter = cardRect.left + cardRect.width / 2;
+      const distance = Math.abs(cardCenter - trackCenter);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    });
+
+    setActiveTestimonial(nearestIndex);
+  };
+
+  testimonialCards.forEach((_, index) => {
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.className = 'testimonial-dot';
+    dot.setAttribute('aria-label', \`Xem feedback \${index + 1}\`);
+    dot.addEventListener('click', () => centerTestimonial(index));
+    testimonialDots?.appendChild(dot);
+  });
+
+  if (!testimonialListenersAdded) {
+    prevTestimonialBtn?.addEventListener('click', () => {
+      centerTestimonial(activeTestimonialIndex - 1);
+    });
+
+    nextTestimonialBtn?.addEventListener('click', () => {
+      centerTestimonial(activeTestimonialIndex + 1);
+    });
+
+    testimonialsTrack.addEventListener('scroll', () => {
+      window.clearTimeout(testimonialScrollTimer);
+      testimonialScrollTimer = window.setTimeout(updateActiveFromScroll, 90);
+    }, { passive: true });
+    
+    testimonialListenersAdded = true;
+  }
+
+  setActiveTestimonial(0);
+  window.requestAnimationFrame(() => centerTestimonial(0, 'auto'));
 }
 
 function initYouTubeEmbeds() {

@@ -12,6 +12,9 @@ const ADMIN_DEFAULT_PASSWORD = 'admin123';
 const ADMIN_SESSION_SECONDS = 21600;
 const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
 const ADMIN_SHEET_DATE_FORMAT = 'dd/MM/yyyy HH:mm:ss';
+const IMGBB_API_KEY = 'dbbeb2a25359362e9e9df73c5a9adb24';
+const FEEDBACK_IMAGES_SHEET_NAME = 'Feedback images';
+const FEEDBACK_IMAGES_HEADERS = ['Ngày tạo', 'Tên file', 'URL', 'File ID', 'Người upload'];
 const LANDING_CONTENT_HEADERS = [
   'Bật',
   'Khóa',
@@ -85,6 +88,8 @@ function doPost(e) {
     if (action === 'createAdminUser') return handleCreateAdminUser(params);
     if (action === 'setAdminUserStatus') return handleSetAdminUserStatus(params);
     if (action === 'syncLandingContentTemplate') return handleSyncLandingContentTemplate(params);
+    if (action === 'uploadFeedbackImage') return handleUploadFeedbackImage(params);
+    if (action === 'deleteFeedbackImage') return handleDeleteFeedbackImage(params);
 
     return jsonResponse({ ok: false, message: 'Action khong hop le', scriptVersion: SCRIPT_VERSION });
   } catch (error) {
@@ -122,10 +127,24 @@ function handleGetLandingContent() {
     .map((row, rowIndex) => landingContentRowToItem(row, displayValues[rowIndex], indexes, templateRowsByKey))
     .filter((item) => item.enabled && item.selector && item.value !== '');
 
+  const feedbackSheet = spreadsheet.getSheetByName(FEEDBACK_IMAGES_SHEET_NAME);
+  let feedbackImages = [];
+  if (feedbackSheet) {
+    const fbLastRow = feedbackSheet.getLastRow();
+    if (fbLastRow >= 2) {
+      const fbValues = feedbackSheet.getRange(2, 1, fbLastRow - 1, FEEDBACK_IMAGES_HEADERS.length).getValues();
+      feedbackImages = fbValues.map(row => ({
+        url: row[2],
+        fileId: row[3]
+      })).filter(img => img.url);
+    }
+  }
+
   return jsonResponse({
     ok: true,
     items: items,
     count: items.length,
+    feedbackImages: feedbackImages,
     scriptVersion: SCRIPT_VERSION,
   });
 }
@@ -900,4 +919,102 @@ function jsonResponse(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// =============================================
+//  Feedback Images Upload
+// =============================================
+function ensureFeedbackImagesSheet() {
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  let sheet = spreadsheet.getSheetByName(FEEDBACK_IMAGES_SHEET_NAME);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(FEEDBACK_IMAGES_SHEET_NAME);
+    sheet.getRange(1, 1, 1, FEEDBACK_IMAGES_HEADERS.length).setValues([FEEDBACK_IMAGES_HEADERS]);
+    sheet.setFrozenRows(1);
+    sheet.autoResizeColumns(1, FEEDBACK_IMAGES_HEADERS.length);
+  }
+  return sheet;
+}
+
+function handleUploadFeedbackImage(params) {
+  const session = requireAdminSession(params.token);
+  const base64Data = params.base64Data;
+  const filename = cleanValue(params.filename) || 'feedback_' + new Date().getTime() + '.jpg';
+  
+  if (!base64Data) throw new Error('Thiếu dữ liệu ảnh.');
+  
+  let cleanBase64 = base64Data;
+  if (cleanBase64.indexOf('base64,') !== -1) {
+    cleanBase64 = cleanBase64.split('base64,')[1];
+  }
+  
+  const payload = {
+    key: IMGBB_API_KEY,
+    image: cleanBase64,
+    name: filename
+  };
+  
+  const options = {
+    method: 'post',
+    payload: payload
+  };
+  
+  let response;
+  try {
+    response = UrlFetchApp.fetch('https://api.imgbb.com/1/upload', options);
+  } catch(e) {
+    throw new Error('Không thể kết nối đến máy chủ ImgBB: ' + e.toString());
+  }
+  
+  const result = JSON.parse(response.getContentText());
+  if (!result.success) {
+    throw new Error('Lỗi từ ImgBB: ' + (result.error ? result.error.message : 'Unknown'));
+  }
+  
+  const url = result.data.display_url;
+  const fileId = result.data.id;
+  
+  const sheet = ensureFeedbackImagesSheet();
+  sheet.appendRow([
+    getVietnamNow(),
+    filename,
+    url,
+    fileId,
+    session.username
+  ]);
+  
+  sheet.getRange(sheet.getLastRow(), 1).setNumberFormat(ADMIN_SHEET_DATE_FORMAT);
+  
+  return jsonResponse({
+    ok: true,
+    message: 'Upload lên ImgBB thành công',
+    url: url,
+    fileId: fileId,
+    scriptVersion: SCRIPT_VERSION
+  });
+}
+
+function handleDeleteFeedbackImage(params) {
+  requireAdminSession(params.token, ['admin', 'editor']);
+  const fileId = cleanValue(params.fileId);
+  if (!fileId) throw new Error('Thiếu File ID.');
+  
+  const sheet = ensureFeedbackImagesSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow >= 2) {
+    const values = sheet.getRange(2, 4, lastRow - 1, 1).getValues();
+    for (let i = 0; i < values.length; i++) {
+      if (values[i][0] === fileId) {
+        sheet.deleteRow(i + 2);
+        break;
+      }
+    }
+  }
+  
+  return jsonResponse({
+    ok: true,
+    message: 'Xóa thành công khỏi hệ thống',
+    fileId: fileId,
+    scriptVersion: SCRIPT_VERSION
+  });
 }

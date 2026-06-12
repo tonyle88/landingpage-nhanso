@@ -10,6 +10,7 @@ const state = {
   selectedSection: 'all',
   search: '',
   savingKeys: new Set(),
+  feedbackImages: [],
 };
 
 const els = {
@@ -133,6 +134,7 @@ async function loadContent(showNotice = false) {
     const payload = await api('getAdminContent', { token: state.token });
     state.items = (payload.items || []).map(normalizeItem);
     state.sections = payload.sections || [];
+    state.feedbackImages = payload.feedbackImages || [];
     state.originals = new Map(state.items.map((item) => [item.key, snapshotItem(item)]));
     render();
     if (showNotice) toast('Đã tải lại nội dung mới nhất.');
@@ -196,6 +198,7 @@ function renderSections() {
   const buttons = [
     { name: 'all', label: 'Tất cả', count: state.items.length },
     ...groups.map((group) => ({ name: group.name, label: group.name, count: group.count })),
+    { name: 'feedback-images', label: 'Ảnh Feedback', count: state.feedbackImages ? state.feedbackImages.length : 0 }
   ];
 
   els.sectionNav.innerHTML = '';
@@ -219,14 +222,29 @@ function renderSections() {
 }
 
 function renderHeading() {
-  const label = state.selectedSection === 'all' ? 'Tất cả section' : state.selectedSection;
-  const count = getFilteredItems().length;
+  let label, count, title, desc;
+  if (state.selectedSection === 'feedback-images') {
+    label = 'Ảnh khách hàng';
+    title = 'Quản lý ảnh Feedback';
+    count = state.feedbackImages ? state.feedbackImages.length : 0;
+    desc = `${count} ảnh đang hiển thị. Ảnh sẽ tự động thêm vào mục "Khách hàng nghĩ gì?" trên trang chủ.`;
+  } else {
+    label = state.selectedSection === 'all' ? 'Tất cả section' : state.selectedSection;
+    count = getFilteredItems().length;
+    title = state.selectedSection === 'all' ? 'Nội dung có thể chỉnh' : `Section ${state.selectedSection}`;
+    desc = `${count} mục đang hiển thị. Những mục đổi nội dung sẽ được đánh dấu để bạn lưu lại.`;
+  }
   els.sectionHeading.querySelector('.eyebrow').textContent = label;
-  els.sectionHeading.querySelector('h2').textContent = state.selectedSection === 'all' ? 'Nội dung có thể chỉnh' : `Section ${state.selectedSection}`;
-  document.getElementById('section-description').textContent = `${count} mục đang hiển thị. Những mục đổi nội dung sẽ được đánh dấu để bạn lưu lại.`;
+  els.sectionHeading.querySelector('h2').textContent = title;
+  document.getElementById('section-description').textContent = desc;
 }
 
 function renderCards() {
+  if (state.selectedSection === 'feedback-images') {
+    renderFeedbackImages();
+    return;
+  }
+
   const items = getFilteredItems();
   els.editorGrid.innerHTML = '';
   els.emptyState.classList.toggle('is-hidden', items.length > 0);
@@ -607,4 +625,155 @@ function formatDate(value) {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(date);
+}
+
+// =============================================
+//  Feedback Images Upload
+// =============================================
+function renderFeedbackImages() {
+  els.editorGrid.innerHTML = `
+    <div class="content-card" style="grid-column: 1/-1;">
+      <div class="card-top">
+        <div>
+          <div class="content-key">Tải lên ảnh Feedback mới</div>
+          <p class="content-desc">Chọn file ảnh (.jpg, .png, .webp). Hệ thống sẽ tự động nén kích thước để web load nhanh hơn.</p>
+        </div>
+      </div>
+      <div style="margin-top: 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <input type="file" id="feedback-upload-input" accept="image/jpeg, image/png, image/webp" />
+        <button type="button" class="primary-button" id="feedback-upload-btn" disabled>
+          <i class="fa-solid fa-cloud-arrow-up"></i> <span>Tải ảnh lên</span>
+        </button>
+      </div>
+      <p id="feedback-upload-msg" style="margin-top: 12px; font-size: 0.9em; font-weight: 500;"></p>
+    </div>
+  `;
+  
+  const input = document.getElementById('feedback-upload-input');
+  const btn = document.getElementById('feedback-upload-btn');
+  const msg = document.getElementById('feedback-upload-msg');
+  
+  input.addEventListener('change', () => {
+    btn.disabled = !input.files.length;
+  });
+  
+  btn.addEventListener('click', async () => {
+    if (!input.files.length) return;
+    const file = input.files[0];
+    
+    setBusy(btn, true);
+    msg.textContent = 'Đang nén và đẩy ảnh lên ImgBB... Vui lòng đợi nhé!';
+    msg.style.color = 'var(--text-dim)';
+    
+    try {
+      const base64 = await resizeAndCompressImage(file);
+      await api('uploadFeedbackImage', {
+        token: state.token,
+        filename: file.name,
+        mimeType: file.type,
+        base64Data: base64
+      });
+      toast('Tải ảnh lên thành công!');
+      input.value = '';
+      btn.disabled = true;
+      msg.textContent = '';
+      loadContent(true);
+    } catch(err) {
+      msg.textContent = 'Lỗi: ' + err.message;
+      msg.style.color = 'var(--color-danger)';
+    } finally {
+      setBusy(btn, false);
+    }
+  });
+
+  const gallery = document.createElement('div');
+  gallery.className = 'feedback-gallery';
+  gallery.style.display = 'grid';
+  gallery.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+  gallery.style.gap = '16px';
+  gallery.style.marginTop = '8px';
+  gallery.style.width = '100%';
+  gallery.style.gridColumn = '1 / -1';
+  
+  if (state.feedbackImages && state.feedbackImages.length) {
+    state.feedbackImages.forEach(img => {
+      const card = document.createElement('article');
+      card.className = 'content-card';
+      card.style.display = 'flex';
+      card.style.flexDirection = 'column';
+      card.style.alignItems = 'center';
+      card.style.padding = '12px';
+      
+      const imgEl = document.createElement('img');
+      imgEl.src = img.url;
+      imgEl.style.width = '100%';
+      imgEl.style.height = 'auto';
+      imgEl.style.maxHeight = '240px';
+      imgEl.style.objectFit = 'contain';
+      imgEl.style.borderRadius = '8px';
+      imgEl.style.marginBottom = '12px';
+      imgEl.style.backgroundColor = 'var(--surface-sunken)';
+      
+      const delBtn = document.createElement('button');
+      delBtn.className = 'ghost-button';
+      delBtn.style.color = 'var(--color-danger)';
+      delBtn.style.marginTop = 'auto';
+      delBtn.innerHTML = '<i class="fa-solid fa-trash"></i> <span>Xóa ảnh</span>';
+      delBtn.onclick = async () => {
+        if (!confirm('Bạn có chắc muốn xóa ảnh này khỏi Landing Page không?')) return;
+        setBusy(delBtn, true);
+        try {
+          await api('deleteFeedbackImage', { token: state.token, fileId: img.fileId });
+          toast('Đã xóa ảnh.');
+          loadContent(true);
+        } catch(err) {
+          handleSessionError(err);
+          setBusy(delBtn, false);
+        }
+      };
+      
+      card.append(imgEl, delBtn);
+      gallery.appendChild(card);
+    });
+  } else {
+    gallery.innerHTML = '<p style="grid-column: 1/-1; color: var(--text-dim);">Chưa có ảnh feedback nào được tải lên.</p>';
+  }
+  
+  els.editorGrid.appendChild(gallery);
+  els.emptyState.classList.add('is-hidden');
+}
+
+function resizeAndCompressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 1000;
+        
+        if (width > height && width > maxDim) {
+          height *= maxDim / width;
+          width = maxDim;
+        } else if (height > maxDim) {
+          width *= maxDim / height;
+          height = maxDim;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        resolve(dataUrl);
+      };
+      img.onerror = () => reject(new Error('Khong the doc file anh.'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('Loi doc file.'));
+    reader.readAsDataURL(file);
+  });
 }
