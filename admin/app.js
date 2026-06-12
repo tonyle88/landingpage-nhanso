@@ -42,6 +42,8 @@ const els = {
   userList: document.getElementById('user-list'),
   usersMessage: document.getElementById('users-message'),
   toast: document.getElementById('toast'),
+  adminHamburger: document.getElementById('admin-hamburger'),
+  sidebar: document.querySelector('.sidebar'),
 };
 
 document.addEventListener('DOMContentLoaded', boot);
@@ -66,6 +68,13 @@ function bindEvents() {
   els.passwordForm.addEventListener('submit', changePassword);
   els.openUsers.addEventListener('click', openUsersModal);
   els.userForm.addEventListener('submit', createUser);
+
+  if (els.adminHamburger) {
+    els.adminHamburger.addEventListener('click', () => {
+      els.adminHamburger.classList.toggle('is-active');
+      els.sidebar.classList.toggle('is-open');
+    });
+  }
 
   document.querySelectorAll('[data-close-modal]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -199,6 +208,10 @@ function renderSections() {
     button.querySelector('small').textContent = section.count;
     button.addEventListener('click', () => {
       state.selectedSection = section.name;
+      if (els.adminHamburger && els.adminHamburger.classList.contains('is-active')) {
+        els.adminHamburger.classList.remove('is-active');
+        els.sidebar.classList.remove('is-open');
+      }
       render();
     });
     els.sectionNav.appendChild(button);
