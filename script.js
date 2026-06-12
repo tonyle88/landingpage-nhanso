@@ -366,7 +366,7 @@ function initTestimonialsCarousel() {
     const dot = document.createElement('button');
     dot.type = 'button';
     dot.className = 'testimonial-dot';
-    dot.setAttribute('aria-label', \`Xem feedback \${index + 1}\`);
+    dot.setAttribute('aria-label', `Xem feedback ${index + 1}`);
     dot.addEventListener('click', () => centerTestimonial(index));
     testimonialDots?.appendChild(dot);
   });
