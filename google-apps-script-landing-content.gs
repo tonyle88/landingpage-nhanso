@@ -5,7 +5,11 @@
 
 const SPREADSHEET_ID = '1hxBpzJwNO470xqoHBuaZF26anCGir5pnpQk0iPTxz4k';
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
-const SCRIPT_VERSION = '2026-06-11-v10-landing-content-display-values';
+const ADMIN_USERS_SHEET_NAME = 'Admin users';
+const SCRIPT_VERSION = '2026-06-12-v11-admin-dashboard';
+const ADMIN_DEFAULT_USERNAME = 'admin';
+const ADMIN_DEFAULT_PASSWORD = 'admin123';
+const ADMIN_SESSION_SECONDS = 21600;
 const LANDING_CONTENT_HEADERS = [
   'Bật',
   'Khóa',
@@ -15,6 +19,17 @@ const LANDING_CONTENT_HEADERS = [
   'Kiểu',
   'Thuộc tính',
   'Nội dung',
+];
+const ADMIN_USERS_HEADERS = [
+  'Bật',
+  'Tên đăng nhập',
+  'Tên hiển thị',
+  'Vai trò',
+  'Muối',
+  'Mật khẩu hash',
+  'Ngày tạo',
+  'Ngày cập nhật',
+  'Lần đăng nhập cuối',
 ];
 
 function onOpen() {
@@ -51,6 +66,28 @@ function doGet(e) {
   });
 }
 
+function doPost(e) {
+  const params = parseRequestParams(e);
+  const action = cleanValue(params.action);
+
+  try {
+    if (action === 'loginAdmin') return handleAdminLogin(params);
+    if (action === 'logoutAdmin') return handleAdminLogout(params);
+    if (action === 'getAdminContent') return handleGetAdminContent(params);
+    if (action === 'saveLandingContentItem') return handleSaveLandingContentItem(params);
+    if (action === 'saveLandingContentBatch') return handleSaveLandingContentBatch(params);
+    if (action === 'changeAdminPassword') return handleChangeAdminPassword(params);
+    if (action === 'listAdminUsers') return handleListAdminUsers(params);
+    if (action === 'createAdminUser') return handleCreateAdminUser(params);
+    if (action === 'setAdminUserStatus') return handleSetAdminUserStatus(params);
+    if (action === 'syncLandingContentTemplate') return handleSyncLandingContentTemplate(params);
+
+    return jsonResponse({ ok: false, message: 'Action khong hop le', scriptVersion: SCRIPT_VERSION });
+  } catch (error) {
+    return jsonResponse({ ok: false, message: error.message, scriptVersion: SCRIPT_VERSION });
+  }
+}
+
 // =============================================
 //  Landing content config – đọc nội dung website từ Google Sheet
 // =============================================
@@ -85,6 +122,140 @@ function handleGetLandingContent() {
     ok: true,
     items: items,
     count: items.length,
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function handleGetAdminContent(params) {
+  requireAdminSession(params.token);
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  const sheet = spreadsheet.getSheetByName(LANDING_CONTENT_SHEET_NAME);
+  if (!sheet) {
+    return jsonResponse({
+      ok: true,
+      items: [],
+      sections: [],
+      message: 'Chua co tab Landing content. Hay chay initializeLandingContentSheet mot lan.',
+      scriptVersion: SCRIPT_VERSION,
+    });
+  }
+
+  ensureLandingContentHeaderRow(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return jsonResponse({ ok: true, items: [], sections: [], scriptVersion: SCRIPT_VERSION });
+  }
+
+  const range = sheet.getRange(2, 1, lastRow - 1, LANDING_CONTENT_HEADERS.length);
+  const values = range.getValues();
+  const displayValues = range.getDisplayValues();
+  const indexes = getLandingContentHeaderIndexes();
+  const templateRowsByKey = getLandingContentTemplateRowsByKey();
+  const sectionsMap = {};
+  const items = values
+    .map((row, rowIndex) => {
+      const item = landingContentRowToItem(row, displayValues[rowIndex], indexes, templateRowsByKey);
+      item.rowNumber = rowIndex + 2;
+      return item;
+    })
+    .filter((item) => item.key);
+
+  items.forEach((item) => {
+    if (!sectionsMap[item.section]) {
+      sectionsMap[item.section] = {
+        name: item.section || 'Khac',
+        count: 0,
+        enabledCount: 0,
+      };
+    }
+    sectionsMap[item.section].count += 1;
+    if (item.enabled) sectionsMap[item.section].enabledCount += 1;
+  });
+
+  return jsonResponse({
+    ok: true,
+    items: items,
+    sections: Object.keys(sectionsMap).map((key) => sectionsMap[key]),
+    count: items.length,
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function handleSaveLandingContentItem(params) {
+  requireAdminSession(params.token);
+  const key = cleanValue(params.key);
+  if (!key) throw new Error('Thieu khoa noi dung can luu.');
+
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  const sheet = spreadsheet.getSheetByName(LANDING_CONTENT_SHEET_NAME);
+  if (!sheet) throw new Error('Chua co tab Landing content.');
+
+  const rowNumber = findLandingContentRowNumberByKey(sheet, key);
+  if (!rowNumber) throw new Error('Khong tim thay khoa: ' + key);
+
+  const indexes = getLandingContentHeaderIndexes();
+  if (params.enabled !== undefined && params.enabled !== null && String(params.enabled) !== '') {
+    sheet.getRange(rowNumber, indexes['Bật'] + 1).setValue(isTruthy(params.enabled));
+  }
+  sheet.getRange(rowNumber, indexes['Nội dung'] + 1).setValue(params.value == null ? '' : String(params.value));
+
+  return jsonResponse({
+    ok: true,
+    key: key,
+    message: 'Da luu noi dung',
+    savedAt: new Date().toISOString(),
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function handleSaveLandingContentBatch(params) {
+  requireAdminSession(params.token);
+  const rawItems = cleanValue(params.items);
+  if (!rawItems) throw new Error('Thieu danh sach noi dung can luu.');
+
+  let items;
+  try {
+    items = JSON.parse(rawItems);
+  } catch (error) {
+    throw new Error('Danh sach noi dung khong dung dinh dang JSON.');
+  }
+  if (!Array.isArray(items)) throw new Error('Danh sach noi dung phai la mang.');
+
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  const sheet = spreadsheet.getSheetByName(LANDING_CONTENT_SHEET_NAME);
+  if (!sheet) throw new Error('Chua co tab Landing content.');
+
+  const indexes = getLandingContentHeaderIndexes();
+  const rowByKey = getLandingContentRowsByKey(sheet);
+  let saved = 0;
+  items.forEach((item) => {
+    const key = cleanValue(item.key);
+    const rowNumber = rowByKey[key];
+    if (!key || !rowNumber) return;
+
+    if (item.enabled !== undefined && item.enabled !== null) {
+      sheet.getRange(rowNumber, indexes['Bật'] + 1).setValue(isTruthy(item.enabled));
+    }
+    sheet.getRange(rowNumber, indexes['Nội dung'] + 1).setValue(item.value == null ? '' : String(item.value));
+    saved += 1;
+  });
+
+  return jsonResponse({
+    ok: true,
+    saved: saved,
+    message: 'Da luu ' + saved + ' muc noi dung',
+    savedAt: new Date().toISOString(),
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function handleSyncLandingContentTemplate(params) {
+  requireAdminSession(params.token);
+  const result = syncLandingContentSheet();
+  return jsonResponse({
+    ok: true,
+    result: result,
+    message: 'Da dong bo template noi dung',
     scriptVersion: SCRIPT_VERSION,
   });
 }
@@ -335,6 +506,344 @@ function buildDefaultLandingContentRows() {
     lc(true, 'footer.copyright', 'Footer', 'Dòng bản quyền', '.footer-bottom p:nth-child(1)', 'text', '', '© 2026 ClowCat Patronus. Tất cả quyền được bảo lưu.'),
     lc(true, 'footer.made_with', 'Footer', 'Dòng năng lượng', '.footer-made-with', 'text', '', '✦ Được tạo ra với tình yêu và năng lượng tích cực ✦'),
   ];
+}
+
+// =============================================
+//  Admin dashboard API
+// =============================================
+function parseRequestParams(e) {
+  const params = {};
+  if (e && e.parameter) {
+    Object.keys(e.parameter).forEach((key) => {
+      params[key] = e.parameter[key];
+    });
+  }
+
+  const postData = e && e.postData;
+  if (!postData || !postData.contents) return params;
+
+  const contentType = String(postData.type || '').toLowerCase();
+  if (contentType.indexOf('application/json') !== -1) {
+    try {
+      const body = JSON.parse(postData.contents);
+      Object.keys(body || {}).forEach((key) => {
+        params[key] = body[key];
+      });
+    } catch (error) {
+      throw new Error('Body JSON khong hop le.');
+    }
+  }
+
+  return params;
+}
+
+function handleAdminLogin(params) {
+  const username = cleanValue(params.username).toLowerCase();
+  const password = String(params.password || '');
+  if (!username || !password) throw new Error('Vui long nhap tai khoan va mat khau.');
+
+  const found = findAdminUser(username);
+  if (!found || !found.enabled) throw new Error('Tai khoan khong ton tai hoac da bi khoa.');
+
+  const passwordHash = hashAdminPassword(password, found.salt);
+  if (passwordHash !== found.passwordHash) throw new Error('Mat khau khong dung.');
+
+  const token = createAdminSession(found);
+  found.sheet.getRange(found.rowNumber, found.indexes['Lần đăng nhập cuối'] + 1).setValue(new Date());
+
+  return jsonResponse({
+    ok: true,
+    token: token,
+    user: adminUserPublicProfile(found),
+    expiresIn: ADMIN_SESSION_SECONDS,
+    forcePasswordChange: username === ADMIN_DEFAULT_USERNAME && password === ADMIN_DEFAULT_PASSWORD,
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function handleAdminLogout(params) {
+  const token = cleanValue(params.token);
+  if (token) CacheService.getScriptCache().remove(getAdminSessionCacheKey(token));
+  return jsonResponse({ ok: true, scriptVersion: SCRIPT_VERSION });
+}
+
+function handleChangeAdminPassword(params) {
+  const session = requireAdminSession(params.token);
+  const username = cleanValue(params.username || session.username).toLowerCase();
+  const currentPassword = String(params.currentPassword || '');
+  const newPassword = String(params.newPassword || '');
+  if (newPassword.length < 6) throw new Error('Mat khau moi can it nhat 6 ky tu.');
+  if (username !== session.username && session.role !== 'admin') {
+    throw new Error('Ban khong co quyen doi mat khau tai khoan nay.');
+  }
+
+  const found = findAdminUser(username);
+  if (!found) throw new Error('Khong tim thay tai khoan.');
+  if (username === session.username) {
+    const currentHash = hashAdminPassword(currentPassword, found.salt);
+    if (currentHash !== found.passwordHash) throw new Error('Mat khau hien tai khong dung.');
+  }
+
+  const newSalt = makeAdminSalt();
+  const indexes = found.indexes;
+  found.sheet.getRange(found.rowNumber, indexes['Muối'] + 1).setValue(newSalt);
+  found.sheet.getRange(found.rowNumber, indexes['Mật khẩu hash'] + 1).setValue(hashAdminPassword(newPassword, newSalt));
+  found.sheet.getRange(found.rowNumber, indexes['Ngày cập nhật'] + 1).setValue(new Date());
+
+  return jsonResponse({
+    ok: true,
+    message: 'Da doi mat khau',
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function handleListAdminUsers(params) {
+  requireAdminSession(params.token, ['admin']);
+  const users = listAdminUsers();
+  return jsonResponse({
+    ok: true,
+    users: users,
+    count: users.length,
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function handleCreateAdminUser(params) {
+  requireAdminSession(params.token, ['admin']);
+  const username = cleanValue(params.username).toLowerCase();
+  const displayName = cleanValue(params.displayName) || username;
+  const role = cleanValue(params.role || 'editor').toLowerCase();
+  const password = String(params.password || '');
+
+  if (!/^[a-z0-9._-]{3,32}$/.test(username)) {
+    throw new Error('Ten dang nhap chi gom chu thuong, so, dau cham, gach ngang, gach duoi va dai 3-32 ky tu.');
+  }
+  if (role !== 'admin' && role !== 'editor') throw new Error('Vai tro khong hop le.');
+  if (password.length < 6) throw new Error('Mat khau can it nhat 6 ky tu.');
+  if (findAdminUser(username)) throw new Error('Tai khoan da ton tai.');
+
+  const sheet = ensureAdminUsersSheet();
+  const salt = makeAdminSalt();
+  sheet.appendRow([
+    true,
+    username,
+    displayName,
+    role,
+    salt,
+    hashAdminPassword(password, salt),
+    new Date(),
+    new Date(),
+    '',
+  ]);
+
+  return jsonResponse({
+    ok: true,
+    user: {
+      username: username,
+      displayName: displayName,
+      role: role,
+      enabled: true,
+    },
+    message: 'Da tao tai khoan',
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function handleSetAdminUserStatus(params) {
+  const session = requireAdminSession(params.token, ['admin']);
+  const username = cleanValue(params.username).toLowerCase();
+  const enabled = isTruthy(params.enabled);
+  if (!username) throw new Error('Thieu tai khoan can cap nhat.');
+  if (username === session.username && !enabled) throw new Error('Khong the tu khoa tai khoan dang dang nhap.');
+
+  const found = findAdminUser(username);
+  if (!found) throw new Error('Khong tim thay tai khoan.');
+  found.sheet.getRange(found.rowNumber, found.indexes['Bật'] + 1).setValue(enabled);
+  found.sheet.getRange(found.rowNumber, found.indexes['Ngày cập nhật'] + 1).setValue(new Date());
+
+  return jsonResponse({
+    ok: true,
+    username: username,
+    enabled: enabled,
+    message: enabled ? 'Da mo tai khoan' : 'Da khoa tai khoan',
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function requireAdminSession(token, allowedRoles) {
+  const session = getAdminSession(token);
+  if (!session) throw new Error('Phien dang nhap het han. Vui long dang nhap lai.');
+  if (allowedRoles && allowedRoles.length && allowedRoles.indexOf(session.role) === -1) {
+    throw new Error('Tai khoan khong co quyen thuc hien thao tac nay.');
+  }
+
+  const found = findAdminUser(session.username);
+  if (!found || !found.enabled) throw new Error('Tai khoan khong ton tai hoac da bi khoa.');
+  return session;
+}
+
+function createAdminSession(user) {
+  const token = Utilities.getUuid() + Utilities.getUuid().replace(/-/g, '');
+  const session = {
+    username: user.username,
+    displayName: user.displayName,
+    role: user.role,
+    createdAt: new Date().toISOString(),
+  };
+  CacheService.getScriptCache().put(getAdminSessionCacheKey(token), JSON.stringify(session), ADMIN_SESSION_SECONDS);
+  return token;
+}
+
+function getAdminSession(token) {
+  token = cleanValue(token);
+  if (!token) return null;
+  const cached = CacheService.getScriptCache().get(getAdminSessionCacheKey(token));
+  if (!cached) return null;
+  try {
+    return JSON.parse(cached);
+  } catch (error) {
+    return null;
+  }
+}
+
+function getAdminSessionCacheKey(token) {
+  return 'admin-session-' + token;
+}
+
+function ensureAdminUsersSheet() {
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  let sheet = spreadsheet.getSheetByName(ADMIN_USERS_SHEET_NAME);
+  if (!sheet) sheet = spreadsheet.insertSheet(ADMIN_USERS_SHEET_NAME);
+
+  sheet.getRange(1, 1, 1, ADMIN_USERS_HEADERS.length).setValues([ADMIN_USERS_HEADERS]);
+  sheet.setFrozenRows(1);
+  if (sheet.getLastRow() < 2) {
+    const salt = makeAdminSalt();
+    sheet.getRange(2, 1, 1, ADMIN_USERS_HEADERS.length).setValues([[
+      true,
+      ADMIN_DEFAULT_USERNAME,
+      'Quản trị viên',
+      'admin',
+      salt,
+      hashAdminPassword(ADMIN_DEFAULT_PASSWORD, salt),
+      new Date(),
+      new Date(),
+      '',
+    ]]);
+  }
+  sheet.autoResizeColumns(1, ADMIN_USERS_HEADERS.length);
+  return sheet;
+}
+
+function getAdminUserHeaderIndexes() {
+  const indexes = {};
+  ADMIN_USERS_HEADERS.forEach((header, index) => {
+    indexes[header] = index;
+  });
+  return indexes;
+}
+
+function findAdminUser(username) {
+  username = cleanValue(username).toLowerCase();
+  if (!username) return null;
+  const sheet = ensureAdminUsersSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  const indexes = getAdminUserHeaderIndexes();
+  const values = sheet.getRange(2, 1, lastRow - 1, ADMIN_USERS_HEADERS.length).getValues();
+  for (let index = 0; index < values.length; index += 1) {
+    const row = values[index];
+    const rowUsername = cleanValue(row[indexes['Tên đăng nhập']]).toLowerCase();
+    if (rowUsername === username) {
+      return {
+        sheet: sheet,
+        rowNumber: index + 2,
+        indexes: indexes,
+        enabled: isTruthy(row[indexes['Bật']]),
+        username: rowUsername,
+        displayName: cleanValue(row[indexes['Tên hiển thị']]) || rowUsername,
+        role: cleanValue(row[indexes['Vai trò']]) || 'editor',
+        salt: cleanValue(row[indexes['Muối']]),
+        passwordHash: cleanValue(row[indexes['Mật khẩu hash']]),
+        createdAt: row[indexes['Ngày tạo']],
+        updatedAt: row[indexes['Ngày cập nhật']],
+        lastLoginAt: row[indexes['Lần đăng nhập cuối']],
+      };
+    }
+  }
+  return null;
+}
+
+function listAdminUsers() {
+  const sheet = ensureAdminUsersSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const indexes = getAdminUserHeaderIndexes();
+  const values = sheet.getRange(2, 1, lastRow - 1, ADMIN_USERS_HEADERS.length).getValues();
+  return values.map((row) => ({
+    enabled: isTruthy(row[indexes['Bật']]),
+    username: cleanValue(row[indexes['Tên đăng nhập']]).toLowerCase(),
+    displayName: cleanValue(row[indexes['Tên hiển thị']]),
+    role: cleanValue(row[indexes['Vai trò']]) || 'editor',
+    createdAt: formatAdminDate(row[indexes['Ngày tạo']]),
+    updatedAt: formatAdminDate(row[indexes['Ngày cập nhật']]),
+    lastLoginAt: formatAdminDate(row[indexes['Lần đăng nhập cuối']]),
+  })).filter((user) => user.username);
+}
+
+function adminUserPublicProfile(user) {
+  return {
+    username: user.username,
+    displayName: user.displayName,
+    role: user.role,
+    enabled: user.enabled,
+  };
+}
+
+function makeAdminSalt() {
+  return Utilities.getUuid().replace(/-/g, '');
+}
+
+function hashAdminPassword(password, salt) {
+  const raw = String(salt || '') + ':' + String(password || '') + ':' + SPREADSHEET_ID;
+  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, raw, Utilities.Charset.UTF_8);
+  return digest.map((byteValue) => {
+    const value = byteValue < 0 ? byteValue + 256 : byteValue;
+    return ('0' + value.toString(16)).slice(-2);
+  }).join('');
+}
+
+function findLandingContentRowNumberByKey(sheet, key) {
+  return getLandingContentRowsByKey(sheet)[key] || 0;
+}
+
+function getLandingContentRowsByKey(sheet) {
+  const rowsByKey = {};
+  ensureLandingContentHeaderRow(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return rowsByKey;
+
+  const indexes = getLandingContentHeaderIndexes();
+  const values = sheet.getRange(2, 1, lastRow - 1, LANDING_CONTENT_HEADERS.length).getValues();
+  values.forEach((row, index) => {
+    const key = cleanValue(row[indexes['Khóa']]);
+    if (key && !rowsByKey[key]) rowsByKey[key] = index + 2;
+  });
+  return rowsByKey;
+}
+
+function isTruthy(value) {
+  return value === true || String(value).toUpperCase() === 'TRUE' || String(value).trim() === '1';
+}
+
+function formatAdminDate(value) {
+  if (!value) return '';
+  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
+    return value.toISOString();
+  }
+  return String(value);
 }
 
 function getSpreadsheetByIdOrActive() {

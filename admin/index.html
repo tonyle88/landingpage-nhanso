@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản trị Landing Page | Clow Cat Patronus</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/png" href="../assets/images/logo2.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="login-screen" id="login-screen">
+    <section class="login-panel" aria-labelledby="login-title">
+      <div class="brand-mark">
+        <img src="../assets/images/logo.png" alt="Clow Cat Patronus" />
+        <div>
+          <span>Clow Cat Patronus</span>
+          <strong>Admin Console</strong>
+        </div>
+      </div>
+
+      <div class="login-copy">
+        <p class="eyebrow">Quản trị nội dung</p>
+        <h1 id="login-title">Buồng lái landing page</h1>
+        <p>Đăng nhập để chỉnh nội dung section, lưu về Google Sheet và đồng bộ landing page.</p>
+      </div>
+
+      <form class="login-form" id="login-form">
+        <label for="login-username">Tài khoản</label>
+        <div class="input-shell">
+          <i class="fa-regular fa-user" aria-hidden="true"></i>
+          <input id="login-username" name="username" type="text" autocomplete="username" value="admin" required />
+        </div>
+
+        <label for="login-password">Mật khẩu</label>
+        <div class="input-shell">
+          <i class="fa-solid fa-lock" aria-hidden="true"></i>
+          <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+          <button class="icon-button" type="button" id="toggle-login-password" aria-label="Hiện hoặc ẩn mật khẩu">
+            <i class="fa-regular fa-eye" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <button class="primary-button" type="submit">
+          <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>
+          <span>Đăng nhập</span>
+        </button>
+      </form>
+
+      <p class="form-message" id="login-message" role="status"></p>
+    </section>
+  </main>
+
+  <main class="admin-shell is-hidden" id="admin-shell">
+    <aside class="sidebar">
+      <a class="sidebar-brand" href="#dashboard" aria-label="Về bảng điều khiển">
+        <img src="../assets/images/logo2.png" alt="" />
+        <span>Clow Admin</span>
+      </a>
+
+      <nav class="section-nav" id="section-nav" aria-label="Danh mục nội dung"></nav>
+
+      <div class="sidebar-actions">
+        <a class="ghost-button" href="../index.html" target="_blank" rel="noopener">
+          <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+          <span>Xem landing page</span>
+        </a>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Landing page content</p>
+          <h1>Quản trị nội dung</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="ghost-button" type="button" id="refresh-content">
+            <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+            <span>Tải lại</span>
+          </button>
+          <button class="ghost-button admin-only" type="button" id="open-users">
+            <i class="fa-solid fa-users-gear" aria-hidden="true"></i>
+            <span>User</span>
+          </button>
+          <button class="ghost-button" type="button" id="open-password">
+            <i class="fa-solid fa-key" aria-hidden="true"></i>
+            <span>Mật khẩu</span>
+          </button>
+          <button class="icon-button" type="button" id="logout" aria-label="Đăng xuất">
+            <i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>
+          </button>
+        </div>
+      </header>
+
+      <section class="status-strip" aria-live="polite">
+        <div>
+          <span id="total-count">0</span>
+          <small>mục nội dung</small>
+        </div>
+        <div>
+          <span id="enabled-count">0</span>
+          <small>đang bật</small>
+        </div>
+        <div>
+          <span id="dirty-count">0</span>
+          <small>chưa lưu</small>
+        </div>
+        <div>
+          <span id="current-user">admin</span>
+          <small>đang đăng nhập</small>
+        </div>
+      </section>
+
+      <section class="toolbar" aria-label="Công cụ lọc và lưu">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <input id="content-search" type="search" placeholder="Tìm theo khóa, section, mô tả hoặc nội dung..." />
+        </div>
+        <div class="toolbar-actions">
+          <button class="ghost-button admin-only" type="button" id="sync-template">
+            <i class="fa-solid fa-table-list" aria-hidden="true"></i>
+            <span>Đồng bộ dòng mới</span>
+          </button>
+          <button class="primary-button" type="button" id="save-all" disabled>
+            <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+            <span>Lưu tất cả</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="section-heading" id="section-heading">
+        <div>
+          <p class="eyebrow">Tất cả section</p>
+          <h2>Nội dung có thể chỉnh</h2>
+        </div>
+        <p id="section-description">Chọn một section bên trái hoặc tìm nhanh nội dung cần sửa.</p>
+      </section>
+
+      <section class="editor-grid" id="editor-grid" aria-live="polite"></section>
+
+      <section class="empty-state is-hidden" id="empty-state">
+        <i class="fa-regular fa-folder-open" aria-hidden="true"></i>
+        <h2>Chưa có mục phù hợp</h2>
+        <p>Thử đổi từ khóa tìm kiếm hoặc chọn section khác.</p>
+      </section>
+    </section>
+  </main>
+
+  <dialog class="modal" id="password-modal">
+    <form method="dialog" class="modal-panel" id="password-form">
+      <header>
+        <div>
+          <p class="eyebrow">Bảo mật</p>
+          <h2>Đổi mật khẩu</h2>
+        </div>
+        <button class="icon-button" type="button" data-close-modal="password-modal" aria-label="Đóng">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </header>
+      <label for="current-password">Mật khẩu hiện tại</label>
+      <input id="current-password" type="password" autocomplete="current-password" required />
+      <label for="new-password">Mật khẩu mới</label>
+      <input id="new-password" type="password" autocomplete="new-password" minlength="6" required />
+      <label for="confirm-password">Nhập lại mật khẩu mới</label>
+      <input id="confirm-password" type="password" autocomplete="new-password" minlength="6" required />
+      <footer>
+        <button class="ghost-button" type="button" data-close-modal="password-modal">Hủy</button>
+        <button class="primary-button" type="submit">
+          <i class="fa-solid fa-check" aria-hidden="true"></i>
+          <span>Lưu mật khẩu</span>
+        </button>
+      </footer>
+      <p class="form-message" id="password-message" role="status"></p>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="users-modal">
+    <section class="modal-panel users-panel">
+      <header>
+        <div>
+          <p class="eyebrow">Phân quyền</p>
+          <h2>Quản lý user</h2>
+        </div>
+        <button class="icon-button" type="button" data-close-modal="users-modal" aria-label="Đóng">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </header>
+
+      <form class="user-form" id="user-form">
+        <input id="new-user-username" type="text" placeholder="Tên đăng nhập" autocomplete="off" required />
+        <input id="new-user-display" type="text" placeholder="Tên hiển thị" autocomplete="off" />
+        <select id="new-user-role" aria-label="Vai trò">
+          <option value="editor">Editor</option>
+          <option value="admin">Admin</option>
+        </select>
+        <input id="new-user-password" type="password" placeholder="Mật khẩu tạm" minlength="6" required />
+        <button class="primary-button" type="submit">
+          <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+          <span>Tạo user</span>
+        </button>
+      </form>
+
+      <div class="user-list" id="user-list"></div>
+      <p class="form-message" id="users-message" role="status"></p>
+    </section>
+  </dialog>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
