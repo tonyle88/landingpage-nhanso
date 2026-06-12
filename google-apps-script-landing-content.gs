@@ -6,10 +6,12 @@
 const SPREADSHEET_ID = '1hxBpzJwNO470xqoHBuaZF26anCGir5pnpQk0iPTxz4k';
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
 const ADMIN_USERS_SHEET_NAME = 'Admin users';
-const SCRIPT_VERSION = '2026-06-12-v11-admin-dashboard';
+const SCRIPT_VERSION = '2026-06-12-v12-vietnam-admin-time';
 const ADMIN_DEFAULT_USERNAME = 'admin';
 const ADMIN_DEFAULT_PASSWORD = 'admin123';
 const ADMIN_SESSION_SECONDS = 21600;
+const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
+const ADMIN_SHEET_DATE_FORMAT = 'dd/MM/yyyy HH:mm:ss';
 const LANDING_CONTENT_HEADERS = [
   'Bật',
   'Khóa',
@@ -37,6 +39,8 @@ function onOpen() {
     .createMenu('Clow Cat')
     .addItem('Tạo bảng nội dung landing page', 'initializeLandingContentSheet')
     .addItem('Đồng bộ dòng nội dung mới', 'syncLandingContentSheet')
+    .addSeparator()
+    .addItem('Sửa định dạng ngày giờ Admin users', 'repairAdminUserDateFormats')
     .addToUi();
 }
 
@@ -549,7 +553,7 @@ function handleAdminLogin(params) {
   if (passwordHash !== found.passwordHash) throw new Error('Mat khau khong dung.');
 
   const token = createAdminSession(found);
-  found.sheet.getRange(found.rowNumber, found.indexes['Lần đăng nhập cuối'] + 1).setValue(new Date());
+  setAdminDateCell(found.sheet, found.rowNumber, found.indexes['Lần đăng nhập cuối'] + 1, getVietnamNow());
 
   return jsonResponse({
     ok: true,
@@ -588,7 +592,7 @@ function handleChangeAdminPassword(params) {
   const indexes = found.indexes;
   found.sheet.getRange(found.rowNumber, indexes['Muối'] + 1).setValue(newSalt);
   found.sheet.getRange(found.rowNumber, indexes['Mật khẩu hash'] + 1).setValue(hashAdminPassword(newPassword, newSalt));
-  found.sheet.getRange(found.rowNumber, indexes['Ngày cập nhật'] + 1).setValue(new Date());
+  setAdminDateCell(found.sheet, found.rowNumber, indexes['Ngày cập nhật'] + 1, getVietnamNow());
 
   return jsonResponse({
     ok: true,
@@ -631,10 +635,12 @@ function handleCreateAdminUser(params) {
     role,
     salt,
     hashAdminPassword(password, salt),
-    new Date(),
-    new Date(),
+    getVietnamNow(),
+    getVietnamNow(),
     '',
   ]);
+  formatAdminUserDateColumns(sheet);
+  sheet.autoResizeColumns(7, 3);
 
   return jsonResponse({
     ok: true,
@@ -659,7 +665,7 @@ function handleSetAdminUserStatus(params) {
   const found = findAdminUser(username);
   if (!found) throw new Error('Khong tim thay tai khoan.');
   found.sheet.getRange(found.rowNumber, found.indexes['Bật'] + 1).setValue(enabled);
-  found.sheet.getRange(found.rowNumber, found.indexes['Ngày cập nhật'] + 1).setValue(new Date());
+  setAdminDateCell(found.sheet, found.rowNumber, found.indexes['Ngày cập nhật'] + 1, getVietnamNow());
 
   return jsonResponse({
     ok: true,
@@ -688,7 +694,7 @@ function createAdminSession(user) {
     username: user.username,
     displayName: user.displayName,
     role: user.role,
-    createdAt: new Date().toISOString(),
+    createdAt: formatAdminDate(getVietnamNow()),
   };
   CacheService.getScriptCache().put(getAdminSessionCacheKey(token), JSON.stringify(session), ADMIN_SESSION_SECONDS);
   return token;
@@ -712,6 +718,7 @@ function getAdminSessionCacheKey(token) {
 
 function ensureAdminUsersSheet() {
   const spreadsheet = getSpreadsheetByIdOrActive();
+  spreadsheet.setSpreadsheetTimeZone(VIETNAM_TIMEZONE);
   let sheet = spreadsheet.getSheetByName(ADMIN_USERS_SHEET_NAME);
   if (!sheet) sheet = spreadsheet.insertSheet(ADMIN_USERS_SHEET_NAME);
 
@@ -726,11 +733,12 @@ function ensureAdminUsersSheet() {
       'admin',
       salt,
       hashAdminPassword(ADMIN_DEFAULT_PASSWORD, salt),
-      new Date(),
-      new Date(),
+      getVietnamNow(),
+      getVietnamNow(),
       '',
     ]]);
   }
+  formatAdminUserDateColumns(sheet);
   sheet.autoResizeColumns(1, ADMIN_USERS_HEADERS.length);
   return sheet;
 }
@@ -838,10 +846,40 @@ function isTruthy(value) {
   return value === true || String(value).toUpperCase() === 'TRUE' || String(value).trim() === '1';
 }
 
+function getVietnamNow() {
+  return new Date();
+}
+
+function setAdminDateCell(sheet, rowNumber, columnNumber, value) {
+  sheet.getRange(rowNumber, columnNumber)
+    .setValue(value)
+    .setNumberFormat(ADMIN_SHEET_DATE_FORMAT);
+}
+
+function formatAdminUserDateColumns(sheet) {
+  const indexes = getAdminUserHeaderIndexes();
+  const dateColumns = [
+    indexes['Ngày tạo'] + 1,
+    indexes['Ngày cập nhật'] + 1,
+    indexes['Lần đăng nhập cuối'] + 1,
+  ];
+  const lastRow = Math.max(sheet.getLastRow(), 2);
+  dateColumns.forEach((columnNumber) => {
+    sheet.getRange(2, columnNumber, lastRow - 1, 1).setNumberFormat(ADMIN_SHEET_DATE_FORMAT);
+  });
+}
+
+function repairAdminUserDateFormats() {
+  const sheet = ensureAdminUsersSheet();
+  formatAdminUserDateColumns(sheet);
+  sheet.autoResizeColumns(7, 3);
+  return 'Da cap nhat dinh dang ngay gio Viet Nam cho tab Admin users: ' + ADMIN_SHEET_DATE_FORMAT;
+}
+
 function formatAdminDate(value) {
   if (!value) return '';
   if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
-    return value.toISOString();
+    return Utilities.formatDate(value, VIETNAM_TIMEZONE, ADMIN_SHEET_DATE_FORMAT);
   }
   return String(value);
 }

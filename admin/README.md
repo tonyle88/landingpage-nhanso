@@ -32,6 +32,7 @@ Password: admin123
 3. Save.
 4. Deploy lại Web App.
 5. Giữ URL Web App hiện tại nếu Google cho cập nhật deployment cũ.
+6. Chạy hàm `repairAdminUserDateFormats` một lần nếu muốn format lại ngày giờ các user đã có sẵn.
 
 Admin đang dùng endpoint trong `admin/app.js`:
 
@@ -40,6 +41,12 @@ const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3m9zkv9mX-Bg
 ```
 
 Nếu deploy ra URL mới, thay URL ở dòng này.
+
+Ngày giờ trong tab `Admin users` được format theo giờ Việt Nam:
+
+```text
+dd/MM/yyyy HH:mm:ss
+```
 
 ## Khi giao diện bị lệch
 
