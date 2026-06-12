@@ -295,6 +295,7 @@ function renderPackages(packages) {
 
   grid.innerHTML = '';
   grid.classList.toggle('packages-grid-3', packages.length === 3);
+  grid.classList.toggle('packages-carousel-enabled', packages.length > 3);
   packages.forEach((pkg, index) => {
     const card = createPackageCard(pkg, index);
     grid.appendChild(card);
@@ -304,6 +305,58 @@ function renderPackages(packages) {
   });
 
   bindPackageCardGlow();
+  setupPackagesCarousel(packages.length);
+}
+
+function setupPackagesCarousel(packageCount) {
+  const grid = document.querySelector('#packages .packages-grid');
+  if (!grid) return;
+
+  const existingControls = document.querySelector('#packages .package-carousel-controls');
+  if (packageCount <= 3) {
+    existingControls?.remove();
+    return;
+  }
+
+  let controls = existingControls;
+  if (!controls) {
+    controls = document.createElement('div');
+    controls.className = 'package-carousel-controls';
+    controls.innerHTML = `
+      <button class="package-carousel-btn" type="button" data-package-slide="prev" aria-label="Xem gói trước">
+        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+      </button>
+      <div class="package-carousel-hint">Lướt để xem thêm gói tư vấn</div>
+      <button class="package-carousel-btn" type="button" data-package-slide="next" aria-label="Xem gói tiếp theo">
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </button>
+    `;
+    grid.after(controls);
+  }
+
+  const previousBtn = controls.querySelector('[data-package-slide="prev"]');
+  const nextBtn = controls.querySelector('[data-package-slide="next"]');
+  const getStep = () => {
+    const firstCard = grid.querySelector('.package-card');
+    if (!firstCard) return grid.clientWidth;
+    const styles = window.getComputedStyle(grid);
+    const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
+    return firstCard.getBoundingClientRect().width + gap;
+  };
+  const updateButtons = () => {
+    const maxScroll = grid.scrollWidth - grid.clientWidth - 2;
+    previousBtn.disabled = grid.scrollLeft <= 2;
+    nextBtn.disabled = grid.scrollLeft >= maxScroll;
+  };
+  const slide = (direction) => {
+    grid.scrollBy({ left: getStep() * direction, behavior: 'smooth' });
+    window.setTimeout(updateButtons, 360);
+  };
+
+  previousBtn.onclick = () => slide(-1);
+  nextBtn.onclick = () => slide(1);
+  grid.onscroll = updateButtons;
+  window.setTimeout(updateButtons, 120);
 }
 
 function createPackageCard(pkg, index) {

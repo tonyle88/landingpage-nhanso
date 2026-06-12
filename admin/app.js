@@ -670,7 +670,7 @@ function renderPackagesManager() {
       <div class="card-top">
         <div>
           <div class="content-key">Thêm hoặc sửa gói tư vấn</div>
-          <p class="content-desc">Nhập mã gói không dấu, ví dụ: big3, big7, year, couple-reading. Quyền lợi nhập mỗi dòng một ý.</p>
+          <p class="content-desc">Nhập mã gói không dấu, ví dụ: big3, big7, year, couple-reading. Thứ tự nhỏ sẽ hiện trước, hoặc dùng nút lên/xuống bên dưới.</p>
         </div>
       </div>
       <div class="package-form-grid">
@@ -723,7 +723,7 @@ function renderPackagesManager() {
     state.packages
       .slice()
       .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
-      .forEach((pkg) => gallery.appendChild(createAdminPackageCard(pkg)));
+      .forEach((pkg, index, sortedPackages) => gallery.appendChild(createAdminPackageCard(pkg, index, sortedPackages.length)));
   } else {
     gallery.innerHTML = '<p style="grid-column: 1/-1; color: var(--text-dim);">Chưa có gói tư vấn nào.</p>';
   }
@@ -732,7 +732,7 @@ function renderPackagesManager() {
   els.emptyState.classList.add('is-hidden');
 }
 
-function createAdminPackageCard(pkg) {
+function createAdminPackageCard(pkg, index = 0, total = 0) {
   const card = document.createElement('article');
   card.className = 'content-card admin-package-card';
 
@@ -770,6 +770,20 @@ function createAdminPackageCard(pkg) {
 
   const actions = document.createElement('div');
   actions.className = 'card-actions';
+  const moveUpBtn = document.createElement('button');
+  moveUpBtn.type = 'button';
+  moveUpBtn.className = 'ghost-button';
+  moveUpBtn.disabled = index <= 0;
+  moveUpBtn.innerHTML = '<i class="fa-solid fa-arrow-up"></i><span>Lên</span>';
+  moveUpBtn.addEventListener('click', () => movePackage(pkg.code, -1));
+
+  const moveDownBtn = document.createElement('button');
+  moveDownBtn.type = 'button';
+  moveDownBtn.className = 'ghost-button';
+  moveDownBtn.disabled = index >= total - 1;
+  moveDownBtn.innerHTML = '<i class="fa-solid fa-arrow-down"></i><span>Xuống</span>';
+  moveDownBtn.addEventListener('click', () => movePackage(pkg.code, 1));
+
   const editBtn = document.createElement('button');
   editBtn.type = 'button';
   editBtn.className = 'ghost-button';
@@ -782,10 +796,57 @@ function createAdminPackageCard(pkg) {
   deleteBtn.style.color = 'var(--danger)';
   deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i><span>Xóa</span>';
   deleteBtn.addEventListener('click', () => deletePackage(pkg.code));
-  actions.append(editBtn, deleteBtn);
+  actions.append(moveUpBtn, moveDownBtn, editBtn, deleteBtn);
 
   card.append(title, meta, features, actions);
   return card;
+}
+
+async function movePackage(code, direction) {
+  const packages = (state.packages || [])
+    .slice()
+    .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
+  const index = packages.findIndex((pkg) => pkg.code === code);
+  const nextIndex = index + direction;
+  if (index < 0 || nextIndex < 0 || nextIndex >= packages.length) return;
+
+  const current = packages[index];
+  const target = packages[nextIndex];
+  packages.forEach((pkg, itemIndex) => {
+    pkg.sortOrder = Number(pkg.sortOrder || (itemIndex + 1) * 10);
+  });
+  const currentOrder = current.sortOrder;
+  current.sortOrder = target.sortOrder;
+  target.sortOrder = currentOrder;
+
+  try {
+    const firstPayload = await savePackageSilently(current);
+    const secondPayload = await savePackageSilently(target);
+    state.packages = secondPayload.packages || firstPayload.packages || state.packages;
+    toast('Đã đổi thứ tự gói tư vấn.');
+    render();
+  } catch (error) {
+    handleSessionError(error);
+  }
+}
+
+function savePackageSilently(pkg) {
+  return api('savePackage', {
+    token: state.token,
+    code: pkg.code,
+    name: pkg.name,
+    onlinePrice: pkg.onlinePrice,
+    offlinePrice: pkg.offlinePrice,
+    unit: pkg.unit,
+    icon: pkg.icon,
+    accent: pkg.accent,
+    sortOrder: pkg.sortOrder,
+    enabled: pkg.enabled ? 'true' : 'false',
+    featured: pkg.featured ? 'true' : 'false',
+    badge: pkg.badge || '',
+    buttonText: pkg.buttonText || 'Đặt Lịch Ngay',
+    features: Array.isArray(pkg.features) ? pkg.features.join('\n') : '',
+  });
 }
 
 function fillPackageForm(pkg = {}) {
