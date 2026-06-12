@@ -839,6 +839,7 @@ a {
 
   .sidebar-header {
     flex: 0 0 auto;
+    padding-right: 18px;
   }
 
   .sidebar-brand {
@@ -860,7 +861,7 @@ a {
     flex-direction: column;
     margin-top: 24px;
     margin-right: 0;
-    padding: 0;
+    padding: 0 18px 0 0;
     overflow-y: auto;
     overflow-x: hidden;
     scroll-snap-type: none;
@@ -877,7 +878,7 @@ a {
   .sidebar-actions {
     flex-direction: column;
     margin-top: 16px;
-    padding: 0;
+    padding: 0 18px 0 0;
   }
 
   .sidebar.is-open {
