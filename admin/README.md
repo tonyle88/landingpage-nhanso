@@ -42,6 +42,8 @@ const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3m9zkv9mX-Bg
 
 Nếu deploy ra URL mới, thay URL ở dòng này.
 
+Lưu ý: không dán `google-apps-script-booking.gs` hoặc `google-apps-script.gs` vào Web App URL của admin. Nếu admin báo lỗi tìm sheet `Dang ky tu van`, nghĩa là URL admin đang trỏ nhầm sang script đặt lịch.
+
 Ngày giờ trong tab `Admin users` được format theo giờ Việt Nam:
 
 ```text

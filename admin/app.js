@@ -577,8 +577,30 @@ async function api(action, data = {}, includeToken = true) {
     body,
   });
   const payload = await response.json();
-  if (!payload.ok) throw new Error(payload.message || 'Không thể hoàn tất thao tác.');
+  if (!payload.ok) throw new Error(formatApiErrorMessage(action, payload));
   return payload;
+}
+
+function formatApiErrorMessage(action, payload) {
+  const message = payload.message || 'Không thể hoàn tất thao tác.';
+  const isAdminAction = [
+    'loginAdmin',
+    'getAdminContent',
+    'saveLandingContentItem',
+    'saveLandingContentBatch',
+    'syncLandingContentTemplate',
+    'savePackage',
+    'deletePackage',
+    'uploadFeedbackImage',
+    'saveFeedbackImage',
+    'deleteFeedbackImage',
+  ].includes(action);
+
+  if (isAdminAction && /Dang ky tu van|SHEET_NAME|sheet/i.test(message)) {
+    return 'Admin đang gọi nhầm Apps Script đặt lịch. Hãy deploy file google-apps-script-landing-content.gs vào đúng Web App URL của admin.';
+  }
+
+  return message;
 }
 
 function handleSessionError(error) {

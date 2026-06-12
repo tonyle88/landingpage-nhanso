@@ -141,6 +141,14 @@ function doPost(e) {
   try {
     const params = getPostParams(e);
 
+    if (isAdminOnlyAction(params.action)) {
+      return jsonResponse({
+        ok: false,
+        message: 'Admin dang goi nham Apps Script tong/booking. Hay deploy file google-apps-script-landing-content.gs vao Web App URL cua admin.',
+        scriptVersion: SCRIPT_VERSION,
+      });
+    }
+
     if (params.action === 'saveBooking' || params.action === 'finalizeBooking') {
       return handleSaveBooking(params);
     }
@@ -151,6 +159,26 @@ function doPost(e) {
   } catch (error) {
     return jsonResponse({ ok: false, message: error.message });
   }
+}
+
+function isAdminOnlyAction(action) {
+  return [
+    'loginAdmin',
+    'logoutAdmin',
+    'getAdminContent',
+    'saveLandingContentItem',
+    'saveLandingContentBatch',
+    'changeAdminPassword',
+    'listAdminUsers',
+    'createAdminUser',
+    'setAdminUserStatus',
+    'syncLandingContentTemplate',
+    'savePackage',
+    'deletePackage',
+    'uploadFeedbackImage',
+    'saveFeedbackImage',
+    'deleteFeedbackImage',
+  ].indexOf(cleanValue(action)) !== -1;
 }
 
 function getPostParams(e) {
