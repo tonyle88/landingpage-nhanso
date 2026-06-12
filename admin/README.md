@@ -3,13 +3,13 @@
 Trang quản trị nằm tại:
 
 ```text
-http://localhost:8080/admin/index.html
+http://localhost:8080/admin/
 ```
 
 Hoặc khi upload hosting, mở:
 
 ```text
-/admin/index.html
+/admin/
 ```
 
 ## Tài khoản mặc định
@@ -40,6 +40,24 @@ const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3m9zkv9mX-Bg
 ```
 
 Nếu deploy ra URL mới, thay URL ở dòng này.
+
+## Khi giao diện bị lệch
+
+Upload lại đủ 3 file:
+
+```text
+admin/index.html
+admin/style.css
+admin/app.js
+```
+
+Sau đó mở lại:
+
+```text
+https://ten-mien-cua-ban/admin/
+```
+
+Nếu trình duyệt còn giữ bản cũ, hard refresh bằng `Cmd + Shift + R` trên Mac hoặc `Ctrl + F5` trên Windows.
 
 ## Vai trò user
 

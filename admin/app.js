@@ -156,11 +156,15 @@ function snapshotItem(item) {
 }
 
 function showLogin() {
+  els.loginScreen.hidden = false;
+  els.adminShell.hidden = true;
   els.loginScreen.classList.remove('is-hidden');
   els.adminShell.classList.add('is-hidden');
 }
 
 function showAdmin() {
+  els.loginScreen.hidden = true;
+  els.adminShell.hidden = false;
   els.loginScreen.classList.add('is-hidden');
   els.adminShell.classList.remove('is-hidden');
   els.currentUser.textContent = `${state.user.displayName || state.user.username} (${state.user.role})`;

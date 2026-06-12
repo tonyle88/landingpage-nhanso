@@ -99,7 +99,8 @@ a {
   text-decoration: none;
 }
 
-.is-hidden {
+.is-hidden,
+[hidden] {
   display: none !important;
 }
 
@@ -114,18 +115,30 @@ a {
 
 .login-screen {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: 32px;
 }
 
 .login-panel {
+  position: relative;
+  overflow: hidden;
   width: min(520px, 100%);
-  padding: 30px;
+  padding: 34px;
   border: 1px solid rgba(240, 201, 106, 0.28);
   border-radius: 8px;
   background: linear-gradient(145deg, rgba(9, 28, 32, 0.94), rgba(13, 43, 48, 0.91));
   box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+}
+
+.login-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold-soft), var(--orange-soft), var(--teal-600));
 }
 
 .brand-mark,
@@ -185,6 +198,11 @@ a {
 .login-form {
   display: grid;
   gap: 12px;
+}
+
+.login-form .primary-button {
+  width: 100%;
+  margin-top: 8px;
 }
 
 .input-shell {
