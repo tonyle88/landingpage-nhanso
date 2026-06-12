@@ -37,7 +37,7 @@ body {
   color: var(--white);
   background:
     linear-gradient(110deg, rgba(7, 24, 27, 0.92), rgba(13, 43, 48, 0.78)),
-    url("../assets/images/hero_bg.png") center/cover fixed;
+    url("/assets/images/hero_bg.png") center/cover fixed;
   -webkit-font-smoothing: antialiased;
 }
 
