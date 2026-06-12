@@ -662,7 +662,7 @@ function renderFeedbackImages() {
     const file = input.files[0];
     
     setBusy(btn, true);
-    msg.textContent = 'Đang nén và đẩy ảnh lên ImgBB... Vui lòng đợi nhé!';
+    msg.textContent = 'Đang nén và tải ảnh lên... Vui lòng đợi nhé!';
     msg.style.color = 'var(--text-dim)';
     
     try {
@@ -675,7 +675,7 @@ function renderFeedbackImages() {
         imageBase64: cleanBase64
       });
       
-      toast('Tải ảnh lên thành công!');
+      toast(payload.message || 'Tải ảnh lên thành công!');
       input.value = '';
       btn.disabled = true;
       msg.textContent = '';

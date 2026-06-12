@@ -6,7 +6,7 @@
 const SPREADSHEET_ID = '1hxBpzJwNO470xqoHBuaZF26anCGir5pnpQk0iPTxz4k';
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
 const ADMIN_USERS_SHEET_NAME = 'Admin users';
-const SCRIPT_VERSION = '2026-06-12-v13-imgbb-feedback-upload';
+const SCRIPT_VERSION = '2026-06-12-v14-imgbb-drive-fallback';
 const ADMIN_DEFAULT_USERNAME = 'admin';
 const ADMIN_DEFAULT_PASSWORD = 'admin123';
 const ADMIN_SESSION_SECONDS = 21600;
@@ -15,6 +15,7 @@ const ADMIN_SHEET_DATE_FORMAT = 'dd/MM/yyyy HH:mm:ss';
 const IMGBB_API_KEY = 'dbbeb2a25359362e9e9df73c5a9adb24';
 const FEEDBACK_IMAGES_SHEET_NAME = 'Feedback images';
 const FEEDBACK_IMAGES_HEADERS = ['Ngày tạo', 'Tên file', 'URL', 'File ID', 'Người upload'];
+const FEEDBACK_DRIVE_FOLDER_NAME = 'ClowCat Landing Feedback Images';
 const LANDING_CONTENT_HEADERS = [
   'Bật',
   'Khóa',
@@ -948,15 +949,9 @@ function getImgBbApiKey() {
   return cleanValue(fromProperties || IMGBB_API_KEY);
 }
 
-function handleUploadFeedbackImage(params) {
-  const session = requireAdminSession(params.token, ['admin', 'editor']);
-  const imageBase64 = cleanValue(params.imageBase64);
-  const filename = cleanValue(params.filename) || 'feedback_' + new Date().getTime() + '.jpg';
+function uploadFeedbackImageToImgBb(imageBase64, filename) {
   const apiKey = getImgBbApiKey();
-
   if (!apiKey) throw new Error('Chua cau hinh ImgBB API Key.');
-  if (!imageBase64) throw new Error('Thieu du lieu anh can upload.');
-
   const response = UrlFetchApp.fetch('https://api.imgbb.com/1/upload', {
     method: 'post',
     payload: {
@@ -984,21 +979,81 @@ function handleUploadFeedbackImage(params) {
   const fileId = cleanValue(data.data && data.data.id);
   if (!url || !fileId) throw new Error('Thieu URL hoac File ID tu ImgBB.');
 
+  return {
+    provider: 'ImgBB',
+    url: url,
+    fileId: fileId,
+  };
+}
+
+function getFeedbackDriveFolder() {
+  const folders = DriveApp.getFoldersByName(FEEDBACK_DRIVE_FOLDER_NAME);
+  if (folders.hasNext()) return folders.next();
+  return DriveApp.createFolder(FEEDBACK_DRIVE_FOLDER_NAME);
+}
+
+function uploadFeedbackImageToDrive(imageBase64, filename) {
+  const safeFilename = filename || ('feedback_' + new Date().getTime() + '.jpg');
+  const mimeType = getImageMimeTypeFromFilename(safeFilename);
+  const bytes = Utilities.base64Decode(imageBase64);
+  const blob = Utilities.newBlob(bytes, mimeType, safeFilename);
+  const file = getFeedbackDriveFolder().createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  const fileId = file.getId();
+  return {
+    provider: 'Google Drive',
+    url: 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(fileId) + '&sz=w1200',
+    fileId: 'drive:' + fileId,
+  };
+}
+
+function getImageMimeTypeFromFilename(filename) {
+  const lower = String(filename || '').toLowerCase();
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  return 'image/jpeg';
+}
+
+function saveFeedbackImageRecord(session, filename, uploadResult) {
   const sheet = ensureFeedbackImagesSheet();
   sheet.appendRow([
     getVietnamNow(),
     filename,
-    url,
-    fileId,
+    uploadResult.url,
+    uploadResult.fileId,
     session.username
   ]);
   sheet.getRange(sheet.getLastRow(), 1).setNumberFormat(ADMIN_SHEET_DATE_FORMAT);
+}
+
+function handleUploadFeedbackImage(params) {
+  const session = requireAdminSession(params.token, ['admin', 'editor']);
+  const imageBase64 = cleanValue(params.imageBase64);
+  const filename = cleanValue(params.filename) || 'feedback_' + new Date().getTime() + '.jpg';
+
+  if (!imageBase64) throw new Error('Thieu du lieu anh can upload.');
+
+  let uploadResult;
+  let imgBbError = null;
+  try {
+    uploadResult = uploadFeedbackImageToImgBb(imageBase64, filename);
+  } catch (error) {
+    imgBbError = error;
+    uploadResult = uploadFeedbackImageToDrive(imageBase64, filename);
+  }
+
+  saveFeedbackImageRecord(session, filename, uploadResult);
 
   return jsonResponse({
     ok: true,
-    message: 'Upload len ImgBB thanh cong',
-    url: url,
-    fileId: fileId,
+    message: imgBbError
+      ? 'ImgBB dang chan request, da luu anh tam qua Google Drive.'
+      : 'Upload len ImgBB thanh cong',
+    provider: uploadResult.provider,
+    url: uploadResult.url,
+    fileId: uploadResult.fileId,
+    fallbackReason: imgBbError ? imgBbError.message : '',
     feedbackImages: getFeedbackImages(),
     scriptVersion: SCRIPT_VERSION
   });
@@ -1037,6 +1092,14 @@ function handleDeleteFeedbackImage(params) {
   requireAdminSession(params.token, ['admin', 'editor']);
   const fileId = cleanValue(params.fileId);
   if (!fileId) throw new Error('Thiếu File ID.');
+
+  if (fileId.indexOf('drive:') === 0) {
+    try {
+      DriveApp.getFileById(fileId.replace('drive:', '')).setTrashed(true);
+    } catch (error) {
+      // The Sheet row should still be removed even if the Drive file is already gone.
+    }
+  }
   
   const sheet = ensureFeedbackImagesSheet();
   const lastRow = sheet.getLastRow();
