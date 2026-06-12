@@ -167,7 +167,9 @@ function showAdmin() {
   els.adminShell.hidden = false;
   els.loginScreen.classList.add('is-hidden');
   els.adminShell.classList.remove('is-hidden');
-  els.currentUser.textContent = `${state.user.displayName || state.user.username} (${state.user.role})`;
+  const displayName = state.user.displayName || state.user.username;
+  els.currentUser.textContent = displayName;
+  els.currentUser.title = `${displayName} - ${state.user.role}`;
   document.querySelectorAll('.admin-only').forEach((el) => {
     el.classList.toggle('is-hidden', state.user.role !== 'admin');
   });

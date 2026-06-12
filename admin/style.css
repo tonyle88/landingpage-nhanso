@@ -407,7 +407,7 @@ a {
 
 .status-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) minmax(120px, 1fr) minmax(260px, 1.45fr);
   gap: 1px;
   margin: 16px 0;
   overflow: hidden;
@@ -429,6 +429,18 @@ a {
   font-weight: 850;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.status-strip .status-user {
+  min-width: 0;
+}
+
+.status-strip .status-user span {
+  max-width: 100%;
+  font-size: clamp(1.05rem, 1.6vw, 1.32rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .status-strip small {
