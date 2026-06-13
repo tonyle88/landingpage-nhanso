@@ -342,11 +342,11 @@ class BirthGrid(Flowable):
         c = self.canv
         cell = self.width / 3
         blue = colors.HexColor("#BFE7F2")
-        red = SUNBURST
+        gold = GOLD
         rows = [
-            [[("3", blue)], [("6", blue), ("6", blue)], [("9", red), ("9", red), ("9", red)]],
-            [[("2", red), ("2", red), ("2", blue), ("2", blue), ("2", blue)], [("5", blue), ("5", blue)], [("8", blue), ("8", blue)]],
-            [[("1", red), ("1", red)], [("4", blue)], [("7", blue), ("7", blue)]],
+            [[], [("6", gold)], [("9", blue), ("9", blue)]],
+            [[("2", blue), ("2", gold)], [("5", blue), ("5", blue), ("5", gold), ("5", gold), ("5", gold)], [("8", gold), ("8", gold)]],
+            [[("1", blue)], [("4", blue)], [("7", gold), ("7", gold)]],
         ]
 
         def draw_segments(segments, cx, cy, present):
@@ -368,11 +368,12 @@ class BirthGrid(Flowable):
                 y = self.height - (r + 1) * cell * 0.68
                 h = cell * 0.68
                 segments = rows[r][col]
-                present = "(" not in segments[0][0]
+                present = bool(segments) and "(" not in segments[0][0]
                 c.setFillColor(colors.Color(1, 1, 1, 0.11 if present else 0.045))
                 c.setStrokeColor(colors.Color(1, 1, 1, 0.16))
                 c.roundRect(x, y, cell - 1.4, h - 1.4, 7, fill=1, stroke=1)
-                draw_segments(segments, x + cell / 2, y + h / 2 - 4, present)
+                if segments:
+                    draw_segments(segments, x + cell / 2, y + h / 2 - 4, present)
         c.setFillColor(MUTED)
         c.setFont("Arial", 6.4)
         c.drawString(0, 1 * mm, "Lưới được bê theo map viết tay; màu số bám theo ghi chú trong ảnh.")
@@ -510,8 +511,8 @@ def cover_bg(canvas, doc):
     canvas.setLineWidth(0.6)
     canvas.line(54 * mm, h - 124 * mm, 156 * mm, h - 124 * mm)
 
-    customer_name = "Ngô Thị Dương"
-    customer_date = " · 20/08/1991"
+    customer_name = "Hồng Thiên Ý"
+    customer_date = " · 25/04/1995"
     customer_font = 15.6
     customer_y = h - 135 * mm
     canvas.setFont("Arial-Bold", customer_font)
@@ -657,13 +658,13 @@ class PythagorasPyramid(Flowable):
         top_y = 58 * mm
         cx = self.width / 2
         nodes = {
-            "base_month": ("8", "Tháng", "", cx - 48 * mm, base_y, False),
-            "base_day": ("2", "Ngày", "", cx, base_y, False),
-            "base_year": ("2", "Năm", "", cx + 48 * mm, base_y, False),
-            "peak_1": ("1", "33T", "2024", cx - 24 * mm, mid_y, True),
-            "peak_2": ("4", "42T", "2033", cx + 24 * mm, mid_y, True),
-            "peak_3": ("5", "51T", "2042", cx, upper_y, True),
-            "peak_4": ("1", "60T", "2051", cx, top_y, True),
+            "base_month": ("4", "Tháng", "", cx - 48 * mm, base_y, False),
+            "base_day": ("7", "Ngày", "", cx, base_y, False),
+            "base_year": ("6", "Năm", "", cx + 48 * mm, base_y, False),
+            "peak_1": ("11/2", "28T", "2023", cx - 24 * mm, mid_y, True),
+            "peak_2": ("4", "37T", "2032", cx + 24 * mm, mid_y, True),
+            "peak_3": ("6", "46T", "2041", cx, upper_y, True),
+            "peak_4": ("10", "55T", "2050", cx, top_y, True),
         }
 
         def draw_arrow(x1, y1, x2, y2, color, width=0.9):
@@ -720,11 +721,11 @@ class PythagorasPyramid(Flowable):
         )
 
         challenge_items = [
-            ("6", nodes["peak_1"][3] - 13 * mm, nodes["peak_1"][4] + 5 * mm),
-            ("0", nodes["peak_2"][3] + 13 * mm, nodes["peak_2"][4] + 4 * mm),
+            ("3", nodes["peak_1"][3] - 13 * mm, nodes["peak_1"][4] + 5 * mm),
+            ("1", nodes["peak_2"][3] + 13 * mm, nodes["peak_2"][4] + 4 * mm),
             # Challenge 3 follows this template's rule: |Peak 1 energy - Peak 2 energy|.
-            ("3", nodes["peak_3"][3] - 14 * mm, nodes["peak_3"][4] + 4 * mm),
-            ("6", nodes["peak_4"][3] - 14 * mm, nodes["peak_4"][4] + 2 * mm),
+            ("2", nodes["peak_3"][3] - 14 * mm, nodes["peak_3"][4] + 4 * mm),
+            ("2", nodes["peak_4"][3] - 14 * mm, nodes["peak_4"][4] + 2 * mm),
         ]
         for value, x, y in challenge_items:
             c.setFillColor(colors.Color(217 / 255, 78 / 255, 31 / 255, 0.20))
@@ -912,16 +913,16 @@ def build():
     story.append(PageBreak())
 
     # SECTION 1
-    story.append(SectionBand("01", "Bức Tranh Tính Cách (7 Chỉ Số Cốt Lõi)", "Ngô Thị Dương · 20/08/1991 · Chuyên gia đồng hành: Lê Chí Cường"))
+    story.append(SectionBand("01", "Bức Tranh Tính Cách (7 Chỉ Số Cốt Lõi)", "Hồng Thiên Ý · 25/04/1995 · Chuyên gia đồng hành: Lê Chí Cường"))
     story.append(Spacer(1, 7 * mm))
     indicators = [
-        ("Đường đời (Life Path)", "3", "Trở thành người truyền đạt và sáng tạo. Bạn mang sứ mệnh của một người truyền cảm hứng thông qua ngôn từ và sự sáng tạo."),
-        ("Sứ mệnh (Destiny)", "8", "Bài học về sự điều hành, quyền lực và vật chất. Cuộc đời sẽ đặt bạn vào những tình huống để học cách làm chủ vật chất."),
-        ("Linh hồn (Soul Urge)", "6", "Khao khát được yêu thương và chăm sóc gia đình. Sâu thẳm bên trong, bạn hạnh phúc nhất khi được bao bọc gia đình."),
-        ("Nhân cách (Personality)", "11/2", "Một tâm hồn nhạy bén, đầy cảm hứng và trực giác. Thế giới nhìn nhận bạn như một người có trực giác rất cao."),
-        ("Thái độ (Attitude)", "1", "Độc lập, quyết đoán và tự chủ trong phản ứng đầu tiên."),
-        ("Ngày sinh", "2", "Khả năng lắng nghe, thấu cảm và nhạy bén bẩm sinh."),
-        ("Trưởng thành (Maturity)", "11/2", "Sự thức tỉnh tâm linh và khả năng hòa giải giai đoạn chín muồi."),
+        ("Đường đời (Life Path)", "8", "Bài học làm chủ vật chất, quyền lực và khả năng vận hành nguồn lực. Năng lượng này cần đi cùng sự chính trực và tư duy win-win."),
+        ("Sứ mệnh (Destiny)", "8", "Sứ mệnh của bạn là học cách điều hành, xây dựng thành tựu và dùng sức ảnh hưởng để tạo giá trị thực tế cho cộng đồng."),
+        ("Linh hồn (Soul Urge)", "9", "Bên trong bạn có lý tưởng phụng sự, lòng bao dung và mong muốn làm điều có ích cho nhiều người."),
+        ("Nhân cách (Personality)", "8", "Bên ngoài bạn toát ra khí chất mạnh mẽ, tự chủ, có khả năng dẫn dắt và tạo cảm giác đáng tin cậy."),
+        ("Thái độ (Attitude)", "11/2", "Phản ứng đầu tiên thường đi qua trực giác rất nhạy. Bạn dễ cảm nhận tầng sâu của tình huống trước khi lý trí kịp gọi tên."),
+        ("Ngày sinh", "7", "Khả năng chiêm nghiệm, tự học và đào sâu bản chất vấn đề. Những bài học thực tế là chất liệu lớn để bạn trưởng thành."),
+        ("Trưởng thành (Maturity)", "7", "Giai đoạn chín muồi hướng bạn về sự thông tuệ, chiều sâu nội tâm và năng lực nhìn thấu bản chất."),
     ]
     for row in indicators:
         story.append(indicator(*row))
@@ -937,7 +938,7 @@ def build():
     ]
     right = [
         P("<b>Biểu đồ theo map viết tay</b>", "H2"),
-        P("Lưới bên trái được bê theo map viết tay của Ngô Thị Dương. Đây là một biểu đồ cực kỳ hiếm gặp khi không khuyết bất kỳ con số nào. Bạn đến với thế giới này với một bộ công cụ đầy đủ, không thiếu sót. Tuy nhiên, sự 'đặc quánh' của các con số tạo ra những dòng năng lượng vô cùng áp lực.", "BodySmall"),
+        P("Lưới bên trái được bê theo map viết tay của Hồng Thiên Ý. Năng lượng 8 và 7 xuất hiện nổi bật, đi cùng trực giác 11/2 và lý tưởng số 9. Điểm cần chăm sóc là khoảng trống số 3: khả năng diễn đạt, gọi tên cảm xúc và truyền đạt ý tưởng cần được rèn luyện đều đặn.", "BodySmall"),
     ]
     two_col = Table(
         [[card(left, width=82 * mm), Spacer(4 * mm, 1), card(right, width=84 * mm)]],
@@ -950,9 +951,9 @@ def build():
     story.append(
         checklist(
             [
-                (True, "Mũi tên Cân bằng cảm xúc (2-5-8)", "Sự quá tải rung động: Với 5 con số 2 và 3 con số 8, bạn mang gánh nặng cảm xúc khổng lồ. Rất nhạy cảm, dễ tổn thương và hay kịch tính hóa vấn đề."),
-                (False, "Mũi tên Trí tuệ (3-6-9)", "Bạn có óc sáng tạo và lý tưởng lớn. Nếu giúp đỡ người khác sai cách, bạn không những không giúp được họ mà còn vô tình làm tổn hao công đức."),
-                (False, "Mũi tên Tâm linh (3-5-7)", "Với 2 con số 7, cuộc đời không thiếu những bài học thực tế đau đớn để chiêm nghiệm. Đặc biệt những bài học ngầm về gia đình hiện tại là sự sắp đặt để bạn gọt giũa cái tôi."),
+                (False, "Khuyết số 3", "Thiếu số 3 tạo khoảng trống trong diễn đạt và tư duy linh hoạt. Bạn có thể hiểu sâu, cảm nhanh nhưng cần luyện cách nói ra rõ ràng, mềm mại và đúng lúc."),
+                (True, "Tam hợp năng lượng số 8", "Đường đời, Sứ mệnh và Nhân cách đều mang số 8. Đây là dấu ấn của năng lực điều hành, thực thi và làm chủ vật chất, nhưng cần tránh độc đoán hoặc nghiện kiểm soát."),
+                (True, "Năng lượng 7 & 11/2", "Ngày sinh 7, Trưởng thành 7 và Thái độ 11/2 tạo chiều sâu trực giác. Bạn học rất nhiều qua trải nghiệm, chiêm nghiệm và những lần buộc phải nhìn lại cái tôi."),
             ]
         )
     )
@@ -971,8 +972,9 @@ def build():
     story.append(
         card(
             [
-                P("<b>Không có nợ nghiệp (Ø)</b>", "H2"),
-                P("Bạn là 'học sinh giỏi của kiếp trước'. Bạn bước vào kiếp này với hành trang trong sạch, không phải trả nợ cũ. Đây là đặc ân để bạn toàn tâm toàn ý tập trung hoàn thành sứ mệnh số 8 và số 3 mà không bị kéo chân bởi những oan khiên quá khứ.", "Body"),
+                P("<b>Nợ nghiệp 16/7</b>", "H2"),
+                P("Chỉ số 16/7 nhắc bạn đánh giá lại những giá trị cốt lõi, loại bỏ nền tảng phù phiếm và học cách khiêm nhường trước những biến chuyển bất ngờ của cuộc sống. Đây là bài học về việc vượt qua tự cao, đối xử với mọi người bằng sự tôn trọng và trung thực hơn trong tình yêu lẫn các mối quan hệ.", "Body"),
+                P("Khi bạn tập trung phát triển bản thân, thành thật với những điểm yếu và đặt thành tựu vật chất vào đúng mục đích phụng sự, bài học 16/7 sẽ trở thành cánh cửa mở ra sự trưởng thành rất sâu.", "Body"),
             ]
         )
     )
@@ -980,14 +982,14 @@ def build():
     story.append(PageBreak())
 
     # SECTION 5 - LIFE CYCLES
-    story.append(SectionBand("05", "Ba Chu Kỳ Cuộc Đời Lớn", "Nền hành trình lớn của Ngô Thị Dương"))
+    story.append(SectionBand("05", "Ba Chu Kỳ Cuộc Đời Lớn", "Nền hành trình lớn của Hồng Thiên Ý"))
     story.append(Spacer(1, 8 * mm))
     story.append(
         step_blocks(
             [
-                ("Chu kỳ 1", "8", "Từ 0 đến 33 tuổi: Bạn được yêu cầu làm chủ thế giới vật chất, học sự độc lập, quyền lực và kiểm soát. Bạn có khả năng thu hút thành công tài chính nếu biết kiên trì."),
-                ("Chu kỳ 2", "2", "Từ 34 đến 60 tuổi: Đòi hỏi sự kiên nhẫn, hợp tác và nhạy cảm. Đây là lúc cái 'Tôi' cần hạ xuống để nhường chỗ cho sự kết nối, hòa hợp và thấu hiểu cảm xúc người khác."),
-                ("Chu kỳ 3", "2", "Từ 61 tuổi trở đi: Mang năng lượng bình yên và trực giác. Bạn tìm thấy niềm vui trong điều giản đơn, sống chậm lại và trở thành điểm tựa tinh thần cho người xung quanh."),
+                ("Chu kỳ 1", "4", "Từ 0 đến 28 tuổi: Giai đoạn xây nền, rèn kỷ luật, trách nhiệm và tính thực tế. Số 4 giúp bạn học cách làm việc chăm chỉ, chính xác và xây dựng nền móng bền."),
+                ("Chu kỳ 2", "7", "Từ 29 đến 55 tuổi: Giai đoạn đi sâu vào tri thức, chiến lược, tâm lý, nghiên cứu và hành trình tìm chân lý. Đây là lúc bạn cần lắng nghe nội tâm nhiều hơn."),
+                ("Chu kỳ 3", "6", "Từ 56 tuổi trở lên: Giai đoạn của sự chăm sóc, cố vấn và phụng sự. Bạn trở thành điểm tựa tinh thần khi biết dùng kinh nghiệm để chữa lành và nâng đỡ người khác."),
             ]
         )
     )
@@ -996,8 +998,8 @@ def build():
         card(
             [
                 P("Lưu ý hiện tại", "Kicker"),
-                P("Năm Cá Nhân Số 9 (2024-2025)", "H1"),
-                P("Dương đang ở Năm cá nhân số 9 – năm cuối cùng của Chu kỳ 1. Đây là năm để bạn 'chốt sổ' quá khứ, dọn dẹp những tàn dư cũ (từ tư duy đến các mối quan hệ không còn phù hợp) để chuẩn bị cho một chu kỳ mới đầy ánh sáng.", "Body"),
+                P("Năm Cá Nhân Số 3 (2026)", "H1"),
+                P("Theo map viết tay, năm 2026 mang năng lượng cá nhân số 3. Đây là giai đoạn luyện diễn đạt, mở lòng, viết ra điều chưa nói được và chuyển hóa suy nghĩ thành ngôn từ rõ ràng hơn. Năm 2027 chuyển sang năng lượng số 4, phù hợp để xây cấu trúc và kỷ luật mới.", "Body"),
             ],
             fill=colors.Color(217 / 255, 78 / 255, 31 / 255, 0.18),
         )
@@ -1011,10 +1013,10 @@ def build():
     story.append(
         step_blocks(
             [
-                ("Đỉnh cao 1", "1", "Năm 2024, tuổi 33: Khởi đầu mới, độc lập. Thách thức 6 là gánh nặng trách nhiệm và sự áp đặt trong gia đình."),
-                ("Đỉnh cao 2", "4", "Năm 2033, tuổi 42: Xây dựng nền tảng, kỷ luật. Thách thức 0 là thử thách tâm linh tổng thể, đòi hỏi sự thức tỉnh cao độ."),
-                ("Đỉnh cao 3", "5", "Năm 2042, tuổi 51: Tự do, trải nghiệm, thay đổi. Thách thức 3 là kiểm soát lời nói và sự phân tán năng lượng."),
-                ("Đỉnh cao 4", "1", "Năm 2051, tuổi 60: Tái khẳng định vị thế cá nhân. Thách thức 6 là sự cân bằng giữa cái tôi và sự phụng sự gia đình."),
+                ("Đỉnh cao 1", "11/2", "Năm 2023, tuổi 28: Trực giác, hợp tác và thức tỉnh cảm xúc. Thách thức 3 yêu cầu bạn học cách diễn đạt chân thật, tránh giữ mọi thứ trong đầu."),
+                ("Đỉnh cao 2", "4", "Năm 2032, tuổi 37: Xây dựng nền tảng, kỷ luật và năng lực thực thi. Thách thức 1 nhắc bạn cân bằng giữa độc lập và lắng nghe."),
+                ("Đỉnh cao 3", "6", "Năm 2041, tuổi 46: Chăm sóc, trách nhiệm và chữa lành gia đình. Thách thức 2 yêu cầu sự hòa giải, kiên nhẫn và mềm mại cảm xúc."),
+                ("Đỉnh cao 4", "10", "Năm 2050, tuổi 55: Tái khẳng định vị thế cá nhân ở tầng trưởng thành hơn. Thách thức 2 tiếp tục nhắc bạn giữ cân bằng trong kết nối."),
             ]
         )
     )
@@ -1023,13 +1025,13 @@ def build():
     story.append(PageBreak())
 
     # SECTION 7 - HEALING MESSAGE
-    story.append(SectionBand("07", "Thông Điệp Chữa Lành", "Lộ trình cá nhân hóa dành cho Ngô Thị Dương"))
+    story.append(SectionBand("07", "Thông Điệp Chữa Lành", "Lộ trình cá nhân hóa dành cho Hồng Thiên Ý"))
     story.append(Spacer(1, 8 * mm))
     story.append(
         card(
             [
-                P("Ngô Thị Dương thân mến, tôi viết những dòng này cho bạn không phải như một nhà toán học, mà như một người đồng hành trên con đường chữa lành linh hồn.", "Body"),
-                P("Bạn mang năng lượng Đường đời 3 (ngôn từ) và Ngày sinh 2 (thấu hiểu). Đừng dùng khả năng ăn nói của số 3 để chỉ trích hay áp đặt. Thay vào đó, hãy dùng sự nhạy bén của số 2 để 'dự đoán trước nhân quả' trong lời nói của mình.", "Body"),
+                P("Hồng Thiên Ý thân mến, năng lượng số 8 trong bạn rất mạnh: muốn làm chủ, muốn tạo kết quả và muốn đứng vững bằng năng lực của chính mình. Nhưng Linh hồn số 9 và Thái độ 11/2 lại nhắc rằng thành tựu thật sự cần đi cùng lòng bao dung, trực giác và mục đích phụng sự.", "Body"),
+                P("Nợ nghiệp 16/7 không đến để trừng phạt, mà để giúp bạn hạ cái tôi xuống, nhìn lại nền tảng bên trong và dùng sức mạnh vật chất một cách tỉnh thức hơn. Khi bạn càng khiêm nhường, năng lượng số 8 càng trở nên bền vững.", "Body"),
             ],
             fill=colors.Color(245 / 255, 193 / 255, 150 / 255, 0.10),
         )
@@ -1039,15 +1041,15 @@ def build():
     story.append(
         step_blocks(
             [
-                ("01", "Yêu thương bản thân", "Hãy đặt mình lên hàng đầu, chăm sóc tâm hồn mình trước khi muốn bao bọc bất kỳ ai khác. Bạn không thể rót nước từ một chiếc bình rỗng."),
-                ("02", "Gỡ bỏ lớp mặt nạ mạnh mẽ", "Sự mạnh mẽ thực sự nằm ở chỗ bạn dám thừa nhận mình đang yếu đuối. Hãy cho phép mình được khóc, được cần giúp đỡ."),
-                ("03", "Nghệ thuật giao tiếp", "Trước khi thốt ra một lời gây tổn thương cho chồng, hãy dừng lại một nhịp. Hãy dùng sự dịu dàng có trí tuệ để phá vỡ vòng lặp mâu thuẫn."),
-                ("04", "Thanh lọc (Năm số 9)", "Đừng sợ hãi sự xáo trộn, đó là lúc vũ trụ đang giúp bạn dọn dẹp để bước vào Đỉnh cao số 1 với một tâm thế tự do nhất."),
+                ("01", "Grounding mỗi ngày", "Dành ít nhất 15 phút đi chân trần trên cỏ, làm vườn hoặc tiếp xúc thiên nhiên để làm dịu hệ thần kinh và kéo năng lượng số 8 về trạng thái cân bằng."),
+                ("02", "Viết nhật ký chuyển hóa", "Vì khuyết số 3, hãy viết ra những suy nghĩ hoặc cảm xúc chưa thể nói thành lời. Việc đưa ý nghĩ ra giấy giúp bạn bớt cô độc trong tư duy."),
+                ("03", "Thiền định với bài học 16/7", "Khi đạt thành tựu, hãy tự hỏi: 'Tôi có thể dùng nguồn lực này để giúp đỡ bao nhiêu người?' Câu hỏi này giúp cái tôi tan vào mục đích phụng sự."),
+                ("04", "Đạo đức kinh doanh win-win", "Trong mọi quyết định tài chính, hãy giữ luật nhân quả và lợi ích đôi bên. Khi bạn giúp người khác thành công, năng lượng số 8 sẽ vận hành bền hơn."),
             ]
         )
     )
     story.append(Spacer(1, 12 * mm))
-    story.append(card([P("“Yêu thương bản thân không phải là ích kỷ, đó là sự khởi đầu của mọi sự chữa lành.”", "Quote")], fill=colors.Color(217 / 255, 78 / 255, 31 / 255, 0.20)))
+    story.append(card([P("“Thành công bền vững của bạn bắt đầu khi sức mạnh cá nhân được đặt vào đúng mục đích phụng sự.”", "Quote")], fill=colors.Color(217 / 255, 78 / 255, 31 / 255, 0.20)))
     story.append(Spacer(1, 11 * mm))
     story.append(
         kv_table(
