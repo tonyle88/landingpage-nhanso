@@ -1,16 +1,112 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Package Layout Test</title>
+  <link rel="stylesheet" href="/admin/style.css?v=test-package-actions" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
-  <aside class="sidebar">
-    <div class="sidebar-brand">Brand</div>
-    <nav class="section-nav">
-      <div class="section-tab">Tab 1</div>
-      <div class="section-tab">Tab 2</div>
-    </nav>
-    <div class="sidebar-actions">Action</div>
-  </aside>
+  <main class="admin-shell">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a class="sidebar-brand" href="#">
+          <img src="/assets/images/logo2.png" width="48" height="48" alt="" />
+          <span>Clow Admin</span>
+        </a>
+      </div>
+    </aside>
+    <section class="workspace">
+      <section class="section-heading">
+        <div>
+          <p class="eyebrow">Gói tư vấn</p>
+          <h2>Kiểm tra layout nút</h2>
+        </div>
+        <p>Trang test cục bộ để kiểm card gói không bị tràn nút.</p>
+      </section>
+      <section class="editor-grid">
+        <div class="packages-admin-grid" style="grid-column:1/-1">
+          <article class="content-card admin-package-card">
+            <div class="card-top">
+              <div>
+                <div class="content-key">year · Đang bật</div>
+                <p class="content-desc">Dự Đoán Năm Cá Nhân</p>
+              </div>
+              <span class="pill">Thứ tự 10</span>
+            </div>
+            <div class="content-meta">
+              <span class="pill">Online 500.000đ</span>
+              <span class="pill">Offline 550.000đ</span>
+              <span class="pill">orange</span>
+            </div>
+            <ul class="admin-package-features">
+              <li>Dự đoán xu hướng năm cá nhân</li>
+              <li>Nhận diện cơ hội &amp; thách thức</li>
+              <li>Định hướng theo chu kỳ số</li>
+            </ul>
+            <div class="card-actions package-card-actions">
+              <button class="ghost-button" type="button"><i class="fa-solid fa-arrow-up"></i><span>Lên</span></button>
+              <button class="ghost-button" type="button"><i class="fa-solid fa-arrow-down"></i><span>Xuống</span></button>
+              <button class="ghost-button" type="button"><i class="fa-solid fa-pen"></i><span>Sửa</span></button>
+              <button class="ghost-button" type="button"><i class="fa-solid fa-trash"></i><span>Xóa</span></button>
+            </div>
+          </article>
+
+          <article class="content-card admin-package-card">
+            <div class="card-top">
+              <div>
+                <div class="content-key">combo3 · Đang bật</div>
+                <p class="content-desc">Dịch vụ Tư Vấn 3-in-1 Đặc Biệt</p>
+              </div>
+              <span class="pill">Thứ tự 20</span>
+            </div>
+            <div class="content-meta">
+              <span class="pill">Online 500.000đ</span>
+              <span class="pill">Offline 500.000đ</span>
+              <span class="pill">teal</span>
+            </div>
+            <ul class="admin-package-features">
+              <li>Kết hợp linh hoạt 3 công cụ gồm Bài Clow, Bản Đồ Sao Chiêm Tinh và Nhân Số Học</li>
+              <li>Phân tích Bản đồ Nhân số chuyên sâu</li>
+              <li>Tặng kèm file PDF tóm tắt buổi tư vấn</li>
+            </ul>
+            <div class="card-actions package-card-actions">
+              <button class="ghost-button" type="button"><i class="fa-solid fa-arrow-up"></i><span>Lên</span></button>
+              <button class="ghost-button" type="button"><i class="fa-solid fa-arrow-down"></i><span>Xuống</span></button>
+              <button class="ghost-button" type="button"><i class="fa-solid fa-pen"></i><span>Sửa</span></button>
+              <button class="ghost-button" type="button"><i class="fa-solid fa-trash"></i><span>Xóa</span></button>
+            </div>
+          </article>
+
+          <article class="content-card admin-package-card">
+            <div class="card-top">
+              <div>
+                <div class="content-key">big7 · Đang bật</div>
+                <p class="content-desc">Phân Tích Toàn Diện</p>
+              </div>
+              <span class="pill">Nổi bật</span>
+            </div>
+            <div class="content-meta">
+              <span class="pill">Online 2.000.000đ</span>
+              <span class="pill">Offline 2.000.000đ</span>
+              <span class="pill">gold</span>
+            </div>
+            <ul class="admin-package-features">
+              <li><strong>7 chỉ số cốt lõi</strong>: chủ đạo · linh hồn · sứ mệnh · nhân cách · thái độ · trưởng thành</li>
+              <li><strong>4 đỉnh cao</strong> trong cuộc đời</li>
+              <li>Thông điệp chữa lành chuyên sâu</li>
+            </ul>
+            <div class="card-actions package-card-actions">
+              <button class="ghost-button" type="button"><i class="fa-solid fa-arrow-up"></i><span>Lên</span></button>
+              <button class="ghost-button" type="button"><i class="fa-solid fa-arrow-down"></i><span>Xuống</span></button>
+              <button class="ghost-button" type="button"><i class="fa-solid fa-pen"></i><span>Sửa</span></button>
+              <button class="ghost-button" type="button"><i class="fa-solid fa-trash"></i><span>Xóa</span></button>
+            </div>
+          </article>
+        </div>
+      </section>
+    </section>
+  </main>
 </body>
 </html>

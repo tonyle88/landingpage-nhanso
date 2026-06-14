@@ -1928,25 +1928,28 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .testimonials-header {
   position: relative;
   z-index: 2;
-  max-width: 980px;
-  margin: 0 auto 46px;
+  max-width: 860px;
+  margin: 0 auto 40px;
 }
 
 .testimonials-title {
   font-family: var(--font-main);
-  font-size: clamp(2rem, 3.2vw, 2.85rem);
+  font-size: clamp(1.9rem, 2.65vw, 2.45rem);
   font-weight: 800;
-  line-height: 1.16;
+  line-height: 1.18;
   color: rgba(255, 255, 255, 0.96);
-  text-wrap: normal;
-  white-space: nowrap;
+  max-width: 16ch;
+  margin-left: auto;
+  margin-right: auto;
+  text-wrap: balance;
+  white-space: normal;
   text-shadow: 0 12px 42px rgba(0, 0, 0, 0.38);
 }
 
 .testimonial-title-main,
 .testimonial-title-accent {
   display: inline;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .testimonial-title-accent {
@@ -1963,7 +1966,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
 .testimonials-track {
   display: flex;
-  gap: 34px;
+  gap: 28px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
@@ -1977,7 +1980,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
 .testimonial-card {
   position: relative;
-  flex: 0 0 clamp(270px, 24vw, 340px);
+  flex: 0 0 clamp(250px, 21vw, 310px);
   scroll-snap-align: center;
   border: 1px solid rgba(212, 168, 67, 0.22);
   border-radius: 22px;
@@ -2025,7 +2028,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
 .testimonial-image-wrap img {
   width: 100%;
-  height: clamp(410px, 42vw, 580px);
+  height: clamp(380px, 38vw, 530px);
   object-fit: contain;
   object-position: center;
   border-radius: 14px;
@@ -2097,7 +2100,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     margin-bottom: 34px;
   }
   .testimonials-title {
-    font-size: clamp(2rem, 8vw, 2.9rem);
+    font-size: clamp(1.75rem, 6.6vw, 2.35rem);
     white-space: normal;
     text-wrap: balance;
   }
@@ -2111,7 +2114,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     padding: 12px max(18px, 9vw) 34px;
   }
   .testimonial-card {
-    flex-basis: min(78vw, 350px);
+    flex-basis: min(74vw, 320px);
     padding: 12px;
     border-radius: 18px;
     opacity: 0.62;
@@ -2121,7 +2124,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     border-radius: 12px;
   }
   .testimonial-image-wrap img {
-    height: min(480px, 104vw);
+    height: min(440px, 96vw);
   }
   .testimonials-controls {
     gap: 20px;
@@ -2151,14 +2154,14 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
 @media (max-width: 480px) {
   .testimonials-title {
-    font-size: 2rem;
-    line-height: 1.08;
+    font-size: 1.75rem;
+    line-height: 1.12;
   }
   .testimonial-card {
-    flex-basis: 82vw;
+    flex-basis: 78vw;
   }
   .testimonial-image-wrap img {
-    height: 420px;
+    height: 390px;
   }
 }
 
@@ -2574,8 +2577,8 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     white-space: normal;
   }
   .testimonials-title {
-    font-size: clamp(1.95rem, 8.2vw, 2.45rem);
-    line-height: 1.12;
+    font-size: clamp(1.65rem, 6.8vw, 2.05rem);
+    line-height: 1.16;
     max-width: 100%;
     margin-left: auto;
     margin-right: auto;
@@ -2583,10 +2586,10 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   .testimonial-title-main,
   .testimonial-title-accent {
     display: block;
-    white-space: nowrap;
+    white-space: normal;
   }
   .testimonials-track {
-    --testimonial-mobile-card: min(84vw, 330px);
+    --testimonial-mobile-card: min(80vw, 310px);
     gap: 18px;
     padding-top: 8px;
     padding-bottom: 26px;
@@ -2599,7 +2602,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     padding: 10px;
   }
   .testimonial-image-wrap img {
-    height: min(450px, 105vw);
+    height: min(410px, 96vw);
   }
   .testimonials-controls {
     gap: 18px;
@@ -2684,17 +2687,17 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     letter-spacing: 1.8px;
   }
   .testimonials-title {
-    font-size: clamp(1.8rem, 8.6vw, 2.05rem);
+    font-size: clamp(1.55rem, 7vw, 1.85rem);
     max-width: 100%;
   }
   .testimonials-track {
-    --testimonial-mobile-card: 86vw;
+    --testimonial-mobile-card: 82vw;
   }
   .testimonial-card {
     flex-basis: var(--testimonial-mobile-card);
   }
   .testimonial-image-wrap img {
-    height: min(410px, 104vw);
+    height: min(380px, 96vw);
   }
 }
 

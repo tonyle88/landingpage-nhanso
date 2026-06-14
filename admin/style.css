@@ -562,13 +562,26 @@ a {
 
 .packages-admin-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr));
+  gap: 16px;
   width: 100%;
 }
 
 .admin-package-card {
   align-content: start;
+  overflow: hidden;
+}
+
+.admin-package-card .content-meta {
+  overflow: hidden;
+}
+
+.admin-package-card .pill {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-package-features {
@@ -578,6 +591,11 @@ a {
   padding-left: 18px;
   color: rgba(255, 255, 255, 0.84);
   line-height: 1.45;
+  overflow: hidden;
+}
+
+.admin-package-features li {
+  overflow-wrap: anywhere;
 }
 
 .pill {
@@ -650,6 +668,32 @@ a {
 
 .card-actions .ghost-button {
   min-height: 38px;
+}
+
+.admin-package-card .package-card-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  justify-content: stretch;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.admin-package-card .package-card-actions .ghost-button {
+  width: 100%;
+  min-width: 0;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.admin-package-card .package-card-actions .ghost-button span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-package-card .package-card-actions .ghost-button i {
+  flex: 0 0 auto;
 }
 
 .save-state {

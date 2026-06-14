@@ -1,5 +1,10 @@
 const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3m9zkv9mX-BgMtB7DZj2rMrZtkAAOFDQow2UKxttXRz8G5Zlc4qponSGrvPBxJwEO/exec';
 const SESSION_KEY = 'clowcat_admin_session';
+const MANAGED_PACKAGE_CONTENT_PREFIXES = [
+  'packages.year_',
+  'packages.big3_',
+  'packages.big7_',
+];
 
 const state = {
   token: '',
@@ -198,7 +203,7 @@ function render() {
 function renderSections() {
   const groups = buildSectionGroups();
   const buttons = [
-    { name: 'all', label: 'Tất cả', count: state.items.length },
+    { name: 'all', label: 'Tất cả', count: getVisibleContentItems().length },
     ...groups.map((group) => ({ name: group.name, label: group.name, count: group.count })),
     { name: 'packages-manager', label: 'Gói Tư Vấn', count: state.packages ? state.packages.length : 0 },
     { name: 'feedback-images', label: 'Ảnh Feedback', count: state.feedbackImages ? state.feedbackImages.length : 0 }
@@ -317,7 +322,7 @@ function createContentCard(item) {
   });
 
   const actions = document.createElement('div');
-  actions.className = 'card-actions';
+  actions.className = 'card-actions package-card-actions';
   const stateLabel = document.createElement('span');
   stateLabel.className = 'save-state';
   stateLabel.textContent = isDirty(item) ? 'Có thay đổi chưa lưu' : 'Đã đồng bộ';
@@ -349,24 +354,34 @@ function shouldUseTextarea(item) {
 
 function renderStats() {
   const dirty = getDirtyItems();
-  els.totalCount.textContent = state.items.length;
-  els.enabledCount.textContent = state.items.filter((item) => item.enabled).length;
+  const visibleItems = getVisibleContentItems();
+  els.totalCount.textContent = visibleItems.length;
+  els.enabledCount.textContent = visibleItems.filter((item) => item.enabled).length;
   els.dirtyCount.textContent = dirty.length;
   els.saveAll.disabled = dirty.length === 0;
 }
 
 function buildSectionGroups() {
   const groups = new Map();
-  state.items.forEach((item) => {
+  getVisibleContentItems().forEach((item) => {
     if (!groups.has(item.section)) groups.set(item.section, { name: item.section, count: 0 });
     groups.get(item.section).count += 1;
   });
   return Array.from(groups.values());
 }
 
+function isManagedPackageContent(item) {
+  const key = String(item?.key || '').trim();
+  return MANAGED_PACKAGE_CONTENT_PREFIXES.some((prefix) => key.startsWith(prefix));
+}
+
+function getVisibleContentItems() {
+  return state.items.filter((item) => !isManagedPackageContent(item));
+}
+
 function getFilteredItems() {
   const search = state.search;
-  return state.items.filter((item) => {
+  return getVisibleContentItems().filter((item) => {
     const sectionMatch = state.selectedSection === 'all' || item.section === state.selectedSection;
     if (!sectionMatch) return false;
     if (!search) return true;
@@ -388,7 +403,7 @@ function isDirty(item) {
 }
 
 function getDirtyItems() {
-  return state.items.filter(isDirty);
+  return getVisibleContentItems().filter(isDirty);
 }
 
 async function saveItem(item) {
