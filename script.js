@@ -7,8 +7,12 @@ const BOOKING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOlNPUunzX4
 // Sheet mới: cấu hình nội dung từng section của landing page.
 const LANDING_CONTENT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3m9zkv9mX-BgMtB7DZj2rMrZtkAAOFDQow2UKxttXRz8G5Zlc4qponSGrvPBxJwEO/exec';
 const LANDING_CONTENT_ENABLED = true;
-const LANDING_CONTENT_TIMEOUT_MS = 3500;
+const LANDING_CONTENT_TIMEOUT_MS = 9000;
+const LANDING_CONTENT_RETRY_COUNT = 2;
+const LANDING_CONTENT_LOADING_MAX_MS = 1600;
 const LANDING_CONTENT_LOADING_CLASS = 'landing-content-loading';
+const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_cache_v2';
+const LANDING_CONTENT_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const DEFAULT_TESTIMONIAL_IMAGES = Array.from({ length: 10 }, (_, index) => ({
   url: `assets/images/testimonials/testimonial-${String(index + 1).padStart(2, '0')}.png`,
 }));
@@ -206,6 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ===== BOOKING MODAL LOGIC =====
   initBookingModals();
+  initMobileStickyCta();
 
   // ===== SMOOTH COUNTER ANIMATION =====
   landingContentReady.finally(initStatCounters);
@@ -220,27 +225,91 @@ async function loadLandingContentFromSheet() {
     return;
   }
 
-  let timeoutId;
-  try {
-    const controller = new AbortController();
-    timeoutId = window.setTimeout(() => controller.abort(), LANDING_CONTENT_TIMEOUT_MS);
-    const url = `${LANDING_CONTENT_SCRIPT_URL}?action=getLandingContent&_=${Date.now()}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      mode: 'cors',
-      cache: 'no-store',
-      signal: controller.signal,
-    });
-
-    const payload = await response.json();
-    if (!payload.ok || !Array.isArray(payload.items)) return;
-    applyLandingContent(payload);
-  } catch (error) {
-    console.warn('Không tải được nội dung từ Google Sheet, dùng nội dung dự phòng trong HTML.', error);
-  } finally {
-    if (timeoutId) window.clearTimeout(timeoutId);
+  const loaderTimer = window.setTimeout(finishLandingContentLoading, LANDING_CONTENT_LOADING_MAX_MS);
+  const cachedPayload = readLandingContentCache();
+  if (cachedPayload) {
+    applyLandingContent(cachedPayload);
     finishLandingContentLoading();
   }
+
+  try {
+    const payload = await fetchLandingContentWithRetry();
+    if (!isValidLandingContentPayload(payload)) return;
+    applyLandingContent(payload);
+    writeLandingContentCache(payload);
+  } catch (error) {
+    const message = cachedPayload
+      ? 'Không tải được nội dung mới từ Google Sheet, đang dùng bản cache gần nhất.'
+      : 'Không tải được nội dung từ Google Sheet, dùng nội dung dự phòng trong HTML.';
+    console.warn(message, error);
+  } finally {
+    window.clearTimeout(loaderTimer);
+    finishLandingContentLoading();
+  }
+}
+
+async function fetchLandingContentWithRetry() {
+  let lastError;
+  for (let attempt = 0; attempt <= LANDING_CONTENT_RETRY_COUNT; attempt += 1) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), LANDING_CONTENT_TIMEOUT_MS);
+      const url = `${LANDING_CONTENT_SCRIPT_URL}?action=getLandingContent&_=${Date.now()}&try=${attempt + 1}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      window.clearTimeout(timeoutId);
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json();
+      if (!isValidLandingContentPayload(payload)) {
+        throw new Error(payload?.message || 'Payload Google Sheet không hợp lệ.');
+      }
+      return payload;
+    } catch (error) {
+      lastError = error;
+      if (attempt < LANDING_CONTENT_RETRY_COUNT) {
+        await sleep(450 * (attempt + 1));
+      }
+    }
+  }
+  throw lastError;
+}
+
+function isValidLandingContentPayload(payload) {
+  return Boolean(payload)
+    && payload.ok !== false
+    && Array.isArray(payload.items);
+}
+
+function readLandingContentCache() {
+  try {
+    const raw = window.localStorage?.getItem(LANDING_CONTENT_CACHE_KEY);
+    if (!raw) return null;
+    const cached = JSON.parse(raw);
+    if (!cached.savedAt || Date.now() - cached.savedAt > LANDING_CONTENT_CACHE_MAX_AGE_MS) return null;
+    return isValidLandingContentPayload(cached.payload) ? cached.payload : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function writeLandingContentCache(payload) {
+  try {
+    window.localStorage?.setItem(LANDING_CONTENT_CACHE_KEY, JSON.stringify({
+      savedAt: Date.now(),
+      payload,
+    }));
+  } catch (error) {
+    // Cache chỉ là lớp dự phòng, lỗi lưu cache không ảnh hưởng trải nghiệm chính.
+  }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 function finishLandingContentLoading() {
@@ -250,7 +319,7 @@ function finishLandingContentLoading() {
 }
 
 function applyLandingContent(payload) {
-  payload.items.forEach(applyLandingContentItem);
+  (payload.items || []).forEach(applyLandingContentItem);
   syncHeroConsultationBadge();
 
   const packages = normalizePackages(payload.packages);
@@ -276,7 +345,7 @@ function normalizePackages(packages) {
       name: String(pkg.name || '').trim(),
       onlinePrice: Number(pkg.onlinePrice || 0),
       offlinePrice: Number(pkg.offlinePrice || pkg.onlinePrice || 0),
-      unit: String(pkg.unit || '/buổi').trim(),
+      unit: normalizePackageUnit(pkg.unit),
       icon: String(pkg.icon || 'sparkles').trim(),
       accent: String(pkg.accent || 'teal').trim(),
       featured: pkg.featured === true,
@@ -326,7 +395,10 @@ function setupPackagesCarousel(packageCount) {
       <button class="package-carousel-btn" type="button" data-package-slide="prev" aria-label="Xem gói trước">
         <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
       </button>
-      <div class="package-carousel-hint">Lướt để xem thêm gói tư vấn</div>
+      <div class="package-carousel-status" aria-live="polite">
+        <span class="package-carousel-range">1-3 / ${packageCount}</span>
+        <div class="package-carousel-dots" aria-label="Chọn gói tư vấn"></div>
+      </div>
       <button class="package-carousel-btn" type="button" data-package-slide="next" aria-label="Xem gói tiếp theo">
         <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
       </button>
@@ -336,6 +408,22 @@ function setupPackagesCarousel(packageCount) {
 
   const previousBtn = controls.querySelector('[data-package-slide="prev"]');
   const nextBtn = controls.querySelector('[data-package-slide="next"]');
+  const range = controls.querySelector('.package-carousel-range');
+  const dots = controls.querySelector('.package-carousel-dots');
+  let activeIndex = 0;
+
+  if (dots && dots.children.length !== packageCount) {
+    dots.innerHTML = '';
+    for (let index = 0; index < packageCount; index += 1) {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'package-carousel-dot';
+      dot.setAttribute('aria-label', `Xem gói tư vấn ${index + 1}`);
+      dot.addEventListener('click', () => scrollToPackage(index));
+      dots.appendChild(dot);
+    }
+  }
+
   const getStep = () => {
     const firstCard = grid.querySelector('.package-card');
     if (!firstCard) return grid.clientWidth;
@@ -343,19 +431,37 @@ function setupPackagesCarousel(packageCount) {
     const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
     return firstCard.getBoundingClientRect().width + gap;
   };
+  const getVisibleCount = () => Math.max(1, Math.round(grid.clientWidth / getStep()));
+  const getMaxStartIndex = () => Math.max(0, packageCount - getVisibleCount());
+  const scrollToPackage = (index) => {
+    const targetIndex = Math.max(0, Math.min(index, getMaxStartIndex()));
+    grid.scrollTo({ left: getStep() * targetIndex, behavior: 'smooth' });
+    window.setTimeout(updateButtons, 360);
+  };
   const updateButtons = () => {
-    const maxScroll = grid.scrollWidth - grid.clientWidth - 2;
-    previousBtn.disabled = grid.scrollLeft <= 2;
-    nextBtn.disabled = grid.scrollLeft >= maxScroll;
+    const visibleCount = getVisibleCount();
+    const maxStartIndex = getMaxStartIndex();
+    activeIndex = Math.max(0, Math.min(Math.round(grid.scrollLeft / getStep()), maxStartIndex));
+    const rangeStart = activeIndex + 1;
+    const rangeEnd = Math.min(packageCount, activeIndex + visibleCount);
+
+    previousBtn.disabled = activeIndex <= 0;
+    nextBtn.disabled = activeIndex >= maxStartIndex;
+    if (range) range.textContent = `${rangeStart}${rangeEnd > rangeStart ? `-${rangeEnd}` : ''} / ${packageCount}`;
+    dots?.querySelectorAll('.package-carousel-dot').forEach((dot, dotIndex) => {
+      const isActive = dotIndex === activeIndex;
+      dot.classList.toggle('is-active', isActive);
+      dot.setAttribute('aria-current', isActive ? 'true' : 'false');
+    });
   };
   const slide = (direction) => {
-    grid.scrollBy({ left: getStep() * direction, behavior: 'smooth' });
-    window.setTimeout(updateButtons, 360);
+    scrollToPackage(activeIndex + direction);
   };
 
   previousBtn.onclick = () => slide(-1);
   nextBtn.onclick = () => slide(1);
   grid.onscroll = updateButtons;
+  window.addEventListener('resize', updateButtons);
   window.setTimeout(updateButtons, 120);
 }
 
@@ -439,8 +545,8 @@ function syncPackageOptionsFromPackages(packages) {
   PACKAGE_OPTIONS.online = {};
   PACKAGE_OPTIONS.offline = {};
   packages.forEach((pkg) => {
-    updatePackageOption('online', pkg.code, stripHtmlToText(pkg.name), pkg.onlinePrice);
-    updatePackageOption('offline', pkg.code, stripHtmlToText(pkg.name), pkg.offlinePrice || pkg.onlinePrice);
+    updatePackageOption('online', pkg.code, stripHtmlToText(pkg.name), pkg.onlinePrice, pkg.unit);
+    updatePackageOption('offline', pkg.code, stripHtmlToText(pkg.name), pkg.offlinePrice || pkg.onlinePrice, pkg.unit);
   });
 
   const consultationTypeSelect = document.getElementById('consultation-type');
@@ -506,6 +612,10 @@ function renderTestimonials(images) {
     imgEl.src = img.url;
     imgEl.alt = 'Cảm nhận của khách hàng ' + (index + 1);
     imgEl.loading = 'lazy';
+    imgEl.decoding = 'async';
+    imgEl.width = 420;
+    imgEl.height = 620;
+    imgEl.referrerPolicy = 'no-referrer';
     imgEl.onerror = () => {
       const fallback = DEFAULT_TESTIMONIAL_IMAGES[index % DEFAULT_TESTIMONIAL_IMAGES.length]?.url;
       if (fallback && imgEl.dataset.fallbackApplied !== 'true') {
@@ -696,12 +806,13 @@ function syncPackageOptionsFromLandingContent(items) {
     const price = parsePriceFromContent(valuesByKey.get(keys.price));
     if (!name || !price) return;
 
-    updatePackageOption('online', packageCode, name, price);
+    updatePackageOption('online', packageCode, name, price, '/buổi');
     updatePackageOption(
       'offline',
       packageCode,
       name,
-      packageCode === 'big7' ? price : price + OFFLINE_TRAVEL_FEE
+      packageCode === 'big7' ? price : price + OFFLINE_TRAVEL_FEE,
+      '/buổi'
     );
   });
 
@@ -712,13 +823,15 @@ function syncPackageOptionsFromLandingContent(items) {
   }
 }
 
-function updatePackageOption(consultationType, packageCode, name, price) {
+function updatePackageOption(consultationType, packageCode, name, price, unit = '/buổi') {
   if (!PACKAGE_OPTIONS[consultationType]) PACKAGE_OPTIONS[consultationType] = {};
   if (!PACKAGE_OPTIONS[consultationType][packageCode]) PACKAGE_OPTIONS[consultationType][packageCode] = {};
   const option = PACKAGE_OPTIONS[consultationType][packageCode];
+  const unitLabel = normalizePackageUnit(unit);
 
   option.price = price;
-  option.label = `${name} – ${formatPackagePriceLabel(price)}/buổi`;
+  option.unit = unitLabel;
+  option.label = `${name} – ${formatPackagePriceLabel(price)}${unitLabel}`;
 }
 
 function parsePriceFromContent(value) {
@@ -735,6 +848,13 @@ function stripHtmlToText(value) {
 
 function formatPackagePriceLabel(price) {
   return Number(price || 0).toLocaleString('vi-VN') + ' vnđ';
+}
+
+function normalizePackageUnit(unit) {
+  const value = String(unit || '/buổi').trim();
+  if (!value) return '/buổi';
+  if (value.startsWith('/')) return value;
+  return `/${value}`;
 }
 
 function initStatCounters() {
@@ -961,6 +1081,23 @@ function initBookingModals() {
       copyTextToClipboard(text).then(() => showToast('Đã sao chép!'));
     });
   });
+}
+
+function initMobileStickyCta() {
+  const stickyCta = document.getElementById('mobile-sticky-cta');
+  const contact = document.getElementById('contact');
+  if (!stickyCta || !contact) return;
+
+  const updateVisibility = () => {
+    const isMobile = window.matchMedia('(max-width: 760px)').matches;
+    const contactTop = contact.getBoundingClientRect().top;
+    const shouldShow = isMobile && window.scrollY > 520 && contactTop > window.innerHeight * 0.45;
+    stickyCta.classList.toggle('is-visible', shouldShow);
+  };
+
+  window.addEventListener('scroll', updateVisibility, { passive: true });
+  window.addEventListener('resize', updateVisibility);
+  updateVisibility();
 }
 
 // ============================================

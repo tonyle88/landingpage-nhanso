@@ -6,10 +6,12 @@
 const SPREADSHEET_ID = '1hxBpzJwNO470xqoHBuaZF26anCGir5pnpQk0iPTxz4k';
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
 const ADMIN_USERS_SHEET_NAME = 'Admin users';
-const SCRIPT_VERSION = '2026-06-12-v15-dynamic-packages';
+const SCRIPT_VERSION = '2026-06-14-v16-cache-order';
 const ADMIN_DEFAULT_USERNAME = 'admin';
 const ADMIN_DEFAULT_PASSWORD = 'admin123';
 const ADMIN_SESSION_SECONDS = 21600;
+const LANDING_CONTENT_CACHE_KEY = 'landing_content_payload_v16';
+const LANDING_CONTENT_CACHE_SECONDS = 300;
 const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
 const ADMIN_SHEET_DATE_FORMAT = 'dd/MM/yyyy HH:mm:ss';
 const IMGBB_API_KEY = 'dbbeb2a25359362e9e9df73c5a9adb24';
@@ -106,6 +108,7 @@ function doPost(e) {
     if (action === 'setAdminUserStatus') return handleSetAdminUserStatus(params);
     if (action === 'syncLandingContentTemplate') return handleSyncLandingContentTemplate(params);
     if (action === 'savePackage') return handleSavePackage(params);
+    if (action === 'savePackageOrder') return handleSavePackageOrder(params);
     if (action === 'deletePackage') return handleDeletePackage(params);
     if (action === 'uploadFeedbackImage') return handleUploadFeedbackImage(params);
     if (action === 'saveFeedbackImage') return handleSaveFeedbackImage(params);
@@ -121,23 +124,32 @@ function doPost(e) {
 //  Landing content config – đọc nội dung website từ Google Sheet
 // =============================================
 function handleGetLandingContent() {
+  const cachedPayload = getLandingContentPayloadFromCache();
+  if (cachedPayload) return jsonResponse(cachedPayload);
+
+  const payload = buildLandingContentPayload();
+  putLandingContentPayloadToCache(payload);
+  return jsonResponse(payload);
+}
+
+function buildLandingContentPayload() {
   const spreadsheet = getSpreadsheetByIdOrActive();
   const sheet = spreadsheet.getSheetByName(LANDING_CONTENT_SHEET_NAME);
   if (!sheet) {
-    return jsonResponse({
+    return {
       ok: true,
       items: [],
       packages: getPackages(false),
       feedbackImages: getFeedbackImages(),
       message: 'Chua co tab Landing content. Hay chay initializeLandingContentSheet mot lan trong Apps Script.',
       scriptVersion: SCRIPT_VERSION,
-    });
+    };
   }
 
   ensureLandingContentHeaderRow(sheet);
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
-    return jsonResponse({ ok: true, items: [], packages: getPackages(false), scriptVersion: SCRIPT_VERSION });
+    return { ok: true, items: [], packages: getPackages(false), feedbackImages: getFeedbackImages(), scriptVersion: SCRIPT_VERSION };
   }
 
   const range = sheet.getRange(2, 1, lastRow - 1, LANDING_CONTENT_HEADERS.length);
@@ -149,14 +161,39 @@ function handleGetLandingContent() {
     .map((row, rowIndex) => landingContentRowToItem(row, displayValues[rowIndex], indexes, templateRowsByKey))
     .filter((item) => item.enabled && item.selector && item.value !== '');
 
-  return jsonResponse({
+  return {
     ok: true,
     items: items,
     count: items.length,
     feedbackImages: getFeedbackImages(),
     packages: getPackages(false),
     scriptVersion: SCRIPT_VERSION,
-  });
+  };
+}
+
+function getLandingContentPayloadFromCache() {
+  try {
+    const raw = CacheService.getScriptCache().get(LANDING_CONTENT_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function putLandingContentPayloadToCache(payload) {
+  try {
+    CacheService.getScriptCache().put(LANDING_CONTENT_CACHE_KEY, JSON.stringify(payload), LANDING_CONTENT_CACHE_SECONDS);
+  } catch (error) {
+    console.warn('Khong luu duoc landing content cache:', error);
+  }
+}
+
+function clearLandingContentCache() {
+  try {
+    CacheService.getScriptCache().remove(LANDING_CONTENT_CACHE_KEY);
+  } catch (error) {
+    console.warn('Khong xoa duoc landing content cache:', error);
+  }
 }
 
 function handleGetAdminContent(params) {
@@ -235,6 +272,7 @@ function handleSaveLandingContentItem(params) {
     sheet.getRange(rowNumber, indexes['Bật'] + 1).setValue(isTruthy(params.enabled));
   }
   sheet.getRange(rowNumber, indexes['Nội dung'] + 1).setValue(params.value == null ? '' : String(params.value));
+  clearLandingContentCache();
 
   return jsonResponse({
     ok: true,
@@ -276,6 +314,7 @@ function handleSaveLandingContentBatch(params) {
     sheet.getRange(rowNumber, indexes['Nội dung'] + 1).setValue(item.value == null ? '' : String(item.value));
     saved += 1;
   });
+  clearLandingContentCache();
 
   return jsonResponse({
     ok: true,
@@ -290,6 +329,7 @@ function handleSyncLandingContentTemplate(params) {
   requireAdminSession(params.token);
   const result = syncLandingContentSheet();
   ensurePackagesSheet();
+  clearLandingContentCache();
   return jsonResponse({
     ok: true,
     result: result,
@@ -1129,10 +1169,49 @@ function handleSavePackage(params) {
 
   sheet.getRange(rowNumber, 1, 1, PACKAGES_HEADERS.length).setValues([row]);
   sheet.autoResizeColumns(1, PACKAGES_HEADERS.length);
+  clearLandingContentCache();
 
   return jsonResponse({
     ok: true,
     message: 'Da luu goi tu van',
+    packages: getPackages(true),
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function handleSavePackageOrder(params) {
+  requireAdminSession(params.token);
+  const rawOrder = cleanValue(params.order);
+  if (!rawOrder) throw new Error('Thieu danh sach thu tu goi.');
+
+  let orderItems;
+  try {
+    orderItems = JSON.parse(rawOrder);
+  } catch (error) {
+    throw new Error('Danh sach thu tu goi khong dung JSON.');
+  }
+  if (!Array.isArray(orderItems)) throw new Error('Danh sach thu tu goi phai la mang.');
+
+  const sheet = ensurePackagesSheet();
+  const indexes = getPackageHeaderIndexes();
+  const sortOrderColumn = indexes['Thứ tự'] + 1;
+  let saved = 0;
+
+  orderItems.forEach((item, index) => {
+    const code = cleanPackageCode(item && item.code);
+    if (!code) return;
+    const rowNumber = findPackageRowNumberByCode(sheet, code);
+    if (!rowNumber) return;
+    const sortOrder = Number(item.sortOrder) || (index + 1) * 10;
+    sheet.getRange(rowNumber, sortOrderColumn).setValue(sortOrder);
+    saved += 1;
+  });
+
+  clearLandingContentCache();
+  return jsonResponse({
+    ok: true,
+    saved: saved,
+    message: 'Da luu thu tu goi tu van',
     packages: getPackages(true),
     scriptVersion: SCRIPT_VERSION,
   });
@@ -1147,6 +1226,7 @@ function handleDeletePackage(params) {
   const rowNumber = findPackageRowNumberByCode(sheet, code);
   if (!rowNumber) throw new Error('Khong tim thay goi: ' + code);
   sheet.deleteRow(rowNumber);
+  clearLandingContentCache();
 
   return jsonResponse({
     ok: true,
@@ -1289,6 +1369,7 @@ function handleUploadFeedbackImage(params) {
   }
 
   saveFeedbackImageRecord(session, filename, uploadResult);
+  clearLandingContentCache();
 
   return jsonResponse({
     ok: true,
@@ -1322,6 +1403,7 @@ function handleSaveFeedbackImage(params) {
   ]);
   
   sheet.getRange(sheet.getLastRow(), 1).setNumberFormat(ADMIN_SHEET_DATE_FORMAT);
+  clearLandingContentCache();
   
   return jsonResponse({
     ok: true,
@@ -1353,6 +1435,7 @@ function handleDeleteFeedbackImage(params) {
     for (let i = 0; i < values.length; i++) {
       if (cleanValue(values[i][0]) === fileId) {
         sheet.deleteRow(i + 2);
+        clearLandingContentCache();
         break;
       }
     }

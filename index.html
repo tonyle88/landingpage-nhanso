@@ -7,15 +7,17 @@
   <meta name="description" content="Khám phá bản thân qua Nhân Số Học. Hơn 3 năm kinh nghiệm, 800+ ca tư vấn. Hiểu mình hơn – Sống đúng hướng hơn. Đặt lịch tư vấn ngay!" />
   <meta property="og:title" content="Nhân Số Học Khai Phá Tiềm Năng | Clow Cat Patronus" />
   <meta property="og:description" content="Tấm bản đồ giúp bạn hiểu rõ bản thân, tính cách, điểm mạnh và hành trình phát triển của chính mình." />
+  <meta property="og:image" content="assets/images/hero_bg.png" />
   <link rel="icon" type="image/png" href="assets/images/logo2.png" />
   <link rel="apple-touch-icon" href="assets/images/logo2.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://script.google.com" />
   <link rel="preconnect" href="https://script.googleusercontent.com" />
+  <link rel="preconnect" href="https://i.ibb.co" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="style.css?v=20260612-packages-carousel" />
+  <link rel="stylesheet" href="style.css?v=20260614-growth-plan" />
 </head>
 <body class="landing-content-loading">
 
@@ -234,7 +236,10 @@
         <div class="mentor-block reveal">
         <div class="mentor-image-col">
           <div class="mentor-arch-frame">
-            <img src="assets/images/mentor_bao.png" alt="Phan Thái Bảo" id="mentor1-img" />
+            <picture>
+              <source srcset="assets/images/mentor_bao.webp" type="image/webp" />
+              <img src="assets/images/mentor_bao.png" alt="Phan Thái Bảo" id="mentor1-img" width="1400" height="1868" loading="lazy" decoding="async" />
+            </picture>
           </div>
         </div>
         <div class="mentor-content-col">
@@ -267,7 +272,10 @@
       <div class="mentor-block reveal">
         <div class="mentor-image-col">
           <div class="mentor-arch-frame">
-            <img src="assets/images/mentor_cuong.png" alt="Lê Chí Cường" id="mentor2-img" />
+            <picture>
+              <source srcset="assets/images/mentor_cuong.webp" type="image/webp" />
+              <img src="assets/images/mentor_cuong.png" alt="Lê Chí Cường" id="mentor2-img" width="1400" height="1401" loading="lazy" decoding="async" />
+            </picture>
           </div>
         </div>
         <div class="mentor-content-col">
@@ -609,7 +617,12 @@
               <span>Chọn Lịch & Thanh Toán</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>
-            <p class="form-note">Bước tiếp theo: chọn ngày giờ phù hợp và hoàn tất thanh toán ✨</p>
+            <p class="form-note">Bước tiếp theo: chọn ngày giờ phù hợp và hoàn tất thanh toán.</p>
+            <div class="form-trust-list" aria-label="Cam kết khi đặt lịch">
+              <span><i class="fa-solid fa-shield-halved"></i> Bảo mật thông tin</span>
+              <span><i class="fa-regular fa-calendar-check"></i> Có thể đổi lịch</span>
+              <span><i class="fa-regular fa-file-lines"></i> Nhận tóm tắt sau buổi tư vấn</span>
+            </div>
           </form>
         </div>
       </div>
@@ -814,12 +827,17 @@
     <i class="fa-solid fa-arrow-up"></i>
   </button>
 
+  <a href="#contact" class="mobile-sticky-cta" id="mobile-sticky-cta">
+    <i class="fa-regular fa-calendar-check" aria-hidden="true"></i>
+    <span>Đặt lịch tư vấn</span>
+  </a>
+
   <!-- Background Music -->
   <audio id="bg-music" src="nhac.mp3" loop autoplay preload="auto"></audio>
   <button id="musicToggleBtn" class="music-toggle-btn playing" aria-label="Tắt nhạc" aria-pressed="true">
     <i class="fa-solid fa-volume-high"></i>
   </button>
 
-  <script src="script.js?v=20260612-packages-carousel"></script>
+  <script src="script.js?v=20260614-package-unit"></script>
 </body>
 </html>

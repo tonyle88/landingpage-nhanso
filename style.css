@@ -598,7 +598,10 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   inset: -5%; /* Extend past edges to hide bounds during pan */
   width: 110%;
   height: 110%;
-  background-image: url('assets/images/hero_bg.png');
+  background-image: image-set(
+    url('assets/images/hero_bg.webp') type('image/webp'),
+    url('assets/images/hero_bg.png') type('image/png')
+  );
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -660,9 +663,24 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   z-index: 0;
   pointer-events: none;
 }
-.bg-img-1 { background-image: url('assets/images/hero_bg.png'); }
-.bg-img-2 { background-image: url('assets/images/packages_bg.png'); }
-.bg-img-3 { background-image: url('assets/images/about_bg.png'); }
+.bg-img-1 {
+  background-image: image-set(
+    url('assets/images/hero_bg.webp') type('image/webp'),
+    url('assets/images/hero_bg.png') type('image/png')
+  );
+}
+.bg-img-2 {
+  background-image: image-set(
+    url('assets/images/packages_bg.webp') type('image/webp'),
+    url('assets/images/packages_bg.png') type('image/png')
+  );
+}
+.bg-img-3 {
+  background-image: image-set(
+    url('assets/images/about_bg.webp') type('image/webp'),
+    url('assets/images/about_bg.png') type('image/png')
+  );
+}
 
 .hero-overlay {
   position: absolute;
@@ -1213,6 +1231,11 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   box-shadow: 0 0 40px rgba(0, 229, 204, 0.15), inset 0 0 20px rgba(212, 168, 67, 0.2);
   position: relative;
 }
+.mentor-arch-frame picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
 .mentor-arch-frame img {
   width: 100%;
   height: 100%;
@@ -1377,7 +1400,10 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .packages-bg-image {
   position: absolute;
   inset: 0;
-  background-image: url('assets/images/packages_bg.png');
+  background-image: image-set(
+    url('assets/images/packages_bg.webp') type('image/webp'),
+    url('assets/images/packages_bg.png') type('image/png')
+  );
   background-size: cover;
   background-position: center;
   opacity: 0.18;
@@ -1424,6 +1450,42 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   gap: 18px;
   margin: 0 auto 42px;
 }
+.package-carousel-status {
+  min-width: 180px;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+.package-carousel-range {
+  color: var(--color-gold-light);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+.package-carousel-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.package-carousel-dot {
+  width: 8px;
+  height: 8px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+  transition: width var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+}
+.package-carousel-dot.is-active {
+  width: 28px;
+  background: linear-gradient(135deg, var(--color-gold-light), var(--color-orange));
+}
+.package-carousel-dot:hover {
+  transform: translateY(-1px);
+  background: rgba(246, 204, 109, 0.8);
+}
 .package-carousel-btn {
   width: 54px;
   height: 54px;
@@ -1445,13 +1507,6 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   opacity: 0.35;
   cursor: not-allowed;
 }
-.package-carousel-hint {
-  color: var(--color-gold-light);
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 2.2px;
-  text-transform: uppercase;
-}
 @media (max-width: 960px) {
   .packages-grid-3 { grid-template-columns: minmax(0, 1fr); max-width: 480px; }
   .packages-carousel-enabled {
@@ -1460,8 +1515,21 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   .packages-carousel-enabled .package-card {
     flex-basis: 100%;
   }
-  .package-carousel-hint {
-    display: none;
+  .package-carousel-controls {
+    gap: 12px;
+    margin-bottom: 34px;
+  }
+  .package-carousel-status {
+    min-width: 118px;
+  }
+  .package-carousel-range {
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+  }
+  .package-carousel-dots {
+    max-width: 118px;
+    flex-wrap: wrap;
+    gap: 7px;
   }
 }
 
@@ -2192,6 +2260,28 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   font-size: 0.8rem;
   color: var(--color-white-60);
 }
+.form-trust-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+.form-trust-list span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 168, 67, 0.22);
+  background: rgba(13, 43, 48, 0.56);
+  color: var(--color-white-70);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+.form-trust-list i {
+  color: var(--color-gold-light);
+}
 
 /* ===== FOOTER ===== */
 .footer {
@@ -2329,6 +2419,58 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
 @media (max-width: 900px) {
   .floating-socials { display: none; }
+}
+
+.mobile-sticky-cta {
+  position: fixed;
+  left: 18px;
+  right: 18px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 9500;
+  min-height: 56px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--color-gold-light), var(--color-orange));
+  color: var(--color-teal-darkest);
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: 0 18px 42px rgba(232, 94, 48, 0.38);
+  opacity: 0;
+  transform: translateY(18px);
+  pointer-events: none;
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+}
+.mobile-sticky-cta.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+@media (max-width: 760px) {
+  .mobile-sticky-cta {
+    display: inline-flex;
+  }
+  .hero,
+  .section {
+    overflow-x: clip;
+  }
+  .hero-bg-image {
+    width: 100%;
+    max-width: 100vw;
+    left: 0;
+    right: 0;
+  }
+  .number-ring {
+    max-width: 92vw;
+    max-height: 92vw;
+  }
+  .ring-5 {
+    width: 86vw;
+    height: 86vw;
+  }
 }
 
 /* ===== TOAST ===== */

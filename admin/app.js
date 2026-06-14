@@ -672,6 +672,7 @@ function renderPackagesManager() {
           <div class="content-key">Thêm hoặc sửa gói tư vấn</div>
           <p class="content-desc">Nhập mã gói không dấu, ví dụ: big3, big7, year, couple-reading. Thứ tự nhỏ sẽ hiện trước, hoặc dùng nút lên/xuống bên dưới.</p>
         </div>
+        <button type="button" class="ghost-button" id="package-normalize-order-btn"><i class="fa-solid fa-arrow-down-1-9"></i><span>Sắp lại thứ tự</span></button>
       </div>
       <div class="package-form-grid">
         <label>Mã gói<input name="code" required placeholder="vd: big3" /></label>
@@ -712,8 +713,10 @@ function renderPackagesManager() {
 
   const form = document.getElementById('package-form');
   const resetBtn = document.getElementById('package-reset-btn');
+  const normalizeOrderBtn = document.getElementById('package-normalize-order-btn');
   form.addEventListener('submit', savePackageFromForm);
   resetBtn.addEventListener('click', () => fillPackageForm());
+  normalizeOrderBtn.addEventListener('click', normalizePackageOrder);
 
   const gallery = document.createElement('div');
   gallery.className = 'packages-admin-grid';
@@ -820,14 +823,43 @@ async function movePackage(code, direction) {
   target.sortOrder = currentOrder;
 
   try {
-    const firstPayload = await savePackageSilently(current);
-    const secondPayload = await savePackageSilently(target);
-    state.packages = secondPayload.packages || firstPayload.packages || state.packages;
+    const payload = await savePackageOrder(packages);
+    state.packages = payload.packages || state.packages;
     toast('Đã đổi thứ tự gói tư vấn.');
     render();
   } catch (error) {
     handleSessionError(error);
   }
+}
+
+async function normalizePackageOrder() {
+  const packages = (state.packages || [])
+    .slice()
+    .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
+  if (!packages.length) return;
+
+  packages.forEach((pkg, index) => {
+    pkg.sortOrder = (index + 1) * 10;
+  });
+
+  try {
+    const payload = await savePackageOrder(packages);
+    state.packages = payload.packages || state.packages;
+    toast('Đã sắp lại thứ tự gói tư vấn.');
+    render();
+  } catch (error) {
+    handleSessionError(error);
+  }
+}
+
+function savePackageOrder(packages) {
+  return api('savePackageOrder', {
+    token: state.token,
+    order: JSON.stringify(packages.map((pkg, index) => ({
+      code: pkg.code,
+      sortOrder: Number(pkg.sortOrder || (index + 1) * 10),
+    }))),
+  });
 }
 
 function savePackageSilently(pkg) {

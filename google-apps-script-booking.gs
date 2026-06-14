@@ -863,7 +863,7 @@ function getPackageOption(consultationType, packageCode) {
       ? packageFromSheet.offlinePrice || packageFromSheet.onlinePrice
       : packageFromSheet.onlinePrice;
     return {
-      label: packageFromSheet.name + ' – ' + formatPackagePriceLabel(price) + (packageFromSheet.unit || '/buổi'),
+      label: packageFromSheet.name + ' – ' + formatPackagePriceLabel(price) + normalizePackageUnit(packageFromSheet.unit),
       price: price,
       onlinePrice: packageFromSheet.onlinePrice,
       offlinePrice: packageFromSheet.offlinePrice,
@@ -877,7 +877,7 @@ function getPackageOption(consultationType, packageCode) {
       : packageBase.price;
 
     return {
-      label: packageBase.name + ' – ' + formatPackagePriceLabel(price) + '/buổi',
+      label: packageBase.name + ' – ' + formatPackagePriceLabel(price) + normalizePackageUnit('/buổi'),
       price: price,
     };
   }
@@ -916,7 +916,7 @@ function getPackageBaseFromPackagesSheet(packageCode) {
         name: name,
         onlinePrice: onlinePrice,
         offlinePrice: offlinePrice,
-        unit: cleanValue(row[unitCol]) || '/buổi',
+        unit: normalizePackageUnit(row[unitCol]),
       };
     }
   } catch (error) {
@@ -995,6 +995,13 @@ function stripHtmlToText(value) {
 
 function formatPackagePriceLabel(price) {
   return Number(price || 0).toLocaleString('vi-VN') + ' vnđ';
+}
+
+function normalizePackageUnit(unit) {
+  const value = cleanValue(unit || '/buổi');
+  if (!value) return '/buổi';
+  if (value.indexOf('/') === 0) return value;
+  return '/' + value;
 }
 
 function resolveBookingDetails(params) {
