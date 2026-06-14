@@ -570,10 +570,53 @@ a {
 .admin-package-card {
   align-content: start;
   overflow: hidden;
+  min-width: 0;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
+}
+
+.admin-package-card.is-dragging {
+  opacity: 0.58;
+  transform: scale(0.985);
+}
+
+.admin-package-card.is-drag-over {
+  border-color: rgba(240, 201, 106, 0.76);
+  box-shadow: 0 0 0 1px rgba(240, 201, 106, 0.24), 0 18px 44px rgba(0, 0, 0, 0.34);
+}
+
+.package-card-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.package-drag-handle {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  color: rgba(240, 201, 106, 0.82);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: grab;
+}
+
+.package-drag-handle:active {
+  cursor: grabbing;
 }
 
 .admin-package-card .content-meta {
   overflow: hidden;
+}
+
+.admin-package-card .content-desc {
+  font-size: 0.9rem;
+  line-height: 1.34;
+  overflow-wrap: anywhere;
 }
 
 .admin-package-card .pill {
@@ -586,16 +629,19 @@ a {
 
 .admin-package-features {
   display: grid;
-  gap: 8px;
+  gap: 7px;
   margin: 0;
   padding-left: 18px;
   color: rgba(255, 255, 255, 0.84);
-  line-height: 1.45;
+  font-size: 0.84rem;
+  line-height: 1.36;
   overflow: hidden;
 }
 
 .admin-package-features li {
+  min-width: 0;
   overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .pill {
@@ -672,18 +718,25 @@ a {
 
 .admin-package-card .package-card-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 44px 44px minmax(86px, 1fr) 44px;
   align-items: stretch;
   justify-content: stretch;
-  gap: 10px;
+  gap: 8px;
   margin-top: auto;
 }
 
 .admin-package-card .package-card-actions .ghost-button {
   width: 100%;
   min-width: 0;
-  padding: 0 10px;
+  padding: 0 9px;
   white-space: nowrap;
+}
+
+.admin-package-card .package-card-actions .package-icon-button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  aspect-ratio: 1;
 }
 
 .admin-package-card .package-card-actions .ghost-button span {

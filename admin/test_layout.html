@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Package Layout Test</title>
-  <link rel="stylesheet" href="/admin/style.css?v=test-package-actions" />
+  <link rel="stylesheet" href="/admin/style.css?v=test-package-drag-sort" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
@@ -33,7 +33,10 @@
                 <div class="content-key">year · Đang bật</div>
                 <p class="content-desc">Dự Đoán Năm Cá Nhân</p>
               </div>
-              <span class="pill">Thứ tự 10</span>
+              <div class="package-card-status">
+                <button class="package-drag-handle" type="button" aria-label="Kéo để đổi thứ tự"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>
+                <span class="pill">Thứ tự 10</span>
+              </div>
             </div>
             <div class="content-meta">
               <span class="pill">Online 500.000đ</span>
@@ -46,10 +49,10 @@
               <li>Định hướng theo chu kỳ số</li>
             </ul>
             <div class="card-actions package-card-actions">
-              <button class="ghost-button" type="button"><i class="fa-solid fa-arrow-up"></i><span>Lên</span></button>
-              <button class="ghost-button" type="button"><i class="fa-solid fa-arrow-down"></i><span>Xuống</span></button>
+              <button class="ghost-button package-icon-button" type="button" aria-label="Lên"><i class="fa-solid fa-arrow-up"></i></button>
+              <button class="ghost-button package-icon-button" type="button" aria-label="Xuống"><i class="fa-solid fa-arrow-down"></i></button>
               <button class="ghost-button" type="button"><i class="fa-solid fa-pen"></i><span>Sửa</span></button>
-              <button class="ghost-button" type="button"><i class="fa-solid fa-trash"></i><span>Xóa</span></button>
+              <button class="ghost-button package-icon-button" type="button" aria-label="Xóa"><i class="fa-solid fa-trash"></i></button>
             </div>
           </article>
 
@@ -59,7 +62,10 @@
                 <div class="content-key">combo3 · Đang bật</div>
                 <p class="content-desc">Dịch vụ Tư Vấn 3-in-1 Đặc Biệt</p>
               </div>
-              <span class="pill">Thứ tự 20</span>
+              <div class="package-card-status">
+                <button class="package-drag-handle" type="button" aria-label="Kéo để đổi thứ tự"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>
+                <span class="pill">Thứ tự 20</span>
+              </div>
             </div>
             <div class="content-meta">
               <span class="pill">Online 500.000đ</span>
@@ -72,10 +78,10 @@
               <li>Tặng kèm file PDF tóm tắt buổi tư vấn</li>
             </ul>
             <div class="card-actions package-card-actions">
-              <button class="ghost-button" type="button"><i class="fa-solid fa-arrow-up"></i><span>Lên</span></button>
-              <button class="ghost-button" type="button"><i class="fa-solid fa-arrow-down"></i><span>Xuống</span></button>
+              <button class="ghost-button package-icon-button" type="button" aria-label="Lên"><i class="fa-solid fa-arrow-up"></i></button>
+              <button class="ghost-button package-icon-button" type="button" aria-label="Xuống"><i class="fa-solid fa-arrow-down"></i></button>
               <button class="ghost-button" type="button"><i class="fa-solid fa-pen"></i><span>Sửa</span></button>
-              <button class="ghost-button" type="button"><i class="fa-solid fa-trash"></i><span>Xóa</span></button>
+              <button class="ghost-button package-icon-button" type="button" aria-label="Xóa"><i class="fa-solid fa-trash"></i></button>
             </div>
           </article>
 
@@ -85,7 +91,10 @@
                 <div class="content-key">big7 · Đang bật</div>
                 <p class="content-desc">Phân Tích Toàn Diện</p>
               </div>
-              <span class="pill">Nổi bật</span>
+              <div class="package-card-status">
+                <button class="package-drag-handle" type="button" aria-label="Kéo để đổi thứ tự"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>
+                <span class="pill">Nổi bật</span>
+              </div>
             </div>
             <div class="content-meta">
               <span class="pill">Online 2.000.000đ</span>
@@ -98,10 +107,10 @@
               <li>Thông điệp chữa lành chuyên sâu</li>
             </ul>
             <div class="card-actions package-card-actions">
-              <button class="ghost-button" type="button"><i class="fa-solid fa-arrow-up"></i><span>Lên</span></button>
-              <button class="ghost-button" type="button"><i class="fa-solid fa-arrow-down"></i><span>Xuống</span></button>
+              <button class="ghost-button package-icon-button" type="button" aria-label="Lên"><i class="fa-solid fa-arrow-up"></i></button>
+              <button class="ghost-button package-icon-button" type="button" aria-label="Xuống"><i class="fa-solid fa-arrow-down"></i></button>
               <button class="ghost-button" type="button"><i class="fa-solid fa-pen"></i><span>Sửa</span></button>
-              <button class="ghost-button" type="button"><i class="fa-solid fa-trash"></i><span>Xóa</span></button>
+              <button class="ghost-button package-icon-button" type="button" aria-label="Xóa"><i class="fa-solid fa-trash"></i></button>
             </div>
           </article>
         </div>

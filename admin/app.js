@@ -753,6 +753,31 @@ function renderPackagesManager() {
 function createAdminPackageCard(pkg, index = 0, total = 0) {
   const card = document.createElement('article');
   card.className = 'content-card admin-package-card';
+  card.draggable = true;
+  card.dataset.packageCode = pkg.code;
+  card.addEventListener('dragstart', (event) => {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', pkg.code);
+    card.classList.add('is-dragging');
+  });
+  card.addEventListener('dragend', () => {
+    card.classList.remove('is-dragging');
+    document.querySelectorAll('.admin-package-card.is-drag-over').forEach((item) => item.classList.remove('is-drag-over'));
+  });
+  card.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    card.classList.add('is-drag-over');
+  });
+  card.addEventListener('dragleave', () => {
+    card.classList.remove('is-drag-over');
+  });
+  card.addEventListener('drop', (event) => {
+    event.preventDefault();
+    card.classList.remove('is-drag-over');
+    const fromCode = event.dataTransfer.getData('text/plain');
+    if (fromCode && fromCode !== pkg.code) reorderPackageByDrag(fromCode, pkg.code);
+  });
 
   const title = document.createElement('div');
   title.className = 'card-top';
@@ -760,10 +785,19 @@ function createAdminPackageCard(pkg, index = 0, total = 0) {
   info.innerHTML = '<div class="content-key"></div><p class="content-desc"></p>';
   info.querySelector('.content-key').textContent = `${pkg.code} · ${pkg.enabled ? 'Đang bật' : 'Đang tắt'}`;
   info.querySelector('.content-desc').innerHTML = pkg.name || '';
+  const statusGroup = document.createElement('div');
+  statusGroup.className = 'package-card-status';
+  const dragHandle = document.createElement('button');
+  dragHandle.type = 'button';
+  dragHandle.className = 'package-drag-handle';
+  dragHandle.innerHTML = '<i class="fa-solid fa-grip-vertical" aria-hidden="true"></i>';
+  dragHandle.setAttribute('aria-label', 'Kéo để đổi thứ tự gói');
+  dragHandle.title = 'Kéo để đổi thứ tự';
   const status = document.createElement('span');
   status.className = 'pill';
   status.textContent = pkg.featured ? 'Nổi bật' : `Thứ tự ${pkg.sortOrder || ''}`;
-  title.append(info, status);
+  statusGroup.append(dragHandle, status);
+  title.append(info, statusGroup);
 
   const meta = document.createElement('div');
   meta.className = 'content-meta';
@@ -787,19 +821,23 @@ function createAdminPackageCard(pkg, index = 0, total = 0) {
   });
 
   const actions = document.createElement('div');
-  actions.className = 'card-actions';
+  actions.className = 'card-actions package-card-actions';
   const moveUpBtn = document.createElement('button');
   moveUpBtn.type = 'button';
-  moveUpBtn.className = 'ghost-button';
+  moveUpBtn.className = 'ghost-button package-icon-button';
   moveUpBtn.disabled = index <= 0;
-  moveUpBtn.innerHTML = '<i class="fa-solid fa-arrow-up"></i><span>Lên</span>';
+  moveUpBtn.innerHTML = '<i class="fa-solid fa-arrow-up" aria-hidden="true"></i>';
+  moveUpBtn.setAttribute('aria-label', 'Đưa gói lên trước');
+  moveUpBtn.title = 'Lên';
   moveUpBtn.addEventListener('click', () => movePackage(pkg.code, -1));
 
   const moveDownBtn = document.createElement('button');
   moveDownBtn.type = 'button';
-  moveDownBtn.className = 'ghost-button';
+  moveDownBtn.className = 'ghost-button package-icon-button';
   moveDownBtn.disabled = index >= total - 1;
-  moveDownBtn.innerHTML = '<i class="fa-solid fa-arrow-down"></i><span>Xuống</span>';
+  moveDownBtn.innerHTML = '<i class="fa-solid fa-arrow-down" aria-hidden="true"></i>';
+  moveDownBtn.setAttribute('aria-label', 'Đưa gói xuống sau');
+  moveDownBtn.title = 'Xuống';
   moveDownBtn.addEventListener('click', () => movePackage(pkg.code, 1));
 
   const editBtn = document.createElement('button');
@@ -810,14 +848,40 @@ function createAdminPackageCard(pkg, index = 0, total = 0) {
 
   const deleteBtn = document.createElement('button');
   deleteBtn.type = 'button';
-  deleteBtn.className = 'ghost-button';
+  deleteBtn.className = 'ghost-button package-icon-button';
   deleteBtn.style.color = 'var(--danger)';
-  deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i><span>Xóa</span>';
+  deleteBtn.innerHTML = '<i class="fa-solid fa-trash" aria-hidden="true"></i>';
+  deleteBtn.setAttribute('aria-label', 'Xóa gói');
+  deleteBtn.title = 'Xóa';
   deleteBtn.addEventListener('click', () => deletePackage(pkg.code));
   actions.append(moveUpBtn, moveDownBtn, editBtn, deleteBtn);
 
   card.append(title, meta, features, actions);
   return card;
+}
+
+async function reorderPackageByDrag(fromCode, toCode) {
+  const packages = (state.packages || [])
+    .slice()
+    .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
+  const fromIndex = packages.findIndex((pkg) => pkg.code === fromCode);
+  const toIndex = packages.findIndex((pkg) => pkg.code === toCode);
+  if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return;
+
+  const [movedPackage] = packages.splice(fromIndex, 1);
+  packages.splice(toIndex, 0, movedPackage);
+  packages.forEach((pkg, itemIndex) => {
+    pkg.sortOrder = (itemIndex + 1) * 10;
+  });
+
+  try {
+    const payload = await savePackageOrder(packages);
+    state.packages = payload.packages || state.packages;
+    toast('Đã kéo thả đổi thứ tự gói tư vấn.');
+    render();
+  } catch (error) {
+    handleSessionError(error);
+  }
 }
 
 async function movePackage(code, direction) {
