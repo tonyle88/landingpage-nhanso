@@ -604,6 +604,7 @@
               <select id="package" name="package" required disabled>
                 <option value="">-- Chọn hình thức trước --</option>
               </select>
+              <div class="package-choice-summary" id="package-choice-summary" hidden></div>
             </div>
             <div class="form-group">
               <label for="email">Email *</label>
@@ -712,6 +713,10 @@
             <span class="bank-info-val gold" id="pay-amount"></span>
           </div>
           <div class="bank-info-row">
+            <span class="bank-info-label">Hình thức</span>
+            <span class="bank-info-val" id="pay-type"></span>
+          </div>
+          <div class="bank-info-row">
             <span class="bank-info-label">Nội dung CK</span>
             <span class="bank-info-val copyable small" id="pay-content" data-copy=""></span>
           </div>
@@ -722,6 +727,10 @@
           <div class="bank-info-row">
             <span class="bank-info-label">Gói tư vấn</span>
             <span class="bank-info-val" id="pay-package"></span>
+          </div>
+          <div class="bank-info-row" id="pay-package-detail-row" hidden>
+            <span class="bank-info-label">Chi tiết</span>
+            <span class="bank-info-val small" id="pay-package-detail"></span>
           </div>
         </div>
       </div>
@@ -838,6 +847,6 @@
     <i class="fa-solid fa-volume-high"></i>
   </button>
 
-  <script src="script.js?v=20260614-package-unit"></script>
+  <script src="script.js?v=20260614-booking-hardening"></script>
 </body>
 </html>

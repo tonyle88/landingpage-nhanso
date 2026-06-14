@@ -2257,6 +2257,37 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .form-group select option { background: var(--color-teal-dark); color: white; }
 .form-group textarea { resize: vertical; min-height: 110px; }
 
+.package-choice-summary {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(240, 201, 106, 0.22);
+  border-radius: 10px;
+  background: rgba(240, 201, 106, 0.07);
+  color: var(--color-white-80);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.package-choice-summary[hidden] {
+  display: none;
+}
+
+.package-choice-summary strong {
+  color: var(--color-gold-light);
+}
+
+.package-choice-summary .summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.package-choice-summary .summary-note {
+  color: var(--color-white-60);
+}
+
 .form-note {
   text-align: center;
   margin-top: 14px;

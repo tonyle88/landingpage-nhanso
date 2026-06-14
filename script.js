@@ -13,6 +13,8 @@ const LANDING_CONTENT_LOADING_MAX_MS = 1600;
 const LANDING_CONTENT_LOADING_CLASS = 'landing-content-loading';
 const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_cache_v2';
 const LANDING_CONTENT_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+const BOOKING_API_TIMEOUT_MS = 12000;
+const BOOKING_API_RETRY_COUNT = 2;
 const DEFAULT_TESTIMONIAL_IMAGES = Array.from({ length: 10 }, (_, index) => ({
   url: `assets/images/testimonials/testimonial-${String(index + 1).padStart(2, '0')}.png`,
 }));
@@ -141,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
   consultationTypeSelect?.addEventListener('change', () => {
     populatePackageOptions(consultationTypeSelect.value, '', true);
   });
+  packageSelect?.addEventListener('change', updatePackageChoiceSummary);
   packageSelect?.addEventListener('focus', () => {
     populatePackageOptions(consultationTypeSelect?.value || '', packageSelect.value);
   });
@@ -204,6 +207,11 @@ document.addEventListener('DOMContentLoaded', () => {
     bookingState.consultationType = fd.get('consultationType') || '';
     bookingState.package = fd.get('package') || '';
     bookingState.concern = fd.get('concern') || '';
+    const packageSnapshot = getSelectedPackageSnapshot();
+    if (!packageSnapshot.price) {
+      showToast('Bạn vui lòng chọn lại gói tư vấn để hệ thống cập nhật đúng số tiền.');
+      return;
+    }
     openModal('modal-calendar');
     loadCalendar();
   });
@@ -545,8 +553,15 @@ function syncPackageOptionsFromPackages(packages) {
   PACKAGE_OPTIONS.online = {};
   PACKAGE_OPTIONS.offline = {};
   packages.forEach((pkg) => {
-    updatePackageOption('online', pkg.code, stripHtmlToText(pkg.name), pkg.onlinePrice, pkg.unit);
-    updatePackageOption('offline', pkg.code, stripHtmlToText(pkg.name), pkg.offlinePrice || pkg.onlinePrice, pkg.unit);
+    const name = stripHtmlToText(pkg.name);
+    const baseMeta = {
+      name,
+      unit: pkg.unit,
+      onlinePrice: pkg.onlinePrice,
+      offlinePrice: pkg.offlinePrice || pkg.onlinePrice,
+    };
+    updatePackageOption('online', pkg.code, name, pkg.onlinePrice, pkg.unit, baseMeta);
+    updatePackageOption('offline', pkg.code, name, pkg.offlinePrice || pkg.onlinePrice, pkg.unit, baseMeta);
   });
 
   const consultationTypeSelect = document.getElementById('consultation-type');
@@ -554,6 +569,7 @@ function syncPackageOptionsFromPackages(packages) {
   if (consultationTypeSelect?.value && packageSelect) {
     populatePackageOptions(consultationTypeSelect.value, packageSelect.value);
   }
+  updatePackageChoiceSummary();
 }
 
 function handlePackageCtaClick(event) {
@@ -805,14 +821,18 @@ function syncPackageOptionsFromLandingContent(items) {
     const name = stripHtmlToText(valuesByKey.get(keys.name));
     const price = parsePriceFromContent(valuesByKey.get(keys.price));
     if (!name || !price) return;
+    const onlinePrice = price;
+    const offlinePrice = packageCode === 'big7' ? price : price + OFFLINE_TRAVEL_FEE;
+    const meta = { name, unit: '/buổi', onlinePrice, offlinePrice };
 
-    updatePackageOption('online', packageCode, name, price, '/buổi');
+    updatePackageOption('online', packageCode, name, onlinePrice, '/buổi', meta);
     updatePackageOption(
       'offline',
       packageCode,
       name,
-      packageCode === 'big7' ? price : price + OFFLINE_TRAVEL_FEE,
-      '/buổi'
+      offlinePrice,
+      '/buổi',
+      meta
     );
   });
 
@@ -823,14 +843,17 @@ function syncPackageOptionsFromLandingContent(items) {
   }
 }
 
-function updatePackageOption(consultationType, packageCode, name, price, unit = '/buổi') {
+function updatePackageOption(consultationType, packageCode, name, price, unit = '/buổi', meta = {}) {
   if (!PACKAGE_OPTIONS[consultationType]) PACKAGE_OPTIONS[consultationType] = {};
   if (!PACKAGE_OPTIONS[consultationType][packageCode]) PACKAGE_OPTIONS[consultationType][packageCode] = {};
   const option = PACKAGE_OPTIONS[consultationType][packageCode];
   const unitLabel = normalizePackageUnit(unit);
 
+  option.name = meta.name || name;
   option.price = price;
   option.unit = unitLabel;
+  option.onlinePrice = Number(meta.onlinePrice || price || 0);
+  option.offlinePrice = Number(meta.offlinePrice || price || 0);
   option.label = `${name} – ${formatPackagePriceLabel(price)}${unitLabel}`;
 }
 
@@ -890,6 +913,7 @@ function isConfiguredScriptUrl(url) {
 
 function getBookingDataObject() {
   const transferContent = buildTransferContent(bookingState.package, bookingState.phone);
+  const packageSnapshot = getSelectedPackageSnapshot();
 
   return {
     name: bookingState.name,
@@ -899,8 +923,13 @@ function getBookingDataObject() {
     consultationType: bookingState.consultationType,
     consultationTypeLabel: CONSULTATION_TYPE_LABELS[bookingState.consultationType] || bookingState.consultationType,
     package: bookingState.package,
-    packageLabel: getPackageLabel(bookingState.package, bookingState.consultationType),
-    packagePrice: String(getPackagePrice(bookingState.package, bookingState.consultationType)),
+    packageName: packageSnapshot.name,
+    packageLabel: packageSnapshot.label,
+    packagePrice: String(packageSnapshot.price),
+    packageUnit: packageSnapshot.unit,
+    packageOnlinePrice: String(packageSnapshot.onlinePrice || ''),
+    packageOfflinePrice: String(packageSnapshot.offlinePrice || ''),
+    hasOfflineTravelFee: packageSnapshot.hasOfflineTravelFee ? 'true' : 'false',
     transferContent: transferContent,
     concern: bookingState.concern,
     slotLabel: bookingState.fullSlotLabel || '',
@@ -940,16 +969,64 @@ async function saveBookingToSheet(data) {
 
 async function completeBookingOnServer(data) {
   const query = bookingDataToUrlParams(data, 'completeBooking').toString();
-  const res = await fetch(`${BOOKING_SCRIPT_URL}?${query}`, {
-    method: 'GET',
-    mode: 'cors',
-    cache: 'no-store',
-  });
-  const result = await res.json();
-  if (!result.ok) {
-    throw new Error(result.message || 'Không hoàn tất được email và lịch Calendar');
+  let lastError;
+
+  for (let attempt = 0; attempt <= BOOKING_API_RETRY_COUNT; attempt += 1) {
+    try {
+      const res = await fetchWithTimeout(`${BOOKING_SCRIPT_URL}?${query}&try=${attempt + 1}`, {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-store',
+      }, BOOKING_API_TIMEOUT_MS);
+      const result = await res.json();
+      if (!result.ok) {
+        throw new Error(result.message || 'Không hoàn tất được email và lịch Calendar');
+      }
+      return result;
+    } catch (error) {
+      lastError = error;
+      if (attempt < BOOKING_API_RETRY_COUNT) {
+        await sleep(700 * (attempt + 1));
+      }
+    }
   }
-  return result;
+
+  await logClientError('completeBooking', lastError, data);
+  throw lastError;
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, Object.assign({}, options, { signal: controller.signal }));
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+async function logClientError(context, error, data = {}) {
+  if (!isConfiguredGoogleScriptUrl()) return;
+  try {
+    const body = bookingDataToUrlParams({
+      context,
+      message: error?.message || String(error || 'Unknown client error'),
+      pageUrl: window.location.href,
+      package: data.package || bookingState.package || '',
+      phone: data.phone || bookingState.phone || '',
+      email: data.email || bookingState.email || '',
+      submittedAt: new Date().toISOString(),
+    }, 'logClientError').toString();
+
+    await fetch(BOOKING_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+  } catch (logError) {
+    console.warn('Không ghi được client error log:', logError);
+  }
 }
 
 function getPackageOptions(consultationType) {
@@ -962,6 +1039,64 @@ function getPackageLabel(packageValue, consultationType) {
 
 function getPackagePrice(packageValue, consultationType) {
   return getPackageOptions(consultationType)[packageValue]?.price || 0;
+}
+
+function getSelectedPackageSnapshot() {
+  return getPackageSnapshot(bookingState.package, bookingState.consultationType);
+}
+
+function getPackageSnapshot(packageValue, consultationType) {
+  const option = getPackageOptions(consultationType)[packageValue] || {};
+  const typeLabel = CONSULTATION_TYPE_LABELS[consultationType] || consultationType || '';
+  const price = Number(option.price || 0);
+  const onlinePrice = Number(option.onlinePrice || PACKAGE_OPTIONS.online?.[packageValue]?.price || 0);
+  const offlinePrice = Number(option.offlinePrice || PACKAGE_OPTIONS.offline?.[packageValue]?.price || 0);
+  const unit = normalizePackageUnit(option.unit || '/buổi');
+  const hasOfflineTravelFee = consultationType === 'offline'
+    && onlinePrice > 0
+    && offlinePrice > onlinePrice;
+
+  return {
+    code: packageValue || '',
+    name: option.name || stripHtmlToText(option.label || packageValue || ''),
+    label: option.label || packageValue || '',
+    price,
+    priceLabel: `${formatPackagePriceLabel(price)}${unit}`,
+    unit,
+    onlinePrice,
+    offlinePrice,
+    typeLabel,
+    hasOfflineTravelFee,
+  };
+}
+
+function updatePackageChoiceSummary() {
+  const summary = document.getElementById('package-choice-summary');
+  const consultationTypeSelect = document.getElementById('consultation-type');
+  const packageSelect = document.getElementById('package');
+  if (!summary || !consultationTypeSelect || !packageSelect) return;
+
+  const packageValue = packageSelect.value;
+  const consultationType = consultationTypeSelect.value;
+  const snapshot = getPackageSnapshot(packageValue, consultationType);
+  if (!consultationType || !packageValue || !snapshot.price) {
+    summary.hidden = true;
+    summary.innerHTML = '';
+    return;
+  }
+
+  const offlineNote = consultationType === 'offline'
+    ? (snapshot.hasOfflineTravelFee
+      ? '<div class="summary-note">Giá offline đã bao gồm phụ phí di chuyển.</div>'
+      : '<div class="summary-note">Gói này không áp dụng phụ phí offline.</div>')
+    : '<div class="summary-note">Buổi tư vấn sẽ diễn ra qua Google Meet.</div>';
+
+  summary.innerHTML = `
+    <div class="summary-row"><span>Hình thức</span><strong>${snapshot.typeLabel}</strong></div>
+    <div class="summary-row"><span>Số tiền</span><strong>${snapshot.priceLabel}</strong></div>
+    ${offlineNote}
+  `;
+  summary.hidden = false;
 }
 
 function populatePackageOptions(consultationType, selectedValue = '', openPicker = false) {
@@ -989,6 +1124,7 @@ function populatePackageOptions(consultationType, selectedValue = '', openPicker
 
   packageSelect.value = options[currentValue] ? currentValue : '';
   packageSelect.disabled = !consultationType || optionEntries.length === 0;
+  updatePackageChoiceSummary();
 
   if (openPicker && consultationType && typeof packageSelect.showPicker === 'function') {
     packageSelect.focus();
@@ -1163,15 +1299,16 @@ async function loadCalendar() {
   document.getElementById('selected-slot-info').style.display = 'none';
 
   try {
-    const res = await fetch(`${BOOKING_SCRIPT_URL}?action=getBookedSlots&_=${Date.now()}`, {
+    const res = await fetchWithTimeout(`${BOOKING_SCRIPT_URL}?action=getBookedSlots&_=${Date.now()}`, {
       mode: 'cors',
       cache: 'no-store',
-    });
+    }, BOOKING_API_TIMEOUT_MS);
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'Không tải được lịch đã đặt');
     bookingState.bookedSlots = json.booked || [];
   } catch (e) {
     console.error('getBookedSlots error:', e);
+    logClientError('getBookedSlots', e);
     bookingState.bookedSlots = [];
     errBox.style.display = 'block';
     const errText = errBox.querySelector('p') || errBox;
@@ -1274,11 +1411,15 @@ function renderTimeSlots(date) {
 // PAYMENT MODAL
 // ============================================
 function openPaymentModal() {
-  const pkg = bookingState.package;
-  const price = getPackagePrice(pkg, bookingState.consultationType);
-  const pkgLabel = getPackageLabel(pkg, bookingState.consultationType);
+  const snapshot = getSelectedPackageSnapshot();
+  const price = snapshot.price;
+  if (!price) {
+    showToast('Bạn vui lòng chọn lại gói tư vấn để hệ thống cập nhật đúng số tiền.');
+    return;
+  }
+
   const priceStr = price.toLocaleString('vi-VN') + 'đ';
-  const transferContent = buildTransferContent(pkg, bookingState.phone);
+  const transferContent = buildTransferContent(snapshot.code, bookingState.phone);
 
   // Build VietQR URL  
   const qrUrl = `https://img.vietqr.io/image/${BANK_BIN}-${BANK_ACCOUNT}-compact2.jpg?amount=${price}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(BANK_NAME_DISPLAY)}`;
@@ -1288,7 +1429,15 @@ function openPaymentModal() {
   document.getElementById('pay-content').textContent = transferContent;
   document.getElementById('pay-content').dataset.copy = transferContent;
   document.getElementById('pay-slot').textContent = bookingState.fullSlotLabel || '';
-  document.getElementById('pay-package').textContent = pkgLabel;
+  document.getElementById('pay-package').textContent = snapshot.name || snapshot.label;
+  document.getElementById('pay-type').textContent = snapshot.typeLabel;
+
+  const detailRow = document.getElementById('pay-package-detail-row');
+  const detailText = document.getElementById('pay-package-detail');
+  if (detailRow && detailText) {
+    detailText.textContent = snapshot.priceLabel;
+    detailRow.hidden = false;
+  }
 
   openModal('modal-payment');
 }
@@ -1320,6 +1469,7 @@ async function finalizeBooking() {
     showSuccessModal();
   } catch (err) {
     console.error(err);
+    await logClientError('finalizeBooking', err, getBookingDataObject());
     showToast('Có lỗi khi xử lý. Vui lòng chụp màn hình và liên hệ qua Zalo/Facebook để được hỗ trợ.');
     btn.innerHTML = '<span>✓ Tôi Đã Chuyển Khoản Thành Công</span>';
     btn.disabled = false;
@@ -1387,11 +1537,12 @@ function showSuccessModal() {
     `Chào mừng ${bookingState.name}! Lịch tư vấn của bạn đã được xác nhận.`;
 
   const typeLabel = CONSULTATION_TYPE_LABELS[bookingState.consultationType] || bookingState.consultationType;
-  const pkgLabel  = getPackageLabel(bookingState.package, bookingState.consultationType);
+  const packageSnapshot = getSelectedPackageSnapshot();
 
   document.getElementById('success-summary').innerHTML = `
     <div class="success-summary-row"><i class="fa-regular fa-clock"></i><span><strong>Thời gian:</strong> ${bookingState.fullSlotLabel}</span></div>
-    <div class="success-summary-row"><i class="fa-solid fa-box-open"></i><span><strong>Gói:</strong> ${pkgLabel}</span></div>
+    <div class="success-summary-row"><i class="fa-solid fa-box-open"></i><span><strong>Gói:</strong> ${packageSnapshot.name || packageSnapshot.label}</span></div>
+    <div class="success-summary-row"><i class="fa-solid fa-money-bill-wave"></i><span><strong>Số tiền:</strong> ${packageSnapshot.priceLabel}</span></div>
     <div class="success-summary-row"><i class="fa-solid fa-video"></i><span><strong>Hình thức:</strong> ${typeLabel}</span></div>
     <div class="success-summary-row"><i class="fa-regular fa-envelope"></i><span><strong>Email xác nhận:</strong> ${bookingState.email}</span></div>`;
 

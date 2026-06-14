@@ -15,6 +15,7 @@ const CALENDAR_ID    = '80668f888da8f3c3ffadd0d0e0e6b49bfba8734a6f0514c8c9143c11
 const OWNER_EMAIL    = 'cuongck3@gmail.com';
 const EMAIL_SENDER_NAME = 'Tony Le – Nhân Số Học';
 const EMAIL_LOG_SHEET = 'Email log';
+const ERROR_LOG_SHEET = 'Error log';
 
 const HEADERS = [
   'Ngày giờ Việt Nam',
@@ -59,7 +60,9 @@ const PACKAGE_CONTENT_KEYS = {
 
 const OFFLINE_TRAVEL_FEE = 50000;
 const PRICE_NUMBER_FORMAT = '#,##0';
-const SCRIPT_VERSION = '2026-06-12-v11-booking-dynamic-packages';
+const BOOKING_RATE_LIMIT_SECONDS = 15 * 60;
+const BOOKING_RATE_LIMIT_MAX = 3;
+const SCRIPT_VERSION = '2026-06-14-v12-booking-hardening';
 let LANDING_CONTENT_VALUE_CACHE = null;
 // =============================================
 //  doGet – Trả về danh sách slot đã đặt (30 ngày tới)
@@ -86,6 +89,7 @@ function doGet(e) {
 
       return jsonResponse({ ok: true, booked, scriptVersion: SCRIPT_VERSION });
     } catch (err) {
+      logAppError('getBookedSlots', err, params);
       return jsonResponse({ ok: false, booked: [], error: err.message });
     }
   }
@@ -103,6 +107,7 @@ function doGet(e) {
     try {
       return handleCompleteBooking(params);
     } catch (error) {
+      logAppError('completeBooking', error, params);
       return jsonResponse({ ok: false, message: error.message, scriptVersion: SCRIPT_VERSION });
     }
   }
@@ -114,8 +119,9 @@ function doGet(e) {
 //  doPost – Xử lý đặt lịch hoàn tất
 // =============================================
 function doPost(e) {
+  let params = {};
   try {
-    const params = getPostParams(e);
+    params = getPostParams(e);
 
     if (isAdminOnlyAction(params.action)) {
       return jsonResponse({
@@ -123,6 +129,10 @@ function doPost(e) {
         message: 'Admin dang goi nham Booking Apps Script. Hay deploy file google-apps-script-landing-content.gs vao Web App URL cua admin.',
         scriptVersion: SCRIPT_VERSION,
       });
+    }
+
+    if (params.action === 'logClientError') {
+      return handleLogClientError(params);
     }
 
     if (params.action === 'saveBooking' || params.action === 'finalizeBooking') {
@@ -133,6 +143,7 @@ function doPost(e) {
     return handleLegacyBooking(params);
 
   } catch (error) {
+    logAppError('doPost', error, params);
     return jsonResponse({ ok: false, message: error.message });
   }
 }
@@ -204,6 +215,8 @@ function handleSaveBooking(params) {
   const sheet = getTargetSheet();
   ensureHeaderRow(sheet);
   const booking = resolveBookingDetails(params);
+  validateBookingParams(params, booking);
+  enforceBookingRateLimit(params, 'save');
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -231,6 +244,8 @@ function handleSaveBooking(params) {
 function handleCompleteBooking(params) {
   const sheet = getTargetSheet();
   const booking = resolveBookingDetails(params);
+  validateBookingParams(params, booking);
+  enforceBookingRateLimit(params, 'complete');
   const rowNumber = findLatestBookingRow(sheet, params);
   const payload = Object.assign({}, params, booking);
 
@@ -299,6 +314,11 @@ function createCalendarEventIfNeeded(params, booking) {
 
 function handleFinalizeBooking(params) {
   return handleSaveBooking(params);
+}
+
+function handleLogClientError(params) {
+  logAppError('client:' + sanitizePlainText(params.context || 'unknown', 80), new Error(sanitizePlainText(params.message || 'Client error', 300)), params);
+  return jsonResponse({ ok: true, scriptVersion: SCRIPT_VERSION });
 }
 
 function sendBookingEmails(payload, sheet, rowNumber) {
@@ -495,6 +515,8 @@ function handleLegacyBooking(params) {
   const sheet = getTargetSheet();
   ensureHeaderRow(sheet);
   const booking = resolveBookingDetails(params);
+  validateBookingParams(params, booking);
+  enforceBookingRateLimit(params, 'legacy');
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   let rowNumber = 0;
@@ -843,6 +865,99 @@ function cleanValue(value) {
   return String(value || '').trim();
 }
 
+function sanitizePlainText(value, maxLength) {
+  return cleanValue(value)
+    .replace(/[<>]/g, '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .slice(0, maxLength || 500);
+}
+
+function isValidPhone(value) {
+  return /^[0-9+().\s-]{8,20}$/.test(cleanValue(value).replace(/^'/, ''));
+}
+
+function validateBookingParams(params, booking) {
+  if (!booking.name || booking.name.length < 2) throw new Error('Họ tên chưa hợp lệ.');
+  if (!booking.phone || !isValidPhone(booking.phone)) throw new Error('Số điện thoại/Zalo chưa hợp lệ.');
+  if (!isValidEmail(booking.email)) throw new Error('Email chưa hợp lệ.');
+  if (!booking.consultationType) throw new Error('Hình thức tư vấn chưa hợp lệ.');
+  if (!booking.package || !booking.packageLabel || !booking.packagePrice) throw new Error('Gói tư vấn chưa hợp lệ.');
+
+  if (params.slotStart || params.slotEnd) {
+    const startDt = new Date(params.slotStart);
+    const endDt = new Date(params.slotEnd);
+    const durationMs = endDt.getTime() - startDt.getTime();
+    if (isNaN(startDt.getTime()) || isNaN(endDt.getTime())) throw new Error('Khung giờ đặt lịch chưa hợp lệ.');
+    if (durationMs <= 0 || durationMs > 4 * 3600 * 1000) throw new Error('Thời lượng đặt lịch chưa hợp lệ.');
+    if (startDt.getTime() < Date.now() - 15 * 60 * 1000) throw new Error('Khung giờ đã qua, vui lòng chọn lại lịch.');
+  }
+}
+
+function enforceBookingRateLimit(params, action) {
+  const phone = cleanValue(params.phone).replace(/^'/, '');
+  const email = cleanValue(params.email).toLowerCase();
+  const identity = phone || email;
+  if (!identity) return;
+
+  const key = 'booking_rl_' + sanitizePlainText(action || 'booking', 20) + '_' + Utilities.base64EncodeWebSafe(identity).slice(0, 80);
+  const cache = CacheService.getScriptCache();
+  const current = parseInt(cache.get(key) || '0', 10);
+  if (current >= BOOKING_RATE_LIMIT_MAX) {
+    throw new Error('Bạn thao tác hơi nhanh. Vui lòng thử lại sau ít phút hoặc nhắn Zalo để được hỗ trợ.');
+  }
+  cache.put(key, String(current + 1), BOOKING_RATE_LIMIT_SECONDS);
+}
+
+function logAppError(source, error, params) {
+  try {
+    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateLogSheet(spreadsheet, ERROR_LOG_SHEET, [
+      'Ngày giờ Việt Nam',
+      'Nguồn',
+      'Thông báo',
+      'Stack',
+      'Dữ liệu',
+    ]);
+    const payload = maskSensitiveParams(params || {});
+    sheet.appendRow([
+      getVietnamDateTime(),
+      sanitizePlainText(source, 120),
+      sanitizePlainText(error && error.message ? error.message : String(error), 500),
+      sanitizePlainText(error && error.stack ? error.stack : '', 1500),
+      JSON.stringify(payload).slice(0, 4500),
+    ]);
+  } catch (logError) {
+    console.error('Error log failed:', logError);
+  }
+}
+
+function getOrCreateLogSheet(spreadsheet, sheetName, headers) {
+  let sheet = spreadsheet.getSheetByName(sheetName);
+  if (!sheet) sheet = spreadsheet.insertSheet(sheetName);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(headers);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function maskSensitiveParams(params) {
+  const safe = {};
+  Object.keys(params || {}).forEach((key) => {
+    const lowerKey = key.toLowerCase();
+    let value = cleanValue(params[key]);
+    if (lowerKey.indexOf('phone') !== -1 || lowerKey.indexOf('zalo') !== -1) {
+      value = value.replace(/^'?(.{0,3}).*(.{2})$/, '$1***$2');
+    }
+    if (lowerKey.indexOf('email') !== -1) {
+      value = value.replace(/^(.{1,2}).*(@.*)$/, '$1***$2');
+    }
+    safe[key] = sanitizePlainText(value, 500);
+  });
+  return safe;
+}
+
 function buildTransferContent(packageCode, phone) {
   const code = cleanValue(packageCode).toUpperCase();
   const cleanPhone = cleanValue(phone).replace(/^'/, '').replace(/\s+/g, '');
@@ -863,8 +978,10 @@ function getPackageOption(consultationType, packageCode) {
       ? packageFromSheet.offlinePrice || packageFromSheet.onlinePrice
       : packageFromSheet.onlinePrice;
     return {
+      name: packageFromSheet.name,
       label: packageFromSheet.name + ' – ' + formatPackagePriceLabel(price) + normalizePackageUnit(packageFromSheet.unit),
       price: price,
+      unit: normalizePackageUnit(packageFromSheet.unit),
       onlinePrice: packageFromSheet.onlinePrice,
       offlinePrice: packageFromSheet.offlinePrice,
     };
@@ -877,12 +994,25 @@ function getPackageOption(consultationType, packageCode) {
       : packageBase.price;
 
     return {
+      name: packageBase.name,
       label: packageBase.name + ' – ' + formatPackagePriceLabel(price) + normalizePackageUnit('/buổi'),
       price: price,
+      unit: normalizePackageUnit('/buổi'),
+      onlinePrice: packageBase.price,
+      offlinePrice: packageCode !== 'big7' ? packageBase.price + OFFLINE_TRAVEL_FEE : packageBase.price,
     };
   }
 
-  return PACKAGE_OPTIONS[consultationType] && PACKAGE_OPTIONS[consultationType][packageCode];
+  const fallback = PACKAGE_OPTIONS[consultationType] && PACKAGE_OPTIONS[consultationType][packageCode];
+  if (!fallback) return null;
+  return {
+    name: stripHtmlToText(fallback.label).replace(/\s+–\s+.*$/, ''),
+    label: fallback.label,
+    price: fallback.price,
+    unit: normalizePackageUnit('/buổi'),
+    onlinePrice: PACKAGE_OPTIONS.online[packageCode] ? PACKAGE_OPTIONS.online[packageCode].price : fallback.price,
+    offlinePrice: PACKAGE_OPTIONS.offline[packageCode] ? PACKAGE_OPTIONS.offline[packageCode].price : fallback.price,
+  };
 }
 
 function getPackageBaseFromPackagesSheet(packageCode) {
@@ -1006,35 +1136,41 @@ function normalizePackageUnit(unit) {
 
 function resolveBookingDetails(params) {
   const consultationType = normalizeConsultationType(params.consultationType || params.consultationTypeLabel);
-  const packageCode = cleanValue(params.package);
+  const packageCode = cleanPackageCode(params.package);
   const packageOption = getPackageOption(consultationType, packageCode);
+  const paramsUnit = normalizePackageUnit(params.packageUnit || '/buổi');
+  const paramsPrice = parsePriceNumber(params.packagePrice);
+  const paramsOnlinePrice = parsePriceNumber(params.packageOnlinePrice);
+  const paramsOfflinePrice = parsePriceNumber(params.packageOfflinePrice);
 
   const packageLabel = packageOption
     ? packageOption.label
-    : cleanValue(params.packageLabel);
+    : sanitizePlainText(params.packageLabel, 180);
   const packagePrice = packageOption
     ? packageOption.price
-    : parseInt(params.packagePrice || '0', 10);
-  const transferContent = cleanValue(params.transferContent) || buildTransferContent(packageCode, params.phone);
+    : paramsPrice;
+  const packageUnit = packageOption ? packageOption.unit : paramsUnit;
+  const onlinePrice = packageOption ? packageOption.onlinePrice : paramsOnlinePrice;
+  const offlinePrice = packageOption ? packageOption.offlinePrice : paramsOfflinePrice;
+  const transferContent = sanitizePlainText(params.transferContent, 80) || buildTransferContent(packageCode, params.phone);
+  const hasOfflineTravelFee = cleanValue(params.hasOfflineTravelFee).toLowerCase() === 'true'
+    || (consultationType === 'offline' && offlinePrice && onlinePrice && offlinePrice > onlinePrice);
 
   return {
-    name: cleanValue(params.name),
-    dob: cleanValue(params.dob),
-    phone: cleanValue(params.phone),
-    email: cleanValue(params.email),
-    concern: cleanValue(params.concern),
+    name: sanitizePlainText(params.name, 120),
+    dob: sanitizePlainText(params.dob, 30),
+    phone: sanitizePlainText(params.phone, 30),
+    email: sanitizePlainText(params.email, 160).toLowerCase(),
+    concern: sanitizePlainText(params.concern, 1200),
     consultationType: consultationType,
-    consultationTypeLabel: CONSULTATION_TYPE_LABELS[consultationType] || cleanValue(params.consultationTypeLabel),
+    consultationTypeLabel: CONSULTATION_TYPE_LABELS[consultationType] || sanitizePlainText(params.consultationTypeLabel, 120),
     package: packageCode,
     packageLabel: packageLabel,
     packagePrice: packagePrice,
+    packageUnit: packageUnit,
     transferContent: transferContent,
     isOffline: consultationType === 'offline',
-    hasOfflineTravelFee: consultationType === 'offline'
-      && packageOption
-      && packageOption.offlinePrice
-      && packageOption.onlinePrice
-      && packageOption.offlinePrice > packageOption.onlinePrice,
+    hasOfflineTravelFee: hasOfflineTravelFee,
   };
 }
 
