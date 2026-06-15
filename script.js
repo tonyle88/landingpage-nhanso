@@ -1820,6 +1820,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setMusicButtonState(true);
     tryPlayMusic();
 
+    bgMusic.addEventListener('play', () => {
+      setMusicButtonState(true);
+      removeAutoplayListeners();
+    });
+
+    bgMusic.addEventListener('pause', () => {
+      setMusicButtonState(false);
+    });
+
     musicToggleBtn.addEventListener('click', () => {
       if (bgMusic.paused) {
         shouldPlayMusic = true;

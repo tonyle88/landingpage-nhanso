@@ -193,6 +193,17 @@ function showAdmin() {
   });
 }
 
+function expireSession() {
+  state.token = '';
+  state.user = null;
+  state.items = [];
+  state.originals = new Map();
+  state.feedbackImages = [];
+  state.packages = [];
+  sessionStorage.removeItem(SESSION_KEY);
+  showLogin();
+}
+
 function render() {
   renderSections();
   renderHeading();
@@ -592,8 +603,18 @@ async function api(action, data = {}, includeToken = true) {
     body,
   });
   const payload = await response.json();
-  if (!payload.ok) throw new Error(formatApiErrorMessage(action, payload));
+  if (!payload.ok) {
+    const errorMessage = formatApiErrorMessage(action, payload);
+    if (isSessionExpiredMessage(errorMessage)) {
+      expireSession();
+    }
+    throw new Error(errorMessage);
+  }
   return payload;
+}
+
+function isSessionExpiredMessage(message) {
+  return /dang nhap|đăng nhập|het han|hết hạn|phien|phiên/i.test(message || '');
 }
 
 function formatApiErrorMessage(action, payload) {
@@ -619,9 +640,9 @@ function formatApiErrorMessage(action, payload) {
 }
 
 function handleSessionError(error) {
-  if (/dang nhap|het han|phien/i.test(error.message)) {
+  if (isSessionExpiredMessage(error.message)) {
     toast('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.');
-    logout();
+    expireSession();
     return;
   }
   toast(error.message || 'Có lỗi xảy ra.');

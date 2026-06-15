@@ -1,5 +1,11 @@
 # Admin Landing Page
 
+Muốn bê bộ admin này sang dự án khác, xem file:
+
+```text
+admin/TRIEN_KHAI_ADMIN_CHO_DU_AN_KHAC.md
+```
+
 Trang quản trị nằm tại:
 
 ```text
