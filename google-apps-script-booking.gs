@@ -71,7 +71,7 @@ const OFFLINE_TRAVEL_FEE = 50000;
 const PRICE_NUMBER_FORMAT = '#,##0';
 const BOOKING_RATE_LIMIT_SECONDS = 15 * 60;
 const BOOKING_RATE_LIMIT_MAX = 3;
-const SCRIPT_VERSION = '2026-06-14-v12-booking-hardening';
+const SCRIPT_VERSION = '2026-06-16-v13-sepay-webhook-body';
 let LANDING_CONTENT_VALUE_CACHE = null;
 // =============================================
 //  doGet – Trả về danh sách slot đã đặt (30 ngày tới)
@@ -208,7 +208,7 @@ function getPostParams(e) {
     });
   }
 
-  if (Object.keys(params).length || !e.postData || !e.postData.contents) {
+  if (!e.postData || !e.postData.contents) {
     return params;
   }
 
@@ -216,19 +216,54 @@ function getPostParams(e) {
   const body = e.postData.contents;
 
   if (contentType.indexOf('application/json') !== -1) {
-    return Object.assign(params, JSON.parse(body));
+    return Object.assign(params, flattenObject(JSON.parse(body)));
   }
 
   if (contentType.indexOf('application/x-www-form-urlencoded') !== -1) {
     body.split('&').forEach((pair) => {
-      const parts = pair.split('=');
+      const separatorIndex = pair.indexOf('=');
+      const parts = separatorIndex === -1
+        ? [pair, '']
+        : [pair.slice(0, separatorIndex), pair.slice(separatorIndex + 1)];
       const key = decodeURIComponent(parts[0] || '');
       const value = decodeURIComponent((parts[1] || '').replace(/\+/g, ' '));
       if (key) params[key] = value;
     });
+    return params;
+  }
+
+  const trimmedBody = cleanValue(body);
+  if (trimmedBody.charAt(0) === '{' || trimmedBody.charAt(0) === '[') {
+    try {
+      return Object.assign(params, flattenObject(JSON.parse(trimmedBody)));
+    } catch (error) {
+      params.rawBody = trimmedBody;
+    }
+  } else {
+    params.rawBody = trimmedBody;
   }
 
   return params;
+}
+
+function flattenObject(value, prefix, output) {
+  const result = output || {};
+  if (!value || typeof value !== 'object') return result;
+
+  Object.keys(value).forEach((key) => {
+    const flatKey = prefix ? prefix + '.' + key : key;
+    const item = value[key];
+    if (item && typeof item === 'object' && !Array.isArray(item)) {
+      flattenObject(item, flatKey, result);
+      return;
+    }
+    result[flatKey] = Array.isArray(item) ? item.join(', ') : item;
+    if (!Object.prototype.hasOwnProperty.call(result, key)) {
+      result[key] = result[flatKey];
+    }
+  });
+
+  return result;
 }
 
 // =============================================
@@ -365,8 +400,32 @@ function handleSepayWebhook(params) {
   const orderId = extractSepayOrderId(params);
   if (!orderId) throw new Error('Webhook SePay thieu ma thanh toan.');
 
-  const status = normalizeSepayStatus(params.status || params.payment_status || params.transaction_status || 'paid');
-  const amount = parsePriceNumber(params.amount || params.order_amount || params.transferAmount);
+  const status = normalizeSepayStatus(
+    getFirstParamValue(params, [
+      'status',
+      'payment_status',
+      'paymentStatus',
+      'transaction_status',
+      'transactionStatus',
+      'transfer_status',
+      'transferStatus',
+      'data.status',
+      'data.payment_status',
+      'data.transaction_status',
+    ]) || 'paid'
+  );
+  const amount = parsePriceNumber(getFirstParamValue(params, [
+    'amount',
+    'order_amount',
+    'orderAmount',
+    'transferAmount',
+    'transfer_amount',
+    'transactionAmount',
+    'transaction_amount',
+    'data.amount',
+    'data.transferAmount',
+    'data.transfer_amount',
+  ]));
   saveSepayPaymentStatus(orderId, status, amount, params);
 
   return jsonResponse({
@@ -859,12 +918,13 @@ function findSepayPayment(orderId) {
 function saveSepayPaymentStatus(orderId, status, amount, rawParams) {
   const sheet = ensureSepayPaymentsSheet();
   const normalizedStatus = normalizeSepayStatus(status);
+  const content = getSepayContent(rawParams || {});
   sheet.appendRow([
     getVietnamDateTime(),
     cleanValue(orderId),
     normalizedStatus,
     amount || '',
-    sanitizePlainText(rawParams.content || rawParams.description || rawParams.order_description || '', 500),
+    sanitizePlainText(content, 500),
     JSON.stringify(maskSensitiveParams(rawParams || {})).slice(0, 4500),
   ]);
   sheet.getRange(sheet.getLastRow(), 4).setNumberFormat(PRICE_NUMBER_FORMAT);
@@ -879,11 +939,64 @@ function normalizeSepayStatus(status) {
 }
 
 function extractSepayOrderId(params) {
-  const direct = sanitizePlainText(params.paymentOrderId || params.order_invoice_number || params.orderCode, 120);
-  if (direct) return direct;
-  const content = sanitizePlainText(params.content || params.description || params.order_description, 500).toUpperCase();
-  const match = content.match(/[A-Z]{2,10}-[A-Z0-9_-]{2,30}-[A-Z0-9]{4,12}-[0-9]{4,12}/);
-  return match ? match[0] : content.slice(0, 120);
+  const direct = sanitizePlainText(getFirstParamValue(params, [
+    'paymentOrderId',
+    'payment_order_id',
+    'order_invoice_number',
+    'orderInvoiceNumber',
+    'orderCode',
+    'order_code',
+    'orderId',
+    'order_id',
+    'invoiceNumber',
+    'invoice_number',
+    'data.paymentOrderId',
+    'data.orderCode',
+    'data.order_id',
+  ]), 120);
+  if (looksLikeSepayOrderId(direct)) return direct.toUpperCase();
+
+  const content = sanitizePlainText(getSepayContent(params), 1000).toUpperCase();
+  const match = content.match(/[A-Z]{2,12}-[A-Z0-9_]{2,40}-[A-Z0-9]{4,16}-[0-9]{4,16}/);
+  if (match) return match[0];
+  return looksLikeSepayOrderId(direct) ? direct.toUpperCase() : '';
+}
+
+function looksLikeSepayOrderId(value) {
+  return /^[A-Z]{2,12}-[A-Z0-9_]{2,40}-[A-Z0-9]{4,16}-[0-9]{4,16}$/i.test(cleanValue(value));
+}
+
+function getSepayContent(params) {
+  return getFirstParamValue(params, [
+    'content',
+    'description',
+    'order_description',
+    'orderDescription',
+    'transferContent',
+    'transfer_content',
+    'transactionContent',
+    'transaction_content',
+    'bankContent',
+    'bank_content',
+    'paymentContent',
+    'payment_content',
+    'rawBody',
+    'data.content',
+    'data.description',
+    'data.transferContent',
+    'data.transfer_content',
+    'data.transactionContent',
+    'data.transaction_content',
+  ]);
+}
+
+function getFirstParamValue(params, keys) {
+  for (let index = 0; index < keys.length; index += 1) {
+    const key = keys[index];
+    const value = params[key];
+    if (value !== undefined && value !== null && cleanValue(value) !== '') return value;
+  }
+  return '';
 }
 
 // =============================================

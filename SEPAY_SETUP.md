@@ -68,8 +68,13 @@ Webhook can gui du lieu co it nhat mot trong cac truong:
 paymentOrderId
 order_invoice_number
 orderCode
+order_id
 content
 description
+transferContent
+transfer_content
+transactionContent
+transaction_content
 ```
 
 Va nen gui:
@@ -90,6 +95,18 @@ complete
 thanh cong
 thành công
 ```
+
+Luu y quan trong: webhook URL co `action` va `secret` tren query string, con du lieu giao dich thuong nam trong POST body. Hay deploy ban booking script `2026-06-16-v13-sepay-webhook-body` tro len de Apps Script doc duoc ca query string lan body.
+
+Sau khi khach thanh toan, kiem tra tab:
+
+```text
+SePay payments
+```
+
+- Neu khong co dong moi: SePay chua goi webhook dung URL, hoac URL/secret sai.
+- Neu co dong moi nhung landing van cho: cot `Ma thanh toan` khong khop noi dung chuyen khoan `CCP-...`, hoac cot `Trang thai` khong phai `paid`.
+- Neu cot `Du lieu goc` co du lieu nhung ma thanh toan trong: can xem field noi dung SePay gui ve ten gi de bo sung parser.
 
 ## 4. Sheet log
 

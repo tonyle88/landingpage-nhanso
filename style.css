@@ -274,6 +274,12 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   position: relative;
   overflow: hidden;
 }
+
+.btn[hidden],
+#btn-confirm-payment[hidden] {
+  display: none !important;
+}
+
 .btn::before {
   content: '';
   position: absolute;

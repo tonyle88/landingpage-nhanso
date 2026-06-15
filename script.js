@@ -1558,6 +1558,7 @@ function preparePaymentMode(paymentMeta) {
   if (!paymentSettings.sepayEnabled) {
     waiting.hidden = true;
     confirmBtn.hidden = false;
+    confirmBtn.style.display = '';
     confirmBtn.disabled = false;
     confirmBtn.innerHTML = '<span>✓ Tôi Đã Chuyển Khoản Thành Công</span>';
     title.textContent = 'Thanh Toán Chuyển Khoản';
@@ -1567,6 +1568,8 @@ function preparePaymentMode(paymentMeta) {
 
   waiting.hidden = false;
   confirmBtn.hidden = true;
+  confirmBtn.style.display = 'none';
+  confirmBtn.disabled = true;
   title.textContent = 'Thanh Toán SePay';
   noteText.textContent = 'Vui lòng quét mã và giữ nguyên nội dung chuyển khoản. Hệ thống sẽ tự xác nhận khi nhận được thanh toán.';
   startSepayWaiting(paymentMeta);
@@ -1628,6 +1631,11 @@ async function checkSepayPaymentStatus(paymentMeta) {
 // FINAL SUBMIT – save to Sheet + create Calendar event + send Email
 // ============================================
 async function finalizeBooking() {
+  if (paymentSettings.sepayEnabled) {
+    showToast('SePay đang bật, hệ thống sẽ tự xác nhận khi nhận được thanh toán.');
+    return;
+  }
+
   const btn = document.getElementById('btn-confirm-payment');
   btn.innerHTML = '<span>Đang xử lý...</span>';
   btn.disabled = true;
