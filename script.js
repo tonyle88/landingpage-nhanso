@@ -11,8 +11,10 @@ const LANDING_CONTENT_TIMEOUT_MS = 9000;
 const LANDING_CONTENT_RETRY_COUNT = 2;
 const LANDING_CONTENT_LOADING_MAX_MS = 1600;
 const LANDING_CONTENT_LOADING_CLASS = 'landing-content-loading';
-const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_cache_v2';
+const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_cache_v4';
 const LANDING_CONTENT_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+const PAYMENT_SETTINGS_REFRESH_MAX_AGE_MS = 60 * 1000;
+const PAYMENT_SETTINGS_REFRESH_TIMEOUT_MS = 4500;
 const BOOKING_API_TIMEOUT_MS = 12000;
 const BOOKING_API_RETRY_COUNT = 2;
 const DEFAULT_TESTIMONIAL_IMAGES = Array.from({ length: 10 }, (_, index) => ({
@@ -77,6 +79,8 @@ const DEFAULT_PAYMENT_SETTINGS = {
   thankYouUrl: 'thankyou.html',
 };
 let paymentSettings = { ...DEFAULT_PAYMENT_SETTINGS };
+let paymentSettingsLoadedAt = 0;
+let paymentSettingsLoadedFromNetwork = false;
 let sepayPaymentTimer = null;
 let sepayPaymentPoller = null;
 
@@ -253,14 +257,14 @@ async function loadLandingContentFromSheet() {
   const loaderTimer = window.setTimeout(finishLandingContentLoading, LANDING_CONTENT_LOADING_MAX_MS);
   const cachedPayload = readLandingContentCache();
   if (cachedPayload) {
-    applyLandingContent(cachedPayload);
+    applyLandingContent(cachedPayload, { fromCache: true });
     finishLandingContentLoading();
   }
 
   try {
     const payload = await fetchLandingContentWithRetry();
     if (!isValidLandingContentPayload(payload)) return;
-    applyLandingContent(payload);
+    applyLandingContent(payload, { fromCache: false });
     writeLandingContentCache(payload);
   } catch (error) {
     const message = cachedPayload
@@ -277,19 +281,7 @@ async function fetchLandingContentWithRetry() {
   let lastError;
   for (let attempt = 0; attempt <= LANDING_CONTENT_RETRY_COUNT; attempt += 1) {
     try {
-      const controller = new AbortController();
-      const timeoutId = window.setTimeout(() => controller.abort(), LANDING_CONTENT_TIMEOUT_MS);
-      const url = `${LANDING_CONTENT_SCRIPT_URL}?action=getLandingContent&_=${Date.now()}&try=${attempt + 1}`;
-      const response = await fetch(url, {
-        method: 'GET',
-        mode: 'cors',
-        cache: 'no-store',
-        signal: controller.signal,
-      });
-      window.clearTimeout(timeoutId);
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const payload = await response.json();
+      const payload = await fetchLandingContentOnce(LANDING_CONTENT_TIMEOUT_MS, `try=${attempt + 1}`);
       if (!isValidLandingContentPayload(payload)) {
         throw new Error(payload?.message || 'Payload Google Sheet không hợp lệ.');
       }
@@ -302,6 +294,26 @@ async function fetchLandingContentWithRetry() {
     }
   }
   throw lastError;
+}
+
+async function fetchLandingContentOnce(timeoutMs = LANDING_CONTENT_TIMEOUT_MS, extraQuery = '') {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  const query = extraQuery ? `&${extraQuery}` : '';
+  const url = `${LANDING_CONTENT_SCRIPT_URL}?action=getLandingContent&_=${Date.now()}${query}`;
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 }
 
 function isValidLandingContentPayload(payload) {
@@ -324,12 +336,28 @@ function readLandingContentCache() {
 
 function writeLandingContentCache(payload) {
   try {
+    const cachePayload = Object.assign({}, payload);
+    delete cachePayload.paymentSettings;
     window.localStorage?.setItem(LANDING_CONTENT_CACHE_KEY, JSON.stringify({
       savedAt: Date.now(),
-      payload,
+      payload: cachePayload,
     }));
   } catch (error) {
     // Cache chỉ là lớp dự phòng, lỗi lưu cache không ảnh hưởng trải nghiệm chính.
+  }
+}
+
+async function refreshPaymentSettingsBeforePayment() {
+  if (!LANDING_CONTENT_ENABLED || !isConfiguredScriptUrl(LANDING_CONTENT_SCRIPT_URL)) return;
+  if (paymentSettingsLoadedFromNetwork && paymentSettingsLoadedAt && Date.now() - paymentSettingsLoadedAt < PAYMENT_SETTINGS_REFRESH_MAX_AGE_MS) return;
+
+  try {
+    const payload = await fetchLandingContentOnce(PAYMENT_SETTINGS_REFRESH_TIMEOUT_MS, 'paymentRefresh=1');
+    if (!isValidLandingContentPayload(payload)) return;
+    applyLandingContent(payload, { fromCache: false });
+    writeLandingContentCache(payload);
+  } catch (error) {
+    console.warn('Không tải kịp cấu hình thanh toán mới, dùng cấu hình hiện có:', error);
   }
 }
 
@@ -343,10 +371,14 @@ function finishLandingContentLoading() {
   });
 }
 
-function applyLandingContent(payload) {
+function applyLandingContent(payload, options = {}) {
   (payload.items || []).forEach(applyLandingContentItem);
   syncHeroConsultationBadge();
-  paymentSettings = normalizePaymentSettings(payload.paymentSettings);
+  if (payload.paymentSettings && !options.fromCache) {
+    paymentSettings = normalizePaymentSettings(payload.paymentSettings);
+    paymentSettingsLoadedAt = Date.now();
+    paymentSettingsLoadedFromNetwork = true;
+  }
 
   const packages = normalizePackages(payload.packages);
   if (packages.length > 0) {
@@ -1216,7 +1248,14 @@ function initBookingModals() {
   document.getElementById('close-calendar').addEventListener('click', closeAllModals);
   document.getElementById('close-payment').addEventListener('click', closeAllModals);
 
-  document.getElementById('btn-go-payment').addEventListener('click', () => {
+  document.getElementById('btn-go-payment').addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const originalHtml = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span>Đang chuẩn bị thanh toán...</span>';
+    await refreshPaymentSettingsBeforePayment();
+    button.disabled = false;
+    button.innerHTML = originalHtml;
     closeAllModals();
     openPaymentModal();
   });
