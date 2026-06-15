@@ -14,11 +14,13 @@ const LANDING_CONTENT_CACHE_KEY = 'landing_content_payload_v16';
 const LANDING_CONTENT_CACHE_SECONDS = 300;
 const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
 const ADMIN_SHEET_DATE_FORMAT = 'dd/MM/yyyy HH:mm:ss';
-const IMGBB_API_KEY = 'dbbeb2a25359362e9e9df73c5a9adb24';
+const IMGBB_API_KEY = '';
 const FEEDBACK_IMAGES_SHEET_NAME = 'Feedback images';
 const FEEDBACK_IMAGES_HEADERS = ['Ngày tạo', 'Tên file', 'URL', 'File ID', 'Người upload'];
 const FEEDBACK_DRIVE_FOLDER_NAME = 'ClowCat Landing Feedback Images';
 const PACKAGES_SHEET_NAME = 'Packages';
+const PAYMENT_SETTINGS_SHEET_NAME = 'Payment settings';
+const SEPAY_SECRET_KEY_PROPERTY = 'SEPAY_SECRET_KEY';
 const PACKAGES_HEADERS = [
   'Bật',
   'Mã gói',
@@ -34,6 +36,20 @@ const PACKAGES_HEADERS = [
   'Nút',
   'Thứ tự',
 ];
+const PAYMENT_SETTINGS_HEADERS = ['Khóa', 'Nội dung', 'Mô tả'];
+const DEFAULT_PAYMENT_SETTINGS = {
+  sepayEnabled: 'false',
+  bankName: 'Vietcombank',
+  bankBin: '970436',
+  bankAccount: '0421003904479',
+  bankAccountName: 'LÊ CHÍ CƯỜNG',
+  sepayEnv: 'sandbox',
+  sepayMerchantId: '',
+  sepayCheckoutUrl: '',
+  sepayOrderPrefix: 'CCP',
+  paymentTimeoutMinutes: '15',
+  thankYouUrl: 'thankyou.html',
+};
 const LANDING_CONTENT_HEADERS = [
   'Bật',
   'Khóa',
@@ -110,6 +126,7 @@ function doPost(e) {
     if (action === 'savePackage') return handleSavePackage(params);
     if (action === 'savePackageOrder') return handleSavePackageOrder(params);
     if (action === 'deletePackage') return handleDeletePackage(params);
+    if (action === 'savePaymentSettings') return handleSavePaymentSettings(params);
     if (action === 'uploadFeedbackImage') return handleUploadFeedbackImage(params);
     if (action === 'saveFeedbackImage') return handleSaveFeedbackImage(params);
     if (action === 'deleteFeedbackImage') return handleDeleteFeedbackImage(params);
@@ -141,6 +158,7 @@ function buildLandingContentPayload() {
       items: [],
       packages: getPackages(false),
       feedbackImages: getFeedbackImages(),
+      paymentSettings: getPaymentSettings(false),
       message: 'Chua co tab Landing content. Hay chay initializeLandingContentSheet mot lan trong Apps Script.',
       scriptVersion: SCRIPT_VERSION,
     };
@@ -149,7 +167,7 @@ function buildLandingContentPayload() {
   ensureLandingContentHeaderRow(sheet);
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
-    return { ok: true, items: [], packages: getPackages(false), feedbackImages: getFeedbackImages(), scriptVersion: SCRIPT_VERSION };
+    return { ok: true, items: [], packages: getPackages(false), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(false), scriptVersion: SCRIPT_VERSION };
   }
 
   const range = sheet.getRange(2, 1, lastRow - 1, LANDING_CONTENT_HEADERS.length);
@@ -167,6 +185,7 @@ function buildLandingContentPayload() {
     count: items.length,
     feedbackImages: getFeedbackImages(),
     packages: getPackages(false),
+    paymentSettings: getPaymentSettings(false),
     scriptVersion: SCRIPT_VERSION,
   };
 }
@@ -207,6 +226,7 @@ function handleGetAdminContent(params) {
       sections: [],
       packages: getPackages(true),
       feedbackImages: getFeedbackImages(),
+      paymentSettings: getPaymentSettings(true),
       message: 'Chua co tab Landing content. Hay chay initializeLandingContentSheet mot lan.',
       scriptVersion: SCRIPT_VERSION,
     });
@@ -215,7 +235,7 @@ function handleGetAdminContent(params) {
   ensureLandingContentHeaderRow(sheet);
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
-    return jsonResponse({ ok: true, items: [], sections: [], packages: getPackages(true), feedbackImages: getFeedbackImages(), scriptVersion: SCRIPT_VERSION });
+    return jsonResponse({ ok: true, items: [], sections: [], packages: getPackages(true), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(true), scriptVersion: SCRIPT_VERSION });
   }
 
   const range = sheet.getRange(2, 1, lastRow - 1, LANDING_CONTENT_HEADERS.length);
@@ -251,6 +271,7 @@ function handleGetAdminContent(params) {
     count: items.length,
     feedbackImages: getFeedbackImages(),
     packages: getPackages(true),
+    paymentSettings: getPaymentSettings(true),
     scriptVersion: SCRIPT_VERSION,
   });
 }
@@ -329,6 +350,7 @@ function handleSyncLandingContentTemplate(params) {
   requireAdminSession(params.token);
   const result = syncLandingContentSheet();
   ensurePackagesSheet();
+  ensurePaymentSettingsSheet();
   clearLandingContentCache();
   return jsonResponse({
     ok: true,
@@ -404,6 +426,7 @@ function writeLandingContentTemplate(resetSheet) {
     sheet.getRange(2, 1, rows.length, LANDING_CONTENT_HEADERS.length).setValues(rows);
     sheet.autoResizeColumns(1, LANDING_CONTENT_HEADERS.length);
     ensurePackagesSheet();
+    ensurePaymentSettingsSheet();
     return { ok: true, mode: resetSheet ? 'initialized' : 'filled-empty-sheet', rows: rows.length };
   }
 
@@ -435,6 +458,7 @@ function writeLandingContentTemplate(resetSheet) {
 
   sheet.autoResizeColumns(1, LANDING_CONTENT_HEADERS.length);
   ensurePackagesSheet();
+  ensurePaymentSettingsSheet();
   return { ok: true, mode: 'synced', added: rowsToAppend.length, totalTemplateRows: rows.length };
 }
 
@@ -1232,6 +1256,152 @@ function handleDeletePackage(params) {
     ok: true,
     message: 'Da xoa goi tu van',
     packages: getPackages(true),
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+// =============================================
+//  Payment Settings
+// =============================================
+function ensurePaymentSettingsSheet() {
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  let sheet = spreadsheet.getSheetByName(PAYMENT_SETTINGS_SHEET_NAME);
+  if (!sheet) sheet = spreadsheet.insertSheet(PAYMENT_SETTINGS_SHEET_NAME);
+
+  sheet.getRange(1, 1, 1, PAYMENT_SETTINGS_HEADERS.length).setValues([PAYMENT_SETTINGS_HEADERS]);
+  sheet.setFrozenRows(1);
+
+  const existing = {};
+  if (sheet.getLastRow() >= 2) {
+    const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, PAYMENT_SETTINGS_HEADERS.length).getValues();
+    values.forEach((row) => {
+      const key = cleanValue(row[0]);
+      if (key) existing[key] = true;
+    });
+  }
+
+  const descriptions = getPaymentSettingDescriptions();
+  const rowsToAppend = [];
+  Object.keys(DEFAULT_PAYMENT_SETTINGS).forEach((key) => {
+    if (!existing[key]) {
+      rowsToAppend.push([key, DEFAULT_PAYMENT_SETTINGS[key], descriptions[key] || '']);
+    }
+  });
+
+  if (rowsToAppend.length) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, rowsToAppend.length, PAYMENT_SETTINGS_HEADERS.length).setValues(rowsToAppend);
+  }
+
+  sheet.autoResizeColumns(1, PAYMENT_SETTINGS_HEADERS.length);
+  return sheet;
+}
+
+function getPaymentSettingDescriptions() {
+  return {
+    sepayEnabled: 'TRUE de bat che do SePay, FALSE de dung QR chuyen khoan thu cong hien tai.',
+    bankName: 'Ten ngan hang hien trong modal thanh toan.',
+    bankBin: 'Ma BIN ngan hang dung de tao QR VietQR.',
+    bankAccount: 'So tai khoan nhan tien.',
+    bankAccountName: 'Ten chu tai khoan nhan tien.',
+    sepayEnv: 'sandbox hoac production.',
+    sepayMerchantId: 'Merchant ID SePay, chi hien trong admin.',
+    sepayCheckoutUrl: 'Checkout URL tuy chon neu dung cong thanh toan SePay redirect.',
+    sepayOrderPrefix: 'Tien to ma don hang/chuyen khoan.',
+    paymentTimeoutMinutes: 'So phut cho khach thanh toan khi bat SePay.',
+    thankYouUrl: 'Trang chuyen den sau khi SePay xac nhan thanh cong.',
+  };
+}
+
+function getPaymentSettings(includePrivateStatus) {
+  const sheet = ensurePaymentSettingsSheet();
+  const settings = Object.assign({}, DEFAULT_PAYMENT_SETTINGS);
+  const lastRow = sheet.getLastRow();
+  if (lastRow >= 2) {
+    const values = sheet.getRange(2, 1, lastRow - 1, PAYMENT_SETTINGS_HEADERS.length).getDisplayValues();
+    values.forEach((row) => {
+      const key = cleanValue(row[0]);
+      if (key && Object.prototype.hasOwnProperty.call(settings, key)) {
+        settings[key] = cleanValue(row[1]);
+      }
+    });
+  }
+
+  const output = {
+    sepayEnabled: isTruthy(settings.sepayEnabled),
+    bankName: settings.bankName,
+    bankBin: settings.bankBin,
+    bankAccount: settings.bankAccount,
+    bankAccountName: settings.bankAccountName,
+    sepayEnv: settings.sepayEnv,
+    sepayMerchantId: settings.sepayMerchantId,
+    sepayCheckoutUrl: settings.sepayCheckoutUrl,
+    sepayOrderPrefix: settings.sepayOrderPrefix,
+    paymentTimeoutMinutes: Math.max(1, Number(settings.paymentTimeoutMinutes) || 15),
+    thankYouUrl: settings.thankYouUrl || 'thankyou.html',
+  };
+
+  if (includePrivateStatus) {
+    output.hasSepaySecretKey = Boolean(cleanValue(PropertiesService.getScriptProperties().getProperty(SEPAY_SECRET_KEY_PROPERTY)));
+  }
+
+  return output;
+}
+
+function handleSavePaymentSettings(params) {
+  requireAdminSession(params.token, ['admin']);
+  const sheet = ensurePaymentSettingsSheet();
+  const descriptions = getPaymentSettingDescriptions();
+  const nextSettings = {
+    sepayEnabled: isTruthy(params.sepayEnabled) ? 'true' : 'false',
+    bankName: cleanValue(params.bankName) || DEFAULT_PAYMENT_SETTINGS.bankName,
+    bankBin: cleanValue(params.bankBin) || DEFAULT_PAYMENT_SETTINGS.bankBin,
+    bankAccount: cleanValue(params.bankAccount) || DEFAULT_PAYMENT_SETTINGS.bankAccount,
+    bankAccountName: cleanValue(params.bankAccountName) || DEFAULT_PAYMENT_SETTINGS.bankAccountName,
+    sepayEnv: cleanValue(params.sepayEnv) || DEFAULT_PAYMENT_SETTINGS.sepayEnv,
+    sepayMerchantId: cleanValue(params.sepayMerchantId),
+    sepayCheckoutUrl: cleanValue(params.sepayCheckoutUrl),
+    sepayOrderPrefix: cleanValue(params.sepayOrderPrefix) || DEFAULT_PAYMENT_SETTINGS.sepayOrderPrefix,
+    paymentTimeoutMinutes: String(Math.max(1, Number(params.paymentTimeoutMinutes) || 15)),
+    thankYouUrl: cleanValue(params.thankYouUrl) || DEFAULT_PAYMENT_SETTINGS.thankYouUrl,
+  };
+
+  if (!/^\d{5,8}$/.test(nextSettings.bankBin)) throw new Error('Ma BIN ngan hang chua hop le.');
+  if (!/^[0-9]{4,32}$/.test(nextSettings.bankAccount)) throw new Error('So tai khoan chua hop le.');
+  if (nextSettings.sepayEnabled === 'true' && !nextSettings.sepayOrderPrefix) {
+    throw new Error('Can co tien to ma don hang khi bat SePay.');
+  }
+
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const nextSepaySecretKey = cleanValue(params.sepaySecretKey);
+  if (isTruthy(params.clearSepaySecretKey)) {
+    scriptProperties.deleteProperty(SEPAY_SECRET_KEY_PROPERTY);
+  } else if (nextSepaySecretKey) {
+    if (!/^spsk_/.test(nextSepaySecretKey)) throw new Error('Secret Key SePay phai bat dau bang spsk_.');
+    scriptProperties.setProperty(SEPAY_SECRET_KEY_PROPERTY, nextSepaySecretKey);
+  }
+
+  const rowByKey = {};
+  if (sheet.getLastRow() >= 2) {
+    const keys = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues();
+    keys.forEach((row, index) => {
+      const key = cleanValue(row[0]);
+      if (key) rowByKey[key] = index + 2;
+    });
+  }
+
+  Object.keys(nextSettings).forEach((key) => {
+    const rowNumber = rowByKey[key] || sheet.getLastRow() + 1;
+    sheet.getRange(rowNumber, 1, 1, PAYMENT_SETTINGS_HEADERS.length)
+      .setValues([[key, nextSettings[key], descriptions[key] || '']]);
+  });
+
+  sheet.autoResizeColumns(1, PAYMENT_SETTINGS_HEADERS.length);
+  clearLandingContentCache();
+
+  return jsonResponse({
+    ok: true,
+    message: 'Da luu cau hinh thanh toan',
+    paymentSettings: getPaymentSettings(true),
     scriptVersion: SCRIPT_VERSION,
   });
 }

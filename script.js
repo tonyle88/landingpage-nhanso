@@ -63,6 +63,22 @@ const landingContentReady = loadLandingContentFromSheet();
 const BANK_BIN = '970436'; // Vietcombank BIN
 const BANK_ACCOUNT = '0421003904479';
 const BANK_NAME_DISPLAY = 'LÊ CHÍ CƯỜNG';
+const DEFAULT_PAYMENT_SETTINGS = {
+  sepayEnabled: false,
+  bankName: 'Vietcombank',
+  bankBin: BANK_BIN,
+  bankAccount: BANK_ACCOUNT,
+  bankAccountName: BANK_NAME_DISPLAY,
+  sepayEnv: 'sandbox',
+  sepayMerchantId: '',
+  sepayCheckoutUrl: '',
+  sepayOrderPrefix: 'CCP',
+  paymentTimeoutMinutes: 15,
+  thankYouUrl: 'thankyou.html',
+};
+let paymentSettings = { ...DEFAULT_PAYMENT_SETTINGS };
+let sepayPaymentTimer = null;
+let sepayPaymentPoller = null;
 
 // Working hours config (24h format)
 // Mon–Fri: 19–21, Sat–Sun: 9–21, slot duration 2h
@@ -207,6 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bookingState.consultationType = fd.get('consultationType') || '';
     bookingState.package = fd.get('package') || '';
     bookingState.concern = fd.get('concern') || '';
+    bookingState.paymentOrderId = '';
     const packageSnapshot = getSelectedPackageSnapshot();
     if (!packageSnapshot.price) {
       showToast('Bạn vui lòng chọn lại gói tư vấn để hệ thống cập nhật đúng số tiền.');
@@ -329,6 +346,7 @@ function finishLandingContentLoading() {
 function applyLandingContent(payload) {
   (payload.items || []).forEach(applyLandingContentItem);
   syncHeroConsultationBadge();
+  paymentSettings = normalizePaymentSettings(payload.paymentSettings);
 
   const packages = normalizePackages(payload.packages);
   if (packages.length > 0) {
@@ -342,6 +360,22 @@ function applyLandingContent(payload) {
   if (feedbackImages.length > 0) {
     renderTestimonials(feedbackImages);
   }
+}
+
+function normalizePaymentSettings(settings = {}) {
+  return {
+    sepayEnabled: settings.sepayEnabled === true || String(settings.sepayEnabled).toLowerCase() === 'true',
+    bankName: String(settings.bankName || DEFAULT_PAYMENT_SETTINGS.bankName).trim(),
+    bankBin: String(settings.bankBin || DEFAULT_PAYMENT_SETTINGS.bankBin).trim(),
+    bankAccount: String(settings.bankAccount || DEFAULT_PAYMENT_SETTINGS.bankAccount).trim(),
+    bankAccountName: String(settings.bankAccountName || DEFAULT_PAYMENT_SETTINGS.bankAccountName).trim(),
+    sepayEnv: String(settings.sepayEnv || DEFAULT_PAYMENT_SETTINGS.sepayEnv).trim(),
+    sepayMerchantId: String(settings.sepayMerchantId || '').trim(),
+    sepayCheckoutUrl: String(settings.sepayCheckoutUrl || '').trim(),
+    sepayOrderPrefix: String(settings.sepayOrderPrefix || DEFAULT_PAYMENT_SETTINGS.sepayOrderPrefix).trim(),
+    paymentTimeoutMinutes: Math.max(1, Number(settings.paymentTimeoutMinutes || DEFAULT_PAYMENT_SETTINGS.paymentTimeoutMinutes)),
+    thankYouUrl: String(settings.thankYouUrl || DEFAULT_PAYMENT_SETTINGS.thankYouUrl).trim(),
+  };
 }
 
 function normalizePackages(packages) {
@@ -912,7 +946,9 @@ function isConfiguredScriptUrl(url) {
 }
 
 function getBookingDataObject() {
-  const transferContent = buildTransferContent(bookingState.package, bookingState.phone);
+  const transferContent = paymentSettings.sepayEnabled && bookingState.paymentOrderId
+    ? bookingState.paymentOrderId
+    : buildTransferContent(bookingState.package, bookingState.phone);
   const packageSnapshot = getSelectedPackageSnapshot();
 
   return {
@@ -937,6 +973,8 @@ function getBookingDataObject() {
     slotEnd: buildSlotISO(bookingState.selectedDate, bookingState.selectedTime, WORKING_HOURS.slotDurationHrs),
     submittedAt: new Date().toISOString(),
     pageUrl: window.location.href,
+    paymentProvider: paymentSettings.sepayEnabled ? 'sepay' : 'manual_qr',
+    paymentOrderId: bookingState.paymentOrderId || buildPaymentOrderId(bookingState.package, bookingState.phone),
   };
 }
 
@@ -944,6 +982,14 @@ function buildTransferContent(packageCode, phone) {
   const cleanPackageCode = String(packageCode || '').trim().toUpperCase();
   const cleanPhone = String(phone || '').replace(/\s+/g, '');
   return `${cleanPackageCode} ${cleanPhone}`.trim();
+}
+
+function buildPaymentOrderId(packageCode, phone) {
+  const prefix = String(paymentSettings.sepayOrderPrefix || 'CCP').trim().toUpperCase();
+  const cleanPackageCode = String(packageCode || '').trim().toUpperCase();
+  const cleanPhone = String(phone || '').replace(/\D/g, '').slice(-6);
+  const timestamp = Date.now().toString().slice(-6);
+  return [prefix, cleanPackageCode, cleanPhone || 'GUEST', timestamp].filter(Boolean).join('-');
 }
 
 function bookingDataToUrlParams(data, action) {
@@ -1146,6 +1192,7 @@ const bookingState = {
   selectedDate: null,   // JS Date object
   selectedTime: null,   // '19:00'
   bookedSlots: [],      // fetched from Apps Script [{start, end}]
+  paymentOrderId: '',
 };
 
 // ---- Modal open/close ----
@@ -1155,6 +1202,7 @@ function openModal(id) {
   document.body.style.overflow = 'hidden';
 }
 function closeAllModals() {
+  stopSepayWaiting();
   document.getElementById('booking-overlay').classList.remove('active');
   ['modal-calendar','modal-payment','modal-success'].forEach(id => {
     document.getElementById(id).classList.remove('active');
@@ -1419,12 +1467,27 @@ function openPaymentModal() {
   }
 
   const priceStr = price.toLocaleString('vi-VN') + 'đ';
-  const transferContent = buildTransferContent(snapshot.code, bookingState.phone);
+  if (paymentSettings.sepayEnabled && !bookingState.paymentOrderId) {
+    bookingState.paymentOrderId = buildPaymentOrderId(snapshot.code, bookingState.phone);
+  }
+  if (!paymentSettings.sepayEnabled) {
+    bookingState.paymentOrderId = '';
+  }
+  const transferContent = paymentSettings.sepayEnabled
+    ? bookingState.paymentOrderId
+    : buildTransferContent(snapshot.code, bookingState.phone);
+  const bankBin = paymentSettings.bankBin || BANK_BIN;
+  const bankAccount = paymentSettings.bankAccount || BANK_ACCOUNT;
+  const bankAccountName = paymentSettings.bankAccountName || BANK_NAME_DISPLAY;
 
   // Build VietQR URL  
-  const qrUrl = `https://img.vietqr.io/image/${BANK_BIN}-${BANK_ACCOUNT}-compact2.jpg?amount=${price}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(BANK_NAME_DISPLAY)}`;
+  const qrUrl = `https://img.vietqr.io/image/${bankBin}-${bankAccount}-compact2.jpg?amount=${price}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(bankAccountName)}`;
 
   document.getElementById('qr-img').src = qrUrl;
+  document.getElementById('bank-name').textContent = paymentSettings.bankName || 'Vietcombank';
+  document.getElementById('bank-account').innerHTML = `${bankAccount} <i class="fa-regular fa-copy"></i>`;
+  document.getElementById('bank-account').dataset.copy = bankAccount;
+  document.getElementById('bank-account-name').textContent = bankAccountName;
   document.getElementById('pay-amount').textContent = priceStr;
   document.getElementById('pay-content').textContent = transferContent;
   document.getElementById('pay-content').dataset.copy = transferContent;
@@ -1439,7 +1502,87 @@ function openPaymentModal() {
     detailRow.hidden = false;
   }
 
+  preparePaymentMode({
+    amount: price,
+    transferContent,
+  });
   openModal('modal-payment');
+}
+
+function preparePaymentMode(paymentMeta) {
+  stopSepayWaiting();
+  const waiting = document.getElementById('sepay-waiting');
+  const confirmBtn = document.getElementById('btn-confirm-payment');
+  const noteText = document.getElementById('payment-note-text');
+  const title = document.getElementById('modal-pay-title');
+
+  if (!paymentSettings.sepayEnabled) {
+    waiting.hidden = true;
+    confirmBtn.hidden = false;
+    confirmBtn.disabled = false;
+    confirmBtn.innerHTML = '<span>✓ Tôi Đã Chuyển Khoản Thành Công</span>';
+    title.textContent = 'Thanh Toán Chuyển Khoản';
+    noteText.textContent = 'Sau khi chuyển khoản, nhấn nút bên dưới để hoàn tất. Chúng tôi sẽ xác nhận và gửi email cho bạn ngay.';
+    return;
+  }
+
+  waiting.hidden = false;
+  confirmBtn.hidden = true;
+  title.textContent = 'Thanh Toán SePay';
+  noteText.textContent = 'Vui lòng quét mã và giữ nguyên nội dung chuyển khoản. Hệ thống sẽ tự xác nhận khi nhận được thanh toán.';
+  startSepayWaiting(paymentMeta);
+}
+
+function startSepayWaiting(paymentMeta) {
+  const countdown = document.getElementById('sepay-countdown');
+  const statusText = document.getElementById('sepay-status-text');
+  const timeoutSeconds = Math.max(60, Number(paymentSettings.paymentTimeoutMinutes || 15) * 60);
+  const expiresAt = Date.now() + timeoutSeconds * 1000;
+
+  const updateCountdown = () => {
+    const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+    const minutes = Math.floor(remaining / 60);
+    const seconds = remaining % 60;
+    countdown.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    if (remaining <= 0) {
+      stopSepayWaiting();
+      statusText.textContent = 'Thanh toán đã quá hạn. Bạn có thể quay lại chọn lịch hoặc tải lại mã thanh toán.';
+      return;
+    }
+  };
+
+  updateCountdown();
+  sepayPaymentTimer = window.setInterval(updateCountdown, 1000);
+  sepayPaymentPoller = window.setInterval(() => checkSepayPaymentStatus(paymentMeta), 5000);
+}
+
+function stopSepayWaiting() {
+  if (sepayPaymentTimer) window.clearInterval(sepayPaymentTimer);
+  if (sepayPaymentPoller) window.clearInterval(sepayPaymentPoller);
+  sepayPaymentTimer = null;
+  sepayPaymentPoller = null;
+}
+
+async function checkSepayPaymentStatus(paymentMeta) {
+  if (!paymentSettings.sepayEnabled || !isConfiguredGoogleScriptUrl()) return;
+  try {
+    const data = getBookingDataObject();
+    const params = bookingDataToUrlParams(Object.assign({}, data, paymentMeta), 'checkSepayPayment').toString();
+    const res = await fetchWithTimeout(`${BOOKING_SCRIPT_URL}?${params}`, {
+      method: 'GET',
+      mode: 'cors',
+      cache: 'no-store',
+    }, BOOKING_API_TIMEOUT_MS);
+    const result = await res.json();
+    if (!result.ok || result.status !== 'paid') return;
+
+    stopSepayWaiting();
+    await saveBookingToSheet(data);
+    await completeBookingOnServer(data);
+    window.location.href = paymentSettings.thankYouUrl || 'thankyou.html';
+  } catch (error) {
+    console.warn('SePay status check failed:', error);
+  }
 }
 
 // ============================================

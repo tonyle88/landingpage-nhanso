@@ -16,6 +16,15 @@ const OWNER_EMAIL    = 'cuongck3@gmail.com';
 const EMAIL_SENDER_NAME = 'Tony Le – Nhân Số Học';
 const EMAIL_LOG_SHEET = 'Email log';
 const ERROR_LOG_SHEET = 'Error log';
+const SEPAY_PAYMENTS_SHEET = 'SePay payments';
+const SEPAY_PAYMENTS_HEADERS = [
+  'Ngày giờ Việt Nam',
+  'Mã thanh toán',
+  'Trạng thái',
+  'Số tiền',
+  'Nội dung',
+  'Dữ liệu gốc',
+];
 
 const HEADERS = [
   'Ngày giờ Việt Nam',
@@ -112,6 +121,15 @@ function doGet(e) {
     }
   }
 
+  if (params.action === 'checkSepayPayment') {
+    try {
+      return handleCheckSepayPayment(params);
+    } catch (error) {
+      logAppError('checkSepayPayment', error, params);
+      return jsonResponse({ ok: false, message: error.message, scriptVersion: SCRIPT_VERSION });
+    }
+  }
+
   return jsonResponse({ ok: true, message: 'Nhân Số Học – Apps Script đang chạy ✓', scriptVersion: SCRIPT_VERSION });
 }
 
@@ -133,6 +151,10 @@ function doPost(e) {
 
     if (params.action === 'logClientError') {
       return handleLogClientError(params);
+    }
+
+    if (params.action === 'sepayWebhook') {
+      return handleSepayWebhook(params);
     }
 
     if (params.action === 'saveBooking' || params.action === 'finalizeBooking') {
@@ -162,6 +184,7 @@ function isAdminOnlyAction(action) {
     'syncLandingContentTemplate',
     'savePackage',
     'deletePackage',
+    'savePaymentSettings',
     'uploadFeedbackImage',
     'saveFeedbackImage',
     'deleteFeedbackImage',
@@ -319,6 +342,39 @@ function handleFinalizeBooking(params) {
 function handleLogClientError(params) {
   logAppError('client:' + sanitizePlainText(params.context || 'unknown', 80), new Error(sanitizePlainText(params.message || 'Client error', 300)), params);
   return jsonResponse({ ok: true, scriptVersion: SCRIPT_VERSION });
+}
+
+function handleCheckSepayPayment(params) {
+  const orderId = sanitizePlainText(params.paymentOrderId || params.transferContent, 120);
+  if (!orderId) throw new Error('Thieu ma thanh toan SePay.');
+
+  const payment = findSepayPayment(orderId);
+  return jsonResponse({
+    ok: true,
+    status: payment ? payment.status : 'pending',
+    payment: payment || null,
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function handleSepayWebhook(params) {
+  const configuredSecret = cleanValue(PropertiesService.getScriptProperties().getProperty('SEPAY_WEBHOOK_SECRET'));
+  if (!configuredSecret) throw new Error('Chua cau hinh SEPAY_WEBHOOK_SECRET trong Script Properties.');
+  if (cleanValue(params.secret) !== configuredSecret) throw new Error('Secret webhook SePay khong hop le.');
+
+  const orderId = extractSepayOrderId(params);
+  if (!orderId) throw new Error('Webhook SePay thieu ma thanh toan.');
+
+  const status = normalizeSepayStatus(params.status || params.payment_status || params.transaction_status || 'paid');
+  const amount = parsePriceNumber(params.amount || params.order_amount || params.transferAmount);
+  saveSepayPaymentStatus(orderId, status, amount, params);
+
+  return jsonResponse({
+    ok: true,
+    status: status,
+    paymentOrderId: orderId,
+    scriptVersion: SCRIPT_VERSION,
+  });
 }
 
 function sendBookingEmails(payload, sheet, rowNumber) {
@@ -765,6 +821,69 @@ function logEmailAttempt(type, recipient, success, errorMessage) {
   } catch (error) {
     console.error('Email log error:', error);
   }
+}
+
+function ensureSepayPaymentsSheet() {
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  let sheet = spreadsheet.getSheetByName(SEPAY_PAYMENTS_SHEET);
+  if (!sheet) sheet = spreadsheet.insertSheet(SEPAY_PAYMENTS_SHEET);
+  sheet.getRange(1, 1, 1, SEPAY_PAYMENTS_HEADERS.length).setValues([SEPAY_PAYMENTS_HEADERS]);
+  sheet.setFrozenRows(1);
+  sheet.autoResizeColumns(1, SEPAY_PAYMENTS_HEADERS.length);
+  return sheet;
+}
+
+function findSepayPayment(orderId) {
+  const target = cleanValue(orderId);
+  if (!target) return null;
+
+  const sheet = ensureSepayPaymentsSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  const values = sheet.getRange(2, 1, lastRow - 1, SEPAY_PAYMENTS_HEADERS.length).getDisplayValues();
+  for (let index = values.length - 1; index >= 0; index -= 1) {
+    const row = values[index];
+    if (cleanValue(row[1]) !== target) continue;
+    return {
+      createdAt: row[0],
+      paymentOrderId: row[1],
+      status: normalizeSepayStatus(row[2]),
+      amount: parsePriceNumber(row[3]),
+      content: row[4],
+    };
+  }
+  return null;
+}
+
+function saveSepayPaymentStatus(orderId, status, amount, rawParams) {
+  const sheet = ensureSepayPaymentsSheet();
+  const normalizedStatus = normalizeSepayStatus(status);
+  sheet.appendRow([
+    getVietnamDateTime(),
+    cleanValue(orderId),
+    normalizedStatus,
+    amount || '',
+    sanitizePlainText(rawParams.content || rawParams.description || rawParams.order_description || '', 500),
+    JSON.stringify(maskSensitiveParams(rawParams || {})).slice(0, 4500),
+  ]);
+  sheet.getRange(sheet.getLastRow(), 4).setNumberFormat(PRICE_NUMBER_FORMAT);
+  return normalizedStatus;
+}
+
+function normalizeSepayStatus(status) {
+  const value = cleanValue(status).toLowerCase();
+  if (['paid', 'success', 'succeeded', 'completed', 'complete', 'thanh cong', 'thành công'].indexOf(value) !== -1) return 'paid';
+  if (['failed', 'error', 'cancelled', 'canceled', 'expired'].indexOf(value) !== -1) return value;
+  return value || 'pending';
+}
+
+function extractSepayOrderId(params) {
+  const direct = sanitizePlainText(params.paymentOrderId || params.order_invoice_number || params.orderCode, 120);
+  if (direct) return direct;
+  const content = sanitizePlainText(params.content || params.description || params.order_description, 500).toUpperCase();
+  const match = content.match(/[A-Z]{2,10}-[A-Z0-9_-]{2,30}-[A-Z0-9]{4,12}-[0-9]{4,12}/);
+  return match ? match[0] : content.slice(0, 120);
 }
 
 // =============================================

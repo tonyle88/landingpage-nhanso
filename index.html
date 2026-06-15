@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://i.ibb.co" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="style.css?v=20260614-review-balance" />
+  <link rel="stylesheet" href="style.css?v=20260615-sepay-payment" />
 </head>
 <body class="landing-content-loading">
 
@@ -698,7 +698,7 @@
         <div class="bank-details">
           <div class="bank-info-row">
             <span class="bank-info-label">Ngân hàng</span>
-            <span class="bank-info-val">Vietcombank</span>
+            <span class="bank-info-val" id="bank-name">Vietcombank</span>
           </div>
           <div class="bank-info-row">
             <span class="bank-info-label">Số TK</span>
@@ -706,7 +706,7 @@
           </div>
           <div class="bank-info-row">
             <span class="bank-info-label">Chủ TK</span>
-            <span class="bank-info-val">LÊ CHÍ CƯỜNG</span>
+            <span class="bank-info-val" id="bank-account-name">LÊ CHÍ CƯỜNG</span>
           </div>
           <div class="bank-info-row highlight-row">
             <span class="bank-info-label">Số tiền</span>
@@ -737,7 +737,15 @@
 
       <div class="pay-note">
         <i class="fa-solid fa-circle-info"></i>
-        Sau khi chuyển khoản, nhấn nút bên dưới để hoàn tất. Chúng tôi sẽ xác nhận và gửi email cho bạn ngay.
+        <span id="payment-note-text">Sau khi chuyển khoản, nhấn nút bên dưới để hoàn tất. Chúng tôi sẽ xác nhận và gửi email cho bạn ngay.</span>
+      </div>
+
+      <div class="sepay-waiting" id="sepay-waiting" hidden>
+        <div>
+          <span class="sepay-status-label">Đang chờ thanh toán</span>
+          <strong id="sepay-countdown">15:00</strong>
+        </div>
+        <p id="sepay-status-text">Hệ thống sẽ tự chuyển sang trang cảm ơn khi thanh toán được xác nhận.</p>
       </div>
 
       <button class="btn btn-primary btn-full" id="btn-confirm-payment">
@@ -847,6 +855,6 @@
     <i class="fa-solid fa-volume-high"></i>
   </button>
 
-  <script src="script.js?v=20260614-booking-hardening"></script>
+  <script src="script.js?v=20260615-sepay-payment"></script>
 </body>
 </html>

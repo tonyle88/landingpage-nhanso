@@ -17,6 +17,7 @@ const state = {
   savingKeys: new Set(),
   feedbackImages: [],
   packages: [],
+  paymentSettings: {},
 };
 
 const els = {
@@ -142,6 +143,7 @@ async function loadContent(showNotice = false) {
     state.sections = payload.sections || [];
     state.feedbackImages = payload.feedbackImages || [];
     state.packages = payload.packages || [];
+    state.paymentSettings = normalizePaymentSettings(payload.paymentSettings);
     state.originals = new Map(state.items.map((item) => [item.key, snapshotItem(item)]));
     render();
     if (showNotice) toast('Đã tải lại nội dung mới nhất.');
@@ -163,6 +165,23 @@ function normalizeItem(item) {
     attribute: String(item.attribute || ''),
     value: item.value == null ? '' : String(item.value),
     rowNumber: item.rowNumber || '',
+  };
+}
+
+function normalizePaymentSettings(settings = {}) {
+  return {
+    sepayEnabled: settings.sepayEnabled === true || String(settings.sepayEnabled).toLowerCase() === 'true',
+    bankName: String(settings.bankName || 'Vietcombank'),
+    bankBin: String(settings.bankBin || '970436'),
+    bankAccount: String(settings.bankAccount || '0421003904479'),
+    bankAccountName: String(settings.bankAccountName || 'LÊ CHÍ CƯỜNG'),
+    sepayEnv: String(settings.sepayEnv || 'sandbox'),
+    sepayMerchantId: String(settings.sepayMerchantId || ''),
+    sepayCheckoutUrl: String(settings.sepayCheckoutUrl || ''),
+    sepayOrderPrefix: String(settings.sepayOrderPrefix || 'CCP'),
+    paymentTimeoutMinutes: Number(settings.paymentTimeoutMinutes || 15),
+    thankYouUrl: String(settings.thankYouUrl || 'thankyou.html'),
+    hasSepaySecretKey: settings.hasSepaySecretKey === true || String(settings.hasSepaySecretKey).toLowerCase() === 'true',
   };
 }
 
@@ -198,8 +217,9 @@ function expireSession() {
   state.user = null;
   state.items = [];
   state.originals = new Map();
-  state.feedbackImages = [];
-  state.packages = [];
+    state.feedbackImages = [];
+    state.packages = [];
+    state.paymentSettings = {};
   sessionStorage.removeItem(SESSION_KEY);
   showLogin();
 }
@@ -217,6 +237,7 @@ function renderSections() {
     { name: 'all', label: 'Tất cả', count: getVisibleContentItems().length },
     ...groups.map((group) => ({ name: group.name, label: group.name, count: group.count })),
     { name: 'packages-manager', label: 'Gói Tư Vấn', count: state.packages ? state.packages.length : 0 },
+    { name: 'payment-settings', label: 'Thanh toán', count: state.paymentSettings?.sepayEnabled ? 'SePay' : 'QR' },
     { name: 'feedback-images', label: 'Ảnh Feedback', count: state.feedbackImages ? state.feedbackImages.length : 0 }
   ];
 
@@ -252,6 +273,11 @@ function renderHeading() {
     title = 'Quản lý gói tư vấn';
     count = state.packages ? state.packages.length : 0;
     desc = `${count} gói đang được quản lý. Các gói bật sẽ tự hiển thị trong section "Gói Tư Vấn" và dropdown đặt lịch.`;
+  } else if (state.selectedSection === 'payment-settings') {
+    label = 'Thanh toán';
+    title = 'Cấu hình thanh toán';
+    count = state.paymentSettings?.sepayEnabled ? 'SePay đang bật' : 'QR thủ công';
+    desc = 'Đổi tài khoản nhận tiền, bật/tắt SePay và thời gian chờ xác nhận thanh toán.';
   } else {
     label = state.selectedSection === 'all' ? 'Tất cả section' : state.selectedSection;
     count = getFilteredItems().length;
@@ -270,6 +296,10 @@ function renderCards() {
   }
   if (state.selectedSection === 'packages-manager') {
     renderPackagesManager();
+    return;
+  }
+  if (state.selectedSection === 'payment-settings') {
+    renderPaymentSettings();
     return;
   }
 
@@ -626,6 +656,7 @@ function formatApiErrorMessage(action, payload) {
     'saveLandingContentBatch',
     'syncLandingContentTemplate',
     'savePackage',
+    'savePaymentSettings',
     'deletePackage',
     'uploadFeedbackImage',
     'saveFeedbackImage',
@@ -1054,6 +1085,132 @@ async function deletePackage(code) {
 
 function formatMoney(value) {
   return Number(value || 0).toLocaleString('vi-VN') + 'đ';
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// =============================================
+//  Payment Settings
+// =============================================
+function renderPaymentSettings() {
+  const settings = normalizePaymentSettings(state.paymentSettings);
+  els.editorGrid.innerHTML = `
+    <form class="content-card package-editor-card" id="payment-settings-form" style="grid-column:1/-1;">
+      <div class="card-top">
+        <div>
+          <div class="content-key">payment.settings</div>
+          <h3>Thanh toán & SePay</h3>
+        </div>
+        <label class="toggle-row">
+          <input type="checkbox" name="sepayEnabled" ${settings.sepayEnabled ? 'checked' : ''} ${state.user.role !== 'admin' ? 'disabled' : ''} />
+          <span>Bật SePay</span>
+        </label>
+      </div>
+      <div class="package-form-grid">
+        <label>Ngân hàng
+          <input name="bankName" value="${escapeHtml(settings.bankName)}" required ${state.user.role !== 'admin' ? 'disabled' : ''} />
+        </label>
+        <label>Mã BIN VietQR
+          <input name="bankBin" value="${escapeHtml(settings.bankBin)}" inputmode="numeric" required ${state.user.role !== 'admin' ? 'disabled' : ''} />
+        </label>
+        <label>Số tài khoản
+          <input name="bankAccount" value="${escapeHtml(settings.bankAccount)}" inputmode="numeric" required ${state.user.role !== 'admin' ? 'disabled' : ''} />
+        </label>
+        <label>Chủ tài khoản
+          <input name="bankAccountName" value="${escapeHtml(settings.bankAccountName)}" required ${state.user.role !== 'admin' ? 'disabled' : ''} />
+        </label>
+        <label>Môi trường SePay
+          <select name="sepayEnv" ${state.user.role !== 'admin' ? 'disabled' : ''}>
+            <option value="sandbox" ${settings.sepayEnv === 'sandbox' ? 'selected' : ''}>Sandbox</option>
+            <option value="production" ${settings.sepayEnv === 'production' ? 'selected' : ''}>Production</option>
+          </select>
+        </label>
+        <label>Merchant ID
+          <input name="sepayMerchantId" value="${escapeHtml(settings.sepayMerchantId)}" placeholder="Nhập Merchant ID SePay" ${state.user.role !== 'admin' ? 'disabled' : ''} />
+        </label>
+        <label>Secret Key
+          <input name="sepaySecretKey" type="password" value="" placeholder="${settings.hasSepaySecretKey ? 'Đã lưu key trên server - để trống nếu không đổi' : 'Dán Secret Key SePay để lưu server-side'}" autocomplete="new-password" ${state.user.role !== 'admin' ? 'disabled' : ''} />
+        </label>
+        <label>Checkout URL tùy chọn
+          <input name="sepayCheckoutUrl" value="${escapeHtml(settings.sepayCheckoutUrl)}" placeholder="Có thể để trống nếu dùng QR chờ thanh toán" ${state.user.role !== 'admin' ? 'disabled' : ''} />
+        </label>
+        <label>Tiền tố mã đơn
+          <input name="sepayOrderPrefix" value="${escapeHtml(settings.sepayOrderPrefix)}" required ${state.user.role !== 'admin' ? 'disabled' : ''} />
+        </label>
+        <label>Thời gian chờ (phút)
+          <input name="paymentTimeoutMinutes" type="number" min="1" max="60" value="${settings.paymentTimeoutMinutes}" required ${state.user.role !== 'admin' ? 'disabled' : ''} />
+        </label>
+        <label>Trang cảm ơn
+          <input name="thankYouUrl" value="${escapeHtml(settings.thankYouUrl)}" required ${state.user.role !== 'admin' ? 'disabled' : ''} />
+        </label>
+      </div>
+      <p class="content-description">
+        Khi tắt SePay, trang dùng flow hiện tại: khách quét QR rồi tự bấm xác nhận. Khi bật SePay, trang hiển thị QR có đếm ngược và chờ webhook/payment log xác nhận đã thanh toán.
+        Secret Key chỉ được lưu trong Apps Script Properties và không trả ra landing page.
+      </p>
+      ${settings.hasSepaySecretKey ? `
+        <label class="toggle-row payment-secret-clear">
+          <input type="checkbox" name="clearSepaySecretKey" ${state.user.role !== 'admin' ? 'disabled' : ''} />
+          <span>Xóa Secret Key SePay đang lưu</span>
+        </label>
+      ` : ''}
+      <footer class="package-form-actions">
+        <span class="save-state" id="payment-settings-message">${state.user.role !== 'admin' ? 'Chỉ admin được đổi cấu hình thanh toán.' : ''}</span>
+        <button class="primary-button" type="submit" id="payment-settings-save-btn" ${state.user.role !== 'admin' ? 'disabled' : ''}>
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span>Lưu thanh toán</span>
+        </button>
+      </footer>
+    </form>
+  `;
+
+  els.emptyState.classList.add('is-hidden');
+  document.getElementById('payment-settings-form')?.addEventListener('submit', savePaymentSettings);
+}
+
+async function savePaymentSettings(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = document.getElementById('payment-settings-save-btn');
+  const message = document.getElementById('payment-settings-message');
+  setBusy(button, true);
+  message.textContent = 'Đang lưu cấu hình thanh toán...';
+  message.style.color = '';
+
+  try {
+    const fields = form.elements;
+    const payload = await api('savePaymentSettings', {
+      token: state.token,
+      sepayEnabled: fields.sepayEnabled.checked ? 'true' : 'false',
+      bankName: fields.bankName.value,
+      bankBin: fields.bankBin.value,
+      bankAccount: fields.bankAccount.value,
+      bankAccountName: fields.bankAccountName.value,
+      sepayEnv: fields.sepayEnv.value,
+      sepayMerchantId: fields.sepayMerchantId.value,
+      sepaySecretKey: fields.sepaySecretKey.value,
+      clearSepaySecretKey: fields.clearSepaySecretKey?.checked ? 'true' : 'false',
+      sepayCheckoutUrl: fields.sepayCheckoutUrl.value,
+      sepayOrderPrefix: fields.sepayOrderPrefix.value,
+      paymentTimeoutMinutes: fields.paymentTimeoutMinutes.value,
+      thankYouUrl: fields.thankYouUrl.value,
+    });
+    state.paymentSettings = normalizePaymentSettings(payload.paymentSettings);
+    toast('Đã lưu cấu hình thanh toán.');
+    render();
+  } catch (error) {
+    message.textContent = error.message;
+    message.style.color = 'var(--danger)';
+  } finally {
+    setBusy(button, false);
+  }
 }
 
 // =============================================

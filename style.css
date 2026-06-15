@@ -3211,6 +3211,47 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 .pay-note i { color: var(--color-gold-light); flex-shrink: 0; margin-top: 2px; }
 
+.sepay-waiting {
+  margin: 18px 0;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(240, 201, 106, 0.28);
+  background: rgba(240, 201, 106, 0.08);
+}
+
+.sepay-waiting[hidden] {
+  display: none;
+}
+
+.sepay-waiting > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.sepay-status-label {
+  color: var(--color-white-60);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#sepay-countdown {
+  color: var(--color-gold-light);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+#sepay-status-text {
+  margin: 0;
+  color: var(--color-white-60);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
 .btn-back-text {
   background: none;
   border: none;
