@@ -1640,9 +1640,17 @@ async function checkSepayPaymentStatus(paymentMeta) {
     if (!result.ok || result.status !== 'paid') return;
 
     stopSepayWaiting();
+
+    const statusText = document.getElementById('sepay-status-text');
+    if (statusText) statusText.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Đang hoàn tất lịch hẹn...';
+    const countdown = document.getElementById('sepay-countdown');
+    if (countdown) countdown.style.display = 'none';
+
     await saveBookingToSheet(data);
     await completeBookingOnServer(data);
-    window.location.href = paymentSettings.thankYouUrl || 'thankyou.html';
+
+    closeAllModals();
+    showSuccessModal();
   } catch (error) {
     console.warn('SePay status check failed:', error);
   }
