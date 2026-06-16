@@ -1019,7 +1019,7 @@ function buildTransferContent(packageCode, phone) {
 function buildPaymentOrderId(packageCode, phone) {
   const prefix = String(paymentSettings.sepayOrderPrefix || 'CCP').trim().toUpperCase();
   const cleanPackageCode = String(packageCode || '').trim().toUpperCase();
-  const cleanPhone = String(phone || '').replace(/\D/g, '').slice(-6);
+  const cleanPhone = String(phone || '').replace(/\D/g, '');
   const timestamp = Date.now().toString().slice(-6);
   return [prefix, cleanPackageCode, cleanPhone || 'GUEST', timestamp].filter(Boolean).join('-');
 }

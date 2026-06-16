@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="style.css?v=20260615-sepay-payment" />
+  <link rel="stylesheet" href="style.css?v=20260616-sepay-success" />
   <style>
     body {
       min-height: 100vh;
@@ -20,62 +20,41 @@
         linear-gradient(rgba(9, 28, 32, 0.78), rgba(9, 28, 32, 0.88)),
         url("assets/images/hero_bg.webp") center / cover fixed;
     }
-    .thankyou-panel {
-      width: min(680px, 100%);
-      padding: clamp(28px, 6vw, 54px);
-      border: 1px solid rgba(240, 201, 106, 0.28);
-      border-radius: 18px;
-      background: rgba(9, 28, 32, 0.88);
+    .bmodal-inner {
       box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
-      text-align: center;
+      position: relative;
     }
-    .thankyou-icon {
-      width: 78px;
-      height: 78px;
-      display: grid;
-      place-items: center;
-      margin: 0 auto 22px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--color-gold), var(--color-sunburst));
-      color: var(--color-teal-darkest);
-      font-size: 2rem;
-    }
-    .thankyou-panel h1 {
-      margin: 0 0 14px;
-      font-family: var(--font-display);
-      font-size: clamp(2.2rem, 6vw, 4rem);
-      color: white;
-    }
-    .thankyou-panel p {
-      margin: 0 auto 26px;
-      max-width: 540px;
-      color: var(--color-white-80);
-      font-size: 1rem;
-      line-height: 1.75;
-    }
-    .thankyou-actions {
-      display: flex;
+    .btn {
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
       justify-content: center;
-      flex-wrap: wrap;
-      gap: 12px;
     }
   </style>
 </head>
 <body>
-  <main class="thankyou-panel">
-    <div class="thankyou-icon">
-      <i class="fa-solid fa-check"></i>
+  <div class="bmodal-inner success-inner">
+    <div class="success-anim">
+      <div class="success-circle">
+        <i class="fa-solid fa-check"></i>
+      </div>
+      <div class="success-stars">
+        <span>✦</span><span>★</span><span>✦</span>
+      </div>
     </div>
-    <h1>Thanh toán thành công</h1>
-    <p>Cảm ơn bạn đã đặt lịch tư vấn. Hệ thống đã ghi nhận thanh toán và tụi mình sẽ gửi email xác nhận lịch hẹn cho bạn trong ít phút.</p>
-    <div class="thankyou-actions">
-      <a class="btn btn-primary" href="index.html#contact">
+    <h2>Thanh toán thành công</h2>
+    <p style="color: var(--color-white-80); margin-bottom: 32px; line-height: 1.6; font-size: 1.05rem; text-align: center;">
+      Cảm ơn bạn đã đặt lịch tư vấn. Hệ thống đã ghi nhận thanh toán và tụi mình sẽ gửi email xác nhận lịch hẹn cho bạn trong ít phút.
+    </p>
+    <div class="success-action-buttons">
+      <a href="index.html#contact" class="btn success-home-btn">
         <span>Về trang đặt lịch</span>
       </a>
-      <a class="btn btn-ghost" href="https://www.facebook.com/clowcatpatronus" target="_blank" rel="noopener">
+      <a href="https://www.facebook.com/clowcatpatronus" target="_blank" rel="noopener" class="btn success-fanpage-btn">
+        <i class="fab fa-facebook-messenger"></i>
         <span>Nhắn fanpage</span>
       </a>
     </div>
-  </main>
+  </div>
 </body>
 </html>
