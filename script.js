@@ -374,6 +374,8 @@ function finishLandingContentLoading() {
 function applyLandingContent(payload, options = {}) {
   (payload.items || []).forEach(applyLandingContentItem);
   syncHeroConsultationBadge();
+  initYouTubeEmbeds();
+  
   if (payload.paymentSettings && !options.fromCache) {
     paymentSettings = normalizePaymentSettings(payload.paymentSettings);
     paymentSettingsLoadedAt = Date.now();
@@ -849,6 +851,9 @@ function applyLandingContentItem(item) {
     }
     if (type === 'href' || type === 'src' || type === 'alt' || type === 'aria-label') {
       element.setAttribute(type, value);
+      if (type === 'src' && element.tagName === 'IMG' && element.previousElementSibling && element.previousElementSibling.tagName === 'SOURCE') {
+        element.previousElementSibling.setAttribute('srcset', value);
+      }
       return;
     }
     element.textContent = value;
