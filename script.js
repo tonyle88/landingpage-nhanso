@@ -3,7 +3,7 @@
    ============================================= */
 
 // Sheet cũ: đặt lịch, Calendar, Email, lưu booking.
-const BOOKING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOlNPUunzX4gJvtpKvvXYdBQRMXEKyEqB4L_39CLu-qt4trPzgDoLXRRmauCk2iA2P/exec';
+const BOOKING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbWZXF2iCsWsr0cWL0JVChANywEq7D7l_mCIvrvqZs78vSOsPej3PuXFgHbOiVNoKr/exec';
 // Sheet mới: cấu hình nội dung từng section của landing page.
 const LANDING_CONTENT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3m9zkv9mX-BgMtB7DZj2rMrZtkAAOFDQow2UKxttXRz8G5Zlc4qponSGrvPBxJwEO/exec';
 const LANDING_CONTENT_ENABLED = true;
