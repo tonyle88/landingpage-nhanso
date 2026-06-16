@@ -1348,10 +1348,10 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
 /* ===== METHODS ===== */
 .methods-header {
-  text-align: left;
+  text-align: center;
 }
 .methods-header .section-tag {
-  justify-content: flex-start;
+  justify-content: center;
   margin-bottom: 12px;
 }
 .methods-header .section-title {
@@ -1359,6 +1359,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 .methods-header .section-desc {
   max-width: 800px;
+  margin: 0 auto;
   font-size: 1.1rem;
   color: var(--color-gray-200);
   line-height: 1.6;
@@ -1412,27 +1413,27 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
 /* Color Themes */
 .method-clow {
-  background: rgba(85, 20, 50, 0.45);
-  border: 1px solid rgba(220, 80, 140, 0.2);
+  background: rgba(140, 25, 80, 0.55);
+  border: 1px solid rgba(255, 90, 150, 0.4);
 }
 .method-card:hover .method-clow {
-  box-shadow: 0 15px 50px rgba(220, 80, 140, 0.15);
+  box-shadow: 0 15px 50px rgba(255, 90, 150, 0.3);
 }
 
 .method-astro {
-  background: rgba(80, 55, 15, 0.45);
-  border: 1px solid rgba(220, 170, 80, 0.2);
+  background: rgba(150, 100, 20, 0.55);
+  border: 1px solid rgba(255, 190, 60, 0.4);
 }
 .method-card:hover .method-astro {
-  box-shadow: 0 15px 50px rgba(220, 170, 80, 0.15);
+  box-shadow: 0 15px 50px rgba(255, 190, 60, 0.3);
 }
 
 .method-numero {
-  background: rgba(15, 45, 60, 0.45);
-  border: 1px solid rgba(80, 180, 220, 0.2);
+  background: rgba(20, 85, 115, 0.55);
+  border: 1px solid rgba(60, 200, 255, 0.4);
 }
 .method-card:hover .method-numero {
-  box-shadow: 0 15px 50px rgba(80, 180, 220, 0.15);
+  box-shadow: 0 15px 50px rgba(60, 200, 255, 0.3);
 }
 
 /* Front Content */
@@ -1548,6 +1549,11 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   color: var(--color-gold-light);
   font-size: 12px;
   margin-top: 4px;
+}
+
+.methods-cta {
+  display: flex;
+  justify-content: center;
 }
 
 @media (max-width: 991px) {
