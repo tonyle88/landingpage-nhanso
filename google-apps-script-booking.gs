@@ -398,8 +398,6 @@ function handleSepayWebhook(params) {
   if (cleanValue(params.secret) !== configuredSecret) throw new Error('Secret webhook SePay khong hop le.');
 
   const orderId = extractSepayOrderId(params);
-  if (!orderId) throw new Error('Webhook SePay thieu ma thanh toan.');
-
   const status = normalizeSepayStatus(
     getFirstParamValue(params, [
       'status',
@@ -426,7 +424,13 @@ function handleSepayWebhook(params) {
     'data.transferAmount',
     'data.transfer_amount',
   ]));
-  saveSepayPaymentStatus(orderId, status, amount, params);
+  
+  // Log first to debug
+  saveSepayPaymentStatus(orderId || 'UNKNOWN', status, amount, params);
+
+  if (!orderId) {
+    throw new Error('Webhook SePay thieu ma thanh toan. Vui long kiem tra cot Du lieu goc.');
+  }
 
   return jsonResponse({
     ok: true,

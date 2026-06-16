@@ -61,13 +61,13 @@ const CONSULTATION_TYPE_LABELS = {
 
 const landingContentReady = loadLandingContentFromSheet();
 
-// Bank info for VietQR
-const BANK_BIN = '970436'; // Vietcombank BIN
-const BANK_ACCOUNT = '0421003904479';
+// Bank info for VietQR/SePay
+const BANK_BIN = '970418'; // BIDV BIN
+const BANK_ACCOUNT = '96247031088CUONG';
 const BANK_NAME_DISPLAY = 'LÊ CHÍ CƯỜNG';
 const DEFAULT_PAYMENT_SETTINGS = {
   sepayEnabled: false,
-  bankName: 'Vietcombank',
+  bankName: 'BIDV',
   bankBin: BANK_BIN,
   bankAccount: BANK_ACCOUNT,
   bankAccountName: BANK_NAME_DISPLAY,
@@ -1519,11 +1519,19 @@ function openPaymentModal() {
   const bankAccount = paymentSettings.bankAccount || BANK_ACCOUNT;
   const bankAccountName = paymentSettings.bankAccountName || BANK_NAME_DISPLAY;
 
-  // Build VietQR URL  
-  const qrUrl = `https://img.vietqr.io/image/${bankBin}-${bankAccount}-compact2.jpg?amount=${price}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(bankAccountName)}`;
+  // Build QR URL
+  let qrUrl = '';
+  if (paymentSettings.sepayEnabled) {
+    // SePay Dynamic QR URL
+    const bankShortName = paymentSettings.bankName || 'BIDV';
+    qrUrl = `https://qr.sepay.vn/img?acc=${bankAccount}&bank=${bankShortName}&amount=${price}&des=${encodeURIComponent(transferContent)}`;
+  } else {
+    // VietQR URL
+    qrUrl = `https://img.vietqr.io/image/${bankBin}-${bankAccount}-compact2.jpg?amount=${price}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(bankAccountName)}`;
+  }
 
   document.getElementById('qr-img').src = qrUrl;
-  document.getElementById('bank-name').textContent = paymentSettings.bankName || 'Vietcombank';
+  document.getElementById('bank-name').textContent = paymentSettings.bankName || 'BIDV';
   document.getElementById('bank-account').innerHTML = `${bankAccount} <i class="fa-regular fa-copy"></i>`;
   document.getElementById('bank-account').dataset.copy = bankAccount;
   document.getElementById('bank-account-name').textContent = bankAccountName;
