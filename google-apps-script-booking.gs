@@ -896,7 +896,7 @@ function ensureSepayPaymentsSheet() {
 }
 
 function findSepayPayment(orderId) {
-  const target = cleanValue(orderId);
+  const target = cleanValue(orderId).replace(/[-_]/g, '');
   if (!target) return null;
 
   const sheet = ensureSepayPaymentsSheet();
@@ -906,7 +906,7 @@ function findSepayPayment(orderId) {
   const values = sheet.getRange(2, 1, lastRow - 1, SEPAY_PAYMENTS_HEADERS.length).getDisplayValues();
   for (let index = values.length - 1; index >= 0; index -= 1) {
     const row = values[index];
-    if (cleanValue(row[1]) !== target) continue;
+    if (cleanValue(row[1]).replace(/[-_]/g, '') !== target) continue;
     return {
       createdAt: row[0],
       paymentOrderId: row[1],
@@ -960,13 +960,13 @@ function extractSepayOrderId(params) {
   if (looksLikeSepayOrderId(direct)) return direct.toUpperCase();
 
   const content = sanitizePlainText(getSepayContent(params), 1000).toUpperCase();
-  const match = content.match(/[A-Z]{2,12}-[A-Z0-9_]{2,40}-[A-Z0-9]{4,16}-[0-9]{4,16}/);
+  const match = content.match(/[A-Z]{2,12}[-_]?[A-Z0-9]{2,40}[-_]?[A-Z0-9]{4,16}[-_]?[0-9]{4,16}/);
   if (match) return match[0];
   return looksLikeSepayOrderId(direct) ? direct.toUpperCase() : '';
 }
 
 function looksLikeSepayOrderId(value) {
-  return /^[A-Z]{2,12}-[A-Z0-9_]{2,40}-[A-Z0-9]{4,16}-[0-9]{4,16}$/i.test(cleanValue(value));
+  return /^[A-Z]{2,12}[-_]?[A-Z0-9]{2,40}[-_]?[A-Z0-9]{4,16}[-_]?[0-9]{4,16}$/i.test(cleanValue(value));
 }
 
 function getSepayContent(params) {
