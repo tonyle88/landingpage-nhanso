@@ -1123,3 +1123,43 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+/* Global Loader */
+.global-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(7, 24, 27, 0.95);
+  backdrop-filter: blur(8px);
+  display: grid;
+  place-items: center;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+.global-loader.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.loader-content {
+  text-align: center;
+  color: var(--gold-soft);
+  animation: float-loader 2.5s ease-in-out infinite;
+}
+.loader-spinner {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, var(--gold-soft), var(--orange-soft));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 16px rgba(240, 201, 106, 0.4));
+}
+.loader-content p {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  letter-spacing: 1px;
+  margin: 0;
+}
+@keyframes float-loader {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}

@@ -52,6 +52,7 @@ const els = {
   toast: document.getElementById('toast'),
   adminHamburger: document.getElementById('admin-hamburger'),
   sidebar: document.querySelector('.sidebar'),
+  globalLoader: document.getElementById('global-loader'),
 };
 
 document.addEventListener('DOMContentLoaded', boot);
@@ -137,6 +138,7 @@ async function handleLogin(event) {
 
 async function loadContent(showNotice = false) {
   setBusy(els.refreshContent, true);
+  if (els.globalLoader) els.globalLoader.classList.remove('is-hidden');
   try {
     const payload = await api('getAdminContent', { token: state.token });
     state.items = (payload.items || []).map(normalizeItem);
@@ -151,6 +153,7 @@ async function loadContent(showNotice = false) {
     handleSessionError(error);
   } finally {
     setBusy(els.refreshContent, false);
+    if (els.globalLoader) els.globalLoader.classList.add('is-hidden');
   }
 }
 
