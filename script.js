@@ -1515,26 +1515,28 @@ function openPaymentModal() {
   const transferContent = paymentSettings.sepayEnabled
     ? bookingState.paymentOrderId
     : buildTransferContent(snapshot.code, bookingState.phone);
+  const isSepay = paymentSettings.sepayEnabled;
   const bankBin = paymentSettings.bankBin || BANK_BIN;
-  const bankAccount = paymentSettings.bankAccount || BANK_ACCOUNT;
-  const bankAccountName = paymentSettings.bankAccountName || BANK_NAME_DISPLAY;
+  
+  const displayBankName = isSepay ? (paymentSettings.sepayBankName || 'BIDV') : (paymentSettings.bankName || 'BIDV');
+  const displayBankAccount = isSepay ? (paymentSettings.sepayBankAccount || '96247031088CUONG') : (paymentSettings.bankAccount || BANK_ACCOUNT);
+  const displayBankAccountName = paymentSettings.bankAccountName || BANK_NAME_DISPLAY;
 
   // Build QR URL
   let qrUrl = '';
-  if (paymentSettings.sepayEnabled) {
+  if (isSepay) {
     // SePay Dynamic QR URL
-    const bankShortName = paymentSettings.bankName || 'BIDV';
-    qrUrl = `https://qr.sepay.vn/img?acc=${bankAccount}&bank=${bankShortName}&amount=${price}&des=${encodeURIComponent(transferContent)}`;
+    qrUrl = `https://qr.sepay.vn/img?acc=${displayBankAccount}&bank=${displayBankName}&amount=${price}&des=${encodeURIComponent(transferContent)}`;
   } else {
     // VietQR URL
-    qrUrl = `https://img.vietqr.io/image/${bankBin}-${bankAccount}-compact2.jpg?amount=${price}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(bankAccountName)}`;
+    qrUrl = `https://img.vietqr.io/image/${bankBin}-${displayBankAccount}-compact2.jpg?amount=${price}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(displayBankAccountName)}`;
   }
 
   document.getElementById('qr-img').src = qrUrl;
-  document.getElementById('bank-name').textContent = paymentSettings.bankName || 'BIDV';
-  document.getElementById('bank-account').innerHTML = `${bankAccount} <i class="fa-regular fa-copy"></i>`;
-  document.getElementById('bank-account').dataset.copy = bankAccount;
-  document.getElementById('bank-account-name').textContent = bankAccountName;
+  document.getElementById('bank-name').textContent = displayBankName;
+  document.getElementById('bank-account').innerHTML = `${displayBankAccount} <i class="fa-regular fa-copy"></i>`;
+  document.getElementById('bank-account').dataset.copy = displayBankAccount;
+  document.getElementById('bank-account-name').textContent = displayBankAccountName;
   document.getElementById('pay-amount').textContent = priceStr;
   document.getElementById('pay-content').textContent = transferContent;
   document.getElementById('pay-content').dataset.copy = transferContent;

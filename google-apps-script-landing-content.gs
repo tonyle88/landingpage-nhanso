@@ -43,6 +43,8 @@ const DEFAULT_PAYMENT_SETTINGS = {
   bankBin: '970436',
   bankAccount: '0421003904479',
   bankAccountName: 'LÊ CHÍ CƯỜNG',
+  sepayBankName: 'BIDV',
+  sepayBankAccount: '96247031088CUONG',
   sepayEnv: 'sandbox',
   sepayMerchantId: '',
   sepayCheckoutUrl: '',
@@ -1301,8 +1303,10 @@ function getPaymentSettingDescriptions() {
     sepayEnabled: 'TRUE de bat che do SePay, FALSE de dung QR chuyen khoan thu cong hien tai.',
     bankName: 'Ten ngan hang hien trong modal thanh toan.',
     bankBin: 'Ma BIN ngan hang dung de tao QR VietQR.',
-    bankAccount: 'So tai khoan nhan tien.',
+    bankAccount: 'So tai khoan nhan tien (VietQR).',
     bankAccountName: 'Ten chu tai khoan nhan tien.',
+    sepayBankName: 'Ten ngan hang ngan gon cho SePay (VD: BIDV).',
+    sepayBankAccount: 'So tai khoan nhan tien cho SePay (co the chua chu cai).',
     sepayEnv: 'sandbox hoac production.',
     sepayMerchantId: 'Merchant ID SePay, chi hien trong admin.',
     sepayCheckoutUrl: 'Checkout URL tuy chon neu dung cong thanh toan SePay redirect.',
@@ -1357,6 +1361,8 @@ function handleSavePaymentSettings(params) {
     bankBin: cleanValue(params.bankBin) || DEFAULT_PAYMENT_SETTINGS.bankBin,
     bankAccount: cleanValue(params.bankAccount) || DEFAULT_PAYMENT_SETTINGS.bankAccount,
     bankAccountName: cleanValue(params.bankAccountName) || DEFAULT_PAYMENT_SETTINGS.bankAccountName,
+    sepayBankName: cleanValue(params.sepayBankName) || DEFAULT_PAYMENT_SETTINGS.sepayBankName,
+    sepayBankAccount: cleanValue(params.sepayBankAccount) || DEFAULT_PAYMENT_SETTINGS.sepayBankAccount,
     sepayEnv: cleanValue(params.sepayEnv) || DEFAULT_PAYMENT_SETTINGS.sepayEnv,
     sepayMerchantId: cleanValue(params.sepayMerchantId),
     sepayCheckoutUrl: cleanValue(params.sepayCheckoutUrl),
@@ -1366,7 +1372,8 @@ function handleSavePaymentSettings(params) {
   };
 
   if (!/^\d{5,8}$/.test(nextSettings.bankBin)) throw new Error('Ma BIN ngan hang chua hop le.');
-  if (!/^[0-9]{4,32}$/.test(nextSettings.bankAccount)) throw new Error('So tai khoan chua hop le.');
+  if (!/^[0-9]{4,32}$/.test(nextSettings.bankAccount)) throw new Error('So tai khoan VietQR phai la so.');
+  if (nextSettings.sepayBankAccount && !/^[A-Za-z0-9]{4,32}$/.test(nextSettings.sepayBankAccount)) throw new Error('So tai khoan SePay chua hop le.');
   if (nextSettings.sepayEnabled === 'true' && !nextSettings.sepayOrderPrefix) {
     throw new Error('Can co tien to ma don hang khi bat SePay.');
   }

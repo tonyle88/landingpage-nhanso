@@ -1114,6 +1114,9 @@ function renderPaymentSettings() {
         </label>
       </div>
       <div class="package-form-grid">
+        <div class="payment-section-title" style="grid-column: 1/-1; margin-top: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 500; font-size: 1.1rem; color: var(--accent-color);">
+          1. Thanh toán thủ công (VietQR)
+        </div>
         <label>Ngân hàng
           <input name="bankName" value="${escapeHtml(settings.bankName)}" required ${state.user.role !== 'admin' ? 'disabled' : ''} />
         </label>
@@ -1125,6 +1128,16 @@ function renderPaymentSettings() {
         </label>
         <label>Chủ tài khoản
           <input name="bankAccountName" value="${escapeHtml(settings.bankAccountName)}" required ${state.user.role !== 'admin' ? 'disabled' : ''} />
+        </label>
+
+        <div class="payment-section-title" style="grid-column: 1/-1; margin-top: 1.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 500; font-size: 1.1rem; color: var(--accent-color);">
+          2. Thanh toán tự động (SePay)
+        </div>
+        <label>Ngân hàng SePay (Tên rút gọn)
+          <input name="sepayBankName" value="${escapeHtml(settings.sepayBankName || '')}" placeholder="Ví dụ: BIDV, VCB..." ${state.user.role !== 'admin' ? 'disabled' : ''} />
+        </label>
+        <label>Số tài khoản SePay
+          <input name="sepayBankAccount" value="${escapeHtml(settings.sepayBankAccount || '')}" placeholder="Ví dụ: 96247031088CUONG" ${state.user.role !== 'admin' ? 'disabled' : ''} />
         </label>
         <label>Môi trường SePay
           <select name="sepayEnv" ${state.user.role !== 'admin' ? 'disabled' : ''}>
@@ -1142,7 +1155,7 @@ function renderPaymentSettings() {
           <input name="sepayCheckoutUrl" value="${escapeHtml(settings.sepayCheckoutUrl)}" placeholder="Có thể để trống nếu dùng QR chờ thanh toán" ${state.user.role !== 'admin' ? 'disabled' : ''} />
         </label>
         <label>Tiền tố mã đơn
-          <input name="sepayOrderPrefix" value="${escapeHtml(settings.sepayOrderPrefix)}" required ${state.user.role !== 'admin' ? 'disabled' : ''} />
+          <input name="sepayOrderPrefix" value="${escapeHtml(settings.sepayOrderPrefix)}" ${state.user.role !== 'admin' ? 'disabled' : ''} />
         </label>
         <label>Thời gian chờ (phút)
           <input name="paymentTimeoutMinutes" type="number" min="1" max="60" value="${settings.paymentTimeoutMinutes}" required ${state.user.role !== 'admin' ? 'disabled' : ''} />
@@ -1193,6 +1206,8 @@ async function savePaymentSettings(event) {
       bankBin: fields.bankBin.value,
       bankAccount: fields.bankAccount.value,
       bankAccountName: fields.bankAccountName.value,
+      sepayBankName: fields.sepayBankName.value,
+      sepayBankAccount: fields.sepayBankAccount.value,
       sepayEnv: fields.sepayEnv.value,
       sepayMerchantId: fields.sepayMerchantId.value,
       sepaySecretKey: fields.sepaySecretKey.value,
