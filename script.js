@@ -1122,14 +1122,6 @@ function getPackageOptions(consultationType) {
   return PACKAGE_OPTIONS[consultationType] || {};
 }
 
-function getPackageLabel(packageValue, consultationType) {
-  return getPackageOptions(consultationType)[packageValue]?.label || packageValue || '';
-}
-
-function getPackagePrice(packageValue, consultationType) {
-  return getPackageOptions(consultationType)[packageValue]?.price || 0;
-}
-
 function getSelectedPackageSnapshot() {
   return getPackageSnapshot(bookingState.package, bookingState.consultationType);
 }
@@ -1405,7 +1397,6 @@ async function loadCalendar() {
     if (!json.ok) throw new Error(json.error || 'Không tải được lịch đã đặt');
     bookingState.bookedSlots = json.booked || [];
   } catch (e) {
-    console.error('getBookedSlots error:', e);
     logClientError('getBookedSlots', e);
     bookingState.bookedSlots = [];
     errBox.style.display = 'block';
@@ -1687,7 +1678,6 @@ async function finalizeBooking() {
     closeAllModals();
     showSuccessModal();
   } catch (err) {
-    console.error(err);
     await logClientError('finalizeBooking', err, getBookingDataObject());
     showToast('Có lỗi khi xử lý. Vui lòng chụp màn hình và liên hệ qua Zalo/Facebook để được hỗ trợ.');
     btn.innerHTML = '<span>✓ Tôi Đã Chuyển Khoản Thành Công</span>';
