@@ -1148,9 +1148,7 @@ a {
 .loader-spinner {
   font-size: 3rem;
   margin-bottom: 20px;
-  background: linear-gradient(135deg, var(--gold-soft), var(--orange-soft));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--gold-soft);
   filter: drop-shadow(0 0 16px rgba(240, 201, 106, 0.4));
 }
 .loader-content p {
