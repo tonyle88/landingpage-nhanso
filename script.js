@@ -810,8 +810,14 @@ function initYouTubeEmbeds() {
   const canUseOrigin = origin && /^https?:\/\//.test(origin);
 
   document.querySelectorAll('iframe[data-youtube-embed]').forEach((iframe) => {
-    const videoId = iframe.dataset.youtubeEmbed;
-    if (!videoId) return;
+    let rawId = iframe.dataset.youtubeEmbed;
+    if (!rawId) return;
+
+    let videoId = rawId;
+    const match = rawId.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    if (match && match[1]) {
+      videoId = match[1];
+    }
 
     const url = new URL(`https://www.youtube.com/embed/${videoId}`);
     url.searchParams.set('rel', '0');

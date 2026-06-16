@@ -508,7 +508,7 @@ function buildDefaultLandingContentRows() {
 
     lc(true, 'about.tag', 'About', 'Tag section', '#about .section-tag', 'text', '', 'Về Chúng Tôi'),
     lc(true, 'about.title', 'About', 'Tiêu đề section', '#about .section-title', 'text', '', 'Những Người Đồng Hành'),
-    lc(true, 'about.video_id', 'About', 'Youtube Video ID', '#about iframe', 'attr', 'data-youtube-embed', '7KYlOuSyGPQ'),
+    lc(true, 'about.video_id', 'About', 'Link Youtube', '#about iframe', 'attr', 'data-youtube-embed', 'https://www.youtube.com/watch?v=7KYlOuSyGPQ'),
     lc(true, 'about.mentor_1_img', 'About', 'Link ảnh mentor 1', '#mentor1-img', 'src', '', 'assets/images/mentor_bao.png'),
     lc(true, 'about.mentor_1_name', 'About', 'Tên mentor 1', '#about .mentor-block:nth-child(1) .mentor-name', 'text', '', 'Phan Thái Bảo'),
     lc(true, 'about.mentor_1_desc', 'About', 'Mô tả mentor 1', '#about .mentor-block:nth-child(1) .mentor-desc', 'text', '', 'Người đồng hành cùng hàng ngàn tâm hồn trên hành trình khám phá bản thân qua ngôn ngữ của những lá bài Clow huyền bí.'),
