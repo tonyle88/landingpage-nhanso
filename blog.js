@@ -177,9 +177,8 @@ function initParticles() {
 function renderBlogHome() {
   const container = document.getElementById('blog-container');
   let html = `
-    <div style="text-align: center; margin-bottom: 40px;">
-      <p class="eyebrow">KIẾN THỨC</p>
-      <h1 class="section-title">Giải Mã Nhân Số Học</h1>
+    <div style="text-align: center; margin: 40px 0;">
+      <h1 class="section-title" style="font-size: 2.5rem;">CÁC CHỦ ĐỀ</h1>
     </div>
   `;
   
@@ -194,10 +193,14 @@ function renderBlogHome() {
     if (articles.length === 0) return;
     
     html += `
-      <section style="margin-bottom: 60px;">
-        <h2 style="font-size: 2.5rem; font-family: 'Playfair Display', serif; color: var(--primary); margin: 60px 0 40px; text-align: center; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px rgba(212, 168, 67, 0.5);">
-          <span style="display: inline-block; padding-bottom: 8px; border-bottom: 2px solid var(--primary);">${cat.name}</span>
-        </h2>
+      <section style="margin-bottom: 80px;">
+        <div class="section-header">
+          <span class="section-tag">Giải Mã Nhân Số Học</span>
+          <h2 class="section-title">${cat.name}</h2>
+          <div class="section-divider">
+            <span>✦</span><span>✦</span><span>✦</span>
+          </div>
+        </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;">
     `;
     
