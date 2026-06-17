@@ -47,6 +47,17 @@ const PACKAGES_HEADERS = [
   'Nút',
   'Thứ tự',
 ];
+const BLOG_CATEGORIES_SHEET_NAME = 'Blog Categories';
+const BLOG_ARTICLES_SHEET_NAME = 'Blog Articles';
+const BLOG_CATEGORIES_HEADERS = ['Mã chủ đề', 'Tên chủ đề', 'Thứ tự'];
+const BLOG_ARTICLES_HEADERS = ['Bật', 'ID', 'Mã chủ đề', 'Tiêu đề', 'Nội dung HTML', 'Ngày đăng', 'Đính lên trên', 'Thumbnail', 'Tóm tắt'];
+const DEFAULT_BLOG_CATEGORIES = [
+  { id: 'so-chu-dao', name: 'Số chủ đạo', order: 1 },
+  { id: 'kham-pha-su-menh', name: 'Hành trình khám phá sứ mệnh', order: 2 },
+  { id: 'linh-hon-tien-kiep', name: 'Giải mã linh hồn tiền kiếp', order: 3 },
+  { id: 'vuot-qua-no-nghiep', name: 'Hành trình vượt qua nợ nghiệp', order: 4 }
+];
+
 const PAYMENT_SETTINGS_HEADERS = ['Khóa', 'Nội dung', 'Mô tả'];
 const DEFAULT_PAYMENT_SETTINGS = {
   sepayEnabled: 'false',
@@ -146,6 +157,10 @@ function doPost(e) {
     if (action === 'saveSectionsLayoutOrder') return handleSaveSectionsLayoutOrder(params);
     if (action === 'saveGenericSection') return handleSaveGenericSection(params);
     if (action === 'deleteSection') return handleDeleteSection(params);
+    if (action === 'saveBlogCategory') return handleSaveBlogCategory(params);
+    if (action === 'deleteBlogCategory') return handleDeleteBlogCategory(params);
+    if (action === 'saveBlogArticle') return handleSaveBlogArticle(params);
+    if (action === 'deleteBlogArticle') return handleDeleteBlogArticle(params);
 
     return jsonResponse({ ok: false, message: 'Action khong hop le', scriptVersion: SCRIPT_VERSION });
   } catch (error) {
@@ -176,6 +191,8 @@ function buildLandingContentPayload() {
       feedbackImages: getFeedbackImages(),
       paymentSettings: getPaymentSettings(false),
       sectionsLayout: getSectionsLayout(false),
+      blogCategories: getBlogCategories(false),
+      blogArticles: getBlogArticles(false),
       message: 'Chua co tab Landing content. Hay chay initializeLandingContentSheet mot lan trong Apps Script.',
       scriptVersion: SCRIPT_VERSION,
     };
@@ -184,7 +201,7 @@ function buildLandingContentPayload() {
   ensureLandingContentHeaderRow(sheet);
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
-    return { ok: true, items: [], packages: getPackages(false), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(false), sectionsLayout: getSectionsLayout(false), scriptVersion: SCRIPT_VERSION };
+    return { ok: true, items: [], packages: getPackages(false), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(false), sectionsLayout: getSectionsLayout(false), blogCategories: getBlogCategories(false), blogArticles: getBlogArticles(false), scriptVersion: SCRIPT_VERSION };
   }
 
   const range = sheet.getRange(2, 1, lastRow - 1, LANDING_CONTENT_HEADERS.length);
@@ -204,6 +221,8 @@ function buildLandingContentPayload() {
     packages: getPackages(false),
     paymentSettings: getPaymentSettings(false),
     sectionsLayout: getSectionsLayout(false),
+    blogCategories: getBlogCategories(false),
+    blogArticles: getBlogArticles(false),
     scriptVersion: SCRIPT_VERSION,
   };
 }
@@ -246,6 +265,8 @@ function handleGetAdminContent(params) {
       feedbackImages: getFeedbackImages(),
       paymentSettings: getPaymentSettings(true),
       sectionsLayout: getSectionsLayout(true),
+      blogCategories: getBlogCategories(true),
+      blogArticles: getBlogArticles(true),
       message: 'Chua co tab Landing content. Hay chay initializeLandingContentSheet mot lan.',
       scriptVersion: SCRIPT_VERSION,
     });
@@ -254,7 +275,7 @@ function handleGetAdminContent(params) {
   ensureLandingContentHeaderRow(sheet);
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
-    return jsonResponse({ ok: true, items: [], sections: [], packages: getPackages(true), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(true), sectionsLayout: getSectionsLayout(true), scriptVersion: SCRIPT_VERSION });
+    return jsonResponse({ ok: true, items: [], sections: [], packages: getPackages(true), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(true), sectionsLayout: getSectionsLayout(true), blogCategories: getBlogCategories(true), blogArticles: getBlogArticles(true), scriptVersion: SCRIPT_VERSION });
   }
 
   const range = sheet.getRange(2, 1, lastRow - 1, LANDING_CONTENT_HEADERS.length);
@@ -1833,4 +1854,176 @@ function handleDeleteSection(params) {
   
   clearLandingContentCache();
   return jsonResponse({ ok: true, message: 'Da xoa section', sectionsLayout: getSectionsLayout(true), scriptVersion: SCRIPT_VERSION });
+}
+
+// =============================================
+//  Blog Categories
+// =============================================
+function ensureBlogCategoriesSheet() {
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  let sheet = spreadsheet.getSheetByName(BLOG_CATEGORIES_SHEET_NAME);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(BLOG_CATEGORIES_SHEET_NAME);
+    sheet.getRange(1, 1, 1, BLOG_CATEGORIES_HEADERS.length).setValues([BLOG_CATEGORIES_HEADERS]);
+    sheet.setFrozenRows(1);
+    
+    // Insert defaults
+    const defaultRows = DEFAULT_BLOG_CATEGORIES.map(c => [
+      c.id,
+      c.name,
+      c.order
+    ]);
+    sheet.getRange(2, 1, defaultRows.length, BLOG_CATEGORIES_HEADERS.length).setValues(defaultRows);
+    sheet.autoResizeColumns(1, BLOG_CATEGORIES_HEADERS.length);
+  }
+  return sheet;
+}
+
+function getBlogCategories(forAdmin) {
+  const sheet = ensureBlogCategoriesSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  
+  const values = sheet.getRange(2, 1, lastRow - 1, BLOG_CATEGORIES_HEADERS.length).getDisplayValues();
+  return values.map(row => {
+    return {
+      id: cleanValue(row[0]),
+      name: cleanValue(row[1]),
+      order: Number(row[2]) || 999
+    };
+  }).filter(c => c.id).sort((a, b) => a.order - b.order);
+}
+
+function handleSaveBlogCategory(params) {
+  requireAdminSession(params.token, ['admin']);
+  const sheet = ensureBlogCategoriesSheet();
+  const id = cleanValue(params.id) || 'cat-' + new Date().getTime();
+  const name = cleanValue(params.name) || 'Tên chủ đề';
+  
+  const lastRow = sheet.getLastRow();
+  let rowNumber = -1;
+  if (lastRow >= 2) {
+    const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues().map(r => String(r[0]).trim());
+    const idx = ids.indexOf(id);
+    if (idx !== -1) rowNumber = idx + 2;
+  }
+  
+  if (rowNumber !== -1) {
+    sheet.getRange(rowNumber, 2).setValue(name);
+  } else {
+    const order = sheet.getLastRow();
+    sheet.appendRow([id, name, order]);
+  }
+  
+  clearLandingContentCache();
+  return jsonResponse({ ok: true, message: 'Đã lưu chủ đề', blogCategories: getBlogCategories(true), scriptVersion: SCRIPT_VERSION });
+}
+
+function handleDeleteBlogCategory(params) {
+  requireAdminSession(params.token, ['admin']);
+  const sheet = ensureBlogCategoriesSheet();
+  const id = cleanValue(params.id);
+  
+  const lastRow = sheet.getLastRow();
+  if (lastRow >= 2) {
+    const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues().map(r => String(r[0]).trim());
+    const idx = ids.indexOf(id);
+    if (idx !== -1) {
+      sheet.deleteRow(idx + 2);
+    }
+  }
+  
+  clearLandingContentCache();
+  return jsonResponse({ ok: true, message: 'Đã xóa chủ đề', blogCategories: getBlogCategories(true), scriptVersion: SCRIPT_VERSION });
+}
+
+// =============================================
+//  Blog Articles
+// =============================================
+function ensureBlogArticlesSheet() {
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  let sheet = spreadsheet.getSheetByName(BLOG_ARTICLES_SHEET_NAME);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(BLOG_ARTICLES_SHEET_NAME);
+    sheet.getRange(1, 1, 1, BLOG_ARTICLES_HEADERS.length).setValues([BLOG_ARTICLES_HEADERS]);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function getBlogArticles(forAdmin) {
+  const sheet = ensureBlogArticlesSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  
+  const values = sheet.getRange(2, 1, lastRow - 1, BLOG_ARTICLES_HEADERS.length).getDisplayValues();
+  return values.map(row => {
+    return {
+      enabled: isTruthy(row[0]),
+      id: cleanValue(row[1]),
+      categoryId: cleanValue(row[2]),
+      title: cleanValue(row[3]),
+      contentHtml: cleanValue(row[4]),
+      date: cleanValue(row[5]),
+      pinned: isTruthy(row[6]),
+      thumbnail: cleanValue(row[7]),
+      summary: cleanValue(row[8])
+    };
+  }).filter(a => a.id && (forAdmin || a.enabled));
+}
+
+function handleSaveBlogArticle(params) {
+  requireAdminSession(params.token, ['admin']);
+  const sheet = ensureBlogArticlesSheet();
+  const id = cleanValue(params.id) || 'post-' + new Date().getTime();
+  const enabled = isTruthy(params.enabled) ? 'TRUE' : 'FALSE';
+  const categoryId = cleanValue(params.categoryId);
+  const title = cleanValue(params.title);
+  const contentHtml = cleanValue(params.contentHtml);
+  const date = cleanValue(params.date) || new Date().toISOString().slice(0,10);
+  const pinned = isTruthy(params.pinned) ? 'TRUE' : 'FALSE';
+  const thumbnail = cleanValue(params.thumbnail);
+  const summary = cleanValue(params.summary);
+  
+  const lastRow = sheet.getLastRow();
+  let rowNumber = -1;
+  if (lastRow >= 2) {
+    const ids = sheet.getRange(2, 2, lastRow - 1, 1).getValues().map(r => String(r[0]).trim());
+    const idx = ids.indexOf(id);
+    if (idx !== -1) rowNumber = idx + 2;
+  }
+  
+  if (rowNumber !== -1) {
+    sheet.getRange(rowNumber, 1).setValue(enabled);
+    sheet.getRange(rowNumber, 3).setValue(categoryId);
+    sheet.getRange(rowNumber, 4).setValue(title);
+    sheet.getRange(rowNumber, 5).setValue(contentHtml);
+    sheet.getRange(rowNumber, 6).setValue(date);
+    sheet.getRange(rowNumber, 7).setValue(pinned);
+    sheet.getRange(rowNumber, 8).setValue(thumbnail);
+    sheet.getRange(rowNumber, 9).setValue(summary);
+  } else {
+    sheet.appendRow([enabled, id, categoryId, title, contentHtml, date, pinned, thumbnail, summary]);
+  }
+  
+  clearLandingContentCache();
+  return jsonResponse({ ok: true, message: 'Đã lưu bài viết', blogArticles: getBlogArticles(true), scriptVersion: SCRIPT_VERSION });
+}
+
+function handleDeleteBlogArticle(params) {
+  requireAdminSession(params.token, ['admin']);
+  const sheet = ensureBlogArticlesSheet();
+  const id = cleanValue(params.id);
+  
+  const lastRow = sheet.getLastRow();
+  if (lastRow >= 2) {
+    const ids = sheet.getRange(2, 2, lastRow - 1, 1).getValues().map(r => String(r[0]).trim());
+    const idx = ids.indexOf(id);
+    if (idx !== -1) {
+      sheet.deleteRow(idx + 2);
+    }
+  }
+  
+  clearLandingContentCache();
+  return jsonResponse({ ok: true, message: 'Đã xóa bài viết', blogArticles: getBlogArticles(true), scriptVersion: SCRIPT_VERSION });
 }

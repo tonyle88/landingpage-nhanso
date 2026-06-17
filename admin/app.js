@@ -252,6 +252,7 @@ function renderSections() {
     { name: 'packages-manager', label: 'Gói Tư Vấn', count: state.packages ? state.packages.length : 0 },
     { name: 'payment-settings', label: 'Thanh toán', count: state.paymentSettings?.sepayEnabled ? 'SePay' : 'QR' },
     { name: 'sections-layout-manager', label: 'Cấu trúc trang', count: state.sectionsLayout ? state.sectionsLayout.length : 0 },
+    { name: 'blog-manager', label: 'Giải mã nhân số học', count: state.blogArticles ? state.blogArticles.length : 0 },
     { name: 'feedback-images', label: 'Ảnh Feedback', count: state.feedbackImages ? state.feedbackImages.length : 0 }
   ];
 
@@ -297,6 +298,11 @@ function renderHeading() {
     title = 'Quản lý thứ tự & khối nội dung';
     count = state.sectionsLayout ? state.sectionsLayout.length : 0;
     desc = 'Sắp xếp thứ tự các section trên trang. Bật/tắt hiển thị. Thêm khối nội dung mới.';
+  } else if (state.selectedSection === 'blog-manager') {
+    label = 'Blog';
+    title = 'Giải mã nhân số học';
+    count = state.blogArticles ? state.blogArticles.length : 0;
+    desc = 'Quản lý chủ đề và bài viết thuộc chuyên mục Giải mã nhân số học.';
   } else {
     label = state.selectedSection === 'all' ? 'Tất cả section' : state.selectedSection;
     count = getFilteredItems().length;
@@ -323,6 +329,10 @@ function renderCards() {
   }
   if (state.selectedSection === 'sections-layout-manager') {
     renderSectionsLayoutManager();
+    return;
+  }
+  if (state.selectedSection === 'blog-manager') {
+    renderBlogManager();
     return;
   }
 
