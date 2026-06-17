@@ -178,6 +178,8 @@ function normalizePaymentSettings(settings = {}) {
     bankBin: String(settings.bankBin || '970436'),
     bankAccount: String(settings.bankAccount || '0421003904479'),
     bankAccountName: String(settings.bankAccountName || 'LÊ CHÍ CƯỜNG'),
+    sepayBankName: String(settings.sepayBankName || 'BIDV'),
+    sepayBankAccount: String(settings.sepayBankAccount || '96247031088CUONG'),
     sepayEnv: String(settings.sepayEnv || 'sandbox'),
     sepayMerchantId: String(settings.sepayMerchantId || ''),
     sepayCheckoutUrl: String(settings.sepayCheckoutUrl || ''),
