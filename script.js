@@ -911,7 +911,7 @@ function applyLandingContentItem(item) {
       }
       return;
     }
-    element.textContent = value;
+    element.innerHTML = value;
   });
 }
 

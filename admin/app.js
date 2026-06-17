@@ -325,7 +325,9 @@ function renderCards() {
   els.emptyState.classList.toggle('is-hidden', items.length > 0);
 
   items.forEach((item) => {
-    els.editorGrid.appendChild(createContentCard(item));
+    const { card, initEditor } = createContentCard(item);
+    els.editorGrid.appendChild(card);
+    if (initEditor) initEditor();
   });
 }
 
@@ -368,16 +370,26 @@ function createContentCard(item) {
     meta.appendChild(pill);
   });
 
-  const input = shouldUseTextarea(item)
-    ? document.createElement('textarea')
-    : document.createElement('input');
-  if (input.tagName === 'INPUT') input.type = 'text';
-  input.value = item.value;
-  input.setAttribute('aria-label', item.description || item.key);
-  input.addEventListener('input', (event) => {
-    item.value = event.target.value;
-    updateSingleCardState(card, item);
-  });
+  const useRichText = shouldUseTextarea(item);
+  let input;
+  let initEditor = null;
+
+  if (useRichText) {
+    input = document.createElement('div');
+    input.style.background = '#fff';
+    input.style.color = '#000';
+    input.style.borderRadius = '4px';
+    input.style.minHeight = '150px';
+  } else {
+    input = document.createElement('input');
+    input.type = 'text';
+    input.value = item.value;
+    input.setAttribute('aria-label', item.description || item.key);
+    input.addEventListener('input', (event) => {
+      item.value = event.target.value;
+      updateSingleCardState(card, item);
+    });
+  }
 
   const actions = document.createElement('div');
   actions.className = 'card-actions package-card-actions';
@@ -393,7 +405,30 @@ function createContentCard(item) {
   actions.append(stateLabel, saveButton);
 
   card.append(top, meta, input, actions);
-  return card;
+
+  if (useRichText) {
+    initEditor = () => {
+      const quill = new Quill(input, {
+        theme: 'snow',
+        modules: {
+          toolbar: [
+            [{ 'header': [2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['link', 'image', 'video'],
+            ['clean']
+          ]
+        }
+      });
+      quill.root.innerHTML = item.value;
+      quill.on('text-change', () => {
+        item.value = quill.root.innerHTML;
+        updateSingleCardState(card, item);
+      });
+    };
+  }
+
+  return { card, initEditor };
 }
 
 function updateSingleCardState(card, item) {
