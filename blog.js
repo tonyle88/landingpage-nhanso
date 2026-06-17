@@ -195,7 +195,9 @@ function renderBlogHome() {
     
     html += `
       <section style="margin-bottom: 60px;">
-        <h2 style="font-size: 2rem; color: var(--primary); margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">${cat.name}</h2>
+        <h2 style="font-size: 2.5rem; font-family: 'Playfair Display', serif; color: var(--primary); margin: 60px 0 40px; text-align: center; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px rgba(212, 168, 67, 0.5);">
+          <span style="display: inline-block; padding-bottom: 8px; border-bottom: 2px solid var(--primary);">${cat.name}</span>
+        </h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;">
     `;
     
@@ -210,7 +212,7 @@ function renderBlogHome() {
             <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">
               <i class="fa-regular fa-calendar"></i> ${a.date}
             </div>
-            <h3 style="font-size: 1.25rem; margin-bottom: 12px; line-height: 1.4;">${a.title}</h3>
+            <h3 style="font-size: 1.25rem; margin-bottom: 12px; line-height: 1.4; text-align: justify;">${a.title}</h3>
             <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; margin-bottom: 16px; flex: 1;">${a.summary || ''}</p>
             <div style="color: var(--primary); font-weight: 500; font-size: 0.9rem; margin-top: auto;">Đọc tiếp <i class="fa-solid fa-arrow-right"></i></div>
           </div>
