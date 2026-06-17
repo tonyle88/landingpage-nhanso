@@ -1700,14 +1700,14 @@ function handleDeleteFeedbackImage(params) {
 //  Sections Layout
 // =============================================
 const DEFAULT_SECTIONS_LAYOUT = [
-  { enabled: true, id: 'pain-points', type: 'builtin', name: 'Vấn đề', order: 1 },
-  { enabled: true, id: 'about', type: 'builtin', name: 'Về chúng tôi', order: 2 },
-  { enabled: true, id: 'benefits', type: 'builtin', name: 'Lợi ích', order: 3 },
-  { enabled: true, id: 'testimonials', type: 'builtin', name: 'Cảm nhận', order: 4 },
-  { enabled: true, id: 'packages', type: 'builtin', name: 'Gói tư vấn', order: 5 },
-  { enabled: true, id: 'methods', type: 'builtin', name: 'Ba lăng kính', order: 6 },
-  { enabled: true, id: 'process', type: 'builtin', name: 'Lộ trình', order: 7 },
-  { enabled: true, id: 'contact', type: 'builtin', name: 'Liên hệ', order: 8 }
+  { enabled: true, id: 'pain-points', type: 'builtin', name: 'Vấn Đề', order: 1 },
+  { enabled: true, id: 'about', type: 'builtin', name: 'Về Chúng Tôi', order: 2 },
+  { enabled: true, id: 'benefits', type: 'builtin', name: 'Lợi Ích', order: 3 },
+  { enabled: true, id: 'testimonials', type: 'builtin', name: 'Cảm Nhận', order: 4 },
+  { enabled: true, id: 'packages', type: 'builtin', name: 'Bảng Giá', order: 5 },
+  { enabled: true, id: 'methods', type: 'builtin', name: 'Ba Lăng Kính', order: 6 },
+  { enabled: true, id: 'process', type: 'builtin', name: 'Lộ Trình', order: 7 },
+  { enabled: true, id: 'contact', type: 'builtin', name: 'Liên Hệ', order: 8 }
 ];
 
 function ensureSectionsLayoutSheet() {
