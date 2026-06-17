@@ -1434,9 +1434,9 @@ function renderSectionsLayoutManager() {
             <button class="icon-button btn-move-up" ${index === 0 || state.user.role !== 'admin' ? 'disabled' : ''} title="Lên"><i class="fa-solid fa-arrow-up"></i></button>
             <button class="icon-button btn-move-down" ${index === state.sectionsLayout.length - 1 || state.user.role !== 'admin' ? 'disabled' : ''} title="Xuống"><i class="fa-solid fa-arrow-down"></i></button>
             
-            <label class="toggle-switch" title="Bật/tắt hiển thị">
+            <label class="toggle" title="Bật/tắt hiển thị">
               <input type="checkbox" class="toggle-section-visible" ${sec.enabled ? 'checked' : ''} ${state.user.role !== 'admin' ? 'disabled' : ''}>
-              <span class="slider"></span>
+              <span class="switch"></span>
             </label>
             
             ${sec.type === 'generic' ? `
@@ -1546,7 +1546,7 @@ function openGenericSectionModal(sec = null) {
     modal.className = 'modal';
     modal.id = 'generic-section-modal';
     modal.innerHTML = `
-      <form method="dialog" class="modal-panel" style="max-width: 800px; width: 90vw;">
+      <form method="dialog" class="modal-panel">
         <header>
           <div>
             <p class="eyebrow">Cấu trúc trang</p>
@@ -1567,13 +1567,13 @@ function openGenericSectionModal(sec = null) {
             <input type="text" id="generic-sec-title" placeholder="Tiêu đề chính của khối...">
           </div>
           <div>
-            <label for="generic-sec-content">Nội dung HTML (Hỗ trợ <br>, <b>, <i>...)</label>
+            <label for="generic-sec-content">Nội dung HTML (Hỗ trợ &lt;br&gt;, &lt;b&gt;, &lt;i&gt;...)</label>
             <textarea id="generic-sec-content" rows="10" placeholder="Nội dung chi tiết..."></textarea>
           </div>
           <div>
-            <label class="toggle-switch" style="display:inline-flex; align-items:center; gap:8px;">
+            <label class="toggle" style="display:inline-flex; align-items:center; gap:8px;">
               <input type="checkbox" id="generic-sec-enabled" checked>
-              <span class="slider"></span>
+              <span class="switch"></span>
               <span> Bật hiển thị khối này</span>
             </label>
           </div>
