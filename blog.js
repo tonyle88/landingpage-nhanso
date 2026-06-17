@@ -21,9 +21,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else {
         renderBlogHome();
       }
+      
+      document.body.classList.remove('landing-content-loading');
     }
   } catch (error) {
     document.getElementById('blog-container').innerHTML = '<p>Lỗi tải dữ liệu.</p>';
+    document.body.classList.remove('landing-content-loading');
   }
 });
 
