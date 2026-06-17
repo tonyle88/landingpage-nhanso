@@ -519,7 +519,8 @@ function buildDefaultLandingContentRows() {
     lc(true, 'nav.testimonials', 'Menu', 'Menu feedback', '#nav-links li:nth-child(3) .nav-link', 'text', '', 'Khách Hàng Nghĩ Gì?'),
     lc(true, 'nav.packages', 'Menu', 'Menu gói tư vấn', '#nav-links li:nth-child(4) .nav-link', 'text', '', 'Gói Tư Vấn'),
     lc(true, 'nav.process', 'Menu', 'Menu hành trình', '#nav-links li:nth-child(5) .nav-link', 'text', '', 'Hành Trình'),
-    lc(true, 'nav.contact', 'Menu', 'Menu CTA', '#nav-links li:nth-child(6) .nav-link', 'text', '', 'Đặt Lịch Ngay'),
+    lc(true, 'nav.blog', 'Menu', 'Menu giải mã', '#nav-links li:nth-child(6) .nav-link', 'text', '', 'Giải mã nhân số học'),
+    lc(true, 'nav.contact', 'Menu', 'Menu CTA', '#nav-links li:nth-child(7) .nav-link', 'text', '', 'Đặt Lịch Ngay'),
     lc(true, 'nav.logo_text', 'Menu', 'Tên cạnh logo', '.nav-logo .logo-text', 'text', '', 'Clow Cat Patronus'),
 
     lc(true, 'hero.badge', 'Trang Chủ', 'Badge đầu trang', '.hero-badge', 'text', '', '✦ Hơn 800 ca tư vấn thực tế ✦'),

@@ -217,8 +217,17 @@ window.openBlogArticleModal = function(article = null) {
               <input type="date" id="article-date" required>
             </div>
             <div>
-              <label for="article-thumbnail">Ảnh Thumbnail (URL)</label>
-              <input type="text" id="article-thumbnail" placeholder="https://...">
+              <label for="article-thumbnail">Ảnh Thumbnail</label>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" id="article-thumbnail" placeholder="https://... hoặc tải ảnh lên ↓" style="flex: 1;">
+              </div>
+              <div style="margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <input type="file" id="article-thumb-file" accept="image/jpeg,image/png,image/webp" style="display:none;">
+                <button type="button" class="ghost-button" id="article-thumb-upload-btn" style="font-size: 0.85rem; padding: 6px 12px;" onclick="document.getElementById('article-thumb-file').click()">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Tải ảnh lên ImgBB
+                </button>
+                <span id="article-thumb-upload-status" style="font-size: 0.85rem; color: var(--text-muted);"></span>
+              </div>
             </div>
           </div>
           
@@ -267,6 +276,39 @@ window.openBlogArticleModal = function(article = null) {
           ['link', 'image', 'video'],
           ['clean']
         ]
+      }
+    });
+    
+    // Thumbnail file upload via api uploadFeedbackImage (reuses ImgBB pipeline)
+    document.getElementById('article-thumb-file').addEventListener('change', async function() {
+      const file = this.files[0];
+      if (!file) return;
+      const statusEl = document.getElementById('article-thumb-upload-status');
+      const uploadBtn = document.getElementById('article-thumb-upload-btn');
+      setBusy(uploadBtn, true);
+      statusEl.textContent = 'Đang tải ảnh lên...';
+      statusEl.style.color = 'var(--text-muted)';
+      try {
+        const base64 = await resizeAndCompressImage(file);
+        const cleanBase64 = base64.split('base64,')[1];
+        const res = await api('uploadFeedbackImage', {
+          token: state.token,
+          filename: file.name,
+          imageBase64: cleanBase64
+        });
+        if (res.url || (res.feedbackImages && res.feedbackImages.length)) {
+          // Get the latest uploaded image URL
+          const url = res.url || res.feedbackImages[res.feedbackImages.length - 1].url;
+          document.getElementById('article-thumbnail').value = url;
+          statusEl.textContent = '✓ Tải lên thành công!';
+          statusEl.style.color = 'var(--primary)';
+        }
+        this.value = '';
+      } catch(err) {
+        statusEl.textContent = 'Lỗi: ' + err.message;
+        statusEl.style.color = 'var(--danger)';
+      } finally {
+        setBusy(uploadBtn, false);
       }
     });
     

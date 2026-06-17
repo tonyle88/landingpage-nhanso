@@ -5,6 +5,8 @@ let blogArticles = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
   setupNavbar();
+  setupMusic();
+  initParticles();
   
   try {
     const res = await fetch(`${SCRIPT_URL}?action=getLandingContent`);
@@ -39,6 +41,137 @@ function setupNavbar() {
       navLinks.classList.toggle('active');
     });
   }
+  
+  // Navbar scroll effect
+  const navbar = document.getElementById('navbar');
+  if (navbar) {
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 50);
+    }, { passive: true });
+  }
+}
+
+// ============================================
+// BACKGROUND MUSIC TOGGLE
+// ============================================
+function setupMusic() {
+  const bgMusic = document.getElementById('bg-music');
+  const musicToggleBtn = document.getElementById('musicToggleBtn');
+  if (!bgMusic || !musicToggleBtn) return;
+
+  const interactionEvents = ['pointerdown', 'touchstart', 'keydown', 'scroll'];
+  let shouldPlayMusic = true;
+  let isWaitingForInteraction = false;
+
+  const setMusicButtonState = (isPlaying) => {
+    musicToggleBtn.innerHTML = isPlaying
+      ? '<i class="fa-solid fa-volume-high"></i>'
+      : '<i class="fa-solid fa-volume-xmark"></i>';
+    musicToggleBtn.classList.toggle('playing', isPlaying);
+    musicToggleBtn.setAttribute('aria-label', isPlaying ? 'Tắt nhạc' : 'Bật nhạc');
+    musicToggleBtn.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
+  };
+
+  const removeAutoplayListeners = () => {
+    interactionEvents.forEach(e => document.removeEventListener(e, handleFirstInteraction));
+    isWaitingForInteraction = false;
+  };
+  const addAutoplayListeners = () => {
+    if (isWaitingForInteraction) return;
+    isWaitingForInteraction = true;
+    interactionEvents.forEach(e => document.addEventListener(e, handleFirstInteraction, { passive: true }));
+  };
+
+  const tryPlayMusic = () => {
+    if (!shouldPlayMusic) return Promise.resolve();
+    return bgMusic.play()
+      .then(() => { setMusicButtonState(true); removeAutoplayListeners(); })
+      .catch(() => { setMusicButtonState(false); addAutoplayListeners(); });
+  };
+
+  function handleFirstInteraction(event) {
+    if (musicToggleBtn.contains(event.target)) return;
+    removeAutoplayListeners();
+    tryPlayMusic();
+  }
+
+  bgMusic.volume = 0.35;
+  setMusicButtonState(true);
+  tryPlayMusic();
+
+  bgMusic.addEventListener('play', () => { setMusicButtonState(true); removeAutoplayListeners(); });
+  bgMusic.addEventListener('pause', () => { setMusicButtonState(false); });
+
+  musicToggleBtn.addEventListener('click', () => {
+    if (bgMusic.paused) {
+      shouldPlayMusic = true;
+      tryPlayMusic();
+    } else {
+      shouldPlayMusic = false;
+      bgMusic.pause();
+      removeAutoplayListeners();
+      setMusicButtonState(false);
+    }
+  });
+}
+
+// ============================================
+// PARTICLES
+// ============================================
+function initParticles() {
+  const canvas = document.getElementById('particles-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W = window.innerWidth, H = window.innerHeight;
+  canvas.width = W; canvas.height = H;
+
+  const colors = [
+    'rgba(217, 78, 31, alpha)',
+    'rgba(212, 168, 67, alpha)',
+    'rgba(232, 168, 120, alpha)',
+    'rgba(27, 97, 107, alpha)',
+  ];
+  const particles = [];
+  for (let i = 0; i < 70; i++) {
+    particles.push({
+      x: Math.random() * W, y: Math.random() * H,
+      r: Math.random() * 2.5 + 0.5,
+      dx: (Math.random() - 0.5) * 0.4,
+      dy: (Math.random() - 0.5) * 0.4 - 0.1,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      alpha: Math.random() * 0.6 + 0.2,
+      pulse: Math.random() * Math.PI * 2,
+    });
+  }
+  function animate() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => {
+      p.x += p.dx; p.y += p.dy; p.pulse += 0.02;
+      const alpha = p.alpha * (0.7 + 0.3 * Math.sin(p.pulse));
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color.replace('alpha', alpha);
+      ctx.fill();
+    });
+    particles.forEach((p, i) => {
+      particles.slice(i + 1, i + 5).forEach(q => {
+        const dist = Math.hypot(p.x - q.x, p.y - q.y);
+        if (dist < 120) {
+          ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
+          ctx.strokeStyle = `rgba(212, 168, 67, ${(1 - dist / 120) * 0.08})`;
+          ctx.lineWidth = 0.5; ctx.stroke();
+        }
+      });
+    });
+    requestAnimationFrame(animate);
+  }
+  animate();
+  window.addEventListener('resize', () => {
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W; canvas.height = H;
+  }, { passive: true });
 }
 
 function renderBlogHome() {
