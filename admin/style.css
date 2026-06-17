@@ -1161,3 +1161,171 @@ a {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-12px); }
 }
+
+/* =============================================
+   Sections Layout Manager
+============================================= */
+.manager-container {
+  grid-column: 1 / -1;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.manager-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.sections-layout-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-layout-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.section-layout-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.drag-handle {
+  cursor: grab;
+  color: var(--gold-soft);
+  font-size: 1.2rem;
+  padding: 0 8px;
+  opacity: 0.7;
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.section-layout-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.section-layout-info strong {
+  font-size: 1.05rem;
+  color: var(--white);
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  text-transform: uppercase;
+  width: max-content;
+}
+
+.badge-neutral {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--muted);
+}
+
+.badge-success {
+  background: rgba(115, 217, 178, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(115, 217, 178, 0.3);
+}
+
+.generic-title-preview {
+  font-size: 0.85rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 4px;
+}
+
+.section-layout-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-layout-actions .icon-button {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+}
+
+/* Custom Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  margin: 0 12px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.12);
+  transition: .3s;
+  border-radius: 24px;
+  border: 1px solid var(--line);
+}
+
+.toggle-switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: rgba(255, 255, 255, 0.76);
+  transition: .3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .slider {
+  background-color: rgba(240, 201, 106, 0.28);
+  border-color: rgba(240, 201, 106, 0.5);
+}
+
+.toggle-switch input:focus + .slider {
+  box-shadow: 0 0 1px rgba(240, 201, 106, 0.5);
+}
+
+.toggle-switch input:checked + .slider:before {
+  transform: translateX(20px);
+  background-color: var(--gold-soft);
+}
