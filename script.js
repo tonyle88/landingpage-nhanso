@@ -396,6 +396,52 @@ function applyLandingContent(payload, options = {}) {
   if (feedbackImages.length > 0) {
     renderTestimonials(feedbackImages);
   }
+
+  if (payload.sectionsLayout) {
+    applySectionsLayout(payload.sectionsLayout);
+  }
+}
+
+function applySectionsLayout(layout) {
+  const container = document.getElementById('dynamic-layout');
+  if (!container) return;
+  
+  // Xóa các generic section cũ nếu đang render lại
+  container.querySelectorAll('.generic-section').forEach(el => el.remove());
+
+  layout.forEach((sec) => {
+    if (sec.type === 'builtin') {
+      const el = document.getElementById(sec.id);
+      if (el) {
+        el.style.order = sec.order;
+        el.style.display = sec.enabled ? '' : 'none';
+      }
+    } else if (sec.type === 'generic' && sec.enabled) {
+      const el = document.createElement('section');
+      el.className = `generic-section section`;
+      el.id = sec.id;
+      el.style.order = sec.order;
+      el.innerHTML = `
+        <div class="container">
+          <div class="section-header reveal">
+            <h2 class="section-title" style="margin-bottom: 2rem;">${sec.title || ''}</h2>
+          </div>
+          <div class="generic-content reveal">
+            ${sec.contentHtml || ''}
+          </div>
+        </div>
+      `;
+      container.appendChild(el);
+      if (window.ScrollReveal) {
+        window.ScrollReveal().reveal(el.querySelectorAll('.reveal'), {
+          distance: '30px',
+          duration: 800,
+          easing: 'ease-out',
+          interval: 100
+        });
+      }
+    }
+  });
 }
 
 function normalizePaymentSettings(settings = {}) {

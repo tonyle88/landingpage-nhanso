@@ -21,6 +21,16 @@ const FEEDBACK_DRIVE_FOLDER_NAME = 'ClowCat Landing Feedback Images';
 const PACKAGES_SHEET_NAME = 'Packages';
 const PAYMENT_SETTINGS_SHEET_NAME = 'Payment settings';
 const SEPAY_SECRET_KEY_PROPERTY = 'SEPAY_SECRET_KEY';
+const SECTIONS_LAYOUT_SHEET_NAME = 'Sections layout';
+const SECTIONS_LAYOUT_HEADERS = [
+  'Bật',
+  'ID',
+  'Loại',
+  'Tên hiển thị',
+  'Thứ tự',
+  'Tiêu đề',
+  'Nội dung HTML'
+];
 const PACKAGES_HEADERS = [
   'Bật',
   'Mã gói',
@@ -132,6 +142,9 @@ function doPost(e) {
     if (action === 'uploadFeedbackImage') return handleUploadFeedbackImage(params);
     if (action === 'saveFeedbackImage') return handleSaveFeedbackImage(params);
     if (action === 'deleteFeedbackImage') return handleDeleteFeedbackImage(params);
+    if (action === 'saveSectionsLayoutOrder') return handleSaveSectionsLayoutOrder(params);
+    if (action === 'saveGenericSection') return handleSaveGenericSection(params);
+    if (action === 'deleteSection') return handleDeleteSection(params);
 
     return jsonResponse({ ok: false, message: 'Action khong hop le', scriptVersion: SCRIPT_VERSION });
   } catch (error) {
@@ -161,6 +174,7 @@ function buildLandingContentPayload() {
       packages: getPackages(false),
       feedbackImages: getFeedbackImages(),
       paymentSettings: getPaymentSettings(false),
+      sectionsLayout: getSectionsLayout(false),
       message: 'Chua co tab Landing content. Hay chay initializeLandingContentSheet mot lan trong Apps Script.',
       scriptVersion: SCRIPT_VERSION,
     };
@@ -169,7 +183,7 @@ function buildLandingContentPayload() {
   ensureLandingContentHeaderRow(sheet);
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
-    return { ok: true, items: [], packages: getPackages(false), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(false), scriptVersion: SCRIPT_VERSION };
+    return { ok: true, items: [], packages: getPackages(false), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(false), sectionsLayout: getSectionsLayout(false), scriptVersion: SCRIPT_VERSION };
   }
 
   const range = sheet.getRange(2, 1, lastRow - 1, LANDING_CONTENT_HEADERS.length);
@@ -188,6 +202,7 @@ function buildLandingContentPayload() {
     feedbackImages: getFeedbackImages(),
     packages: getPackages(false),
     paymentSettings: getPaymentSettings(false),
+    sectionsLayout: getSectionsLayout(false),
     scriptVersion: SCRIPT_VERSION,
   };
 }
@@ -229,6 +244,7 @@ function handleGetAdminContent(params) {
       packages: getPackages(true),
       feedbackImages: getFeedbackImages(),
       paymentSettings: getPaymentSettings(true),
+      sectionsLayout: getSectionsLayout(true),
       message: 'Chua co tab Landing content. Hay chay initializeLandingContentSheet mot lan.',
       scriptVersion: SCRIPT_VERSION,
     });
@@ -237,7 +253,7 @@ function handleGetAdminContent(params) {
   ensureLandingContentHeaderRow(sheet);
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
-    return jsonResponse({ ok: true, items: [], sections: [], packages: getPackages(true), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(true), scriptVersion: SCRIPT_VERSION });
+    return jsonResponse({ ok: true, items: [], sections: [], packages: getPackages(true), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(true), sectionsLayout: getSectionsLayout(true), scriptVersion: SCRIPT_VERSION });
   }
 
   const range = sheet.getRange(2, 1, lastRow - 1, LANDING_CONTENT_HEADERS.length);
@@ -274,6 +290,7 @@ function handleGetAdminContent(params) {
     feedbackImages: getFeedbackImages(),
     packages: getPackages(true),
     paymentSettings: getPaymentSettings(true),
+    sectionsLayout: getSectionsLayout(true),
     scriptVersion: SCRIPT_VERSION,
   });
 }
@@ -1677,4 +1694,138 @@ function handleDeleteFeedbackImage(params) {
     feedbackImages: getFeedbackImages(),
     scriptVersion: SCRIPT_VERSION
   });
+}
+
+// =============================================
+//  Sections Layout
+// =============================================
+const DEFAULT_SECTIONS_LAYOUT = [
+  { enabled: true, id: 'pain-points', type: 'builtin', name: 'Vấn đề', order: 1 },
+  { enabled: true, id: 'about', type: 'builtin', name: 'Về chúng tôi', order: 2 },
+  { enabled: true, id: 'benefits', type: 'builtin', name: 'Lợi ích', order: 3 },
+  { enabled: true, id: 'testimonials', type: 'builtin', name: 'Cảm nhận', order: 4 },
+  { enabled: true, id: 'packages', type: 'builtin', name: 'Gói tư vấn', order: 5 },
+  { enabled: true, id: 'methods', type: 'builtin', name: 'Ba lăng kính', order: 6 },
+  { enabled: true, id: 'process', type: 'builtin', name: 'Lộ trình', order: 7 },
+  { enabled: true, id: 'contact', type: 'builtin', name: 'Liên hệ', order: 8 }
+];
+
+function ensureSectionsLayoutSheet() {
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  let sheet = spreadsheet.getSheetByName(SECTIONS_LAYOUT_SHEET_NAME);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(SECTIONS_LAYOUT_SHEET_NAME);
+    sheet.getRange(1, 1, 1, SECTIONS_LAYOUT_HEADERS.length).setValues([SECTIONS_LAYOUT_HEADERS]);
+    sheet.setFrozenRows(1);
+    
+    // Insert defaults
+    const defaultRows = DEFAULT_SECTIONS_LAYOUT.map(s => [
+      s.enabled ? 'TRUE' : 'FALSE',
+      s.id,
+      s.type,
+      s.name,
+      s.order,
+      '',
+      ''
+    ]);
+    sheet.getRange(2, 1, defaultRows.length, SECTIONS_LAYOUT_HEADERS.length).setValues(defaultRows);
+    sheet.autoResizeColumns(1, SECTIONS_LAYOUT_HEADERS.length);
+  }
+  return sheet;
+}
+
+function getSectionsLayout(forAdmin) {
+  const sheet = ensureSectionsLayoutSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  
+  const values = sheet.getRange(2, 1, lastRow - 1, SECTIONS_LAYOUT_HEADERS.length).getDisplayValues();
+  return values.map(row => {
+    return {
+      enabled: isTruthy(row[0]),
+      id: cleanValue(row[1]),
+      type: cleanValue(row[2]) || 'builtin',
+      name: cleanValue(row[3]),
+      order: Number(row[4]) || 999,
+      title: cleanValue(row[5]),
+      contentHtml: cleanValue(row[6])
+    };
+  }).filter(s => s.id && (forAdmin || s.enabled)).sort((a, b) => a.order - b.order);
+}
+
+function handleSaveSectionsLayoutOrder(params) {
+  requireAdminSession(params.token, ['admin']);
+  const sheet = ensureSectionsLayoutSheet();
+  let updates;
+  try {
+    updates = JSON.parse(params.updates);
+  } catch(e) {
+    throw new Error('Du lieu updates khong hop le.');
+  }
+  
+  const lastRow = sheet.getLastRow();
+  if (lastRow >= 2) {
+    const ids = sheet.getRange(2, 2, lastRow - 1, 1).getValues().map(r => String(r[0]).trim());
+    updates.forEach(u => {
+      const idx = ids.indexOf(u.id);
+      if (idx !== -1) {
+        const rowNumber = idx + 2;
+        if (typeof u.enabled !== 'undefined') sheet.getRange(rowNumber, 1).setValue(u.enabled ? 'TRUE' : 'FALSE');
+        if (typeof u.order !== 'undefined') sheet.getRange(rowNumber, 5).setValue(u.order);
+      }
+    });
+  }
+  clearLandingContentCache();
+  return jsonResponse({ ok: true, message: 'Da luu thu tu sections', sectionsLayout: getSectionsLayout(true), scriptVersion: SCRIPT_VERSION });
+}
+
+function handleSaveGenericSection(params) {
+  requireAdminSession(params.token, ['admin']);
+  const sheet = ensureSectionsLayoutSheet();
+  const id = cleanValue(params.id) || 'generic-' + new Date().getTime();
+  const enabled = isTruthy(params.enabled) ? 'TRUE' : 'FALSE';
+  const name = cleanValue(params.name) || 'Khối nội dung';
+  const title = cleanValue(params.title);
+  const contentHtml = cleanValue(params.contentHtml);
+  
+  const lastRow = sheet.getLastRow();
+  let rowNumber = -1;
+  if (lastRow >= 2) {
+    const ids = sheet.getRange(2, 2, lastRow - 1, 1).getValues().map(r => String(r[0]).trim());
+    const idx = ids.indexOf(id);
+    if (idx !== -1) rowNumber = idx + 2;
+  }
+  
+  if (rowNumber !== -1) {
+    sheet.getRange(rowNumber, 1).setValue(enabled);
+    sheet.getRange(rowNumber, 4).setValue(name);
+    sheet.getRange(rowNumber, 6).setValue(title);
+    sheet.getRange(rowNumber, 7).setValue(contentHtml);
+  } else {
+    const order = sheet.getLastRow();
+    sheet.appendRow([enabled, id, 'generic', name, order, title, contentHtml]);
+  }
+  
+  clearLandingContentCache();
+  return jsonResponse({ ok: true, message: 'Da luu section', sectionsLayout: getSectionsLayout(true), scriptVersion: SCRIPT_VERSION });
+}
+
+function handleDeleteSection(params) {
+  requireAdminSession(params.token, ['admin']);
+  const sheet = ensureSectionsLayoutSheet();
+  const id = cleanValue(params.id);
+  
+  const lastRow = sheet.getLastRow();
+  if (lastRow >= 2) {
+    const ids = sheet.getRange(2, 2, lastRow - 1, 1).getValues().map(r => String(r[0]).trim());
+    const idx = ids.indexOf(id);
+    if (idx !== -1) {
+      const type = cleanValue(sheet.getRange(idx + 2, 3).getValue());
+      if (type === 'builtin') throw new Error('Khong the xoa section mac dinh.');
+      sheet.deleteRow(idx + 2);
+    }
+  }
+  
+  clearLandingContentCache();
+  return jsonResponse({ ok: true, message: 'Da xoa section', sectionsLayout: getSectionsLayout(true), scriptVersion: SCRIPT_VERSION });
 }

@@ -145,6 +145,7 @@ async function loadContent(showNotice = false) {
     state.sections = payload.sections || [];
     state.feedbackImages = payload.feedbackImages || [];
     state.packages = payload.packages || [];
+    state.sectionsLayout = payload.sectionsLayout || [];
     state.paymentSettings = normalizePaymentSettings(payload.paymentSettings);
     state.originals = new Map(state.items.map((item) => [item.key, snapshotItem(item)]));
     render();
@@ -224,6 +225,7 @@ function expireSession() {
   state.originals = new Map();
     state.feedbackImages = [];
     state.packages = [];
+    state.sectionsLayout = [];
     state.paymentSettings = {};
   sessionStorage.removeItem(SESSION_KEY);
   showLogin();
@@ -243,6 +245,7 @@ function renderSections() {
     ...groups.map((group) => ({ name: group.name, label: group.name, count: group.count })),
     { name: 'packages-manager', label: 'Gói Tư Vấn', count: state.packages ? state.packages.length : 0 },
     { name: 'payment-settings', label: 'Thanh toán', count: state.paymentSettings?.sepayEnabled ? 'SePay' : 'QR' },
+    { name: 'sections-layout-manager', label: 'Cấu trúc trang', count: state.sectionsLayout ? state.sectionsLayout.length : 0 },
     { name: 'feedback-images', label: 'Ảnh Feedback', count: state.feedbackImages ? state.feedbackImages.length : 0 }
   ];
 
@@ -283,6 +286,11 @@ function renderHeading() {
     title = 'Cấu hình thanh toán';
     count = state.paymentSettings?.sepayEnabled ? 'SePay đang bật' : 'QR thủ công';
     desc = 'Đổi tài khoản nhận tiền, bật/tắt SePay và thời gian chờ xác nhận thanh toán.';
+  } else if (state.selectedSection === 'sections-layout-manager') {
+    label = 'Cấu trúc trang';
+    title = 'Quản lý thứ tự & khối nội dung';
+    count = state.sectionsLayout ? state.sectionsLayout.length : 0;
+    desc = 'Sắp xếp thứ tự các section trên trang. Bật/tắt hiển thị. Thêm khối nội dung mới.';
   } else {
     label = state.selectedSection === 'all' ? 'Tất cả section' : state.selectedSection;
     count = getFilteredItems().length;
@@ -305,6 +313,10 @@ function renderCards() {
   }
   if (state.selectedSection === 'payment-settings') {
     renderPaymentSettings();
+    return;
+  }
+  if (state.selectedSection === 'sections-layout-manager') {
+    renderSectionsLayoutManager();
     return;
   }
 
@@ -1391,4 +1403,224 @@ function resizeAndCompressImage(file) {
     reader.onerror = () => reject(new Error('Loi doc file.'));
     reader.readAsDataURL(file);
   });
+}
+
+// =============================================
+//  Sections Layout Manager
+// =============================================
+function renderSectionsLayoutManager() {
+  els.editorGrid.innerHTML = '';
+  els.emptyState.classList.add('is-hidden');
+
+  const container = document.createElement('div');
+  container.className = 'manager-container';
+  container.innerHTML = `
+    <div class="manager-header">
+      <p>Kéo thả (hoặc dùng nút mũi tên) để sắp xếp thứ tự. Khối 'generic' có thể xóa và chỉnh sửa nội dung.</p>
+      <button class="primary-button" id="btn-add-generic-section" ${state.user.role !== 'admin' ? 'disabled' : ''}>
+        <i class="fa-solid fa-plus"></i> Thêm Khối Nội Dung
+      </button>
+    </div>
+    <div class="sections-layout-list">
+      ${state.sectionsLayout.map((sec, index) => `
+        <div class="section-layout-item" data-id="${sec.id}" data-type="${sec.type}">
+          <div class="drag-handle"><i class="fa-solid fa-grip-vertical"></i></div>
+          <div class="section-layout-info">
+            <strong>${escapeHtml(sec.name || sec.id)}</strong>
+            <span class="badge badge-${sec.type === 'builtin' ? 'neutral' : 'success'}">${sec.type === 'builtin' ? 'Mặc định' : 'Tự tạo'}</span>
+            ${sec.type === 'generic' ? `<div class="generic-title-preview">${escapeHtml(sec.title || '')}</div>` : ''}
+          </div>
+          <div class="section-layout-actions">
+            <button class="icon-button btn-move-up" ${index === 0 || state.user.role !== 'admin' ? 'disabled' : ''} title="Lên"><i class="fa-solid fa-arrow-up"></i></button>
+            <button class="icon-button btn-move-down" ${index === state.sectionsLayout.length - 1 || state.user.role !== 'admin' ? 'disabled' : ''} title="Xuống"><i class="fa-solid fa-arrow-down"></i></button>
+            
+            <label class="toggle-switch" title="Bật/tắt hiển thị">
+              <input type="checkbox" class="toggle-section-visible" ${sec.enabled ? 'checked' : ''} ${state.user.role !== 'admin' ? 'disabled' : ''}>
+              <span class="slider"></span>
+            </label>
+            
+            ${sec.type === 'generic' ? `
+              <button class="icon-button btn-edit-generic" title="Sửa nội dung" ${state.user.role !== 'admin' ? 'disabled' : ''}><i class="fa-solid fa-pen"></i></button>
+              <button class="icon-button btn-delete-generic" title="Xóa" ${state.user.role !== 'admin' ? 'disabled' : ''}><i class="fa-solid fa-trash"></i></button>
+            ` : `<div style="width: 72px;"></div>`}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="manager-footer" style="margin-top: 20px; text-align: right;">
+      <button class="primary-button" id="btn-save-sections-layout" ${state.user.role !== 'admin' ? 'disabled' : ''}>
+        <i class="fa-solid fa-save"></i> Lưu Thứ Tự & Trạng Thái
+      </button>
+    </div>
+  `;
+
+  els.editorGrid.appendChild(container);
+
+  const btnSave = container.querySelector('#btn-save-sections-layout');
+  btnSave.addEventListener('click', async () => {
+    setBusy(btnSave, true);
+    try {
+      const items = Array.from(container.querySelectorAll('.section-layout-item'));
+      const updates = items.map((el, i) => ({
+        id: el.dataset.id,
+        order: i + 1,
+        enabled: el.querySelector('.toggle-section-visible').checked
+      }));
+      
+      const res = await api('saveSectionsLayoutOrder', {
+        token: state.token,
+        updates: JSON.stringify(updates)
+      });
+      state.sectionsLayout = res.sectionsLayout;
+      toast('Đã lưu cấu trúc trang.');
+      renderSectionsLayoutManager();
+    } catch(e) {
+      toast(e.message, 'error');
+    } finally {
+      setBusy(btnSave, false);
+    }
+  });
+
+  const listContainer = container.querySelector('.sections-layout-list');
+  
+  // Nút Lên/Xuống
+  listContainer.addEventListener('click', (e) => {
+    const btnUp = e.target.closest('.btn-move-up');
+    const btnDown = e.target.closest('.btn-move-down');
+    if (btnUp || btnDown) {
+      const item = (btnUp || btnDown).closest('.section-layout-item');
+      if (btnUp && item.previousElementSibling) {
+        listContainer.insertBefore(item, item.previousElementSibling);
+      } else if (btnDown && item.nextElementSibling) {
+        listContainer.insertBefore(item.nextElementSibling, item);
+      }
+      updateMoveButtons(listContainer);
+    }
+    
+    const btnEdit = e.target.closest('.btn-edit-generic');
+    if (btnEdit) {
+      const id = btnEdit.closest('.section-layout-item').dataset.id;
+      const sec = state.sectionsLayout.find(s => s.id === id);
+      if (sec) openGenericSectionModal(sec);
+    }
+    
+    const btnDelete = e.target.closest('.btn-delete-generic');
+    if (btnDelete) {
+      const id = btnDelete.closest('.section-layout-item').dataset.id;
+      if (confirm('Bạn có chắc chắn muốn xóa khối nội dung này?')) {
+        deleteGenericSection(id);
+      }
+    }
+  });
+  
+  container.querySelector('#btn-add-generic-section').addEventListener('click', () => {
+    openGenericSectionModal();
+  });
+}
+
+function updateMoveButtons(listContainer) {
+  const items = Array.from(listContainer.querySelectorAll('.section-layout-item'));
+  items.forEach((item, index) => {
+    const btnUp = item.querySelector('.btn-move-up');
+    const btnDown = item.querySelector('.btn-move-down');
+    if (btnUp) btnUp.disabled = index === 0;
+    if (btnDown) btnDown.disabled = index === items.length - 1;
+  });
+}
+
+async function deleteGenericSection(id) {
+  try {
+    const res = await api('deleteSection', { token: state.token, id });
+    state.sectionsLayout = res.sectionsLayout;
+    toast('Đã xóa khối nội dung.');
+    renderSectionsLayoutManager();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
+function openGenericSectionModal(sec = null) {
+  let modal = document.getElementById('generic-section-modal');
+  if (!modal) {
+    modal = document.createElement('dialog');
+    modal.className = 'modal';
+    modal.id = 'generic-section-modal';
+    modal.innerHTML = `
+      <form method="dialog" class="modal-panel" style="max-width: 800px; width: 90vw;">
+        <header>
+          <div>
+            <p class="eyebrow">Cấu trúc trang</p>
+            <h2 id="generic-modal-title">Thêm Khối Nội Dung</h2>
+          </div>
+          <button class="icon-button" type="button" onclick="this.closest('dialog').close()" aria-label="Đóng">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </header>
+        <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+          <input type="hidden" id="generic-sec-id" value="">
+          <div>
+            <label for="generic-sec-name">Tên hiển thị (Admin)</label>
+            <input type="text" id="generic-sec-name" required placeholder="Ví dụ: Giới thiệu khóa học...">
+          </div>
+          <div>
+            <label for="generic-sec-title">Tiêu đề (Hiển thị trên web)</label>
+            <input type="text" id="generic-sec-title" placeholder="Tiêu đề chính của khối...">
+          </div>
+          <div>
+            <label for="generic-sec-content">Nội dung HTML (Hỗ trợ <br>, <b>, <i>...)</label>
+            <textarea id="generic-sec-content" rows="10" placeholder="Nội dung chi tiết..."></textarea>
+          </div>
+          <div>
+            <label class="toggle-switch" style="display:inline-flex; align-items:center; gap:8px;">
+              <input type="checkbox" id="generic-sec-enabled" checked>
+              <span class="slider"></span>
+              <span> Bật hiển thị khối này</span>
+            </label>
+          </div>
+        </div>
+        <footer>
+          <button class="ghost-button" type="button" onclick="this.closest('dialog').close()">Hủy</button>
+          <button class="primary-button" type="submit" id="btn-save-generic">
+            <i class="fa-solid fa-check"></i> Lưu Khối
+          </button>
+        </footer>
+      </form>
+    `;
+    document.body.appendChild(modal);
+    
+    modal.querySelector('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = modal.querySelector('#btn-save-generic');
+      setBusy(btn, true);
+      try {
+        const payload = {
+          action: 'saveGenericSection',
+          token: state.token,
+          id: modal.querySelector('#generic-sec-id').value,
+          name: modal.querySelector('#generic-sec-name').value,
+          title: modal.querySelector('#generic-sec-title').value,
+          contentHtml: modal.querySelector('#generic-sec-content').value,
+          enabled: modal.querySelector('#generic-sec-enabled').checked ? 'true' : 'false'
+        };
+        const res = await api('saveGenericSection', payload);
+        state.sectionsLayout = res.sectionsLayout;
+        toast('Đã lưu khối nội dung.');
+        modal.close();
+        if (state.selectedSection === 'sections-layout-manager') renderSectionsLayoutManager();
+      } catch(error) {
+        toast(error.message, 'error');
+      } finally {
+        setBusy(btn, false);
+      }
+    });
+  }
+  
+  modal.querySelector('#generic-modal-title').textContent = sec ? 'Sửa Khối Nội Dung' : 'Thêm Khối Nội Dung';
+  modal.querySelector('#generic-sec-id').value = sec ? sec.id : '';
+  modal.querySelector('#generic-sec-name').value = sec ? sec.name : '';
+  modal.querySelector('#generic-sec-title').value = sec ? sec.title : '';
+  modal.querySelector('#generic-sec-content').value = sec ? sec.contentHtml : '';
+  modal.querySelector('#generic-sec-enabled').checked = sec ? sec.enabled : true;
+  
+  openModal(modal);
 }
