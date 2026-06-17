@@ -313,6 +313,8 @@ function handleGetAdminContent(params) {
     packages: getPackages(true),
     paymentSettings: getPaymentSettings(true),
     sectionsLayout: getSectionsLayout(true),
+    blogCategories: getBlogCategories(true),
+    blogArticles: getBlogArticles(true),
     scriptVersion: SCRIPT_VERSION,
   });
 }

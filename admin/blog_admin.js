@@ -232,8 +232,8 @@ window.openBlogArticleModal = function(article = null) {
           </div>
           
           <div>
-             <label for="article-summary">Tóm tắt ngắn</label>
-             <textarea id="article-summary" rows="2" placeholder="Hiển thị ở trang danh sách bài viết..."></textarea>
+            <label>Tóm tắt ngắn (hiển thị ở trang danh sách)</label>
+            <div id="article-summary-editor" style="height: 120px; background: #fff; color: #000; border-radius: 4px;"></div>
           </div>
           
           <div>
@@ -264,19 +264,34 @@ window.openBlogArticleModal = function(article = null) {
     `;
     document.body.appendChild(modal);
     
-    // Setup Quill
+    // Shared toolbar config with color
+    const FULL_TOOLBAR = [
+      [{ 'header': [2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'align': [] }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['link', 'image', 'video'],
+      ['clean']
+    ];
+    const SUMMARY_TOOLBAR = [
+      ['bold', 'italic', 'underline'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'align': [] }],
+      ['clean']
+    ];
+    
+    // Setup Summary Quill
+    window.summaryQuill = new Quill('#article-summary-editor', {
+      theme: 'snow',
+      placeholder: 'Hiển thị ở trang danh sách bài viết...',
+      modules: { toolbar: SUMMARY_TOOLBAR }
+    });
+    
+    // Setup Content Quill
     window.articleQuill = new Quill('#article-editor', {
       theme: 'snow',
-      modules: {
-        toolbar: [
-          [{ 'header': [2, 3, false] }],
-          ['bold', 'italic', 'underline', 'strike'],
-          [{ 'align': [] }],
-          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-          ['link', 'image', 'video'],
-          ['clean']
-        ]
-      }
+      modules: { toolbar: FULL_TOOLBAR }
     });
     
     // Thumbnail file upload via api uploadFeedbackImage (reuses ImgBB pipeline)
@@ -325,7 +340,7 @@ window.openBlogArticleModal = function(article = null) {
           categoryId: modal.querySelector('#article-category').value,
           date: modal.querySelector('#article-date').value,
           thumbnail: modal.querySelector('#article-thumbnail').value,
-          summary: modal.querySelector('#article-summary').value,
+          summary: window.summaryQuill ? window.summaryQuill.root.innerHTML : '',
           contentHtml: window.articleQuill.root.innerHTML,
           enabled: modal.querySelector('#article-enabled').checked ? 'true' : 'false',
           pinned: modal.querySelector('#article-pinned').checked ? 'true' : 'false'
@@ -353,7 +368,9 @@ window.openBlogArticleModal = function(article = null) {
   modal.querySelector('#article-category').value = article ? article.categoryId : '';
   modal.querySelector('#article-date').value = article ? article.date : new Date().toISOString().slice(0,10);
   modal.querySelector('#article-thumbnail').value = article ? (article.thumbnail || '') : '';
-  modal.querySelector('#article-summary').value = article ? (article.summary || '') : '';
+  if (window.summaryQuill) {
+    window.summaryQuill.root.innerHTML = article ? (article.summary || '') : '';
+  }
   if (window.articleQuill) {
     window.articleQuill.root.innerHTML = article ? article.contentHtml : '';
   }
