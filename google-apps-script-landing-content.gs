@@ -1386,6 +1386,8 @@ function getPaymentSettings(includePrivateStatus) {
     bankBin: settings.bankBin,
     bankAccount: settings.bankAccount,
     bankAccountName: settings.bankAccountName,
+    sepayBankName: settings.sepayBankName,
+    sepayBankAccount: settings.sepayBankAccount,
     sepayEnv: settings.sepayEnv,
     sepayMerchantId: settings.sepayMerchantId,
     sepayCheckoutUrl: settings.sepayCheckoutUrl,
