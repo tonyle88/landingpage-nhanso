@@ -127,17 +127,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ===== SCROLL REVEAL =====
-  const revealObserver = new IntersectionObserver((entries) => {
+  window.revealObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         entry.target.classList.add('visible');
-        revealObserver.unobserve(entry.target);
+        window.revealObserver.unobserve(entry.target);
       }
     });
   }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
 
   document.querySelectorAll('.reveal').forEach(el => {
-    revealObserver.observe(el);
+    window.revealObserver.observe(el);
   });
 
   // ===== ACTIVE NAV LINK =====
@@ -424,7 +424,11 @@ function applySectionsLayout(layout) {
       el.innerHTML = `
         <div class="container">
           <div class="section-header reveal">
-            <h2 class="section-title" style="margin-bottom: 2rem;">${sec.title || ''}</h2>
+            ${sec.tag ? `<span class="section-tag">${sec.tag}</span>` : ''}
+            <h2 class="section-title">${sec.title || ''}</h2>
+            <div class="section-divider">
+              <span>✦</span><span>✦</span><span>✦</span>
+            </div>
           </div>
           <div class="generic-content reveal">
             ${sec.contentHtml || ''}
@@ -432,13 +436,8 @@ function applySectionsLayout(layout) {
         </div>
       `;
       container.appendChild(el);
-      if (window.ScrollReveal) {
-        window.ScrollReveal().reveal(el.querySelectorAll('.reveal'), {
-          distance: '30px',
-          duration: 800,
-          easing: 'ease-out',
-          interval: 100
-        });
+      if (window.revealObserver) {
+        el.querySelectorAll('.reveal').forEach(child => window.revealObserver.observe(child));
       }
     }
   });

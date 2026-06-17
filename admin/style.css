@@ -848,6 +848,16 @@ a {
   gap: 10px;
 }
 
+.ql-toolbar {
+  background: #f1f1f1;
+  border-radius: 4px 4px 0 0;
+  border-color: #ccc !important;
+}
+.ql-container {
+  border-radius: 0 0 4px 4px;
+  border-color: #ccc !important;
+}
+
 .user-list {
   display: grid;
   gap: 10px;

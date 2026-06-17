@@ -29,6 +29,7 @@ const SECTIONS_LAYOUT_HEADERS = [
   'Tên hiển thị',
   'Thứ tự',
   'Tiêu đề',
+  'Thẻ phụ',
   'Nội dung HTML'
 ];
 const PACKAGES_HEADERS = [
@@ -1726,6 +1727,7 @@ function ensureSectionsLayoutSheet() {
       s.name,
       s.order,
       '',
+      '',
       ''
     ]);
     sheet.getRange(2, 1, defaultRows.length, SECTIONS_LAYOUT_HEADERS.length).setValues(defaultRows);
@@ -1748,7 +1750,8 @@ function getSectionsLayout(forAdmin) {
       name: cleanValue(row[3]),
       order: Number(row[4]) || 999,
       title: cleanValue(row[5]),
-      contentHtml: cleanValue(row[6])
+      tag: cleanValue(row[6]),
+      contentHtml: cleanValue(row[7])
     };
   }).filter(s => s.id && (forAdmin || s.enabled)).sort((a, b) => a.order - b.order);
 }
@@ -1786,6 +1789,7 @@ function handleSaveGenericSection(params) {
   const enabled = isTruthy(params.enabled) ? 'TRUE' : 'FALSE';
   const name = cleanValue(params.name) || 'Khối nội dung';
   const title = cleanValue(params.title);
+  const tag = cleanValue(params.tag);
   const contentHtml = cleanValue(params.contentHtml);
   
   const lastRow = sheet.getLastRow();
@@ -1800,10 +1804,11 @@ function handleSaveGenericSection(params) {
     sheet.getRange(rowNumber, 1).setValue(enabled);
     sheet.getRange(rowNumber, 4).setValue(name);
     sheet.getRange(rowNumber, 6).setValue(title);
-    sheet.getRange(rowNumber, 7).setValue(contentHtml);
+    sheet.getRange(rowNumber, 7).setValue(tag);
+    sheet.getRange(rowNumber, 8).setValue(contentHtml);
   } else {
     const order = sheet.getLastRow();
-    sheet.appendRow([enabled, id, 'generic', name, order, title, contentHtml]);
+    sheet.appendRow([enabled, id, 'generic', name, order, title, tag, contentHtml]);
   }
   
   clearLandingContentCache();

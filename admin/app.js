@@ -1563,12 +1563,16 @@ function openGenericSectionModal(sec = null) {
             <input type="text" id="generic-sec-name" required placeholder="Ví dụ: Giới thiệu khóa học...">
           </div>
           <div>
-            <label for="generic-sec-title">Tiêu đề (Hiển thị trên web)</label>
+            <label for="generic-sec-tag">Thẻ phụ (Chữ màu cam nhỏ)</label>
+            <input type="text" id="generic-sec-tag" placeholder="Ví dụ: BẠN ĐANG GẶP PHẢI?">
+          </div>
+          <div>
+            <label for="generic-sec-title">Tiêu đề chính (Hiển thị trên web)</label>
             <input type="text" id="generic-sec-title" placeholder="Tiêu đề chính của khối...">
           </div>
           <div>
-            <label for="generic-sec-content">Nội dung HTML (Hỗ trợ &lt;br&gt;, &lt;b&gt;, &lt;i&gt;...)</label>
-            <textarea id="generic-sec-content" rows="10" placeholder="Nội dung chi tiết..."></textarea>
+            <label>Nội dung chi tiết</label>
+            <div id="generic-sec-editor" style="height: 250px; background: #fff; color: #000; border-radius: 4px;"></div>
           </div>
           <div>
             <label class="toggle" style="display:inline-flex; align-items:center; gap:8px;">
@@ -1588,6 +1592,20 @@ function openGenericSectionModal(sec = null) {
     `;
     document.body.appendChild(modal);
     
+    // Initialize Quill
+    window.genericQuill = new Quill('#generic-sec-editor', {
+      theme: 'snow',
+      modules: {
+        toolbar: [
+          [{ 'header': [2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+          ['link', 'image', 'video'],
+          ['clean']
+        ]
+      }
+    });
+    
     modal.querySelector('form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = modal.querySelector('#btn-save-generic');
@@ -1598,8 +1616,9 @@ function openGenericSectionModal(sec = null) {
           token: state.token,
           id: modal.querySelector('#generic-sec-id').value,
           name: modal.querySelector('#generic-sec-name').value,
+          tag: modal.querySelector('#generic-sec-tag').value,
           title: modal.querySelector('#generic-sec-title').value,
-          contentHtml: modal.querySelector('#generic-sec-content').value,
+          contentHtml: window.genericQuill.root.innerHTML,
           enabled: modal.querySelector('#generic-sec-enabled').checked ? 'true' : 'false'
         };
         const res = await api('saveGenericSection', payload);
@@ -1618,8 +1637,11 @@ function openGenericSectionModal(sec = null) {
   modal.querySelector('#generic-modal-title').textContent = sec ? 'Sửa Khối Nội Dung' : 'Thêm Khối Nội Dung';
   modal.querySelector('#generic-sec-id').value = sec ? sec.id : '';
   modal.querySelector('#generic-sec-name').value = sec ? sec.name : '';
+  modal.querySelector('#generic-sec-tag').value = sec && sec.tag ? sec.tag : '';
   modal.querySelector('#generic-sec-title').value = sec ? sec.title : '';
-  modal.querySelector('#generic-sec-content').value = sec ? sec.contentHtml : '';
+  if (window.genericQuill) {
+    window.genericQuill.root.innerHTML = sec ? sec.contentHtml : '';
+  }
   modal.querySelector('#generic-sec-enabled').checked = sec ? sec.enabled : true;
   
   openModal(modal);
