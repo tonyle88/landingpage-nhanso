@@ -153,6 +153,8 @@ async function loadContent(showNotice = false) {
     state.packages = payload.packages || [];
     state.sectionsLayout = payload.sectionsLayout || [];
     state.paymentSettings = normalizePaymentSettings(payload.paymentSettings);
+    state.blogCategories = payload.blogCategories || [];
+    state.blogArticles = payload.blogArticles || [];
     state.originals = new Map(state.items.map((item) => [item.key, snapshotItem(item)]));
     render();
     if (showNotice) toast('Đã tải lại nội dung mới nhất.');
