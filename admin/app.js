@@ -7,18 +7,24 @@ const MANAGED_PACKAGE_CONTENT_PREFIXES = [
 ];
 
 const state = {
-  token: '',
+  token: null,
   user: null,
   items: [],
-  originals: new Map(),
-  sections: [],
-  selectedSection: 'all',
-  search: '',
-  savingKeys: new Set(),
-  feedbackImages: [],
+  sectionsLayout: [],
   packages: [],
+  feedbackImages: [],
   paymentSettings: {},
+  search: '',
+  selectedSection: 'all',
+  savingKeys: new Set(),
+  toastTimeout: null,
 };
+
+// Cấu hình Quill dùng inline style cho canh lề
+if (window.Quill) {
+  const AlignStyle = Quill.import('attributors/style/align');
+  Quill.register(AlignStyle, true);
+}
 
 const els = {
   loginScreen: document.getElementById('login-screen'),
@@ -414,6 +420,7 @@ function createContentCard(item) {
           toolbar: [
             [{ 'header': [2, 3, false] }],
             ['bold', 'italic', 'underline', 'strike'],
+            [{ 'align': [] }],
             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
             ['link', 'image', 'video'],
             ['clean']
@@ -442,7 +449,8 @@ function updateSingleCardState(card, item) {
 
 function shouldUseTextarea(item) {
   const type = item.type.toLowerCase();
-  return type === 'html' || item.value.length > 90 || item.value.includes('\n');
+  const key = item.key.toLowerCase();
+  return type === 'html' || key.includes('body') || key.includes('desc') || key.includes('content') || item.value.length > 90 || item.value.includes('\n');
 }
 
 function renderStats() {
@@ -1634,6 +1642,7 @@ function openGenericSectionModal(sec = null) {
         toolbar: [
           [{ 'header': [2, 3, false] }],
           ['bold', 'italic', 'underline', 'strike'],
+          [{ 'align': [] }],
           [{ 'list': 'ordered'}, { 'list': 'bullet' }],
           ['link', 'image', 'video'],
           ['clean']
