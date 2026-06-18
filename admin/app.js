@@ -1304,6 +1304,22 @@ async function savePaymentSettings(event) {
 //  Feedback Images Upload
 // =============================================
 function renderFeedbackImages() {
+  // Auto-cleanup blog thumbnails mistakenly added to feedback images
+  setTimeout(async () => {
+    if (!state.feedbackImages || !state.blogArticles || window.__cleanedUpFeedbackImages) return;
+    window.__cleanedUpFeedbackImages = true;
+    const blogThumbnails = state.blogArticles.map(a => a.thumbnail).filter(Boolean);
+    const overlaps = state.feedbackImages.filter(img => blogThumbnails.includes(img.url));
+    if (overlaps.length > 0) {
+      console.log('Cleaning up', overlaps.length, 'overlapping images');
+      for (let img of overlaps) {
+        try { await api('deleteFeedbackImage', { token: state.token, fileId: img.fileId }); } catch(e) {}
+      }
+      toast('Đã dọn dẹp các ảnh bị trùng lặp!');
+      loadContent(true); // reload the UI
+    }
+  }, 1000);
+
   els.editorGrid.innerHTML = `
     <div class="content-card" style="grid-column: 1/-1;">
       <div class="card-top">
