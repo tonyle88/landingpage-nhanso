@@ -152,6 +152,7 @@ function doPost(e) {
     if (action === 'deletePackage') return handleDeletePackage(params);
     if (action === 'savePaymentSettings') return handleSavePaymentSettings(params);
     if (action === 'uploadFeedbackImage') return handleUploadFeedbackImage(params);
+    if (action === 'uploadImage') return handleUploadImage(params);
     if (action === 'saveFeedbackImage') return handleSaveFeedbackImage(params);
     if (action === 'deleteFeedbackImage') return handleDeleteFeedbackImage(params);
     if (action === 'saveSectionsLayoutOrder') return handleSaveSectionsLayoutOrder(params);
@@ -1653,6 +1654,31 @@ function handleUploadFeedbackImage(params) {
     fallbackReason: imgBbError ? imgBbError.message : '',
     feedbackImages: getFeedbackImages(),
     scriptVersion: SCRIPT_VERSION
+  });
+}
+
+function handleUploadImage(params) {
+  requireAdminSession(params.token, ['admin', 'editor']);
+  const imageBase64 = cleanValue(params.imageBase64);
+  const filename = cleanValue(params.filename) || 'image_' + new Date().getTime() + '.jpg';
+
+  if (!imageBase64) throw new Error('Thieu du lieu anh can upload.');
+
+  let uploadResult;
+  let imgBbError = null;
+  try {
+    uploadResult = uploadFeedbackImageToImgBb(imageBase64, filename);
+  } catch (error) {
+    imgBbError = error;
+    uploadResult = uploadFeedbackImageToDrive(imageBase64, filename);
+  }
+
+  return jsonResponse({
+    ok: true,
+    message: imgBbError
+      ? 'ImgBB dang chan request, da luu anh tam qua Google Drive.'
+      : 'Upload thanh cong',
+    url: uploadResult.url
   });
 }
 

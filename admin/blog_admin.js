@@ -337,7 +337,7 @@ window.openBlogArticleModal = function(article = null) {
       modules: { toolbar: FULL_TOOLBAR }
     });
     
-    // Thumbnail file upload via api uploadFeedbackImage (reuses ImgBB pipeline)
+    // Thumbnail file upload via api uploadImage
     document.getElementById('article-thumb-file').addEventListener('change', async function() {
       const file = this.files[0];
       if (!file) return;
@@ -349,15 +349,13 @@ window.openBlogArticleModal = function(article = null) {
       try {
         const base64 = await resizeAndCompressImage(file);
         const cleanBase64 = base64.split('base64,')[1];
-        const res = await api('uploadFeedbackImage', {
+        const res = await api('uploadImage', {
           token: state.token,
           filename: file.name,
           imageBase64: cleanBase64
         });
-        if (res.url || (res.feedbackImages && res.feedbackImages.length)) {
-          // Get the latest uploaded image URL
-          const url = res.url || res.feedbackImages[res.feedbackImages.length - 1].url;
-          document.getElementById('article-thumbnail').value = url;
+        if (res.url) {
+          document.getElementById('article-thumbnail').value = res.url;
           statusEl.textContent = '✓ Tải lên thành công!';
           statusEl.style.color = 'var(--primary)';
         }
