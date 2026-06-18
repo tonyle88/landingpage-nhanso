@@ -95,11 +95,14 @@ window.renderBlogArticlesList = function(container) {
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 16px;">
       <div style="display: flex; align-items: center; gap: 12px;">
         <h3 style="margin: 0;">Danh sách bài viết</h3>
-        <select id="blog-category-filter" style="padding: 6px 12px; background: var(--surface-hover); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); outline: none;" onchange="window.blogAdminState.categoryFilter = this.value; window.blogAdminState.currentPage = 1; window.renderBlogArticlesList()">
-          <option value="ALL">Tất cả chủ đề</option>
-          ${catOptions}
-        </select>
-      </div>
+        <div style="position: relative; display: inline-flex; align-items: center;">
+          <i class="fa-solid fa-filter" style="position: absolute; left: 12px; color: var(--primary); pointer-events: none; font-size: 0.9rem;"></i>
+          <select id="blog-category-filter" style="appearance: none; padding: 8px 32px 8px 36px; background: rgba(212, 168, 67, 0.1); border: 1px solid var(--primary); border-radius: 20px; color: var(--primary); outline: none; font-weight: bold; cursor: pointer; min-width: 230px;" onchange="window.blogAdminState.categoryFilter = this.value; window.blogAdminState.currentPage = 1; window.renderBlogArticlesList()">
+            <option value="ALL">Lọc theo: Tất cả chủ đề</option>
+            ${catOptions}
+          </select>
+          <i class="fa-solid fa-chevron-down" style="position: absolute; right: 14px; color: var(--primary); pointer-events: none; font-size: 0.8rem;"></i>
+        </div>
       <button class="primary-button" onclick="openBlogArticleModal()"><i class="fa-solid fa-plus"></i> Viết bài mới</button>
     </div>
     <div class="user-list">
