@@ -1664,21 +1664,25 @@ function handleUploadImage(params) {
 
   if (!imageBase64) throw new Error('Thieu du lieu anh can upload.');
 
-  let uploadResult;
-  let imgBbError = null;
-  try {
-    uploadResult = uploadFeedbackImageToImgBb(imageBase64, filename);
-  } catch (error) {
-    imgBbError = error;
-    uploadResult = uploadFeedbackImageToDrive(imageBase64, filename);
-  }
+  // The specific Drive folder for blog images provided by the user
+  const folderId = '1dXKyPdPFVOGrmAQcVXKk2dJc9U2btEQ6';
+  
+  const safeFilename = filename;
+  const mimeType = getImageMimeTypeFromFilename(safeFilename);
+  const bytes = Utilities.base64Decode(imageBase64);
+  const blob = Utilities.newBlob(bytes, mimeType, safeFilename);
+  
+  const folder = DriveApp.getFolderById(folderId);
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  const fileId = file.getId();
+  const url = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(fileId) + '&sz=w1200';
 
   return jsonResponse({
     ok: true,
-    message: imgBbError
-      ? 'ImgBB dang chan request, da luu anh tam qua Google Drive.'
-      : 'Upload thanh cong',
-    url: uploadResult.url
+    message: 'Upload thanh cong len Google Drive',
+    url: url
   });
 }
 
