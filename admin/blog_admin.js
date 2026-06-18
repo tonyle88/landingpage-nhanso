@@ -65,13 +65,41 @@ window.renderBlogCategoriesList = function(container) {
   `;
 };
 
+window.blogAdminState = window.blogAdminState || {
+  categoryFilter: 'ALL',
+  currentPage: 1,
+  pageSize: 8
+};
+
 window.renderBlogArticlesList = function(container) {
+  if (!container) container = document.getElementById('blog-content-area');
+  
   const cats = {};
   (state.blogCategories || []).forEach(c => cats[c.id] = c.name);
   
-  container.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-      <h3>Danh sách bài viết</h3>
+  let articles = [...(state.blogArticles || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
+  
+  if (window.blogAdminState.categoryFilter !== 'ALL') {
+    articles = articles.filter(a => a.categoryId === window.blogAdminState.categoryFilter);
+  }
+  
+  const totalPages = Math.ceil(articles.length / window.blogAdminState.pageSize) || 1;
+  if (window.blogAdminState.currentPage > totalPages) window.blogAdminState.currentPage = totalPages;
+  
+  const startIndex = (window.blogAdminState.currentPage - 1) * window.blogAdminState.pageSize;
+  const paginatedArticles = articles.slice(startIndex, startIndex + window.blogAdminState.pageSize);
+  
+  const catOptions = (state.blogCategories || []).map(c => `<option value="${c.id}" ${window.blogAdminState.categoryFilter === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
+  
+  let html = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <h3 style="margin: 0;">Danh sách bài viết</h3>
+        <select id="blog-category-filter" style="padding: 6px 12px; background: var(--surface-hover); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); outline: none;" onchange="window.blogAdminState.categoryFilter = this.value; window.blogAdminState.currentPage = 1; window.renderBlogArticlesList()">
+          <option value="ALL">Tất cả chủ đề</option>
+          ${catOptions}
+        </select>
+      </div>
       <button class="primary-button" onclick="openBlogArticleModal()"><i class="fa-solid fa-plus"></i> Viết bài mới</button>
     </div>
     <div class="user-list">
@@ -83,7 +111,7 @@ window.renderBlogArticlesList = function(container) {
         <span>Ghim</span>
         <span style="text-align: right;">Thao tác</span>
       </div>
-      ${(state.blogArticles || []).map(a => `
+      ${paginatedArticles.map(a => `
         <div class="user-row" style="grid-template-columns: 60px 1fr 150px 100px 80px 100px; align-items: center;">
           <label class="toggle">
              <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleBlogArticle('${a.id}', this.checked)">
@@ -99,9 +127,21 @@ window.renderBlogArticlesList = function(container) {
           </div>
         </div>
       `).join('')}
-      ${(state.blogArticles || []).length === 0 ? '<div style="padding: 32px; text-align: center; color: var(--text-muted);">Chưa có bài viết nào.</div>' : ''}
+      ${paginatedArticles.length === 0 ? '<div style="padding: 32px; text-align: center; color: var(--text-muted);">Không tìm thấy bài viết nào.</div>' : ''}
     </div>
   `;
+  
+  if (totalPages > 1) {
+    html += `
+      <div style="display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 24px;">
+        <button class="ghost-button" ${window.blogAdminState.currentPage === 1 ? 'disabled style="opacity: 0.5;"' : ''} onclick="window.blogAdminState.currentPage--; window.renderBlogArticlesList()"><i class="fa-solid fa-chevron-left"></i> Trang trước</button>
+        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-muted);">Trang ${window.blogAdminState.currentPage} / ${totalPages}</span>
+        <button class="ghost-button" ${window.blogAdminState.currentPage === totalPages ? 'disabled style="opacity: 0.5;"' : ''} onclick="window.blogAdminState.currentPage++; window.renderBlogArticlesList()">Tiếp theo <i class="fa-solid fa-chevron-right"></i></button>
+      </div>
+    `;
+  }
+  
+  container.innerHTML = html;
 };
 
 window.openBlogCategoryModalById = function(id) {
