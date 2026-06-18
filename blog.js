@@ -247,7 +247,7 @@ function renderBlogHome() {
               <span style="font-size: 0.8rem; color: rgba(212,168,67,0.7); letter-spacing:1px;"><i class="fa-regular fa-clock"></i> ${a.date.replace('T', ' ')}</span>
             </div>
             <h3 style="font-family:'Playfair Display',serif; font-size:1.2rem; margin-bottom:12px; line-height:1.55; text-align:justify; color: #f0e0c0; font-weight:700;">${a.title}</h3>
-            <div style="color: rgba(200,180,150,0.75); font-size:0.9rem; line-height:1.65; flex:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;">${(a.summary || '').replace(/<[^>]*>/g, '')}</div>
+            <div style="color: rgba(235,215,185,0.9); font-size:0.9rem; line-height:1.65; flex:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;">${(a.summary || '').replace(/<[^>]*>/g, '')}</div>
             <!-- Read More Button -->
             <div style="margin-top:20px; display:flex; align-items:center; justify-content:center;">
               <span style="display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg, rgba(212,168,67,0.15), rgba(212,168,67,0.05)); border: 1px solid rgba(212,168,67,0.5); border-radius:24px; padding:8px 22px; font-size:0.88rem; font-weight:700; color: var(--primary); letter-spacing:0.5px; transition: all 0.3s; box-shadow: 0 0 12px rgba(212,168,67,0.1);">
@@ -331,7 +331,7 @@ function renderArticleDetail(id) {
       </div>
 
       <!-- Article Content -->
-      <div class="article-content" style="background: linear-gradient(160deg, rgba(26,16,6,0.6) 0%, rgba(15,10,3,0.7) 100%); border: 1px solid rgba(212,168,67,0.2); border-radius:20px; padding:40px 48px; font-size:1.08rem; line-height:1.9; color:rgba(220,200,170,0.9); box-shadow:0 0 40px rgba(0,0,0,0.4), inset 0 0 60px rgba(212,168,67,0.03); position:relative;">
+      <div class="article-content" style="background: linear-gradient(160deg, rgba(26,16,6,0.6) 0%, rgba(15,10,3,0.7) 100%); border: 1px solid rgba(212,168,67,0.2); border-radius:20px; padding:40px 48px; font-size:1.1rem; line-height:1.9; color:#f0e8d8; box-shadow:0 0 40px rgba(0,0,0,0.4), inset 0 0 60px rgba(212,168,67,0.03); position:relative;">
         <div style="position:absolute; top:0; left:0; width:24px; height:24px; border-top:2px solid rgba(212,168,67,0.5); border-left:2px solid rgba(212,168,67,0.5); border-radius:20px 0 0 0;"></div>
         <div style="position:absolute; top:0; right:0; width:24px; height:24px; border-top:2px solid rgba(212,168,67,0.5); border-right:2px solid rgba(212,168,67,0.5); border-radius:0 20px 0 0;"></div>
         <div style="position:absolute; bottom:0; left:0; width:24px; height:24px; border-bottom:2px solid rgba(212,168,67,0.5); border-left:2px solid rgba(212,168,67,0.5); border-radius:0 0 0 20px;"></div>
