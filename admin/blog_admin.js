@@ -44,7 +44,7 @@ window.renderBlogCategoriesList = function(container) {
       <button class="primary-button" onclick="openBlogCategoryModal()"><i class="fa-solid fa-plus"></i> Thêm Chủ đề</button>
     </div>
     <div class="user-list">
-      <div class="user-header" style="grid-template-columns: 150px 1fr 100px 100px;">
+      <div class="user-header" style="display: grid; gap: 10px; padding: 0 12px 12px 12px; font-weight: bold; color: var(--text-muted); border-bottom: 1px solid var(--line); margin-bottom: 8px; grid-template-columns: 150px 1fr 100px 100px;">
         <span>Mã chủ đề</span>
         <span>Tên chủ đề</span>
         <span>Thứ tự</span>
@@ -106,7 +106,7 @@ window.renderBlogArticlesList = function(container) {
       <button class="primary-button" onclick="openBlogArticleModal()"><i class="fa-solid fa-plus"></i> Viết bài mới</button>
     </div>
     <div class="user-list">
-      <div class="user-header" style="grid-template-columns: 60px 1fr 150px 100px 80px 100px;">
+      <div class="user-header" style="display: grid; gap: 10px; padding: 0 12px 12px 12px; font-weight: bold; color: var(--text-muted); border-bottom: 1px solid var(--line); margin-bottom: 8px; grid-template-columns: 60px 1fr 150px 100px 80px 100px;">
         <span>Bật</span>
         <span>Tiêu đề</span>
         <span>Chủ đề</span>
@@ -122,7 +122,7 @@ window.renderBlogArticlesList = function(container) {
           </label>
           <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(a.title)}</strong>
           <span class="pill" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(cats[a.categoryId] || a.categoryId)}</span>
-          <span>${escapeHtml(a.date)}</span>
+          <span style="font-size: 0.9rem;">${escapeHtml(a.date.replace('T', ' '))}</span>
           <span style="color: var(--primary);">${a.pinned ? '<i class="fa-solid fa-thumbtack"></i>' : ''}</span>
           <div style="text-align: right; display: flex; gap: 8px; justify-content: flex-end;">
             <button class="icon-button" onclick="openBlogArticleModalById('${a.id}')"><i class="fa-solid fa-pen"></i></button>
@@ -256,8 +256,8 @@ window.openBlogArticleModal = function(article = null) {
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
             <div>
-              <label for="article-date">Ngày đăng</label>
-              <input type="date" id="article-date" required>
+              <label for="article-date">Ngày và giờ đăng</label>
+              <input type="datetime-local" id="article-date" required>
             </div>
             <div>
               <label for="article-thumbnail">Ảnh Thumbnail</label>
@@ -409,7 +409,14 @@ window.openBlogArticleModal = function(article = null) {
   modal.querySelector('#article-id').value = article ? article.id : '';
   modal.querySelector('#article-title').value = article ? article.title : '';
   modal.querySelector('#article-category').value = article ? article.categoryId : '';
-  modal.querySelector('#article-date').value = article ? article.date : new Date().toISOString().slice(0,10);
+  
+  const now = new Date();
+  const localDatetime = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + 'T' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  let dateValue = localDatetime;
+  if (article && article.date) {
+    dateValue = article.date.includes('T') ? article.date.slice(0,16) : article.date + 'T00:00';
+  }
+  modal.querySelector('#article-date').value = dateValue;
   modal.querySelector('#article-thumbnail').value = article ? (article.thumbnail || '') : '';
   if (window.summaryQuill) {
     window.summaryQuill.root.innerHTML = article ? (article.summary || '') : '';

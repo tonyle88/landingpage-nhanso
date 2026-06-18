@@ -213,7 +213,7 @@ function renderBlogHome() {
           </div>
           <div style="padding: 20px; flex: 1; display: flex; flex-direction: column;">
             <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">
-              <i class="fa-regular fa-calendar"></i> ${a.date}
+              <i class="fa-regular fa-calendar"></i> ${a.date.replace('T', ' ')}
             </div>
             <h3 style="font-size: 1.25rem; margin-bottom: 12px; line-height: 1.4; text-align: justify;">${a.title}</h3>
             <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; margin-bottom: 16px; flex: 1;">${a.summary || ''}</p>
@@ -266,7 +266,7 @@ function renderArticleDetail(id) {
           <span style="color: var(--border);">|</span>
           <span class="pill">${catName}</span>
           <span style="color: var(--border);">|</span>
-          <span style="color: var(--text-muted);"><i class="fa-regular fa-calendar"></i> ${article.date}</span>
+          <span style="color: var(--text-muted);"><i class="fa-regular fa-calendar"></i> ${article.date.replace('T', ' ')}</span>
         </div>
         <h1 style="font-size: 2.5rem; line-height: 1.3; margin-bottom: 24px;">${article.title}</h1>
         ${article.thumbnail ? `<div style="width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 32px;"><img src="${article.thumbnail}" style="width: 100%; display: block;"></div>` : ''}
@@ -290,7 +290,7 @@ function renderArticleDetail(id) {
           ${r.thumbnail ? `<div style="width: 120px; height: 80px; flex-shrink: 0; border-radius: 4px; overflow: hidden;"><img src="${r.thumbnail}" style="width: 100%; height: 100%; object-fit: cover;"></div>` : ''}
           <div style="display: flex; flex-direction: column; justify-content: center;">
             <h4 style="font-size: 1.1rem; margin-bottom: 8px; line-height: 1.4;">${r.title}</h4>
-            <div style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-regular fa-calendar"></i> ${r.date}</div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-regular fa-calendar"></i> ${r.date.replace('T', ' ')}</div>
           </div>
         </a>
       `;
