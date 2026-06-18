@@ -200,7 +200,7 @@ function renderBlogHome() {
               <div style="height: 1px; width: 60px; background: linear-gradient(to left, transparent, var(--primary));"></div>
             </div>
             <!-- Main ribbon banner -->
-            <div style="position: relative; background: linear-gradient(135deg, #1a1006 0%, #2e1f07 40%, #3b2608 60%, #1a1006 100%); border: 1px solid rgba(212,168,67,0.6); border-radius: 4px; padding: 14px 60px; box-shadow: 0 0 30px rgba(212,168,67,0.2), inset 0 0 40px rgba(0,0,0,0.5);">
+            <div style="position: relative; background: linear-gradient(135deg, #1a1006 0%, #2e1f07 40%, #3b2608 60%, #1a1006 100%); border: 1px solid rgba(212,168,67,0.6); border-radius: 4px; padding: 14px 48px; box-shadow: 0 0 30px rgba(212,168,67,0.2), inset 0 0 40px rgba(0,0,0,0.5);">
               <!-- Left ribbon fold -->
               <div style="position: absolute; left: -16px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-style: solid; border-width: 22px 16px 22px 0; border-color: transparent #0f0b03 transparent transparent; filter: drop-shadow(2px 0 3px rgba(0,0,0,0.5));"></div>
               <div style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 4px; height: 44px; background: linear-gradient(to bottom, #8a6520, #d4a843, #8a6520);"></div>
@@ -208,7 +208,7 @@ function renderBlogHome() {
               <div style="position: absolute; right: -16px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-style: solid; border-width: 22px 0 22px 16px; border-color: transparent transparent transparent #0f0b03; filter: drop-shadow(-2px 0 3px rgba(0,0,0,0.5));"></div>
               <div style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 4px; height: 44px; background: linear-gradient(to bottom, #8a6520, #d4a843, #8a6520);"></div>
               <!-- Title text -->
-              <h2 style="margin: 0; font-family: 'Playfair Display', serif; font-size: clamp(1.5rem, 4vw, 2.4rem); font-weight: 800; background: linear-gradient(180deg, #f5d98a 0%, #d4a843 50%, #a07830 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 1px; text-shadow: none; white-space: nowrap;">${cat.name}</h2>
+              <h2 style="margin: 0; font-family: 'Playfair Display', serif; font-size: clamp(1.1rem, 5vw, 2.4rem); font-weight: 800; background: linear-gradient(180deg, #f5d98a 0%, #d4a843 50%, #a07830 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 1px; text-shadow: none; white-space: normal; word-break: break-word; text-align: center; line-height: 1.3;">${cat.name}</h2>
             </div>
             <!-- Stars decoration -->
             <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 16px;">
@@ -301,13 +301,13 @@ function renderArticleDetail(id) {
     <div style="max-width: 820px; margin: 0 auto;">
       
       <!-- Back Button Row -->
-      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:36px;">
-        <a href="blog.html" style="display:inline-flex; align-items:center; gap:10px; background: rgba(212,168,67,0.08); border: 1px solid rgba(212,168,67,0.4); color: var(--primary); font-weight:700; padding:10px 22px; border-radius:32px; text-decoration:none; font-size:0.9rem; letter-spacing:0.5px; transition: all 0.3s; box-shadow: 0 0 12px rgba(212,168,67,0.1);" onmouseover="this.style.background='rgba(212,168,67,0.18)'; this.style.boxShadow='0 0 20px rgba(212,168,67,0.3)';" onmouseout="this.style.background='rgba(212,168,67,0.08)'; this.style.boxShadow='0 0 12px rgba(212,168,67,0.1)';">
+      <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:36px;">
+        <a href="blog.html" style="display:inline-flex; align-items:center; gap:10px; background: rgba(212,168,67,0.08); border: 1px solid rgba(212,168,67,0.4); color: var(--primary); font-weight:700; padding:10px 22px; border-radius:32px; text-decoration:none; font-size:0.9rem; letter-spacing:0.5px; transition: all 0.3s; box-shadow: 0 0 12px rgba(212,168,67,0.1); align-self:flex-start;" onmouseover="this.style.background='rgba(212,168,67,0.18)'; this.style.boxShadow='0 0 20px rgba(212,168,67,0.3)';" onmouseout="this.style.background='rgba(212,168,67,0.08)'; this.style.boxShadow='0 0 12px rgba(212,168,67,0.1)';">
           <i class="fa-solid fa-arrow-left"></i> Quay lại Danh Sách
         </a>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <span style="background: linear-gradient(135deg, rgba(212,168,67,0.2), rgba(212,168,67,0.05)); border: 1px solid rgba(212,168,67,0.4); color: var(--primary); padding:6px 16px; border-radius:20px; font-size:0.8rem; font-weight:700; letter-spacing:1px;">${catName}</span>
-          <span style="font-size:0.82rem; color:rgba(212,168,67,0.6);"><i class="fa-regular fa-clock"></i> ${article.date.replace('T', ' ')}</span>
+        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
+          <span style="background: linear-gradient(135deg, rgba(212,168,67,0.2), rgba(212,168,67,0.05)); border: 1px solid rgba(212,168,67,0.4); color: var(--primary); padding:6px 16px; border-radius:20px; font-size:0.8rem; font-weight:700; letter-spacing:1px; white-space:nowrap;">${catName}</span>
+          <span style="font-size:0.82rem; color:rgba(212,168,67,0.6); white-space:nowrap;"><i class="fa-regular fa-clock"></i> ${article.date.replace('T', ' ')}</span>
         </div>
       </div>
 
