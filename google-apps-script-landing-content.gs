@@ -1686,6 +1686,49 @@ function handleUploadImage(params) {
   });
 }
 
+// ==========================================
+// MIGRATION SCRIPT: Cập nhật toàn bộ ảnh bài viết sang Drive
+// ==========================================
+function migrateBlogImagesToDrive() {
+  const folderId = '1dXKyPdPFVOGrmAQcVXKk2dJc9U2btEQ6';
+  const folder = DriveApp.getFolderById(folderId);
+  const sheet = ensureBlogArticlesSheet();
+  const data = sheet.getDataRange().getValues();
+  
+  if (data.length <= 1) return 'Không có bài viết nào để cập nhật.';
+  
+  let updatedCount = 0;
+  
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const title = row[1];
+    let thumbnailUrl = row[4];
+    
+    // Nếu ảnh chưa phải là Drive link, ta sẽ tải về và up lên Drive
+    if (thumbnailUrl && thumbnailUrl.indexOf('drive.google.com') === -1) {
+      try {
+        const response = UrlFetchApp.fetch(thumbnailUrl);
+        const blob = response.getBlob();
+        blob.setName('blog_' + title.replace(/[^a-zA-Z0-9]/g, '_') + '.jpg');
+        
+        const file = folder.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        
+        const newUrl = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(file.getId()) + '&sz=w1200';
+        
+        // Cập nhật lại cột Thumbnail (Cột E -> index 4 + 1 = 5)
+        sheet.getRange(i + 1, 5).setValue(newUrl);
+        updatedCount++;
+      } catch (err) {
+        Logger.log('Lỗi khi tải ảnh bài viết: ' + title + ' - ' + err.message);
+      }
+    }
+  }
+  
+  clearLandingContentCache();
+  return 'Đã cập nhật thành công ' + updatedCount + ' ảnh bài viết sang Drive!';
+}
+
 function handleSaveFeedbackImage(params) {
   const session = requireAdminSession(params.token);
   const url = cleanValue(params.url);
