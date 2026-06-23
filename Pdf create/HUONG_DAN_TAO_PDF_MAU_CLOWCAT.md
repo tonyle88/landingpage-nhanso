@@ -23,12 +23,32 @@ Mỗi lần tạo PDF mới:
 
 Nếu thiếu PDF hoặc ảnh map trong `input`, script phải báo lỗi ngay, không được tự lấy file khách cũ.
 
+## Khung Sườn PDF Trắng
+
+Để làm nhanh hơn, dự án có thêm file dựng khung sườn:
+
+- `Pdf create/build_clowcat_blank_template_pdf.py`
+- File PDF khung xuất ra:
+  - `Pdf create/templates/CLOWCAT_KHUNG_SUON_TEMPLATE.pdf`
+  - `Pdf files/output/CLOWCAT_KHUNG_SUON_TEMPLATE.pdf`
+
+Khung sườn này giữ sẵn toàn bộ layout Clow Cat, gồm bìa, 7 chỉ số, biểu đồ ngày sinh, map viết tay, nợ nghiệp, 3 chu kỳ cuộc đời lớn, 4 đỉnh cao/kim tự tháp và thông điệp chữa lành. Nội dung bên trong để dạng `[placeholder]`.
+
+Quy tắc dùng:
+
+1. Không dùng khung sườn trắng làm file gửi khách cuối.
+2. Dùng khung sườn để nhìn cấu trúc và fill dữ liệu nhanh vào `build_vietnamese_report_pdf.py`.
+3. Khi đổi design, sửa cả file tạo PDF thật và file khung sườn để hai bên đồng bộ.
+4. Ba số bìa trong khung sườn vẫn cố định là `7 - 3 - 4`.
+
 ## Mang Sang Dự Án Khác
 
 Copy nguyên bộ này sang project mới:
 
 - `Pdf create/build_vietnamese_report_pdf.py`
+- `Pdf create/build_clowcat_blank_template_pdf.py`
 - `Pdf create/HUONG_DAN_TAO_PDF_MAU_CLOWCAT.md`
+- `Pdf create/templates/CLOWCAT_KHUNG_SUON_TEMPLATE.pdf`
 - `Pdf create/assets/images/logo.png`
 - `Pdf create/assets/images/hero_bg.png`
 - `Pdf create/assets/images/hero_bg_a4_cover.jpg`
@@ -129,9 +149,10 @@ Trang bìa giữ đúng phong cách Clow Cat:
 - Tên khách hàng nổi bật hơn ngày sinh, dùng màu accent sáng và có bóng nhẹ.
 - Mô tả ngắn nằm trong khung riêng, không đụng cụm 3 số.
 - Ba ô chỉ số chính:
-  - `CHỈ SỐ CỐT LÕI`
-  - `CHU KỲ CUỘC ĐỜI LỚN`
-  - `ĐỈNH CAO CUỘC ĐỜI`
+  - Số cố định `7` với label `CHỈ SỐ CỐT LÕI`.
+  - Số cố định `3` với label `CHU KỲ CUỘC ĐỜI LỚN`.
+  - Số cố định `4` với label `ĐỈNH CAO CUỘC ĐỜI`.
+- Tuyệt đối không đổi 3 số bìa `7 - 3 - 4` theo chỉ số khách hàng; đây là cấu trúc cố định của mẫu bìa Clow Cat.
 - Chữ dưới 3 số phải IN HOA.
 - Ba số chính phải nằm giữa card, có halo/viền nhẹ, màu nổi bật.
 - Label dưới số phải cách halo đủ thoáng, không chèn vào vòng tròn.

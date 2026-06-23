@@ -8,10 +8,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupMusic();
   initParticles();
   
+  const CACHE_KEY = 'blog_landing_cache';
+  const CACHE_TTL = 5 * 60 * 1000; // 5 phút
+
+  // Hiển thị dữ liệu từ cache ngay lập tức nếu có
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const { ts, data } = JSON.parse(cached);
+      if (Date.now() - ts < CACHE_TTL) {
+        blogCategories = data.blogCategories || [];
+        blogArticles = data.blogArticles || [];
+        const urlParams = new URLSearchParams(window.location.search);
+        const articleId = urlParams.get('id');
+        if (articleId) renderArticleDetail(articleId);
+        else renderBlogHome();
+        document.body.classList.remove('landing-content-loading');
+      }
+    }
+  } catch(e) {}
+
+  // Luôn fetch mới ở nền để cập nhật cache
   try {
     const res = await fetch(`${SCRIPT_URL}?action=getLandingContent`);
     const data = await res.json();
     if (data.ok) {
+      // Lưu cache
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+
       blogCategories = data.blogCategories || [];
       blogArticles = data.blogArticles || [];
       
@@ -125,6 +149,10 @@ function initParticles() {
   let W = window.innerWidth, H = window.innerHeight;
   canvas.width = W; canvas.height = H;
 
+  // Giảm số hạt trên mobile để tăng hiệu suất
+  const isMobile = W < 768;
+  const particleCount = isMobile ? 30 : 55;
+
   const colors = [
     'rgba(217, 78, 31, alpha)',
     'rgba(212, 168, 67, alpha)',
@@ -132,7 +160,7 @@ function initParticles() {
     'rgba(27, 97, 107, alpha)',
   ];
   const particles = [];
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < particleCount; i++) {
     particles.push({
       x: Math.random() * W, y: Math.random() * H,
       r: Math.random() * 2.5 + 0.5,
@@ -143,7 +171,12 @@ function initParticles() {
       pulse: Math.random() * Math.PI * 2,
     });
   }
-  function animate() {
+
+  let lastFrame = 0;
+  function animate(ts) {
+    // Giới hạn 40fps thay vì 60fps để giảm CPU
+    if (ts - lastFrame < 25) { requestAnimationFrame(animate); return; }
+    lastFrame = ts;
     ctx.clearRect(0, 0, W, H);
     particles.forEach(p => {
       p.x += p.dx; p.y += p.dy; p.pulse += 0.02;
@@ -155,19 +188,22 @@ function initParticles() {
       ctx.fillStyle = p.color.replace('alpha', alpha);
       ctx.fill();
     });
-    particles.forEach((p, i) => {
-      particles.slice(i + 1, i + 5).forEach(q => {
-        const dist = Math.hypot(p.x - q.x, p.y - q.y);
-        if (dist < 120) {
-          ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
-          ctx.strokeStyle = `rgba(212, 168, 67, ${(1 - dist / 120) * 0.08})`;
-          ctx.lineWidth = 0.5; ctx.stroke();
-        }
+    // Bỏ vẽ đường kết nối trên mobile để nhẹ hơn
+    if (!isMobile) {
+      particles.forEach((p, i) => {
+        particles.slice(i + 1, i + 4).forEach(q => {
+          const dist = Math.hypot(p.x - q.x, p.y - q.y);
+          if (dist < 100) {
+            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
+            ctx.strokeStyle = `rgba(212, 168, 67, ${(1 - dist / 100) * 0.08})`;
+            ctx.lineWidth = 0.5; ctx.stroke();
+          }
+        });
       });
-    });
+    }
     requestAnimationFrame(animate);
   }
-  animate();
+  requestAnimationFrame(animate);
   window.addEventListener('resize', () => {
     W = window.innerWidth; H = window.innerHeight;
     canvas.width = W; canvas.height = H;
