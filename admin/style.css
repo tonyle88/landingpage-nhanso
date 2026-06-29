@@ -270,6 +270,17 @@ a {
   border-color: rgba(240, 201, 106, 0.38);
 }
 
+.blog-pin-button {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.blog-pin-button.is-pinned {
+  color: #101010;
+  background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+  border-color: rgba(240, 201, 106, 0.72);
+  box-shadow: 0 0 18px rgba(240, 201, 106, 0.24);
+}
+
 .primary-button:disabled,
 .ghost-button:disabled,
 .icon-button:disabled {

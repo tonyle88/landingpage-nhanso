@@ -123,7 +123,14 @@ window.renderBlogArticlesList = function(container) {
           <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(a.title)}</strong>
           <span class="pill" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(cats[a.categoryId] || a.categoryId)}</span>
           <span style="font-size: 0.9rem;">${escapeHtml(a.date.replace('T', ' '))}</span>
-          <span style="color: var(--primary);">${a.pinned ? '<i class="fa-solid fa-thumbtack"></i>' : ''}</span>
+          <button
+            class="icon-button blog-pin-button ${a.pinned ? 'is-pinned' : ''}"
+            title="${a.pinned ? 'Bỏ ghim bài viết' : 'Ghim bài viết lên đầu'}"
+            aria-label="${a.pinned ? 'Bỏ ghim bài viết' : 'Ghim bài viết lên đầu'}"
+            onclick="toggleBlogArticlePinned('${a.id}', ${a.pinned ? 'false' : 'true'})"
+          >
+            <i class="fa-solid fa-thumbtack"></i>
+          </button>
           <div style="text-align: right; display: flex; gap: 8px; justify-content: flex-end;">
             <button class="icon-button" onclick="openBlogArticleModalById('${a.id}')"><i class="fa-solid fa-pen"></i></button>
             <button class="icon-button" style="color: var(--danger);" onclick="deleteBlogArticle('${a.id}')"><i class="fa-solid fa-trash"></i></button>
@@ -243,6 +250,7 @@ window.openBlogArticleModal = function(article = null) {
         </header>
         <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
           <input type="hidden" id="article-id" value="">
+          <input type="hidden" id="article-original-date" value="">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
             <div>
               <label for="article-title">Tiêu đề bài viết</label>
@@ -379,7 +387,7 @@ window.openBlogArticleModal = function(article = null) {
           id: modal.querySelector('#article-id').value,
           title: modal.querySelector('#article-title').value,
           categoryId: modal.querySelector('#article-category').value,
-          date: modal.querySelector('#article-date').value,
+          date: modal.querySelector('#article-date').value || modal.querySelector('#article-original-date').value,
           thumbnail: modal.querySelector('#article-thumbnail').value,
           summary: window.summaryQuill ? window.summaryQuill.root.innerHTML : '',
           contentHtml: window.articleQuill.root.innerHTML,
@@ -408,12 +416,10 @@ window.openBlogArticleModal = function(article = null) {
   modal.querySelector('#article-title').value = article ? article.title : '';
   modal.querySelector('#article-category').value = article ? article.categoryId : '';
   
-  const now = new Date();
-  const localDatetime = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + 'T' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-  let dateValue = localDatetime;
-  if (article && article.date) {
-    dateValue = article.date.includes('T') ? article.date.slice(0,16) : article.date + 'T00:00';
-  }
+  const dateValue = article
+    ? toDatetimeLocalValue(article.date, getCurrentDatetimeLocal())
+    : getCurrentDatetimeLocal();
+  modal.querySelector('#article-original-date').value = article ? (article.date || '') : '';
   modal.querySelector('#article-date').value = dateValue;
   modal.querySelector('#article-thumbnail').value = article ? (article.thumbnail || '') : '';
   if (window.summaryQuill) {
@@ -470,3 +476,55 @@ window.toggleBlogArticle = async function(id, enabled) {
     if (state.selectedSection === 'blog-manager') renderBlogManager();
   }
 };
+
+window.toggleBlogArticlePinned = async function(id, pinned) {
+  const article = state.blogArticles.find(a => a.id === id);
+  if (!article) return;
+  try {
+    const payload = {
+      action: 'saveBlogArticle',
+      token: state.token,
+      ...article,
+      pinned: pinned ? 'true' : 'false'
+    };
+    const res = await api('saveBlogArticle', payload);
+    state.blogArticles = res.blogArticles;
+    toast(pinned ? 'Đã ghim bài viết lên đầu' : 'Đã bỏ ghim bài viết');
+    if (state.selectedSection === 'blog-manager') renderBlogManager();
+  } catch (error) {
+    toast(error.message, 'error');
+    if (state.selectedSection === 'blog-manager') renderBlogManager();
+  }
+};
+
+function getCurrentDatetimeLocal() {
+  const now = new Date();
+  return now.getFullYear() + '-' +
+    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+    String(now.getDate()).padStart(2, '0') + 'T' +
+    String(now.getHours()).padStart(2, '0') + ':' +
+    String(now.getMinutes()).padStart(2, '0');
+}
+
+function toDatetimeLocalValue(value, fallback = '') {
+  const raw = String(value || '').trim();
+  if (!raw) return fallback;
+
+  const isoLike = raw.match(/^(\d{4}-\d{2}-\d{2})(?:[T\s]+(\d{1,2}):(\d{2})(?::\d{2})?)?/);
+  if (isoLike) {
+    const hours = isoLike[2] ? isoLike[2].padStart(2, '0') : '00';
+    const minutes = isoLike[3] || '00';
+    return `${isoLike[1]}T${hours}:${minutes}`;
+  }
+
+  const slashDate = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[,\s]+(\d{1,2}):(\d{2}))?/);
+  if (slashDate) {
+    const day = slashDate[1].padStart(2, '0');
+    const month = slashDate[2].padStart(2, '0');
+    const hours = slashDate[4] ? slashDate[4].padStart(2, '0') : '00';
+    const minutes = slashDate[5] || '00';
+    return `${slashDate[3]}-${month}-${day}T${hours}:${minutes}`;
+  }
+
+  return fallback;
+}
