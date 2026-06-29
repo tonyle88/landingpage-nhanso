@@ -394,6 +394,9 @@ window.openBlogArticleModal = function(article = null) {
           enabled: modal.querySelector('#article-enabled').checked ? 'true' : 'false',
           pinned: modal.querySelector('#article-pinned').checked ? 'true' : 'false'
         };
+        if (!payload.categoryId) {
+          throw new Error('Vui lòng chọn chủ đề cho bài viết.');
+        }
         const res = await api('saveBlogArticle', payload);
         state.blogArticles = res.blogArticles;
         toast('Đã lưu bài viết.');
@@ -409,7 +412,10 @@ window.openBlogArticleModal = function(article = null) {
   
   // Populate categories
   const catSelect = modal.querySelector('#article-category');
-  catSelect.innerHTML = (state.blogCategories || []).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  catSelect.innerHTML = `
+    <option value="" disabled ${article ? '' : 'selected'}>Vui lòng chọn chủ đề</option>
+    ${(state.blogCategories || []).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}
+  `;
   
   modal.querySelector('#article-modal-title').textContent = article ? 'Sửa Bài Viết' : 'Viết Bài Mới';
   modal.querySelector('#article-id').value = article ? article.id : '';
