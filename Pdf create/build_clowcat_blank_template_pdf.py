@@ -1,5 +1,9 @@
 import os
 
+# Source-of-truth layout skeleton for the Clow Cat PDF.
+# Use this file as the fixed visual/form reference before filling customer data
+# into `build_vietnamese_report_pdf.py`.
+
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4

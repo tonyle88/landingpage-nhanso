@@ -23,6 +23,8 @@ Mỗi lần tạo PDF mới:
 
 Nếu thiếu PDF hoặc ảnh map trong `input`, script phải báo lỗi ngay, không được tự lấy file khách cũ.
 
+Luôn dùng `Pdf create/build_clowcat_blank_template_pdf.py` làm khung sườn chuẩn trước, rồi chỉ fill dữ liệu khách vào `Pdf create/build_vietnamese_report_pdf.py`. Không dựng layout lại từ đầu.
+
 ## Khung Sườn PDF Trắng
 
 Để làm nhanh hơn, dự án có thêm file dựng khung sườn:
@@ -37,7 +39,7 @@ Khung sườn này giữ sẵn toàn bộ layout Clow Cat, gồm bìa, 7 chỉ s
 Quy tắc dùng:
 
 1. Không dùng khung sườn trắng làm file gửi khách cuối.
-2. Dùng khung sườn để nhìn cấu trúc và fill dữ liệu nhanh vào `build_vietnamese_report_pdf.py`.
+2. Dùng `build_clowcat_blank_template_pdf.py` làm form gốc/source of truth để nhìn cấu trúc và fill dữ liệu nhanh vào `build_vietnamese_report_pdf.py`.
 3. Khi đổi design, sửa cả file tạo PDF thật và file khung sườn để hai bên đồng bộ.
 4. Ba số bìa trong khung sườn vẫn cố định là `7 - 3 - 4`.
 

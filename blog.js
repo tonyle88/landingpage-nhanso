@@ -2,6 +2,10 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3m9zkv9mX-BgMtB7DZ
 
 let blogCategories = [];
 let blogArticles = [];
+let blogSearchState = {
+  query: '',
+  categoryId: 'ALL',
+};
 
 document.addEventListener('DOMContentLoaded', async () => {
   setupNavbar();
@@ -212,7 +216,38 @@ function initParticles() {
 
 function renderBlogHome() {
   const container = document.getElementById('blog-container');
-  let html = '';
+  const enabledArticles = blogArticles.filter(a => a.enabled);
+  const totalArticles = enabledArticles.length;
+  const categoryOptions = blogCategories
+    .filter(cat => enabledArticles.some(a => a.categoryId === cat.id))
+    .map(cat => `<option value="${escapeAttribute(cat.id)}">${escapeHtml(cat.name)}</option>`)
+    .join('');
+  let html = `
+    <section class="blog-search-panel" aria-label="Tìm kiếm bài viết giải mã nhân số học">
+      <div class="blog-search-heading">
+        <span>Tra cứu bài viết</span>
+        <strong>Giải Mã Nhân Số Học</strong>
+      </div>
+      <div class="blog-search-controls">
+        <label class="blog-search-input-wrap" for="blog-search-input">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <input id="blog-search-input" type="search" placeholder="Tìm theo tên bài viết hoặc nội dung..." autocomplete="off" />
+        </label>
+        <label class="blog-category-select-wrap" for="blog-category-filter">
+          <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+          <select id="blog-category-filter">
+            <option value="ALL">Tất cả chủ đề</option>
+            ${categoryOptions}
+          </select>
+        </label>
+      </div>
+      <div class="blog-search-meta">
+        <span id="blog-search-count">Đang hiển thị ${totalArticles} bài viết</span>
+        <button type="button" id="blog-search-clear" class="blog-search-clear" hidden>Xóa lọc</button>
+      </div>
+    </section>
+    <div id="blog-results">
+  `;
   
   blogCategories.forEach(cat => {
     const articles = blogArticles
@@ -225,7 +260,7 @@ function renderBlogHome() {
     if (articles.length === 0) return;
     
     html += `
-      <section style="margin-bottom: 100px;">
+      <section class="blog-category-section" data-blog-category="${escapeAttribute(cat.id)}" style="margin-bottom: 100px;">
         <!-- Category Banner -->
         <div style="text-align: center; margin: 0 0 56px; position: relative;">
           <div style="position: relative; display: inline-block;">
@@ -259,8 +294,14 @@ function renderBlogHome() {
     `;
     
     articles.forEach(a => {
+      const searchText = normalizeSearchText([
+        a.title,
+        cat.name,
+        stripHtml(a.summary),
+        stripHtml(a.contentHtml),
+      ].join(' '));
       html += `
-        <a href="?id=${a.id}" class="blog-card-link" style="display: flex; flex-direction: column; background: linear-gradient(160deg, rgba(26,16,6,0.95) 0%, rgba(20,13,5,0.98) 100%); border: 1px solid rgba(212,168,67,0.25); border-radius: 16px; overflow: hidden; text-decoration: none; color: inherit; position: relative; transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s ease, border-color 0.3s ease;"
+        <a href="?id=${a.id}" class="blog-card-link" data-blog-category="${escapeAttribute(cat.id)}" data-blog-search="${escapeAttribute(searchText)}" style="display: flex; flex-direction: column; background: linear-gradient(160deg, rgba(26,16,6,0.95) 0%, rgba(20,13,5,0.98) 100%); border: 1px solid rgba(212,168,67,0.25); border-radius: 16px; overflow: hidden; text-decoration: none; color: inherit; position: relative; transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s ease, border-color 0.3s ease;"
           onmouseover="this.style.transform='translateY(-8px)'; this.style.boxShadow='0 20px 60px rgba(212,168,67,0.25), 0 0 20px rgba(212,168,67,0.1)'; this.style.borderColor='rgba(212,168,67,0.7)';"
           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='rgba(212,168,67,0.25)';">
           <!-- Corner accents -->
@@ -301,11 +342,119 @@ function renderBlogHome() {
     `;
   });
   
-  if (!html) {
+  html += `
+    </div>
+    <div id="blog-search-empty" class="blog-search-empty" hidden>
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <h2>Không tìm thấy bài viết phù hợp</h2>
+      <p>Thử đổi từ khóa hoặc chọn lại chủ đề khác nhé.</p>
+    </div>
+  `;
+
+  if (totalArticles === 0) {
     html = '<div style="text-align: center; padding: 60px; color: var(--text-muted);">Chưa có bài viết nào.</div>';
   }
   
   container.innerHTML = html;
+  setupBlogSearch();
+}
+
+function setupBlogSearch() {
+  const input = document.getElementById('blog-search-input');
+  const select = document.getElementById('blog-category-filter');
+  const clearBtn = document.getElementById('blog-search-clear');
+  if (!input || !select) return;
+
+  input.value = blogSearchState.query;
+  select.value = blogSearchState.categoryId;
+
+  input.addEventListener('input', () => {
+    blogSearchState.query = input.value;
+    applyBlogFilters();
+  });
+
+  select.addEventListener('change', () => {
+    blogSearchState.categoryId = select.value;
+    applyBlogFilters();
+  });
+
+  clearBtn?.addEventListener('click', () => {
+    blogSearchState = { query: '', categoryId: 'ALL' };
+    input.value = '';
+    select.value = 'ALL';
+    applyBlogFilters();
+    input.focus();
+  });
+
+  applyBlogFilters();
+}
+
+function applyBlogFilters() {
+  const query = normalizeSearchText(blogSearchState.query);
+  const selectedCategory = blogSearchState.categoryId;
+  const sections = document.querySelectorAll('.blog-category-section');
+  const cards = document.querySelectorAll('.blog-card-link[data-blog-search]');
+  const countEl = document.getElementById('blog-search-count');
+  const clearBtn = document.getElementById('blog-search-clear');
+  const emptyEl = document.getElementById('blog-search-empty');
+  let visibleCount = 0;
+
+  cards.forEach(card => {
+    const matchesQuery = !query || card.dataset.blogSearch.includes(query);
+    const matchesCategory = selectedCategory === 'ALL' || card.dataset.blogCategory === selectedCategory;
+    const isVisible = matchesQuery && matchesCategory;
+    card.hidden = !isVisible;
+    if (isVisible) visibleCount += 1;
+  });
+
+  sections.forEach(section => {
+    const hasVisibleCards = !!section.querySelector('.blog-card-link:not([hidden])');
+    section.hidden = !hasVisibleCards;
+  });
+
+  if (countEl) {
+    countEl.textContent = visibleCount > 0
+      ? `Đang hiển thị ${visibleCount} bài viết`
+      : 'Chưa có bài viết phù hợp';
+  }
+
+  if (clearBtn) {
+    clearBtn.hidden = !query && selectedCategory === 'ALL';
+  }
+
+  if (emptyEl) {
+    emptyEl.hidden = visibleCount > 0;
+  }
+}
+
+function stripHtml(value) {
+  const div = document.createElement('div');
+  div.innerHTML = value || '';
+  return div.textContent || div.innerText || '';
+}
+
+function normalizeSearchText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value).replace(/`/g, '&#096;');
 }
 
 function renderArticleDetail(id) {
