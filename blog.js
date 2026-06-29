@@ -231,7 +231,7 @@ function renderBlogHome() {
       <div class="blog-search-controls">
         <label class="blog-search-input-wrap" for="blog-search-input">
           <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-          <input id="blog-search-input" type="search" placeholder="Tìm theo tên bài viết hoặc nội dung..." autocomplete="off" />
+          <input id="blog-search-input" type="search" placeholder="Tìm theo tên bài viết..." autocomplete="off" />
         </label>
         <label class="blog-category-select-wrap" for="blog-category-filter">
           <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
@@ -289,16 +289,13 @@ function renderBlogHome() {
             </div>
           </div>
         </div>
-        <!-- Cards Grid -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 28px;">
+        <!-- Cards Carousel -->
+        <div class="blog-carousel-track" data-carousel-track="${escapeAttribute(cat.id)}">
     `;
     
     articles.forEach(a => {
       const searchText = normalizeSearchText([
         a.title,
-        cat.name,
-        stripHtml(a.summary),
-        stripHtml(a.contentHtml),
       ].join(' '));
       html += `
         <a href="?id=${a.id}" class="blog-card-link" data-blog-category="${escapeAttribute(cat.id)}" data-blog-search="${escapeAttribute(searchText)}" style="display: flex; flex-direction: column; background: linear-gradient(160deg, rgba(26,16,6,0.95) 0%, rgba(20,13,5,0.98) 100%); border: 1px solid rgba(212,168,67,0.25); border-radius: 16px; overflow: hidden; text-decoration: none; color: inherit; position: relative; transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s ease, border-color 0.3s ease;"
@@ -338,6 +335,17 @@ function renderBlogHome() {
     
     html += `
         </div>
+        ${articles.length > 3 ? `
+          <div class="blog-carousel-controls" data-carousel-controls="${escapeAttribute(cat.id)}">
+            <button type="button" class="blog-carousel-btn" data-carousel-prev="${escapeAttribute(cat.id)}" aria-label="Xem bài viết trước">
+              <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+            </button>
+            <span class="blog-carousel-hint">Trượt để xem thêm bài viết</span>
+            <button type="button" class="blog-carousel-btn" data-carousel-next="${escapeAttribute(cat.id)}" aria-label="Xem bài viết tiếp theo">
+              <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        ` : ''}
       </section>
     `;
   });
@@ -357,6 +365,7 @@ function renderBlogHome() {
   
   container.innerHTML = html;
   setupBlogSearch();
+  setupBlogCarousels();
 }
 
 function setupBlogSearch() {
@@ -412,6 +421,10 @@ function applyBlogFilters() {
     section.hidden = !hasVisibleCards;
   });
 
+  document.querySelectorAll('.blog-carousel-track').forEach(track => {
+    track.scrollLeft = 0;
+  });
+
   if (countEl) {
     countEl.textContent = visibleCount > 0
       ? `Đang hiển thị ${visibleCount} bài viết`
@@ -425,12 +438,64 @@ function applyBlogFilters() {
   if (emptyEl) {
     emptyEl.hidden = visibleCount > 0;
   }
+
+  updateBlogCarouselControls();
 }
 
-function stripHtml(value) {
-  const div = document.createElement('div');
-  div.innerHTML = value || '';
-  return div.textContent || div.innerText || '';
+function setupBlogCarousels() {
+  document.querySelectorAll('.blog-carousel-controls').forEach(control => {
+    const categoryId = control.dataset.carouselControls;
+    const track = document.querySelector(`[data-carousel-track="${cssEscape(categoryId)}"]`);
+    const prevBtn = control.querySelector('[data-carousel-prev]');
+    const nextBtn = control.querySelector('[data-carousel-next]');
+    if (!track || !prevBtn || !nextBtn) return;
+
+    const scrollByPage = (direction) => {
+      const visibleCards = getVisibleCarouselCards(track);
+      const firstCard = visibleCards[0];
+      const gap = parseFloat(getComputedStyle(track).columnGap || getComputedStyle(track).gap || '28') || 28;
+      const cardWidth = firstCard ? firstCard.getBoundingClientRect().width + gap : track.clientWidth;
+      const cardsPerPage = window.innerWidth <= 700 ? 1 : 3;
+      track.scrollBy({ left: direction * cardWidth * cardsPerPage, behavior: 'smooth' });
+    };
+
+    prevBtn.addEventListener('click', () => scrollByPage(-1));
+    nextBtn.addEventListener('click', () => scrollByPage(1));
+    track.addEventListener('scroll', () => updateBlogCarouselControls(), { passive: true });
+  });
+
+  window.addEventListener('resize', updateBlogCarouselControls, { passive: true });
+  updateBlogCarouselControls();
+}
+
+function updateBlogCarouselControls() {
+  document.querySelectorAll('.blog-carousel-controls').forEach(control => {
+    const categoryId = control.dataset.carouselControls;
+    const track = document.querySelector(`[data-carousel-track="${cssEscape(categoryId)}"]`);
+    const prevBtn = control.querySelector('[data-carousel-prev]');
+    const nextBtn = control.querySelector('[data-carousel-next]');
+    if (!track || !prevBtn || !nextBtn) return;
+
+    const visibleCards = getVisibleCarouselCards(track);
+    const shouldShowControls = visibleCards.length > (window.innerWidth <= 700 ? 1 : 3);
+    control.hidden = !shouldShowControls;
+    if (!shouldShowControls) return;
+
+    const maxScrollLeft = track.scrollWidth - track.clientWidth - 2;
+    prevBtn.disabled = track.scrollLeft <= 2;
+    nextBtn.disabled = track.scrollLeft >= maxScrollLeft;
+  });
+}
+
+function getVisibleCarouselCards(track) {
+  return [...track.querySelectorAll('.blog-card-link[data-blog-search]')].filter(card => !card.hidden);
+}
+
+function cssEscape(value) {
+  if (window.CSS && typeof window.CSS.escape === 'function') {
+    return window.CSS.escape(value);
+  }
+  return String(value || '').replace(/"/g, '\\"');
 }
 
 function normalizeSearchText(value) {
