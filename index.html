@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://i.ibb.co" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="style.css?v=20260616-sepay-hide-manual" />
+  <link rel="stylesheet" href="style.css?v=20260701-conversion-upgrade" />
 </head>
 <body class="landing-content-loading">
 
@@ -200,6 +200,59 @@
       <div class="pain-conclusion reveal">
         <div class="conclusion-glow"></div>
         <p><i class="fa-solid fa-sparkles" style="color: var(--color-gold-light); margin-right: 8px;"></i> <strong>Nhân Số Học</strong> là tấm bản đồ giúp bạn hiểu rõ bản thân, tính cách, điểm mạnh, điểm yếu và hành trình phát triển của chính mình.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== MINI REPORT SECTION ========== -->
+  <section class="mini-report section" id="mini-report">
+    <div class="section-bg-shared bg-img-1"></div>
+    <div class="container">
+      <div class="mini-report-shell reveal">
+        <div class="mini-report-copy">
+          <span class="section-tag">Tra Cứu Thử Miễn Phí</span>
+          <h2 class="section-title mini-report-title">Nhận bản xem nhanh nhân số của bạn</h2>
+          <p class="mini-report-desc">Nhập tên và ngày sinh để xem số chủ đạo, năm cá nhân và một vài gợi ý ban đầu trước khi đặt lịch tư vấn sâu.</p>
+          <div class="mini-report-points">
+            <span><i class="fa-solid fa-circle-check"></i> Kết quả hiển thị tức thì</span>
+            <span><i class="fa-solid fa-circle-check"></i> Không cần thanh toán</span>
+            <span><i class="fa-solid fa-circle-check"></i> Gợi ý bước tiếp theo rõ ràng</span>
+          </div>
+        </div>
+        <form class="mini-report-form" id="mini-report-form">
+          <div class="form-group">
+            <label for="mini-name">Họ và tên</label>
+            <input type="text" id="mini-name" name="miniName" placeholder="Nhập họ tên của bạn" required />
+          </div>
+          <div class="form-group">
+            <label for="mini-dob">Ngày sinh</label>
+            <input type="date" id="mini-dob" name="miniDob" min="1900-01-01" required />
+          </div>
+          <button type="submit" class="btn btn-primary btn-full" id="mini-report-submit">
+            <span>Xem phân tích sơ bộ</span>
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </button>
+        </form>
+      </div>
+      <div class="mini-report-result" id="mini-report-result" hidden>
+        <div class="mini-result-card mini-result-main">
+          <span class="mini-result-label">Số chủ đạo</span>
+          <strong id="mini-life-path">-</strong>
+          <p id="mini-life-path-text">Kết quả sẽ hiện tại đây.</p>
+        </div>
+        <div class="mini-result-card">
+          <span class="mini-result-label">Năm cá nhân</span>
+          <strong id="mini-personal-year">-</strong>
+          <p id="mini-personal-year-text">Gợi ý chu kỳ hiện tại.</p>
+        </div>
+        <div class="mini-result-card">
+          <span class="mini-result-label">Từ khóa nổi bật</span>
+          <div class="mini-keywords" id="mini-keywords"></div>
+        </div>
+        <div class="mini-result-action">
+          <p id="mini-result-note">Đây là bản xem nhanh. Buổi tư vấn 1:1 sẽ giúp bạn nối các chỉ số thành một lộ trình cụ thể hơn.</p>
+          <a href="#contact" class="btn btn-primary">Đặt lịch phân tích sâu</a>
+        </div>
       </div>
     </div>
   </section>
@@ -487,6 +540,57 @@
     </div>
   </section>
 
+  <!-- ========== PACKAGE COMPARISON SECTION ========== -->
+  <section class="package-compare section" id="package-compare">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Chọn Gói Dễ Hơn</span>
+        <h2 class="section-title">So Sánh Nhanh Các Gói Tư Vấn</h2>
+        <div class="section-divider">
+          <span>✦</span><span>✦</span><span>✦</span>
+        </div>
+      </div>
+      <div class="compare-table-wrap reveal">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Tiêu chí</th>
+              <th>Năm cá nhân</th>
+              <th>BIG 3</th>
+              <th>Toàn diện</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Phù hợp nếu bạn</td>
+              <td>Muốn định hướng 6-12 tháng tới</td>
+              <td>Muốn hiểu tính cách lõi</td>
+              <td>Muốn bản đồ cá nhân sâu để dùng lâu dài</td>
+            </tr>
+            <tr>
+              <td>Chỉ số phân tích</td>
+              <td>Năm cá nhân và chu kỳ hiện tại</td>
+              <td>Chủ đạo, linh hồn, sứ mệnh</td>
+              <td>7 chỉ số cốt lõi, chu kỳ, đỉnh cao</td>
+            </tr>
+            <tr>
+              <td>Đầu ra chính</td>
+              <td>Gợi ý hành động theo năm</td>
+              <td>Hiểu điểm mạnh, động lực và hướng phát triển</td>
+              <td>Lộ trình phân tích đầy đủ kèm PDF tóm tắt</td>
+            </tr>
+            <tr>
+              <td>Mức độ chuyên sâu</td>
+              <td>Cơ bản</td>
+              <td>Trung bình</td>
+              <td>Chuyên sâu nhất</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <!-- ========== METHODS SECTION ========== -->
   <section class="methods section" id="methods">
     <div class="container">
@@ -663,6 +767,45 @@
           <span>Đôi khi chỉ cần hiểu đúng bản thân,</span>
           <em>Mọi thứ sẽ dần rõ ràng hơn</em>
         </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FAQ SECTION ========== -->
+  <section class="faq section" id="faq">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Giải Đáp Trước Khi Đặt Lịch</span>
+        <h2 class="section-title">Những Câu Hỏi Thường Gặp</h2>
+        <div class="section-divider">
+          <span>✦</span><span>✦</span><span>✦</span>
+        </div>
+      </div>
+      <div class="faq-list reveal">
+        <details class="faq-item" open>
+          <summary>Tôi chưa biết chọn gói nào thì sao?</summary>
+          <p>Bạn có thể gửi điều đang trăn trở trong form đặt lịch. Tụi mình sẽ hỗ trợ chọn gói phù hợp trước khi xác nhận lịch.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Buổi tư vấn diễn ra như thế nào?</summary>
+          <p>Buổi tư vấn là cuộc trò chuyện 1:1, đi từ ngày sinh, họ tên, các chỉ số cốt lõi đến câu chuyện thực tế của bạn.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Sau buổi tư vấn có nhận file không?</summary>
+          <p>Gói Toàn Diện có PDF tóm tắt đầy đủ. Các gói khác vẫn có phần ghi chú định hướng theo nội dung đã tư vấn.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Thông tin cá nhân của tôi có được bảo mật không?</summary>
+          <p>Có. Thông tin ngày sinh, số điện thoại và nội dung chia sẻ chỉ dùng để chuẩn bị và thực hiện buổi tư vấn.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Online và offline khác nhau gì?</summary>
+          <p>Online phù hợp nếu bạn muốn linh hoạt thời gian và địa điểm. Offline phù hợp khi bạn muốn gặp trực tiếp tại TP.HCM.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Có thể đổi lịch không?</summary>
+          <p>Có thể đổi lịch nếu bạn báo trước để tụi mình sắp xếp lại khung giờ phù hợp.</p>
+        </details>
       </div>
     </div>
   </section>
@@ -980,6 +1123,6 @@
     <i class="fa-solid fa-volume-high"></i>
   </button>
 
-  <script src="script.js?v=20260617-sections3" defer></script>
+  <script src="script.js?v=20260701-conversion-upgrade" defer></script>
 </body>
 </html>

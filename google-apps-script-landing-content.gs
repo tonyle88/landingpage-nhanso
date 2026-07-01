@@ -393,12 +393,14 @@ function handleSaveLandingContentBatch(params) {
 function handleSyncLandingContentTemplate(params) {
   requireAdminSession(params.token);
   const result = syncLandingContentSheet();
+  const sectionsResult = syncSectionsLayoutDefaults();
   ensurePackagesSheet();
   ensurePaymentSettingsSheet();
   clearLandingContentCache();
   return jsonResponse({
     ok: true,
     result: result,
+    sectionsResult: sectionsResult,
     message: 'Da dong bo template noi dung',
     scriptVersion: SCRIPT_VERSION,
   });
@@ -549,6 +551,18 @@ function buildDefaultLandingContentRows() {
     lc(true, 'pain.card_4', 'Vấn Đề', 'Nội dung card 4', '#pain-points .pain-card:nth-child(4) p', 'html', '', 'Đứng giữa những <strong>lựa chọn quan trọng</strong> nhưng không biết đâu là hướng đi phù hợp?'),
     lc(true, 'pain.conclusion', 'Vấn Đề', 'Kết luận dưới card', '#pain-points .pain-conclusion p', 'html', '', '<i class="fa-solid fa-sparkles" style="color: var(--color-gold-light); margin-right: 8px;"></i> <strong>Nhân Số Học</strong> là tấm bản đồ giúp bạn hiểu rõ bản thân, tính cách, điểm mạnh, điểm yếu và hành trình phát triển của chính mình.'),
 
+    lc(true, 'mini_report.tag', 'Tra Cứu Thử', 'Tag section', '#mini-report .section-tag', 'text', '', 'Tra Cứu Thử Miễn Phí'),
+    lc(true, 'mini_report.title', 'Tra Cứu Thử', 'Tiêu đề section', '#mini-report .mini-report-title', 'text', '', 'Nhận bản xem nhanh nhân số của bạn'),
+    lc(true, 'mini_report.desc', 'Tra Cứu Thử', 'Mô tả section', '#mini-report .mini-report-desc', 'text', '', 'Nhập tên và ngày sinh để xem số chủ đạo, năm cá nhân và một vài gợi ý ban đầu trước khi đặt lịch tư vấn sâu.'),
+    lc(true, 'mini_report.point_1', 'Tra Cứu Thử', 'Điểm nhấn 1', '#mini-report .mini-report-points span:nth-child(1)', 'html', '', '<i class="fa-solid fa-circle-check"></i> Kết quả hiển thị tức thì'),
+    lc(true, 'mini_report.point_2', 'Tra Cứu Thử', 'Điểm nhấn 2', '#mini-report .mini-report-points span:nth-child(2)', 'html', '', '<i class="fa-solid fa-circle-check"></i> Không cần thanh toán'),
+    lc(true, 'mini_report.point_3', 'Tra Cứu Thử', 'Điểm nhấn 3', '#mini-report .mini-report-points span:nth-child(3)', 'html', '', '<i class="fa-solid fa-circle-check"></i> Gợi ý bước tiếp theo rõ ràng'),
+    lc(true, 'mini_report.name_label', 'Tra Cứu Thử', 'Nhãn họ tên', '#mini-report label[for="mini-name"]', 'text', '', 'Họ và tên'),
+    lc(true, 'mini_report.name_placeholder', 'Tra Cứu Thử', 'Placeholder họ tên', '#mini-name', 'attr', 'placeholder', 'Nhập họ tên của bạn'),
+    lc(true, 'mini_report.dob_label', 'Tra Cứu Thử', 'Nhãn ngày sinh', '#mini-report label[for="mini-dob"]', 'text', '', 'Ngày sinh'),
+    lc(true, 'mini_report.button', 'Tra Cứu Thử', 'Nút xem kết quả', '#mini-report-submit span', 'text', '', 'Xem phân tích sơ bộ'),
+    lc(true, 'mini_report.cta', 'Tra Cứu Thử', 'Nút đặt lịch sau kết quả', '#mini-report .mini-result-action .btn', 'text', '', 'Đặt lịch phân tích sâu'),
+
     lc(true, 'about.tag', 'Về Chúng Tôi', 'Tag section', '#about .section-tag', 'text', '', 'Về Chúng Tôi'),
     lc(true, 'about.title', 'Về Chúng Tôi', 'Tiêu đề section', '#about .section-title', 'text', '', 'Những Người Đồng Hành'),
     lc(true, 'about.video_id', 'Về Chúng Tôi', 'Link Youtube', '#about iframe', 'attr', 'data-youtube-embed', 'https://www.youtube.com/watch?v=7KYlOuSyGPQ'),
@@ -657,6 +671,29 @@ function buildDefaultLandingContentRows() {
     lc(true, 'packages.session_2', 'Bảng Giá', 'Thông tin buổi tư vấn 2', '#packages .session-info-item:nth-child(3) span:last-child', 'html', '', 'Yêu cầu sắp xếp lịch trước <strong>ít nhất 1 ngày</strong>'),
     lc(true, 'packages.session_3', 'Bảng Giá', 'Thông tin buổi tư vấn 3', '#packages .session-info-item:nth-child(5) span:last-child', 'html', '', 'Nếu lựa chọn xem hình thức offline, tụi mình phụ thu thêm chi phí xăng xe là <strong>50.000đ</strong> cho các gói dưới 2.000.000đ nhé.'),
 
+    lc(true, 'compare.tag', 'So Sánh Gói', 'Tag section', '#package-compare .section-tag', 'text', '', 'Chọn Gói Dễ Hơn'),
+    lc(true, 'compare.title', 'So Sánh Gói', 'Tiêu đề section', '#package-compare .section-title', 'text', '', 'So Sánh Nhanh Các Gói Tư Vấn'),
+    lc(true, 'compare.header_1', 'So Sánh Gói', 'Header cột tiêu chí', '#package-compare thead th:nth-child(1)', 'text', '', 'Tiêu chí'),
+    lc(true, 'compare.header_2', 'So Sánh Gói', 'Header cột năm cá nhân', '#package-compare thead th:nth-child(2)', 'text', '', 'Năm cá nhân'),
+    lc(true, 'compare.header_3', 'So Sánh Gói', 'Header cột BIG 3', '#package-compare thead th:nth-child(3)', 'text', '', 'BIG 3'),
+    lc(true, 'compare.header_4', 'So Sánh Gói', 'Header cột toàn diện', '#package-compare thead th:nth-child(4)', 'text', '', 'Toàn diện'),
+    lc(true, 'compare.row_1_label', 'So Sánh Gói', 'Hàng 1 nhãn', '#package-compare tbody tr:nth-child(1) td:nth-child(1)', 'text', '', 'Phù hợp nếu bạn'),
+    lc(true, 'compare.row_1_year', 'So Sánh Gói', 'Hàng 1 năm cá nhân', '#package-compare tbody tr:nth-child(1) td:nth-child(2)', 'text', '', 'Muốn định hướng 6-12 tháng tới'),
+    lc(true, 'compare.row_1_big3', 'So Sánh Gói', 'Hàng 1 BIG 3', '#package-compare tbody tr:nth-child(1) td:nth-child(3)', 'text', '', 'Muốn hiểu tính cách lõi'),
+    lc(true, 'compare.row_1_full', 'So Sánh Gói', 'Hàng 1 toàn diện', '#package-compare tbody tr:nth-child(1) td:nth-child(4)', 'text', '', 'Muốn bản đồ cá nhân sâu để dùng lâu dài'),
+    lc(true, 'compare.row_2_label', 'So Sánh Gói', 'Hàng 2 nhãn', '#package-compare tbody tr:nth-child(2) td:nth-child(1)', 'text', '', 'Chỉ số phân tích'),
+    lc(true, 'compare.row_2_year', 'So Sánh Gói', 'Hàng 2 năm cá nhân', '#package-compare tbody tr:nth-child(2) td:nth-child(2)', 'text', '', 'Năm cá nhân và chu kỳ hiện tại'),
+    lc(true, 'compare.row_2_big3', 'So Sánh Gói', 'Hàng 2 BIG 3', '#package-compare tbody tr:nth-child(2) td:nth-child(3)', 'text', '', 'Chủ đạo, linh hồn, sứ mệnh'),
+    lc(true, 'compare.row_2_full', 'So Sánh Gói', 'Hàng 2 toàn diện', '#package-compare tbody tr:nth-child(2) td:nth-child(4)', 'text', '', '7 chỉ số cốt lõi, chu kỳ, đỉnh cao'),
+    lc(true, 'compare.row_3_label', 'So Sánh Gói', 'Hàng 3 nhãn', '#package-compare tbody tr:nth-child(3) td:nth-child(1)', 'text', '', 'Đầu ra chính'),
+    lc(true, 'compare.row_3_year', 'So Sánh Gói', 'Hàng 3 năm cá nhân', '#package-compare tbody tr:nth-child(3) td:nth-child(2)', 'text', '', 'Gợi ý hành động theo năm'),
+    lc(true, 'compare.row_3_big3', 'So Sánh Gói', 'Hàng 3 BIG 3', '#package-compare tbody tr:nth-child(3) td:nth-child(3)', 'text', '', 'Hiểu điểm mạnh, động lực và hướng phát triển'),
+    lc(true, 'compare.row_3_full', 'So Sánh Gói', 'Hàng 3 toàn diện', '#package-compare tbody tr:nth-child(3) td:nth-child(4)', 'text', '', 'Lộ trình phân tích đầy đủ kèm PDF tóm tắt'),
+    lc(true, 'compare.row_4_label', 'So Sánh Gói', 'Hàng 4 nhãn', '#package-compare tbody tr:nth-child(4) td:nth-child(1)', 'text', '', 'Mức độ chuyên sâu'),
+    lc(true, 'compare.row_4_year', 'So Sánh Gói', 'Hàng 4 năm cá nhân', '#package-compare tbody tr:nth-child(4) td:nth-child(2)', 'text', '', 'Cơ bản'),
+    lc(true, 'compare.row_4_big3', 'So Sánh Gói', 'Hàng 4 BIG 3', '#package-compare tbody tr:nth-child(4) td:nth-child(3)', 'text', '', 'Trung bình'),
+    lc(true, 'compare.row_4_full', 'So Sánh Gói', 'Hàng 4 toàn diện', '#package-compare tbody tr:nth-child(4) td:nth-child(4)', 'text', '', 'Chuyên sâu nhất'),
+
     lc(true, 'process.tag', 'Lộ Trình', 'Tag section', '#process .section-tag', 'text', '', 'Hành Trình'),
     lc(true, 'process.title', 'Lộ Trình', 'Tiêu đề section', '#process .section-title', 'text', '', 'Chỉ 3 Bước Đơn Giản'),
     lc(true, 'process.step_1_title', 'Lộ Trình', 'Bước 1 tiêu đề', '#process .process-step:nth-child(1) h3', 'text', '', 'Đặt Lịch'),
@@ -667,6 +704,21 @@ function buildDefaultLandingContentRows() {
     lc(true, 'process.step_3_body', 'Lộ Trình', 'Bước 3 nội dung', '#process .process-step:nth-child(3) p', 'text', '', 'Nhận thông điệp chữa lành và lộ trình cá nhân hoá để tự tin bước tiếp.'),
     lc(true, 'process.quote_1', 'Lộ Trình', 'Quote dòng thường', '#process .process-quote span', 'text', '', 'Đôi khi chỉ cần hiểu đúng bản thân,'),
     lc(true, 'process.quote_2', 'Lộ Trình', 'Quote dòng nhấn', '#process .process-quote em', 'text', '', 'Mọi thứ sẽ dần rõ ràng hơn'),
+
+    lc(true, 'faq.tag', 'FAQ', 'Tag section', '#faq .section-tag', 'text', '', 'Giải Đáp Trước Khi Đặt Lịch'),
+    lc(true, 'faq.title', 'FAQ', 'Tiêu đề section', '#faq .section-title', 'text', '', 'Những Câu Hỏi Thường Gặp'),
+    lc(true, 'faq.q1', 'FAQ', 'Câu hỏi 1', '#faq .faq-item:nth-child(1) summary', 'text', '', 'Tôi chưa biết chọn gói nào thì sao?'),
+    lc(true, 'faq.a1', 'FAQ', 'Trả lời 1', '#faq .faq-item:nth-child(1) p', 'text', '', 'Bạn có thể gửi điều đang trăn trở trong form đặt lịch. Tụi mình sẽ hỗ trợ chọn gói phù hợp trước khi xác nhận lịch.'),
+    lc(true, 'faq.q2', 'FAQ', 'Câu hỏi 2', '#faq .faq-item:nth-child(2) summary', 'text', '', 'Buổi tư vấn diễn ra như thế nào?'),
+    lc(true, 'faq.a2', 'FAQ', 'Trả lời 2', '#faq .faq-item:nth-child(2) p', 'text', '', 'Buổi tư vấn là cuộc trò chuyện 1:1, đi từ ngày sinh, họ tên, các chỉ số cốt lõi đến câu chuyện thực tế của bạn.'),
+    lc(true, 'faq.q3', 'FAQ', 'Câu hỏi 3', '#faq .faq-item:nth-child(3) summary', 'text', '', 'Sau buổi tư vấn có nhận file không?'),
+    lc(true, 'faq.a3', 'FAQ', 'Trả lời 3', '#faq .faq-item:nth-child(3) p', 'text', '', 'Gói Toàn Diện có PDF tóm tắt đầy đủ. Các gói khác vẫn có phần ghi chú định hướng theo nội dung đã tư vấn.'),
+    lc(true, 'faq.q4', 'FAQ', 'Câu hỏi 4', '#faq .faq-item:nth-child(4) summary', 'text', '', 'Thông tin cá nhân của tôi có được bảo mật không?'),
+    lc(true, 'faq.a4', 'FAQ', 'Trả lời 4', '#faq .faq-item:nth-child(4) p', 'text', '', 'Có. Thông tin ngày sinh, số điện thoại và nội dung chia sẻ chỉ dùng để chuẩn bị và thực hiện buổi tư vấn.'),
+    lc(true, 'faq.q5', 'FAQ', 'Câu hỏi 5', '#faq .faq-item:nth-child(5) summary', 'text', '', 'Online và offline khác nhau gì?'),
+    lc(true, 'faq.a5', 'FAQ', 'Trả lời 5', '#faq .faq-item:nth-child(5) p', 'text', '', 'Online phù hợp nếu bạn muốn linh hoạt thời gian và địa điểm. Offline phù hợp khi bạn muốn gặp trực tiếp tại TP.HCM.'),
+    lc(true, 'faq.q6', 'FAQ', 'Câu hỏi 6', '#faq .faq-item:nth-child(6) summary', 'text', '', 'Có thể đổi lịch không?'),
+    lc(true, 'faq.a6', 'FAQ', 'Trả lời 6', '#faq .faq-item:nth-child(6) p', 'text', '', 'Có thể đổi lịch nếu bạn báo trước để tụi mình sắp xếp lại khung giờ phù hợp.'),
 
     lc(true, 'contact.tag', 'Liên Hệ', 'Tag section', '#contact .section-tag', 'text', '', 'Liên Hệ'),
     lc(true, 'contact.title', 'Liên Hệ', 'Tiêu đề section', '#contact .section-title', 'html', '', 'Bắt Đầu Hành Trình<br />Khám Phá Bản Thân'),
@@ -1799,13 +1851,16 @@ function handleDeleteFeedbackImage(params) {
 // =============================================
 const DEFAULT_SECTIONS_LAYOUT = [
   { enabled: true, id: 'pain-points', type: 'builtin', name: 'Vấn Đề', order: 1 },
-  { enabled: true, id: 'about', type: 'builtin', name: 'Về Chúng Tôi', order: 2 },
-  { enabled: true, id: 'benefits', type: 'builtin', name: 'Lợi Ích', order: 3 },
-  { enabled: true, id: 'testimonials', type: 'builtin', name: 'Cảm Nhận', order: 4 },
-  { enabled: true, id: 'packages', type: 'builtin', name: 'Bảng Giá', order: 5 },
-  { enabled: true, id: 'methods', type: 'builtin', name: 'Ba Lăng Kính', order: 6 },
-  { enabled: true, id: 'process', type: 'builtin', name: 'Lộ Trình', order: 7 },
-  { enabled: true, id: 'contact', type: 'builtin', name: 'Liên Hệ', order: 8 }
+  { enabled: true, id: 'mini-report', type: 'builtin', name: 'Tra Cứu Thử', order: 2 },
+  { enabled: true, id: 'about', type: 'builtin', name: 'Về Chúng Tôi', order: 3 },
+  { enabled: true, id: 'benefits', type: 'builtin', name: 'Lợi Ích', order: 4 },
+  { enabled: true, id: 'testimonials', type: 'builtin', name: 'Cảm Nhận', order: 5 },
+  { enabled: true, id: 'packages', type: 'builtin', name: 'Bảng Giá', order: 6 },
+  { enabled: true, id: 'package-compare', type: 'builtin', name: 'So Sánh Gói', order: 7 },
+  { enabled: true, id: 'methods', type: 'builtin', name: 'Ba Lăng Kính', order: 8 },
+  { enabled: true, id: 'process', type: 'builtin', name: 'Lộ Trình', order: 9 },
+  { enabled: true, id: 'faq', type: 'builtin', name: 'FAQ', order: 10 },
+  { enabled: true, id: 'contact', type: 'builtin', name: 'Liên Hệ', order: 11 }
 ];
 
 function ensureSectionsLayoutSheet() {
@@ -1831,6 +1886,36 @@ function ensureSectionsLayoutSheet() {
     sheet.autoResizeColumns(1, SECTIONS_LAYOUT_HEADERS.length);
   }
   return sheet;
+}
+
+function syncSectionsLayoutDefaults() {
+  const sheet = ensureSectionsLayoutSheet();
+  const lastRow = sheet.getLastRow();
+  const existingIds = lastRow >= 2
+    ? sheet.getRange(2, 2, lastRow - 1, 1).getValues().map(r => String(r[0]).trim())
+    : [];
+  const existingSet = {};
+  existingIds.forEach(id => existingSet[id] = true);
+
+  const nextOrder = lastRow;
+  const rowsToAppend = DEFAULT_SECTIONS_LAYOUT
+    .filter(s => !existingSet[s.id])
+    .map((s, index) => [
+      s.enabled ? 'TRUE' : 'FALSE',
+      s.id,
+      s.type,
+      s.name,
+      nextOrder + index + 1,
+      '',
+      '',
+      ''
+    ]);
+
+  if (rowsToAppend.length) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, rowsToAppend.length, SECTIONS_LAYOUT_HEADERS.length).setValues(rowsToAppend);
+  }
+
+  return { ok: true, added: rowsToAppend.length };
 }
 
 function getSectionsLayout(forAdmin) {

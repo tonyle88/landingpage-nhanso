@@ -242,6 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ===== BOOKING MODAL LOGIC =====
   initBookingModals();
   initMobileStickyCta();
+  initMiniReport();
 
   // ===== SMOOTH COUNTER ANIMATION =====
   landingContentReady.finally(initStatCounters);
@@ -1227,6 +1228,105 @@ function updatePackageChoiceSummary() {
     ${offlineNote}
   `;
   summary.hidden = false;
+}
+
+const MINI_REPORT_MEANINGS = {
+  1: { text: 'Bạn có xu hướng chủ động, độc lập và muốn tự mở đường cho mình.', keywords: ['Chủ động', 'Tiên phong', 'Tự lập'] },
+  2: { text: 'Bạn nhạy cảm với cảm xúc, giỏi kết nối và cần môi trường hài hòa.', keywords: ['Kết nối', 'Tinh tế', 'Hợp tác'] },
+  3: { text: 'Bạn có năng lượng sáng tạo, biểu đạt tốt và dễ truyền cảm hứng.', keywords: ['Sáng tạo', 'Giao tiếp', 'Lan tỏa'] },
+  4: { text: 'Bạn cần nền tảng vững, hệ thống rõ và cảm giác mọi thứ có thể kiểm soát.', keywords: ['Kỷ luật', 'Bền bỉ', 'Thực tế'] },
+  5: { text: 'Bạn học tốt qua trải nghiệm, thích tự do và cần không gian để thay đổi.', keywords: ['Tự do', 'Linh hoạt', 'Trải nghiệm'] },
+  6: { text: 'Bạn quan tâm đến trách nhiệm, gia đình, cộng đồng và sự chăm sóc.', keywords: ['Yêu thương', 'Trách nhiệm', 'Chữa lành'] },
+  7: { text: 'Bạn có chiều sâu nội tâm, thích quan sát và thường cần thời gian để hiểu chính mình.', keywords: ['Chiêm nghiệm', 'Trực giác', 'Phân tích'] },
+  8: { text: 'Bạn có bài học về năng lực, thành tựu, quản trị và cách dùng sức ảnh hưởng.', keywords: ['Thành tựu', 'Quản trị', 'Ảnh hưởng'] },
+  9: { text: 'Bạn giàu lòng trắc ẩn, có tầm nhìn rộng và thường học qua sự buông bỏ.', keywords: ['Nhân ái', 'Tầm nhìn', 'Phụng sự'] },
+  11: { text: 'Bạn nhạy năng lượng, giàu trực giác và dễ trở thành người truyền cảm hứng.', keywords: ['Trực giác', 'Khai sáng', 'Cảm hứng'] },
+  22: { text: 'Bạn mang năng lượng kiến tạo lớn, cần biến lý tưởng thành cấu trúc thực tế.', keywords: ['Kiến tạo', 'Tầm vóc', 'Xây dựng'] },
+};
+
+const PERSONAL_YEAR_MEANINGS = {
+  1: 'Năm khởi đầu: phù hợp gieo hạt, mở dự án mới và chủ động chọn hướng đi.',
+  2: 'Năm kết nối: phù hợp hợp tác, lắng nghe cảm xúc và nuôi dưỡng quan hệ.',
+  3: 'Năm biểu đạt: phù hợp sáng tạo, học hỏi, truyền thông và mở rộng niềm vui.',
+  4: 'Năm xây nền: phù hợp kỷ luật, hệ thống hóa và xử lý những việc cần bền bỉ.',
+  5: 'Năm thay đổi: phù hợp thử nghiệm, dịch chuyển và làm mới góc nhìn.',
+  6: 'Năm trách nhiệm: phù hợp chăm sóc gia đình, chữa lành và cân bằng nghĩa vụ.',
+  7: 'Năm chiêm nghiệm: phù hợp học sâu, tĩnh lại và hiểu rõ câu hỏi bên trong.',
+  8: 'Năm thành tựu: phù hợp quản trị tài chính, sự nghiệp và năng lực cá nhân.',
+  9: 'Năm hoàn tất: phù hợp tổng kết, buông bỏ điều cũ và chuẩn bị chu kỳ mới.',
+};
+
+function initMiniReport() {
+  const form = document.getElementById('mini-report-form');
+  const dobInput = document.getElementById('mini-dob');
+  if (!form || !dobInput) return;
+
+  dobInput.max = getTodayDateInputValue();
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!form.reportValidity()) return;
+
+    const name = document.getElementById('mini-name')?.value.trim() || '';
+    const dob = dobInput.value;
+    const result = buildMiniReport(name, dob);
+    renderMiniReport(result);
+  });
+}
+
+function buildMiniReport(name, dob) {
+  const digits = dob.replace(/\D/g, '').split('').map(Number);
+  const lifePath = reduceNumerologyNumber(digits.reduce((sum, num) => sum + num, 0), true);
+  const [, month, day] = dob.split('-').map(Number);
+  const currentYear = new Date().getFullYear();
+  const personalYear = reduceNumerologyNumber(sumDigits(day) + sumDigits(month) + sumDigits(currentYear), false);
+  const meaning = MINI_REPORT_MEANINGS[lifePath] || MINI_REPORT_MEANINGS[reduceNumerologyNumber(lifePath, false)] || MINI_REPORT_MEANINGS[9];
+
+  return {
+    name,
+    lifePath,
+    personalYear,
+    lifePathText: meaning.text,
+    personalYearText: PERSONAL_YEAR_MEANINGS[personalYear] || PERSONAL_YEAR_MEANINGS[9],
+    keywords: meaning.keywords,
+  };
+}
+
+function renderMiniReport(result) {
+  const resultEl = document.getElementById('mini-report-result');
+  if (!resultEl) return;
+
+  document.getElementById('mini-life-path').textContent = result.lifePath;
+  document.getElementById('mini-life-path-text').textContent = result.lifePathText;
+  document.getElementById('mini-personal-year').textContent = result.personalYear;
+  document.getElementById('mini-personal-year-text').textContent = result.personalYearText;
+
+  const keywordsEl = document.getElementById('mini-keywords');
+  if (keywordsEl) {
+    keywordsEl.innerHTML = result.keywords.map((keyword) => `<span>${keyword}</span>`).join('');
+  }
+
+  const note = document.getElementById('mini-result-note');
+  if (note) {
+    note.textContent = `${result.name ? result.name + ', đây' : 'Đây'} là bản xem nhanh dựa trên ngày sinh. Buổi tư vấn 1:1 sẽ nối các chỉ số với câu chuyện thật của bạn để ra lộ trình rõ hơn.`;
+  }
+
+  resultEl.hidden = false;
+  resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function sumDigits(value) {
+  return String(Math.abs(Number(value) || 0))
+    .split('')
+    .reduce((sum, digit) => sum + Number(digit), 0);
+}
+
+function reduceNumerologyNumber(value, keepMasterNumbers) {
+  let num = Math.abs(Number(value) || 0);
+  while (num > 9) {
+    if (keepMasterNumbers && (num === 11 || num === 22)) return num;
+    num = sumDigits(num);
+  }
+  return num || 9;
 }
 
 function populatePackageOptions(consultationType, selectedValue = '', openPicker = false) {
