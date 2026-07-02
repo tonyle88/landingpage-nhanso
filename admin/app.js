@@ -16,6 +16,7 @@ const state = {
   paymentSettings: {},
   search: '',
   selectedSection: 'all',
+  miniReportFilter: { type: 'life_path', number: '1' },
   savingKeys: new Set(),
   toastTimeout: null,
 };
@@ -305,6 +306,11 @@ function renderHeading() {
     title = 'Giải mã nhân số học';
     count = state.blogArticles ? state.blogArticles.length : 0;
     desc = 'Quản lý chủ đề và bài viết thuộc chuyên mục Giải mã nhân số học.';
+  } else if (state.selectedSection === 'Tra Cứu Thử') {
+    label = 'Tra Cứu Thử';
+    count = getMiniReportFilteredItems().length;
+    title = 'Luận giải tra cứu nhanh';
+    desc = 'Chọn loại chỉ số và con số để sửa đúng phần luận giải hoặc từ khóa.';
   } else {
     label = state.selectedSection === 'all' ? 'Tất cả section' : state.selectedSection;
     count = getFilteredItems().length;
@@ -337,6 +343,10 @@ function renderCards() {
     renderBlogManager();
     return;
   }
+  if (state.selectedSection === 'Tra Cứu Thử') {
+    renderMiniReportManager();
+    return;
+  }
 
   const items = getFilteredItems();
   els.editorGrid.innerHTML = '';
@@ -347,6 +357,123 @@ function renderCards() {
     els.editorGrid.appendChild(card);
     if (initEditor) initEditor();
   });
+}
+
+const MINI_REPORT_TYPE_LABELS = {
+  general: 'Nội dung chung',
+  life_path: 'Số chủ đạo',
+  soul: 'Linh hồn',
+  mission: 'Sứ mệnh',
+  personal_year: 'Năm cá nhân',
+};
+
+const MINI_REPORT_TYPE_ORDER = ['life_path', 'soul', 'mission', 'personal_year', 'general'];
+
+function renderMiniReportManager() {
+  const items = getVisibleContentItems().filter((item) => item.section === 'Tra Cứu Thử');
+  const types = getMiniReportTypes(items);
+  const selectedType = types.includes(state.miniReportFilter.type) ? state.miniReportFilter.type : types[0] || 'general';
+  state.miniReportFilter.type = selectedType;
+
+  const numbers = getMiniReportNumbers(items, selectedType);
+  if (selectedType !== 'general') {
+    state.miniReportFilter.number = numbers.includes(state.miniReportFilter.number)
+      ? state.miniReportFilter.number
+      : numbers[0] || '1';
+  }
+
+  const filteredItems = getMiniReportFilteredItems(items);
+  els.editorGrid.innerHTML = '';
+  els.emptyState.classList.toggle('is-hidden', filteredItems.length > 0);
+
+  const panel = document.createElement('section');
+  panel.className = 'mini-report-admin-panel';
+  panel.innerHTML = `
+    <div class="mini-report-admin-filters" aria-label="Bộ lọc tra cứu thử"></div>
+    <div class="mini-report-number-filter" aria-label="Chọn số luận giải"></div>
+  `;
+
+  const typeFilter = panel.querySelector('.mini-report-admin-filters');
+  types.forEach((type) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `mini-report-filter-btn${type === selectedType ? ' is-active' : ''}`;
+    button.textContent = MINI_REPORT_TYPE_LABELS[type] || type;
+    button.addEventListener('click', () => {
+      state.miniReportFilter.type = type;
+      state.miniReportFilter.number = getMiniReportNumbers(items, type)[0] || '1';
+      render();
+    });
+    typeFilter.appendChild(button);
+  });
+
+  const numberFilter = panel.querySelector('.mini-report-number-filter');
+  numberFilter.hidden = selectedType === 'general';
+  numbers.forEach((number) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `mini-report-number-btn${number === state.miniReportFilter.number ? ' is-active' : ''}`;
+    button.textContent = formatMiniReportNumberLabel(number);
+    button.addEventListener('click', () => {
+      state.miniReportFilter.number = number;
+      render();
+    });
+    numberFilter.appendChild(button);
+  });
+
+  els.editorGrid.appendChild(panel);
+
+  filteredItems.forEach((item) => {
+    const { card, initEditor } = createContentCard(item);
+    els.editorGrid.appendChild(card);
+    if (initEditor) initEditor();
+  });
+}
+
+function getMiniReportTypes(items) {
+  const types = new Set(['general']);
+  items.forEach((item) => {
+    const meta = parseMiniReportMeaningKey(item.key);
+    if (meta) types.add(meta.type);
+  });
+  return MINI_REPORT_TYPE_ORDER.filter((type) => types.has(type));
+}
+
+function getMiniReportNumbers(items, type) {
+  const numbers = new Set();
+  items.forEach((item) => {
+    const meta = parseMiniReportMeaningKey(item.key);
+    if (meta?.type === type) numbers.add(meta.number);
+  });
+  return Array.from(numbers).sort((a, b) => Number(a) - Number(b));
+}
+
+function getMiniReportFilteredItems(sourceItems) {
+  const items = sourceItems || getVisibleContentItems().filter((item) => item.section === 'Tra Cứu Thử');
+  const search = state.search;
+  return items.filter((item) => {
+    const meta = parseMiniReportMeaningKey(item.key);
+    const isGeneral = !meta;
+    const filterMatch = state.miniReportFilter.type === 'general'
+      ? isGeneral
+      : meta?.type === state.miniReportFilter.type && meta?.number === state.miniReportFilter.number;
+    if (!filterMatch) return false;
+    if (!search) return true;
+    return [
+      item.key,
+      item.description,
+      item.value,
+    ].join(' ').toLowerCase().includes(search);
+  });
+}
+
+function parseMiniReportMeaningKey(key) {
+  const match = String(key || '').match(/^mini_report\.(life_path|personal_year|soul|mission)\.(\d+)\.(text|keywords)$/);
+  return match ? { type: match[1], number: match[2], field: match[3] } : null;
+}
+
+function formatMiniReportNumberLabel(number) {
+  return number === '33' ? '33/6' : number;
 }
 
 function createContentCard(item) {

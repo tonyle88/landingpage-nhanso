@@ -526,6 +526,49 @@ a {
   box-shadow: 0 0 0 1px rgba(240, 201, 106, 0.18), 0 16px 40px rgba(0, 0, 0, 0.26);
 }
 
+.mini-report-admin-panel {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(5, 20, 23, 0.72);
+}
+
+.mini-report-admin-filters,
+.mini-report-number-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.mini-report-filter-btn,
+.mini-report-number-btn {
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  font-family: inherit;
+  font-weight: 850;
+}
+
+.mini-report-number-btn {
+  min-width: 42px;
+  justify-content: center;
+  padding-inline: 12px;
+}
+
+.mini-report-filter-btn.is-active,
+.mini-report-number-btn.is-active {
+  color: #101010;
+  border-color: rgba(240, 201, 106, 0.78);
+  background: linear-gradient(135deg, var(--gold), var(--orange));
+  box-shadow: 0 10px 24px rgba(238, 125, 54, 0.2);
+}
+
 .card-top {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

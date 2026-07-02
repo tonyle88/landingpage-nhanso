@@ -1417,9 +1417,9 @@ function syncMiniReportContent(items) {
     if (!miniReportContent[type]) miniReportContent[type] = {};
     if (!miniReportContent[type][number]) miniReportContent[type][number] = { text: '', keywords: [] };
     if (field === 'keywords') {
-      miniReportContent[type][number].keywords = splitMiniReportKeywords(item.value);
+      miniReportContent[type][number].keywords = splitMiniReportKeywords(stripHtmlToText(item.value));
     } else {
-      miniReportContent[type][number].text = String(item.value || '').trim();
+      miniReportContent[type][number].text = stripHtmlToText(item.value);
     }
   });
 }
