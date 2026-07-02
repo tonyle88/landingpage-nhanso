@@ -2466,7 +2466,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
 .mini-report-result {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr 1fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
   margin-top: 24px;
 }
@@ -2521,6 +2521,10 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   background: rgba(212, 168, 67, 0.08);
   font-size: 0.86rem;
   font-weight: 800;
+}
+
+.mini-result-keywords {
+  grid-column: span 2;
 }
 
 .mini-result-action {
@@ -4240,6 +4244,10 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   .mini-report-shell,
   .mini-report-result {
     grid-template-columns: 1fr;
+  }
+
+  .mini-result-keywords {
+    grid-column: auto;
   }
 
   .mini-report-shell {

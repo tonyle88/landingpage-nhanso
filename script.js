@@ -59,8 +59,6 @@ const CONSULTATION_TYPE_LABELS = {
   offline: 'Offline - Trực tiếp tại TP.HCM',
 };
 
-const landingContentReady = loadLandingContentFromSheet();
-
 // Bank info for VietQR/SePay
 const BANK_BIN = '970418'; // BIDV BIN
 const BANK_ACCOUNT = '96247031088CUONG';
@@ -376,6 +374,7 @@ function finishLandingContentLoading() {
 
 function applyLandingContent(payload, options = {}) {
   (payload.items || []).forEach(applyLandingContentItem);
+  syncMiniReportContent(payload.items || []);
   syncHeroConsultationBadge();
   initYouTubeEmbeds();
   
@@ -1268,6 +1267,49 @@ const PERSONAL_YEAR_MEANINGS = {
   9: 'Năm hoàn tất: phù hợp tổng kết, buông bỏ điều cũ và chuẩn bị chu kỳ mới.',
 };
 
+const SOUL_MEANINGS = {
+  1: { text: 'Bên trong bạn khao khát được tự quyết, được dẫn đường và được là chính mình.', keywords: ['Tự chủ', 'Dẫn dắt', 'Can đảm'] },
+  2: { text: 'Linh hồn bạn cần sự kết nối, thấu hiểu và cảm giác được đồng hành nhẹ nhàng.', keywords: ['Kết nối', 'Hòa hợp', 'Tinh tế'] },
+  3: { text: 'Bạn được nuôi dưỡng bởi biểu đạt, sáng tạo và niềm vui được chia sẻ cảm xúc.', keywords: ['Biểu đạt', 'Sáng tạo', 'Niềm vui'] },
+  4: { text: 'Bạn cần cảm giác vững vàng, rõ ràng và một nền tảng đủ an toàn để phát triển.', keywords: ['Ổn định', 'Kỷ luật', 'An toàn'] },
+  5: { text: 'Linh hồn bạn tìm kiếm tự do, trải nghiệm mới và không gian để thay đổi.', keywords: ['Tự do', 'Khám phá', 'Linh hoạt'] },
+  6: { text: 'Bạn có nhu cầu yêu thương, chăm sóc và tạo nên sự hài hòa cho người mình quý.', keywords: ['Yêu thương', 'Chăm sóc', 'Hài hòa'] },
+  7: { text: 'Bên trong bạn cần chiều sâu, sự tĩnh lặng và quyền được hiểu mọi thứ theo cách riêng.', keywords: ['Chiều sâu', 'Tĩnh lặng', 'Trực giác'] },
+  8: { text: 'Bạn mong muốn làm chủ năng lực, tạo thành tựu và dùng sức ảnh hưởng đúng cách.', keywords: ['Thành tựu', 'Bản lĩnh', 'Ảnh hưởng'] },
+  9: { text: 'Linh hồn bạn hướng đến lòng trắc ẩn, sự bao dung và những giá trị lớn hơn bản thân.', keywords: ['Bao dung', 'Nhân ái', 'Phụng sự'] },
+  11: { text: 'Bạn có trực giác mạnh, dễ rung cảm với năng lượng xung quanh và cần tin vào ánh sáng nội tâm.', keywords: ['Trực giác', 'Cảm hứng', 'Khai mở'] },
+  22: { text: 'Bạn mang khát vọng kiến tạo điều có ích, biến lý tưởng sâu bên trong thành cấu trúc thật.', keywords: ['Kiến tạo', 'Lý tưởng', 'Bền vững'] },
+};
+
+const MISSION_MEANINGS = {
+  1: { text: 'Sứ mệnh của bạn là học cách đứng vững, mở đường và tạo dấu ấn riêng.', keywords: ['Mở đường', 'Độc lập', 'Tiên phong'] },
+  2: { text: 'Bạn phát triển tốt khi trở thành người kết nối, hòa giải và nâng đỡ các mối quan hệ.', keywords: ['Hợp tác', 'Kết nối', 'Lắng nghe'] },
+  3: { text: 'Con đường của bạn gắn với sáng tạo, truyền đạt và lan tỏa cảm hứng qua lời nói hoặc tác phẩm.', keywords: ['Giao tiếp', 'Sáng tạo', 'Lan tỏa'] },
+  4: { text: 'Bạn đến để xây nền, tạo hệ thống và biến ý tưởng thành kết quả có thể dùng lâu dài.', keywords: ['Xây dựng', 'Hệ thống', 'Bền bỉ'] },
+  5: { text: 'Bạn học qua trải nghiệm, thích nghi nhanh và giúp người khác nhìn thấy nhiều lựa chọn hơn.', keywords: ['Thích nghi', 'Trải nghiệm', 'Đổi mới'] },
+  6: { text: 'Sứ mệnh của bạn liên quan đến trách nhiệm, chữa lành và tạo không gian an toàn cho người khác.', keywords: ['Chữa lành', 'Trách nhiệm', 'Gia đình'] },
+  7: { text: 'Bạn có thiên hướng nghiên cứu, chiêm nghiệm và chia sẻ hiểu biết sau khi đã tự mình đào sâu.', keywords: ['Nghiên cứu', 'Chiêm nghiệm', 'Minh triết'] },
+  8: { text: 'Bạn phát triển qua năng lực quản trị, tạo giá trị vật chất và dùng quyền lực một cách tỉnh táo.', keywords: ['Quản trị', 'Giá trị', 'Thành tựu'] },
+  9: { text: 'Sứ mệnh của bạn là mở rộng lòng trắc ẩn, hoàn thiện bài học cũ và đóng góp cho cộng đồng.', keywords: ['Cộng đồng', 'Bao dung', 'Hoàn thiện'] },
+  11: { text: 'Bạn có sứ mệnh truyền cảm hứng, đánh thức trực giác và giúp người khác tin vào ánh sáng của họ.', keywords: ['Truyền cảm hứng', 'Khai sáng', 'Trực giác'] },
+  22: { text: 'Bạn có khả năng xây dựng điều lớn nếu biết kết hợp tầm nhìn với kỷ luật thực tế.', keywords: ['Tầm nhìn', 'Kiến tạo', 'Thực tế'] },
+};
+
+const PYTHAGOREAN_VALUES = {
+  a: 1, j: 1, s: 1,
+  b: 2, k: 2, t: 2,
+  c: 3, l: 3, u: 3,
+  d: 4, m: 4, v: 4,
+  e: 5, n: 5, w: 5,
+  f: 6, o: 6, x: 6,
+  g: 7, p: 7, y: 7,
+  h: 8, q: 8, z: 8,
+  i: 9, r: 9,
+};
+
+let miniReportContent = createDefaultMiniReportContent();
+const landingContentReady = loadLandingContentFromSheet();
+
 function initMiniReport() {
   const form = document.getElementById('mini-report-form');
   const dobInput = document.getElementById('mini-dob');
@@ -1291,15 +1333,23 @@ function buildMiniReport(name, dob) {
   const [, month, day] = dob.split('-').map(Number);
   const currentYear = new Date().getFullYear();
   const personalYear = reduceNumerologyNumber(sumDigits(day) + sumDigits(month) + sumDigits(currentYear), false);
-  const meaning = MINI_REPORT_MEANINGS[lifePath] || MINI_REPORT_MEANINGS[reduceNumerologyNumber(lifePath, false)] || MINI_REPORT_MEANINGS[9];
+  const soul = calculateNameNumber(name, true);
+  const mission = calculateNameNumber(name, false);
+  const meaning = getMiniReportMeaning('life_path', lifePath);
+  const soulMeaning = getMiniReportMeaning('soul', soul);
+  const missionMeaning = getMiniReportMeaning('mission', mission);
 
   return {
     name,
     lifePath,
+    soul,
+    mission,
     personalYear,
     lifePathText: meaning.text,
-    personalYearText: PERSONAL_YEAR_MEANINGS[personalYear] || PERSONAL_YEAR_MEANINGS[9],
-    keywords: meaning.keywords,
+    soulText: soulMeaning.text,
+    missionText: missionMeaning.text,
+    personalYearText: getMiniReportMeaning('personal_year', personalYear).text,
+    keywords: mergeMiniReportKeywords(meaning.keywords, soulMeaning.keywords, missionMeaning.keywords),
   };
 }
 
@@ -1309,6 +1359,10 @@ function renderMiniReport(result) {
 
   document.getElementById('mini-life-path').textContent = result.lifePath;
   document.getElementById('mini-life-path-text').textContent = result.lifePathText;
+  document.getElementById('mini-soul').textContent = result.soul;
+  document.getElementById('mini-soul-text').textContent = result.soulText;
+  document.getElementById('mini-mission').textContent = result.mission;
+  document.getElementById('mini-mission-text').textContent = result.missionText;
   document.getElementById('mini-personal-year').textContent = result.personalYear;
   document.getElementById('mini-personal-year-text').textContent = result.personalYearText;
 
@@ -1326,6 +1380,69 @@ function renderMiniReport(result) {
   resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+function createDefaultMiniReportContent() {
+  return {
+    life_path: cloneMeaningMap(MINI_REPORT_MEANINGS),
+    personal_year: Object.fromEntries(
+      Object.entries(PERSONAL_YEAR_MEANINGS).map(([number, text]) => [number, { text, keywords: [] }])
+    ),
+    soul: cloneMeaningMap(SOUL_MEANINGS),
+    mission: cloneMeaningMap(MISSION_MEANINGS),
+  };
+}
+
+function cloneMeaningMap(map) {
+  return Object.fromEntries(
+    Object.entries(map).map(([number, meaning]) => [
+      number,
+      {
+        text: meaning.text || '',
+        keywords: Array.isArray(meaning.keywords) ? [...meaning.keywords] : [],
+      },
+    ])
+  );
+}
+
+function syncMiniReportContent(items) {
+  miniReportContent = createDefaultMiniReportContent();
+  items.forEach((item) => {
+    if (!item || item.enabled === false) return;
+    const match = String(item.key || '').match(/^mini_report\.(life_path|personal_year|soul|mission)\.(\d+)\.(text|keywords)$/);
+    if (!match) return;
+
+    const [, type, number, field] = match;
+    if (!miniReportContent[type]) miniReportContent[type] = {};
+    if (!miniReportContent[type][number]) miniReportContent[type][number] = { text: '', keywords: [] };
+    if (field === 'keywords') {
+      miniReportContent[type][number].keywords = splitMiniReportKeywords(item.value);
+    } else {
+      miniReportContent[type][number].text = String(item.value || '').trim();
+    }
+  });
+}
+
+function getMiniReportMeaning(type, number) {
+  const map = miniReportContent[type] || {};
+  const key = String(number);
+  const reducedKey = String(reduceNumerologyNumber(number, false));
+  return map[key] || map[reducedKey] || map[9] || { text: '', keywords: [] };
+}
+
+function splitMiniReportKeywords(value) {
+  return String(value || '')
+    .split(/[,\n|]+/)
+    .map((keyword) => keyword.trim())
+    .filter(Boolean);
+}
+
+function mergeMiniReportKeywords(...groups) {
+  const keywords = [];
+  groups.flat().forEach((keyword) => {
+    if (keyword && !keywords.includes(keyword)) keywords.push(keyword);
+  });
+  return keywords.slice(0, 6);
+}
+
 function sumDigits(value) {
   return String(Math.abs(Number(value) || 0))
     .split('')
@@ -1339,6 +1456,34 @@ function reduceNumerologyNumber(value, keepMasterNumbers) {
     num = sumDigits(num);
   }
   return num || 9;
+}
+
+function calculateNameNumber(name, vowelsOnly) {
+  const letters = extractPythagoreanLetters(name, vowelsOnly);
+  const total = letters.reduce((sum, letter) => sum + (PYTHAGOREAN_VALUES[letter] || 0), 0);
+  return reduceNumerologyNumber(total, true);
+}
+
+function extractPythagoreanLetters(name, vowelsOnly) {
+  return normalizeVietnameseName(name)
+    .split(/\s+/)
+    .flatMap((syllable) => {
+      const chars = syllable.replace(/[^a-z]/g, '').split('');
+      const yIsVowel = syllable === 'y';
+      return chars.filter((char) => {
+        const isVowel = 'aeiou'.includes(char) || (char === 'y' && yIsVowel);
+        return vowelsOnly ? isVowel : true;
+      });
+    });
+}
+
+function normalizeVietnameseName(name) {
+  return String(name || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'd')
+    .toLowerCase();
 }
 
 function populatePackageOptions(consultationType, selectedValue = '', openPicker = false) {
