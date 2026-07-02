@@ -1380,7 +1380,8 @@ function renderMiniReport(result) {
   }
 
   resultEl.hidden = false;
-  resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  const scrollBlock = window.matchMedia('(max-width: 820px)').matches ? 'start' : 'nearest';
+  resultEl.scrollIntoView({ behavior: 'smooth', block: scrollBlock });
 }
 
 function createDefaultMiniReportContent() {

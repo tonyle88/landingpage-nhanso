@@ -2469,6 +2469,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
   margin-top: 24px;
+  scroll-margin-top: 92px;
 }
 
 .mini-report-result[hidden] {
@@ -2530,9 +2531,15 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .mini-result-action {
   grid-column: 1 / -1;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 18px;
+  text-align: center;
+}
+
+.mini-result-action p {
+  max-width: 980px;
 }
 
 /* ===== PACKAGE COMPARE ===== */
@@ -4246,6 +4253,16 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     grid-template-columns: 1fr;
   }
 
+  .mini-report-title,
+  .mini-report-desc {
+    text-align: center;
+  }
+
+  .mini-report-points {
+    max-width: 320px;
+    margin-inline: auto;
+  }
+
   .mini-result-keywords {
     grid-column: auto;
   }
@@ -4254,12 +4271,40 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     padding: 24px 18px;
   }
 
+  .mini-report-form,
+  .mini-result-card,
+  .mini-result-action {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .mini-report-result {
+    gap: 14px;
+    margin-top: 18px;
+  }
+
+  .mini-result-card,
+  .mini-result-action {
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .mini-result-card strong {
+    font-size: 2.65rem;
+  }
+
+  .mini-keywords {
+    justify-content: center;
+  }
+
   .mini-result-action {
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
   }
 
   .mini-result-action .btn {
     justify-content: center;
+    width: min(100%, 320px);
   }
 }
