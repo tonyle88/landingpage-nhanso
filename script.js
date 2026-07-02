@@ -1253,6 +1253,7 @@ const MINI_REPORT_MEANINGS = {
   9: { text: 'Bạn giàu lòng trắc ẩn, có tầm nhìn rộng và thường học qua sự buông bỏ.', keywords: ['Nhân ái', 'Tầm nhìn', 'Phụng sự'] },
   11: { text: 'Bạn nhạy năng lượng, giàu trực giác và dễ trở thành người truyền cảm hứng.', keywords: ['Trực giác', 'Khai sáng', 'Cảm hứng'] },
   22: { text: 'Bạn mang năng lượng kiến tạo lớn, cần biến lý tưởng thành cấu trúc thực tế.', keywords: ['Kiến tạo', 'Tầm vóc', 'Xây dựng'] },
+  33: { text: 'Bạn mang năng lượng chữa lành và phụng sự lớn, cần học cách yêu thương mà không đánh mất chính mình.', keywords: ['Chữa lành', 'Phụng sự', 'Yêu thương'] },
 };
 
 const PERSONAL_YEAR_MEANINGS = {
@@ -1279,6 +1280,7 @@ const SOUL_MEANINGS = {
   9: { text: 'Linh hồn bạn hướng đến lòng trắc ẩn, sự bao dung và những giá trị lớn hơn bản thân.', keywords: ['Bao dung', 'Nhân ái', 'Phụng sự'] },
   11: { text: 'Bạn có trực giác mạnh, dễ rung cảm với năng lượng xung quanh và cần tin vào ánh sáng nội tâm.', keywords: ['Trực giác', 'Cảm hứng', 'Khai mở'] },
   22: { text: 'Bạn mang khát vọng kiến tạo điều có ích, biến lý tưởng sâu bên trong thành cấu trúc thật.', keywords: ['Kiến tạo', 'Lý tưởng', 'Bền vững'] },
+  33: { text: 'Sâu bên trong bạn có nhu cầu yêu thương, chữa lành và nâng đỡ người khác bằng sự bao dung trưởng thành.', keywords: ['Yêu thương', 'Chữa lành', 'Bao dung'] },
 };
 
 const MISSION_MEANINGS = {
@@ -1293,6 +1295,7 @@ const MISSION_MEANINGS = {
   9: { text: 'Sứ mệnh của bạn là mở rộng lòng trắc ẩn, hoàn thiện bài học cũ và đóng góp cho cộng đồng.', keywords: ['Cộng đồng', 'Bao dung', 'Hoàn thiện'] },
   11: { text: 'Bạn có sứ mệnh truyền cảm hứng, đánh thức trực giác và giúp người khác tin vào ánh sáng của họ.', keywords: ['Truyền cảm hứng', 'Khai sáng', 'Trực giác'] },
   22: { text: 'Bạn có khả năng xây dựng điều lớn nếu biết kết hợp tầm nhìn với kỷ luật thực tế.', keywords: ['Tầm nhìn', 'Kiến tạo', 'Thực tế'] },
+  33: { text: 'Bạn có sứ mệnh lan tỏa tình thương, chữa lành và dẫn dắt bằng sự nâng đỡ thay vì kiểm soát.', keywords: ['Lan tỏa', 'Chữa lành', 'Nâng đỡ'] },
 };
 
 const PYTHAGOREAN_VALUES = {
@@ -1357,11 +1360,11 @@ function renderMiniReport(result) {
   const resultEl = document.getElementById('mini-report-result');
   if (!resultEl) return;
 
-  document.getElementById('mini-life-path').textContent = result.lifePath;
+  document.getElementById('mini-life-path').textContent = formatMasterNumber(result.lifePath);
   document.getElementById('mini-life-path-text').textContent = result.lifePathText;
-  document.getElementById('mini-soul').textContent = result.soul;
+  document.getElementById('mini-soul').textContent = formatMasterNumber(result.soul);
   document.getElementById('mini-soul-text').textContent = result.soulText;
-  document.getElementById('mini-mission').textContent = result.mission;
+  document.getElementById('mini-mission').textContent = formatMasterNumber(result.mission);
   document.getElementById('mini-mission-text').textContent = result.missionText;
   document.getElementById('mini-personal-year').textContent = result.personalYear;
   document.getElementById('mini-personal-year-text').textContent = result.personalYearText;
@@ -1452,10 +1455,14 @@ function sumDigits(value) {
 function reduceNumerologyNumber(value, keepMasterNumbers) {
   let num = Math.abs(Number(value) || 0);
   while (num > 9) {
-    if (keepMasterNumbers && (num === 11 || num === 22)) return num;
+    if (keepMasterNumbers && (num === 11 || num === 22 || num === 33)) return num;
     num = sumDigits(num);
   }
   return num || 9;
+}
+
+function formatMasterNumber(number) {
+  return Number(number) === 33 ? '33/6' : String(number);
 }
 
 function calculateNameNumber(name, vowelsOnly) {

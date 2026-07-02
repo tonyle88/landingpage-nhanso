@@ -462,7 +462,15 @@ function updateSingleCardState(card, item) {
 function shouldUseTextarea(item) {
   const type = item.type.toLowerCase();
   const key = item.key.toLowerCase();
-  return type === 'html' || key.includes('body') || key.includes('desc') || key.includes('content') || item.value.length > 90 || item.value.includes('\n');
+  const section = String(item.section || '').toLowerCase();
+  const isAttributeValue = ['attr', 'attribute', 'placeholder', 'href', 'src', 'alt', 'aria-label'].includes(type);
+  return (!isAttributeValue && section === 'tra cứu thử')
+    || type === 'html'
+    || key.includes('body')
+    || key.includes('desc')
+    || key.includes('content')
+    || item.value.length > 90
+    || item.value.includes('\n');
 }
 
 function renderStats() {
