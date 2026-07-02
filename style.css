@@ -1340,9 +1340,13 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   color: var(--color-white-90);
   font-size: 0.95rem;
   line-height: 1.5;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 .mentor-feature-card strong {
+  display: inline;
   color: var(--color-gold-light);
+  white-space: nowrap;
 }
 .about-quote em { color: var(--color-gold-light); font-style: normal; font-weight: 700; }
 
@@ -3267,8 +3271,8 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     min-width: 0;
     font-size: 0.95rem;
     line-height: 1.55;
-    word-break: break-word;
-    overflow-wrap: break-word;
+    word-break: normal;
+    overflow-wrap: normal;
     flex: 1;
   }
 }

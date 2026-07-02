@@ -894,7 +894,9 @@ function applyLandingContentItem(item) {
 
   elements.forEach((element) => {
     if (type === 'html') {
-      element.innerHTML = value;
+      element.innerHTML = element.matches('#about .mentor-feature-card span')
+        ? normalizeInlineLandingContentHtml(value)
+        : value;
       return;
     }
     if (type === 'attr' || type === 'attribute') {
@@ -914,6 +916,16 @@ function applyLandingContentItem(item) {
     }
     element.innerHTML = value;
   });
+}
+
+function normalizeInlineLandingContentHtml(value) {
+  return String(value)
+    .replace(/<\/p>\s*<p[^>]*>/gi, ' ')
+    .replace(/^\s*<p[^>]*>/i, '')
+    .replace(/<\/p>\s*$/i, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+(<strong\b)/gi, '&nbsp;$1')
+    .trim();
 }
 
 function normalizeLandingContentValue(key, rawValue, item) {
