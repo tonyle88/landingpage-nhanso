@@ -473,7 +473,8 @@ function parseMiniReportMeaningKey(key) {
 }
 
 function formatMiniReportNumberLabel(number) {
-  return number === '33' ? '33/6' : number;
+  const masterLabels = { 11: '11/2', 22: '22/4', 33: '33/6' };
+  return masterLabels[Number(number)] || number;
 }
 
 function createContentCard(item) {

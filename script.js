@@ -1462,7 +1462,8 @@ function reduceNumerologyNumber(value, keepMasterNumbers) {
 }
 
 function formatMasterNumber(number) {
-  return Number(number) === 33 ? '33/6' : String(number);
+  const masterLabels = { 11: '11/2', 22: '22/4', 33: '33/6' };
+  return masterLabels[Number(number)] || String(number);
 }
 
 function calculateNameNumber(name, vowelsOnly) {
