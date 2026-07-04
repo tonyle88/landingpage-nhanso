@@ -1331,27 +1331,26 @@ function initMiniReport() {
 }
 
 function buildMiniReport(name, dob) {
-  const digits = dob.replace(/\D/g, '').split('').map(Number);
-  const lifePath = reduceNumerologyNumber(digits.reduce((sum, num) => sum + num, 0), true);
-  const [, month, day] = dob.split('-').map(Number);
+  const [year, month, day] = dob.split('-').map(Number);
+  const lifePath = calculateLifePathNumber(day, month, year);
   const currentYear = new Date().getFullYear();
-  const personalYear = reduceNumerologyNumber(sumDigits(day) + sumDigits(month) + sumDigits(currentYear), false);
+  const personalYear = resolveFinalNumber(sumDigits(day) + sumDigits(month) + sumDigits(currentYear), false);
   const soul = calculateNameNumber(name, true);
   const mission = calculateNameNumber(name, false);
-  const meaning = getMiniReportMeaning('life_path', lifePath);
-  const soulMeaning = getMiniReportMeaning('soul', soul);
-  const missionMeaning = getMiniReportMeaning('mission', mission);
+  const meaning = getMiniReportMeaning('life_path', lifePath.meaningNumber);
+  const soulMeaning = getMiniReportMeaning('soul', soul.meaningNumber);
+  const missionMeaning = getMiniReportMeaning('mission', mission.meaningNumber);
 
   return {
     name,
-    lifePath,
-    soul,
-    mission,
-    personalYear,
+    lifePath: lifePath.display,
+    soul: soul.display,
+    mission: mission.display,
+    personalYear: personalYear.display,
     lifePathText: meaning.text,
     soulText: soulMeaning.text,
     missionText: missionMeaning.text,
-    personalYearText: getMiniReportMeaning('personal_year', personalYear).text,
+    personalYearText: getMiniReportMeaning('personal_year', personalYear.meaningNumber).text,
     keywords: mergeMiniReportKeywords(meaning.keywords, soulMeaning.keywords, missionMeaning.keywords),
   };
 }
@@ -1360,11 +1359,11 @@ function renderMiniReport(result) {
   const resultEl = document.getElementById('mini-report-result');
   if (!resultEl) return;
 
-  document.getElementById('mini-life-path').textContent = formatMasterNumber(result.lifePath);
+  document.getElementById('mini-life-path').textContent = result.lifePath;
   document.getElementById('mini-life-path-text').textContent = result.lifePathText;
-  document.getElementById('mini-soul').textContent = formatMasterNumber(result.soul);
+  document.getElementById('mini-soul').textContent = result.soul;
   document.getElementById('mini-soul-text').textContent = result.soulText;
-  document.getElementById('mini-mission').textContent = formatMasterNumber(result.mission);
+  document.getElementById('mini-mission').textContent = result.mission;
   document.getElementById('mini-mission-text').textContent = result.missionText;
   document.getElementById('mini-personal-year').textContent = result.personalYear;
   document.getElementById('mini-personal-year-text').textContent = result.personalYearText;
@@ -1462,28 +1461,66 @@ function reduceNumerologyNumber(value, keepMasterNumbers) {
   return num || 9;
 }
 
-function formatMasterNumber(number) {
+function calculateLifePathNumber(day, month, year) {
+  const parts = [day, month, year].map((part) => reduceNumerologyNumber(part, true));
+  return resolveFinalNumber(parts.reduce((sum, part) => sum + part, 0), true);
+}
+
+function resolveFinalNumber(value, keepMasterNumbers) {
+  const num = Math.abs(Number(value) || 0);
+  const karmicLabels = { 13: '13/4', 14: '14/5', 16: '16/7', 19: '19/1' };
+  if (karmicLabels[num]) {
+    return {
+      value: num,
+      display: karmicLabels[num],
+      meaningNumber: reduceNumerologyNumber(num, false),
+    };
+  }
+
+  const reduced = reduceNumerologyNumber(num, keepMasterNumbers);
+  return {
+    value: reduced,
+    display: formatCompoundNumber(reduced),
+    meaningNumber: reduced,
+  };
+}
+
+function formatCompoundNumber(number) {
   const masterLabels = { 11: '11/2', 22: '22/4', 33: '33/6' };
   return masterLabels[Number(number)] || String(number);
 }
 
 function calculateNameNumber(name, vowelsOnly) {
-  const letters = extractPythagoreanLetters(name, vowelsOnly);
-  const total = letters.reduce((sum, letter) => sum + (PYTHAGOREAN_VALUES[letter] || 0), 0);
-  return reduceNumerologyNumber(total, true);
+  const wordNumbers = normalizeVietnameseName(name)
+    .split(/\s+/)
+    .map((word) => calculateNameWordNumber(word, vowelsOnly))
+    .filter(Boolean);
+  return resolveFinalNumber(wordNumbers.reduce((sum, number) => sum + number, 0), true);
 }
 
-function extractPythagoreanLetters(name, vowelsOnly) {
-  return normalizeVietnameseName(name)
-    .split(/\s+/)
-    .flatMap((syllable) => {
-      const chars = syllable.replace(/[^a-z]/g, '').split('');
-      const yIsVowel = syllable === 'y';
-      return chars.filter((char) => {
-        const isVowel = 'aeiou'.includes(char) || (char === 'y' && yIsVowel);
-        return vowelsOnly ? isVowel : true;
-      });
-    });
+function calculateNameWordNumber(word, vowelsOnly) {
+  const letters = extractPythagoreanLetters(word, vowelsOnly);
+  const total = letters.reduce((sum, letter) => sum + (PYTHAGOREAN_VALUES[letter] || 0), 0);
+  return total ? reduceNumerologyNumber(total, true) : 0;
+}
+
+function extractPythagoreanLetters(word, vowelsOnly) {
+  const chars = String(word || '').replace(/[^a-z]/g, '').split('');
+  return chars.filter((char, index) => {
+    const isVowel = isSoulVowel(chars, index);
+    return vowelsOnly ? isVowel : true;
+  });
+}
+
+function isSoulVowel(chars, index) {
+  const char = chars[index];
+  if (isBasicVowel(char)) return true;
+  if (char !== 'y') return false;
+  return !isBasicVowel(chars[index - 1]) && !isBasicVowel(chars[index + 1]);
+}
+
+function isBasicVowel(char) {
+  return Boolean(char) && 'aeiou'.includes(char);
 }
 
 function normalizeVietnameseName(name) {
