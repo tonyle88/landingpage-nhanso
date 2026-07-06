@@ -134,12 +134,9 @@ async function handleLogin(event) {
     state.token = payload.token;
     state.user = payload.user;
     sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token: state.token, user: state.user }));
-    setMessage(els.loginMessage, payload.forcePasswordChange ? 'Bạn đang dùng mật khẩu mặc định, hãy đổi ngay sau khi vào.' : 'Đăng nhập thành công.', 'success');
+    setMessage(els.loginMessage, 'Đăng nhập thành công.', 'success');
     showAdmin();
     await loadContent();
-    if (payload.forcePasswordChange) {
-      window.setTimeout(() => openModal(els.passwordModal), 450);
-    }
   } catch (error) {
     setMessage(els.loginMessage, error.message, 'error');
   }
@@ -1046,7 +1043,7 @@ function createAdminPackageCard(pkg, index = 0, total = 0) {
   const info = document.createElement('div');
   info.innerHTML = '<div class="content-key"></div><p class="content-desc"></p>';
   info.querySelector('.content-key').textContent = `${pkg.code} · ${pkg.enabled ? 'Đang bật' : 'Đang tắt'}`;
-  info.querySelector('.content-desc').innerHTML = pkg.name || '';
+  info.querySelector('.content-desc').textContent = pkg.name || '';
   const statusGroup = document.createElement('div');
   statusGroup.className = 'package-card-status';
   const dragHandle = document.createElement('button');
@@ -1078,7 +1075,7 @@ function createAdminPackageCard(pkg, index = 0, total = 0) {
   features.className = 'admin-package-features';
   (pkg.features || []).slice(0, 5).forEach((feature) => {
     const item = document.createElement('li');
-    item.innerHTML = feature;
+    item.textContent = feature;
     features.appendChild(item);
   });
 
@@ -1886,7 +1883,7 @@ function openGenericSectionModal(sec = null) {
   modal.querySelector('#generic-sec-tag').value = sec && sec.tag ? sec.tag : '';
   modal.querySelector('#generic-sec-title').value = sec ? sec.title : '';
   if (window.genericQuill) {
-    window.genericQuill.root.innerHTML = sec ? sec.contentHtml : '';
+    window.genericQuill.root.innerHTML = sec ? (window.DOMPurify ? window.DOMPurify.sanitize(sec.contentHtml) : sec.contentHtml) : '';
   }
   modal.querySelector('#generic-sec-enabled').checked = sec ? sec.enabled : true;
   

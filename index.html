@@ -18,6 +18,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="style.css?v=20260702-mini-report-mobile-stable" />
+  <!-- DOMPurify for XSS Protection -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 </head>
 <body class="landing-content-loading">
 
@@ -1056,6 +1058,7 @@
         <a
           href="https://m.me/clowcatpatronus"
           target="_blank"
+          rel="noopener noreferrer"
           class="btn success-fanpage-btn"
           id="btn-message-fanpage"
           data-message="Khách hàng đã chuyển khoản thanh toán, vui lòng kiểm tra."

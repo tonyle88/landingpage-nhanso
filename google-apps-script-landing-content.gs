@@ -7,8 +7,6 @@ const SPREADSHEET_ID = '1hxBpzJwNO470xqoHBuaZF26anCGir5pnpQk0iPTxz4k';
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
 const ADMIN_USERS_SHEET_NAME = 'Admin users';
 const SCRIPT_VERSION = '2026-06-14-v16-cache-order';
-const ADMIN_DEFAULT_USERNAME = 'admin';
-const ADMIN_DEFAULT_PASSWORD = 'admin123';
 const ADMIN_SESSION_SECONDS = 21600;
 const LANDING_CONTENT_CACHE_KEY = 'landing_content_payload_v16';
 const LANDING_CONTENT_CACHE_SECONDS = 3600; // 1 tiếng
@@ -882,7 +880,6 @@ function handleAdminLogin(params) {
     token: token,
     user: adminUserPublicProfile(found),
     expiresIn: ADMIN_SESSION_SECONDS,
-    forcePasswordChange: username === ADMIN_DEFAULT_USERNAME && password === ADMIN_DEFAULT_PASSWORD,
     scriptVersion: SCRIPT_VERSION,
   });
 }
@@ -1046,20 +1043,6 @@ function ensureAdminUsersSheet() {
 
   sheet.getRange(1, 1, 1, ADMIN_USERS_HEADERS.length).setValues([ADMIN_USERS_HEADERS]);
   sheet.setFrozenRows(1);
-  if (sheet.getLastRow() < 2) {
-    const salt = makeAdminSalt();
-    sheet.getRange(2, 1, 1, ADMIN_USERS_HEADERS.length).setValues([[
-      true,
-      ADMIN_DEFAULT_USERNAME,
-      'Quản trị viên',
-      'admin',
-      salt,
-      hashAdminPassword(ADMIN_DEFAULT_PASSWORD, salt),
-      getVietnamNow(),
-      getVietnamNow(),
-      '',
-    ]]);
-  }
   formatAdminUserDateColumns(sheet);
   sheet.autoResizeColumns(1, ADMIN_USERS_HEADERS.length);
   return sheet;
