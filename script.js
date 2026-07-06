@@ -11,7 +11,7 @@ const LANDING_CONTENT_TIMEOUT_MS = 9000;
 const LANDING_CONTENT_RETRY_COUNT = 2;
 const LANDING_CONTENT_LOADING_MAX_MS = 1600;
 const LANDING_CONTENT_LOADING_CLASS = 'landing-content-loading';
-const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_cache_v4';
+const LANDING_CONTENT_CACHE_KEY = 'clowcat_landing_content_cache_v5';
 const LANDING_CONTENT_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const PAYMENT_SETTINGS_REFRESH_MAX_AGE_MS = 60 * 1000;
 const PAYMENT_SETTINGS_REFRESH_TIMEOUT_MS = 4500;
@@ -724,11 +724,17 @@ function normalizeFeedbackImages(images) {
     .map((img, index) => ({
       ...img,
       originalIndex: index,
-      createdAtMs: parseFeedbackCreatedAt(img?.createdAt),
+      createdAtMs: getFeedbackSortOrder(img, index),
       url: String(img?.url || '').trim(),
     }))
     .filter((img) => img.url)
     .sort((a, b) => (b.createdAtMs - a.createdAtMs) || (b.originalIndex - a.originalIndex));
+}
+
+function getFeedbackSortOrder(img, index) {
+  const serverOrder = Number(img?.sortOrder ?? img?.createdAtMs ?? 0);
+  if (Number.isFinite(serverOrder) && serverOrder > 0) return serverOrder;
+  return parseFeedbackCreatedAt(img?.createdAt) || index + 1;
 }
 
 function parseFeedbackCreatedAt(value) {

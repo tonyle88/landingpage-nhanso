@@ -1670,7 +1670,10 @@ function getFeedbackImages() {
   }))
     .filter(img => img.url)
     .sort((a, b) => (b.createdAtRaw - a.createdAtRaw) || (b.rowIndex - a.rowIndex))
-    .map(({ rowIndex, createdAtRaw, ...img }) => img);
+    .map(({ rowIndex, createdAtRaw, ...img }) => ({
+      ...img,
+      sortOrder: createdAtRaw || rowIndex + 1,
+    }));
 }
 
 function getImgBbApiKey() {
