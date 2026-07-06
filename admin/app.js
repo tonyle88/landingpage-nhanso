@@ -5,6 +5,7 @@ const MANAGED_PACKAGE_CONTENT_PREFIXES = [
   'packages.big3_',
   'packages.big7_',
 ];
+const FEEDBACK_IMAGES_PER_PAGE = 8;
 
 const state = {
   token: null,
@@ -17,6 +18,7 @@ const state = {
   search: '',
   selectedSection: 'all',
   miniReportFilter: { type: 'life_path', number: '1' },
+  feedbackPage: 1,
   savingKeys: new Set(),
   toastTimeout: null,
 };
@@ -1504,6 +1506,7 @@ function renderFeedbackImages() {
       input.value = '';
       btn.disabled = true;
       msg.textContent = '';
+      state.feedbackPage = 1;
       if (payload.feedbackImages) state.feedbackImages = payload.feedbackImages;
       loadContent(true);
     } catch(err) {
@@ -1523,8 +1526,14 @@ function renderFeedbackImages() {
   gallery.style.width = '100%';
   gallery.style.gridColumn = '1 / -1';
   
-  if (state.feedbackImages && state.feedbackImages.length) {
-    state.feedbackImages.forEach(img => {
+  const feedbackImages = state.feedbackImages || [];
+  const totalPages = Math.max(1, Math.ceil(feedbackImages.length / FEEDBACK_IMAGES_PER_PAGE));
+  state.feedbackPage = Math.min(Math.max(1, state.feedbackPage || 1), totalPages);
+  const pageStart = (state.feedbackPage - 1) * FEEDBACK_IMAGES_PER_PAGE;
+  const pageImages = feedbackImages.slice(pageStart, pageStart + FEEDBACK_IMAGES_PER_PAGE);
+
+  if (feedbackImages.length) {
+    pageImages.forEach(img => {
       const card = document.createElement('article');
       card.className = 'content-card';
       card.style.display = 'flex';
@@ -1553,6 +1562,7 @@ function renderFeedbackImages() {
         try {
           const payload = await api('deleteFeedbackImage', { token: state.token, fileId: img.fileId });
           if (payload.feedbackImages) state.feedbackImages = payload.feedbackImages;
+          state.feedbackPage = Math.min(state.feedbackPage, Math.max(1, Math.ceil((state.feedbackImages || []).length / FEEDBACK_IMAGES_PER_PAGE)));
           toast('Đã xóa ảnh.');
           loadContent(true);
         } catch(err) {
@@ -1569,6 +1579,34 @@ function renderFeedbackImages() {
   }
   
   els.editorGrid.appendChild(gallery);
+
+  if (feedbackImages.length > FEEDBACK_IMAGES_PER_PAGE) {
+    const pager = document.createElement('nav');
+    pager.className = 'feedback-pagination';
+    pager.setAttribute('aria-label', 'Phân trang ảnh feedback');
+    pager.innerHTML = `
+      <button type="button" class="ghost-button" ${state.feedbackPage === 1 ? 'disabled' : ''}>
+        <i class="fa-solid fa-chevron-left"></i>
+        <span>Trước</span>
+      </button>
+      <span>Trang ${state.feedbackPage} / ${totalPages}</span>
+      <button type="button" class="ghost-button" ${state.feedbackPage === totalPages ? 'disabled' : ''}>
+        <span>Sau</span>
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+    `;
+    const [prevBtn, nextBtn] = pager.querySelectorAll('button');
+    prevBtn.addEventListener('click', () => {
+      state.feedbackPage = Math.max(1, state.feedbackPage - 1);
+      render();
+    });
+    nextBtn.addEventListener('click', () => {
+      state.feedbackPage = Math.min(totalPages, state.feedbackPage + 1);
+      render();
+    });
+    els.editorGrid.appendChild(pager);
+  }
+
   els.emptyState.classList.add('is-hidden');
 }
 

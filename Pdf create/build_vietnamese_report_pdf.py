@@ -41,12 +41,22 @@ os.makedirs(INPUT_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
-def latest_file(folder, patterns):
+def files_by_patterns(folder, patterns):
     paths = []
     for pattern in patterns:
         paths.extend(glob.glob(os.path.join(folder, pattern)))
     paths = [path for path in paths if os.path.isfile(path)]
-    return max(paths, key=os.path.getmtime) if paths else None
+    return sorted(paths, key=os.path.getmtime, reverse=True)
+
+
+def latest_file(folder, patterns):
+    paths = files_by_patterns(folder, patterns)
+    return paths[0] if paths else None
+
+
+def normalized_stem(path):
+    name = os.path.splitext(os.path.basename(path))[0].lower()
+    return re.sub(r"[^0-9a-zà-ỹ]+", "", name, flags=re.UNICODE)
 
 
 def output_slug_from_input(path):
@@ -58,18 +68,36 @@ def output_slug_from_input(path):
     return name.upper() or "CLOWCAT_OUTPUT"
 
 
-INPUT_PDF = latest_file(INPUT_DIR, ("*.pdf", "*.PDF"))
-INPUT_MAP = latest_file(INPUT_DIR, ("*.jpg", "*.jpeg", "*.png", "*.webp", "*.JPG", "*.JPEG", "*.PNG", "*.WEBP"))
+PDF_PATTERNS = ("*.pdf", "*.PDF")
+MAP_PATTERNS = ("*.jpg", "*.jpeg", "*.png", "*.webp", "*.JPG", "*.JPEG", "*.PNG", "*.WEBP")
+
+
+def select_input_pair():
+    pdfs = files_by_patterns(INPUT_DIR, PDF_PATTERNS)
+    maps = files_by_patterns(INPUT_DIR, MAP_PATTERNS)
+    if not pdfs:
+        return None, maps[0] if maps else None
+    if not maps:
+        return pdfs[0], None
+
+    selected_pdf = pdfs[0]
+    pdf_key = normalized_stem(selected_pdf)
+    matched_maps = [path for path in maps if normalized_stem(path) == pdf_key]
+    selected_map = matched_maps[0] if matched_maps else maps[0]
+    return selected_pdf, selected_map
+
+
+INPUT_PDF, INPUT_MAP = select_input_pair()
 OUTPUT = os.path.join(OUTPUT_DIR, f"{output_slug_from_input(INPUT_PDF)}_VietHoa_ClowCat.pdf")
 
 LOGO = os.path.join(BASE_DIR, "assets/images/logo.png")
 HERO_BG = os.path.join(BASE_DIR, "assets/images/hero_bg.png")
 COVER_BG_A4 = os.path.join(BASE_DIR, "assets/images/hero_bg_a4_cover.jpg")
-INPUT_MAP_CANDIDATES = []
-for pattern in ("*.jpg", "*.jpeg", "*.png", "*.webp", "*.JPG", "*.JPEG", "*.PNG", "*.WEBP"):
-    INPUT_MAP_CANDIDATES.extend(glob.glob(os.path.join(INPUT_DIR, pattern)))
-INPUT_MAP_CANDIDATES = sorted(INPUT_MAP_CANDIDATES, key=os.path.getmtime, reverse=True)
-HANDWRITTEN_MAP_CANDIDATES = ([INPUT_MAP] if INPUT_MAP else []) + INPUT_MAP_CANDIDATES
+INPUT_MAP_CANDIDATES = files_by_patterns(INPUT_DIR, MAP_PATTERNS)
+HANDWRITTEN_MAP_CANDIDATES = []
+for path in ([INPUT_MAP] if INPUT_MAP else []) + INPUT_MAP_CANDIDATES:
+    if path and path not in HANDWRITTEN_MAP_CANDIDATES:
+        HANDWRITTEN_MAP_CANDIDATES.append(path)
 
 TEAL_DARKEST = colors.HexColor("#091C20")
 TEAL_DARK = colors.HexColor("#0D2B30")
@@ -342,21 +370,38 @@ class BirthGrid(Flowable):
         c = self.canv
         cell = self.width / 3
         blue = colors.HexColor("#BFE7F2")
-        gold = GOLD
+        red_ink = SUNBURST
+        highlight_yellow = colors.Color(1, 0.86, 0.08, 0.22)
         rows = [
-            [[("3", blue)], [("6", blue)], [("9", blue)]],
-            [[("2", blue), ("2", blue), ("2", blue), ("2", blue)], [("5", blue), ("5", blue)], [("8", blue)]],
-            [[("1", blue), ("1", blue)], [("4", blue), ("4", blue)], [("7", blue), ("7", blue)]],
+            [
+                {"segments": [("3", blue)], "highlight": False},
+                {"segments": [("6", blue)], "highlight": False},
+                {"segments": [("9", red_ink), ("9", red_ink), ("9", blue)], "highlight": True},
+            ],
+            [
+                {"segments": [("2", red_ink), ("2", blue), ("2", blue)], "highlight": False},
+                {"segments": [("5", blue), ("5", blue), ("5", blue), ("5", blue), ("5", blue)], "highlight": True},
+                {"segments": [("8", red_ink), ("8", blue)], "highlight": False},
+            ],
+            [
+                {"segments": [("1", red_ink), ("1", red_ink), ("1", red_ink), ("1", blue)], "highlight": True},
+                {"segments": [("X", red_ink)], "highlight": True},
+                {"segments": [("7", red_ink), ("7", red_ink), ("7", blue), ("7", blue)], "highlight": True},
+            ],
         ]
 
-        def draw_segments(segments, cx, cy, present):
-            font_name = "Arial-Bold" if present else "Arial"
-            font_size = 15 if present else 12
+        def draw_segments(cell_data, cx, cy):
+            segments = cell_data["segments"]
+            font_name = "Arial-Bold"
+            font_size = 15
             gap = 2.1 * mm if len(segments) > 1 else 0
             c.setFont(font_name, font_size)
             widths = [c.stringWidth(text, font_name, font_size) for text, _ in segments]
             total_w = sum(widths) + gap * (len(segments) - 1)
             x_cursor = cx - total_w / 2
+            if cell_data.get("highlight"):
+                c.setFillColor(highlight_yellow)
+                c.roundRect(x_cursor - 2.2 * mm, cy - 1.8 * mm, total_w + 4.4 * mm, 7.4 * mm, 3.4 * mm, fill=1, stroke=0)
             for (text, color), text_w in zip(segments, widths):
                 c.setFillColor(color)
                 c.drawString(x_cursor, cy, text)
@@ -367,13 +412,11 @@ class BirthGrid(Flowable):
                 x = col * cell
                 y = self.height - (r + 1) * cell * 0.68
                 h = cell * 0.68
-                segments = rows[r][col]
-                present = bool(segments) and "(" not in segments[0][0]
-                c.setFillColor(colors.Color(1, 1, 1, 0.11 if present else 0.045))
+                cell_data = rows[r][col]
+                c.setFillColor(colors.Color(1, 1, 1, 0.11))
                 c.setStrokeColor(colors.Color(1, 1, 1, 0.16))
                 c.roundRect(x, y, cell - 1.4, h - 1.4, 7, fill=1, stroke=1)
-                if segments:
-                    draw_segments(segments, x + cell / 2, y + h / 2 - 4, present)
+                draw_segments(cell_data, x + cell / 2, y + h / 2 - 4)
         c.setFillColor(MUTED)
         c.setFont("Arial", 6.4)
         c.drawString(0, 1 * mm, "Lưới được bê theo map viết tay; màu số bám theo ghi chú trong ảnh.")
@@ -511,8 +554,8 @@ def cover_bg(canvas, doc):
     canvas.setLineWidth(0.6)
     canvas.line(54 * mm, h - 124 * mm, 156 * mm, h - 124 * mm)
 
-    customer_name = "Mai Phương Lam"
-    customer_date = " · 22/05/2000"
+    customer_name = "Trần Nguyễn Hoàng Trí"
+    customer_date = " · 17/08/2001"
     customer_font = 15.6
     customer_y = h - 135 * mm
     canvas.setFont("Arial-Bold", customer_font)
@@ -658,13 +701,13 @@ class PythagorasPyramid(Flowable):
         top_y = 58 * mm
         cx = self.width / 2
         nodes = {
-            "base_month": ("5", "Tháng", "", cx - 48 * mm, base_y, False),
-            "base_day": ("22/4", "Ngày", "", cx, base_y, False),
-            "base_year": ("2", "Năm", "", cx + 48 * mm, base_y, False),
-            "peak_1": ("9", "34T", "2034", cx - 24 * mm, mid_y, True),
-            "peak_2": ("6", "43T", "2043", cx + 24 * mm, mid_y, True),
-            "peak_3": ("6", "52T", "2052", cx, upper_y, True),
-            "peak_4": ("7", "61T", "2061", cx, top_y, True),
+            "base_month": ("8", "Tháng", "", cx - 48 * mm, base_y, False),
+            "base_day": ("8", "Ngày", "", cx, base_y, False),
+            "base_year": ("3", "Năm", "", cx + 48 * mm, base_y, False),
+            "peak_1": ("7", "35T", "2036", cx - 24 * mm, mid_y, True),
+            "peak_2": ("11/2", "44T", "2045", cx + 24 * mm, mid_y, True),
+            "peak_3": ("9", "53T", "2054", cx, upper_y, True),
+            "peak_4": ("11/2", "62T", "2063", cx, top_y, True),
         }
 
         def draw_arrow(x1, y1, x2, y2, color, width=0.9):
@@ -721,11 +764,11 @@ class PythagorasPyramid(Flowable):
         )
 
         challenge_items = [
-            ("1", nodes["peak_1"][3] - 13 * mm, nodes["peak_1"][4] + 5 * mm),
-            ("2", nodes["peak_2"][3] + 13 * mm, nodes["peak_2"][4] + 4 * mm),
+            ("0", nodes["peak_1"][3] - 13 * mm, nodes["peak_1"][4] + 5 * mm),
+            ("5", nodes["peak_2"][3] + 13 * mm, nodes["peak_2"][4] + 4 * mm),
             # Challenge 3 follows this template's rule: |Peak 1 energy - Peak 2 energy|.
-            ("3", nodes["peak_3"][3] - 14 * mm, nodes["peak_3"][4] + 4 * mm),
-            ("3", nodes["peak_4"][3] - 14 * mm, nodes["peak_4"][4] + 2 * mm),
+            ("5", nodes["peak_3"][3] - 14 * mm, nodes["peak_3"][4] + 4 * mm),
+            ("5", nodes["peak_4"][3] - 14 * mm, nodes["peak_4"][4] + 2 * mm),
         ]
         for value, x, y in challenge_items:
             c.setFillColor(colors.Color(217 / 255, 78 / 255, 31 / 255, 0.20))
@@ -913,16 +956,16 @@ def build():
     story.append(PageBreak())
 
     # SECTION 1
-    story.append(SectionBand("01", "Bức Tranh Tính Cách (7 Chỉ Số Cốt Lõi)", "Mai Phương Lam · 22/05/2000 · Chuyên gia đồng hành: Lê Chí Cường"))
+    story.append(SectionBand("01", "Bức Tranh Tính Cách (7 Chỉ Số Cốt Lõi)", "Trần Nguyễn Hoàng Trí · 17/08/2001 · Chuyên gia đồng hành: Lê Chí Cường"))
     story.append(Spacer(1, 7 * mm))
     indicators = [
-        ("Đường đời (Life Path)", "11/2", "Bạn mang năng lượng trực giác bậc thầy, dễ cảm được tầng sâu của con người và có khả năng truyền cảm hứng bằng sự thấu cảm."),
-        ("Sứ mệnh (Destiny)", "3", "Sứ mệnh của bạn là sáng tạo, truyền thông và tự thể hiện. Khi tiếng nói được mở đúng cách, bạn có thể biến cảm xúc thành thông điệp có sức lan tỏa."),
-        ("Linh hồn (Soul Urge)", "11/2", "Bên trong bạn khao khát kết nối tâm linh, hòa bình nội tại và những mối quan hệ có chiều sâu thật sự."),
-        ("Nhân cách (Personality)", "19/1", "Bên ngoài bạn tạo cảm giác độc lập, tiên phong và mạnh mẽ. Đây cũng là bài học về việc dùng quyền lực cá nhân mà không cô lập bản thân."),
-        ("Thái độ (Attitude)", "9", "Bạn tiếp cận cuộc sống bằng lòng vị tha, bao dung và xu hướng nhìn mọi chuyện trong một bức tranh lớn hơn."),
-        ("Ngày sinh", "22/4", "Năng lượng ngày sinh 22/4 là nền của người kiến tạo hệ thống bền vững, giúp các tầm nhìn lớn có cơ hội bước xuống thực tế."),
-        ("Trưởng thành (Maturity)", "14/5", "Giai đoạn chín muồi đưa bạn vào bài học tự do có kỷ luật: trải nghiệm nhiều, nhưng phải biết chọn điều xứng đáng để cam kết."),
+        ("Đường đời (Life Path)", "1", "Bạn mang năng lượng tiên phong: độc lập, tự chủ, thích dẫn đầu và cần được thử sức trong vai trò người mở đường."),
+        ("Sứ mệnh (Destiny)", "6", "Sứ mệnh của bạn là học cách gánh vác, chăm sóc, tạo sự ổn định và chịu trách nhiệm với những điều mình xây dựng."),
+        ("Linh hồn (Soul Urge)", "7", "Bên trong bạn khao khát tri thức, chân lý và chiều sâu nội tâm. Bạn không dễ thỏa mãn với câu trả lời hời hợt."),
+        ("Nhân cách (Personality)", "8", "Bạn tạo cảm giác thực tế, có uy tín điều hành, có bản lĩnh vật chất và khả năng nhìn vấn đề bằng tư duy quản trị."),
+        ("Thái độ (Attitude)", "7", "Bạn quan sát kỹ, phân tích mạnh và thường cần đủ dữ liệu trước khi tin hoặc hành động."),
+        ("Ngày sinh", "8", "Ngày sinh 8 cho bạn khí chất quyết đoán, thực dụng, có duyên với quản trị nguồn lực, tài chính và thành tựu cụ thể."),
+        ("Trưởng thành (Maturity)", "7", "Giai đoạn trưởng thành đưa bạn về sự thông thái qua trải nghiệm thực chứng, càng sống sâu càng cần chính trực với sự thật."),
     ]
     for row in indicators:
         story.append(indicator(*row))
@@ -938,7 +981,7 @@ def build():
     ]
     right = [
         P("<b>Luận giải biểu đồ</b>", "H2"),
-        P("Lưới bên trái được bê theo map viết tay của Mai Phương Lam. Map thể hiện các cụm 2, 4, 5, 7 khá rõ, đi cùng các điểm 3, 6, 8, 9 để tạo thành một trường năng lượng nhiều tầng. Khi đối chiếu với luận giải, bài học chính vẫn là đưa trực giác 11/2 và tiềm năng kiến tạo 22/4 vào kỷ luật, trách nhiệm và bản lĩnh thực tế.", "BodySmall"),
+        P("Lưới bên trái được bê theo map viết tay của Trần Nguyễn Hoàng Trí. Map cho thấy cụm 5 và 7 rất mạnh, đi cùng năng lượng 1, 8 và 9 nổi bật. Bài học chính là biến trực giác, tham vọng và khả năng phân tích thành kỷ luật thực thi, thay vì để sự nghi ngờ hoặc tự do thiếu cấu trúc làm phân tán năng lượng.", "BodySmall"),
     ]
     two_col = Table(
         [[card(left, width=82 * mm), Spacer(4 * mm, 1), card(right, width=84 * mm)]],
@@ -951,11 +994,10 @@ def build():
     story.append(
         checklist(
             [
-                (False, "Bài học số 4", "Thiếu hoặc yếu năng lượng tổ chức khiến các tầm nhìn lớn dễ bị dang dở nếu không có quy trình, deadline và nền móng cụ thể."),
-                (False, "Bài học số 6", "Bạn cần học cách cân bằng nhu cầu cá nhân với trách nhiệm gia đình, cộng đồng và sự hiện diện chân thành trong các mối quan hệ."),
-                (False, "Bài học số 8", "Bản lĩnh quyền lực, tài chính và vị thế cần được rèn bằng sự năng nổ, quyết tâm, chăm chỉ và thái độ làm chủ thịnh vượng."),
-                (True, "Mũi tên 3-6-9 và 2-5-8", "Bạn có tư duy sắc bén và cảm xúc nhạy. Hãy dùng ngôn từ để xây dựng, đồng thời giữ năng lượng nội tại đủ vững để không bị cuốn trôi bởi sự nhạy cảm."),
-                (True, "Hai số 7", "Sự xuất hiện của hai số 7 cho thấy nhu cầu chiêm nghiệm, riêng tư và học qua trải nghiệm thực tế rất mạnh. Thiền định và thiên nhiên là cách cân bằng tốt."),
+                (True, "Mũi tên 3-5-7", "Cụm 7 mạnh khiến Trí học rất nhiều qua trải nghiệm, va chạm và các lần thực tế phản hồi. Đừng xem mất mát là xui xẻo; hãy xem đó là dữ liệu để lọc bỏ điều không đúng."),
+                (True, "Mũi tên Cân bằng cảm xúc 2-5-8", "Trí có cảm hứng mạnh nhưng cũng dễ bùng nổ khi năng lượng tụt. Khi cảm xúc lên cao, cần quay về trạng thái can đảm, nói thẳng và xử lý trong cấu trúc rõ ràng."),
+                (False, "Thiếu số 4", "Gót chân Achilles nằm ở kỷ luật, quy trình và sức bền thực thi. Ý tưởng lớn cần hệ thống nhỏ hằng ngày, nếu không sẽ mãi chỉ là bản vẽ trên giấy."),
+                (True, "Dư năng lượng 5 và 7", "Nhiều 5 tạo nhu cầu tự do, nhiều 7 tạo khuynh hướng phân tích sâu. Nếu không neo bằng hành động cụ thể, Trí dễ phân tán hoặc rơi vào phân tích quá mức."),
             ]
         )
     )
@@ -974,9 +1016,9 @@ def build():
     story.append(
         card(
             [
-                P("<b>Nợ nghiệp / bài học cải thiện: 19/1 và 14/5</b>", "H2"),
-                P("Nợ nghiệp 19/1 xuất hiện tại Nhân cách, nhắc Lam học cách dùng quyền lực cá nhân đúng hướng. Bài học là lắng nghe, thừa nhận lỗi sai và đón nhận sự hỗ trợ, thay vì để sự độc lập hoặc kiểm soát cái tôi khiến mình bị cô lập.", "Body"),
-                P("Nợ nghiệp 14/5 nằm ở chỉ số Trưởng thành, đưa bạn vào bài học về sự chừng mực và kỷ luật. Tự do không phải là phá bỏ mọi giới hạn, mà là khả năng giữ cam kết lâu dài với điều thật sự quan trọng.", "Body"),
+                P("<b>Nợ nghiệp / bài học cải thiện: 19/1 & 16/7</b>", "H2"),
+                P("Trí mang hai bài học lớn: 19/1 về cái tôi, quyền lực cá nhân và khả năng hợp tác; 16/7 về sự sụp đổ của những nền tảng thiếu chính trực hoặc quá hào nhoáng.", "Body"),
+                P("Cách hóa giải là chịu trách nhiệm 100%, dùng năng lượng lãnh đạo của số 1 để dẫn dắt thay vì áp đặt, và dùng trí tuệ số 7 để tìm sự thật thay vì bao biện cho cái tôi.", "Body"),
             ]
         )
     )
@@ -984,14 +1026,14 @@ def build():
     story.append(PageBreak())
 
     # SECTION 5 - LIFE CYCLES
-    story.append(SectionBand("05", "Ba Chu Kỳ Cuộc Đời Lớn", "Nền hành trình lớn của Mai Phương Lam"))
+    story.append(SectionBand("05", "Ba Chu Kỳ Cuộc Đời Lớn", "Nền hành trình lớn của Trần Nguyễn Hoàng Trí"))
     story.append(Spacer(1, 8 * mm))
     story.append(
         step_blocks(
             [
-                ("Chu kỳ 1", "5", "Từ 0 đến 25 tuổi: Giai đoạn của tự do, thay đổi, trải nghiệm và thích nghi. Bạn học nhiều qua sự đa dạng của môi trường, con người và lựa chọn."),
-                ("Chu kỳ 2", "22/4", "Từ 26 đến 52 tuổi: Giai đoạn hiện tại của người kiến tạo bậc thầy. Nhiệm vụ là biến tầm nhìn lớn thành cấu trúc, hệ thống và giá trị có ích cho cộng đồng."),
-                ("Chu kỳ 3", "2", "Từ 53 tuổi trở đi: Giai đoạn của hòa giải, chữa lành và đồng hành. Bạn có thể trở thành người cố vấn tinh tế nhờ khả năng thấu hiểu sâu sắc người khác."),
+                ("Chu kỳ 1", "8", "Tuổi trẻ: Giai đoạn học về quyền lực cá nhân, vật chất, tiền bạc và cách đứng vững trước áp lực thành tựu."),
+                ("Chu kỳ 2", "8", "Trưởng thành: Tiếp tục bài học làm chủ nguồn lực, quản trị, kỷ luật tài chính và tư duy chịu trách nhiệm với kết quả."),
+                ("Chu kỳ 3", "3", "Thông tuệ: Giai đoạn mở ra khả năng biểu đạt, hoạt náo, chia sẻ tri thức và chuyển trải nghiệm nặng thành thông điệp dễ lan tỏa."),
             ]
         )
     )
@@ -1000,8 +1042,8 @@ def build():
         card(
             [
                 P("Lưu ý hiện tại", "Kicker"),
-                P("Năm Cá Nhân Số 1 (2026)", "H1"),
-                P("Theo map viết tay, năm 2026 mang năng lượng cá nhân số 1. Đây là cú hích khởi đầu cho một chu kỳ mới: hãy chủ động mở đường, thiết lập trật tự và đặt nền cho 9 năm tiếp theo. Năm 2027 chuyển sang năng lượng số 2, phù hợp để hợp tác và tinh chỉnh kết nối.", "Body"),
+                P("Năm Cá Nhân Số 8 (2026)", "H1"),
+                P("Theo map viết tay, năm 2026 mang năng lượng cá nhân số 8. Đây là năm thu hoạch, thiết lập trật tự và kiểm tra năng lực quản trị. Trí cần dùng sự quyết đoán của Đường đời 1 để đóng khung dự án, bù phần thiếu số 4 bằng quy trình rõ ràng.", "Body"),
             ],
             fill=colors.Color(217 / 255, 78 / 255, 31 / 255, 0.18),
         )
@@ -1015,10 +1057,10 @@ def build():
     story.append(
         step_blocks(
             [
-                ("Đỉnh cao 1", "9", "Năm 2034, tuổi 34: Học cách lãnh đạo bằng sự phụng sự vô vị lợi. Thách thức 1 nhắc bạn không để cái tôi che mờ lý tưởng nhân văn."),
-                ("Đỉnh cao 2", "6", "Năm 2043, tuổi 43: Kiến tạo hạnh phúc thông qua sự nuôi dưỡng và trách nhiệm. Thách thức 2 yêu cầu bạn làm chủ sự nhạy cảm để không trở nên yếu đuối."),
-                ("Đỉnh cao 3", "6", "Năm 2052, tuổi 52: Gánh vác trách nhiệm lớn bằng sức mạnh sáng tạo. Thách thức 3 nhắc bạn giữ kỷ luật trong biểu đạt cảm xúc và lời nói."),
-                ("Đỉnh cao 4", "7", "Năm 2061, tuổi 61: Lan tỏa trí tuệ thông qua chiêm nghiệm. Thách thức 3 yêu cầu chuyển hóa tri thức trừu tượng thành ngôn từ truyền cảm hứng."),
+                ("Đỉnh cao 1", "7", "Năm 2036, tuổi 35: Giai đoạn đào sâu tri thức, nghiên cứu và tìm chân lý. Thách thức 0 cho thấy bài học mở rộng, cần tự chọn tiêu chuẩn sống rõ ràng."),
+                ("Đỉnh cao 2", "11/2", "Năm 2045, tuổi 44: Trực giác, khả năng truyền cảm hứng và phụng sự cộng đồng được nâng lên. Thách thức 5 nhắc kiểm soát tự do vô kỷ luật."),
+                ("Đỉnh cao 3", "9", "Năm 2054, tuổi 53: Hướng đến giá trị nhân văn, chia sẻ và đóng góp lớn hơn cho cộng đồng. Thách thức 5 vẫn yêu cầu tập trung thay vì phân tán."),
+                ("Đỉnh cao 4", "11/2", "Năm 2063, tuổi 62: Trở lại năng lượng trực giác bậc cao, dẫn dắt bằng sự tinh tế và chiều sâu. Thách thức 5 tiếp tục nhắc sự tự do phải đi cùng kỷ luật."),
             ]
         )
     )
@@ -1027,14 +1069,14 @@ def build():
     story.append(PageBreak())
 
     # SECTION 7 - HEALING MESSAGE
-    story.append(SectionBand("07", "Thông Điệp Chữa Lành", "Lộ trình cá nhân hóa dành cho Mai Phương Lam"))
+    story.append(SectionBand("07", "Thông Điệp Chữa Lành", "Lộ trình cá nhân hóa dành cho Trần Nguyễn Hoàng Trí"))
     story.append(Spacer(1, 8 * mm))
     story.append(P("Thông điệp chính", "H2"))
     story.append(
         card(
             [
-                P("Lam thân mến, bản đồ của bạn mang dòng điện rất mạnh từ hai số chủ 11/2 và 22/4. Một bên là trực giác, cảm xúc và khả năng truyền cảm hứng; một bên là tiềm năng kiến tạo hệ thống lớn. Khi hai nguồn năng lượng này được đặt vào kỷ luật, bạn có thể trở thành người xây cầu giữa cảm hứng và thực tế.", "Body"),
-                P("Điều cần chữa lành không phải là sự nhạy cảm, mà là cách bạn quản trị nó. Khi biết bảo vệ năng lượng, dùng lời nói để xây dựng và biến tầm nhìn thành hành động nhỏ đều đặn, bạn sẽ bớt mệt vì quá tải và bắt đầu vận hành đúng vai trò người kiến tạo.", "Body"),
+                P("Trí thân mến, bản đồ của bạn là cuộc đối thoại giữa tham vọng, trách nhiệm và chiều sâu nội tâm. Đường đời 1 muốn dẫn đầu, Sứ mệnh 6 muốn gánh vác, còn cụm số 7 liên tục yêu cầu bạn sống thật với chân lý.", "Body"),
+                P("Nợ nghiệp 19/1 và 16/7 nhắc rằng sức mạnh chỉ bền khi đi cùng chính trực. Khi Trí ngừng đổ lỗi, ngừng dùng trí tuệ để bao biện cho cái tôi, năng lượng số 8 mới có đất để tạo thịnh vượng vững chắc.", "Body"),
             ],
             fill=colors.Color(245 / 255, 193 / 255, 150 / 255, 0.10),
         )
@@ -1044,15 +1086,15 @@ def build():
     story.append(
         step_blocks(
             [
-                ("01", "Kỷ luật với tầm nhìn", "Mỗi ý tưởng lớn cần được chia thành việc nhỏ có lịch, người phụ trách và tiêu chuẩn hoàn thành rõ ràng. Đây là cách kích hoạt mặt sáng của 22/4."),
-                ("02", "Sáng tạo có mục tiêu", "Sứ mệnh 3 cần được dùng để truyền lửa, kể chuyện và kết nối, nhưng nên đi cùng mục tiêu cụ thể để tránh phân tán năng lượng."),
-                ("03", "Dẫn đầu bằng cảm hứng", "Năm cá nhân số 1 mở chu kỳ mới. Hãy chủ động bắt đầu, nhưng giữ sự liêm chính của 11/2: truyền cảm hứng, không thao túng cảm xúc người khác."),
-                ("04", "Cân bằng tự do và trách nhiệm", "Bài học 14/5 nhắc bạn rằng tự do thật sự đến từ khả năng tự kỷ luật, giữ cam kết và chọn điều xứng đáng để theo đuổi lâu dài."),
+                ("01", "Thiết lập kỷ luật số 4", "Mỗi mục tiêu lớn cần lịch trình, quy trình và tiêu chuẩn đo lường. Đây là cách bù điểm thiếu trong lưới ngày sinh."),
+                ("02", "Chịu trách nhiệm 100%", "Khi có biến cố, hãy hỏi: phần quyết định nào của mình đã tạo ra kết quả này. Câu hỏi đó giúp Trí thoát khỏi tâm lý nạn nhân."),
+                ("03", "Dẫn dắt không áp đặt", "Đường đời 1 và Nhân cách 8 rất mạnh; hãy dùng quyền lực để xây hệ thống, không dùng nó để cô lập bản thân khỏi người có thể hỗ trợ."),
+                ("04", "Tập trung cao độ", "Thách thức 5 lặp lại yêu cầu Trí chọn một mục tiêu lõi, tránh phân tán vào quá nhiều dự án khi nền kỷ luật chưa đủ chắc."),
             ]
         )
     )
     story.append(Spacer(1, 12 * mm))
-    story.append(card([P("“Tôi kỷ luật với tầm nhìn. Tôi sáng tạo có mục tiêu. Tôi dẫn đầu bằng cảm hứng.”", "Quote")], fill=colors.Color(217 / 255, 78 / 255, 31 / 255, 0.20)))
+    story.append(card([P("“Tôi chịu trách nhiệm 100% cho cuộc đời mình. Tôi dùng trí tuệ, kỷ luật và sự chính trực để tạo nên thành tựu bền vững.”", "Quote")], fill=colors.Color(217 / 255, 78 / 255, 31 / 255, 0.20)))
     story.append(Spacer(1, 11 * mm))
     story.append(
         kv_table(

@@ -1659,13 +1659,18 @@ function getFeedbackImages() {
   if (lastRow < 2) return [];
 
   const values = sheet.getRange(2, 1, lastRow - 1, FEEDBACK_IMAGES_HEADERS.length).getValues();
-  return values.map(row => ({
+  return values.map((row, index) => ({
+    rowIndex: index,
+    createdAtRaw: row[0] instanceof Date ? row[0].getTime() : 0,
     createdAt: formatAdminDate(row[0]),
     filename: cleanValue(row[1]),
     url: cleanValue(row[2]),
     fileId: cleanValue(row[3]),
     uploadedBy: cleanValue(row[4]),
-  })).filter(img => img.url);
+  }))
+    .filter(img => img.url)
+    .sort((a, b) => (b.createdAtRaw - a.createdAtRaw) || (b.rowIndex - a.rowIndex))
+    .map(({ rowIndex, createdAtRaw, ...img }) => img);
 }
 
 function getImgBbApiKey() {

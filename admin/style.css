@@ -795,6 +795,24 @@ a {
   min-height: 38px;
 }
 
+.feedback-pagination {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.feedback-pagination > span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.feedback-pagination .ghost-button {
+  min-height: 40px;
+}
+
 .admin-package-card .package-card-actions {
   display: grid;
   grid-template-columns: 44px 44px minmax(86px, 1fr) 44px;

@@ -721,8 +721,26 @@ function bindPackageCardGlow() {
 function normalizeFeedbackImages(images) {
   if (!Array.isArray(images)) return [];
   return images
-    .map((img) => ({ ...img, url: String(img?.url || '').trim() }))
-    .filter((img) => img.url);
+    .map((img, index) => ({
+      ...img,
+      originalIndex: index,
+      createdAtMs: parseFeedbackCreatedAt(img?.createdAt),
+      url: String(img?.url || '').trim(),
+    }))
+    .filter((img) => img.url)
+    .sort((a, b) => (b.createdAtMs - a.createdAtMs) || (b.originalIndex - a.originalIndex));
+}
+
+function parseFeedbackCreatedAt(value) {
+  if (!value) return 0;
+  const text = String(value).trim();
+  const date = new Date(text);
+  if (!Number.isNaN(date.getTime())) return date.getTime();
+
+  const match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if (!match) return 0;
+  const [, day, month, year, hour = '0', minute = '0', second = '0'] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second)).getTime();
 }
 
 function renderTestimonials(images) {
