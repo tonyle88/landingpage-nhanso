@@ -1,3 +1,9 @@
 .DS_Store
+**/.DS_Store
+__pycache__/
+*.pyc
+venv/
+.venv/
+Pdf create/previews/
 /mentor_bao.png
 /mentor_cuong.png
