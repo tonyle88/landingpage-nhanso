@@ -421,26 +421,46 @@ function applySectionsLayout(layout) {
       el.className = `generic-section section`;
       el.id = sec.id;
       el.style.order = sec.order;
-      el.innerHTML = `
-        <div class="container">
-          <div class="section-header reveal">
-            ${sec.tag ? `<span class="section-tag">${sec.tag}</span>` : ''}
-            <h2 class="section-title">${sec.title || ''}</h2>
-            <div class="section-divider">
-              <span>✦</span><span>✦</span><span>✦</span>
-            </div>
-          </div>
-          <div class="generic-content reveal">
-            ${sec.contentHtml || ''}
-          </div>
-        </div>
-      `;
+
+      const inner = document.createElement('div');
+      inner.className = 'container';
+
+      const header = document.createElement('div');
+      header.className = 'section-header reveal';
+      if (sec.tag) {
+        const tag = document.createElement('span');
+        tag.className = 'section-tag';
+        tag.textContent = sec.tag;
+        header.appendChild(tag);
+      }
+
+      const title = document.createElement('h2');
+      title.className = 'section-title';
+      title.textContent = sec.title || '';
+      header.appendChild(title);
+
+      const divider = document.createElement('div');
+      divider.className = 'section-divider';
+      divider.innerHTML = '<span>✦</span><span>✦</span><span>✦</span>';
+      header.appendChild(divider);
+
+      const content = document.createElement('div');
+      content.className = 'generic-content reveal';
+      content.innerHTML = sanitizeGenericSectionHtml(sec.contentHtml);
+
+      inner.append(header, content);
+      el.appendChild(inner);
       container.appendChild(el);
       if (window.revealObserver) {
         el.querySelectorAll('.reveal').forEach(child => window.revealObserver.observe(child));
       }
     }
   });
+}
+
+function sanitizeGenericSectionHtml(html) {
+  const raw = String(html || '');
+  return window.DOMPurify ? window.DOMPurify.sanitize(raw) : raw;
 }
 
 function normalizePaymentSettings(settings = {}) {

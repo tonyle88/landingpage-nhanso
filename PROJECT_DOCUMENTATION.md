@@ -289,6 +289,14 @@ Landing/admin:
 - [ ] Tra cứu thử tính đúng các case đã chốt.
 - [ ] Mobile không tràn ngang hoặc đè chữ ở các section chính.
 
+Smoke test logic có thể chạy local:
+
+```text
+node qa/sprint2-smoke-tests.mjs
+```
+
+Test này kiểm tra công thức mini report, feedback sort mới nhất trước, blog search chỉ index tiêu đề bài viết, carousel blog và lớp render an toàn cho generic section.
+
 Booking:
 
 - [ ] Form bắt lỗi khi thiếu tên/phone/email.

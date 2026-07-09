@@ -62,17 +62,17 @@ Mục tiêu:
 
 Việc làm:
 
-- [ ] Feedback mới nhất đứng đầu ở admin và landing.
-- [ ] Blog search chỉ lọc tiêu đề.
-- [ ] Blog theo chủ đề có carousel khi > 3 bài.
-- [ ] Mini report có bộ case kiểm tra công thức.
-- [ ] Section layout bật/tắt/sắp xếp đúng.
-- [ ] Generic section không phá layout mobile.
+- [x] Feedback mới nhất đứng đầu ở admin và landing.
+- [x] Blog search chỉ lọc tiêu đề.
+- [x] Blog theo chủ đề có carousel khi > 3 bài.
+- [x] Mini report có bộ case kiểm tra công thức.
+- [x] Section layout bật/tắt/sắp xếp đúng.
+- [x] Generic section không phá layout mobile.
 
 Xác minh:
 
 - [ ] Test desktop/mobile các section chính.
-- [ ] `node --check` pass cho JS/GAS.
+- [x] `node --check` pass cho JS/GAS.
 - [ ] Không có lỗi console nghiêm trọng khi load landing/blog/admin.
 
 ## Sprint 3 - Tối ưu nội dung và hiệu năng
