@@ -68,6 +68,7 @@ assert.deepEqual(
 );
 
 const blogSource = fs.readFileSync(new URL('../blog.js', import.meta.url), 'utf8');
+const indexSource = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const styleSource = fs.readFileSync(new URL('../style.css', import.meta.url), 'utf8');
 assert.match(
   blogSource,
@@ -121,6 +122,24 @@ assert.match(
   styleSource,
   /\.generic-content table[\s\S]*overflow-x: auto;/,
   'Generic section tables should scroll instead of overflowing'
+);
+
+assert.match(
+  indexSource,
+  /<audio id="bg-music"[^>]*preload="none"/,
+  'Landing page music should not preload the full audio file during initial render'
+);
+
+assert.match(
+  blogSource,
+  /<img src="\$\{a\.thumbnail\}" loading="lazy" decoding="async"/,
+  'Blog list thumbnails should lazy-load'
+);
+
+assert.match(
+  blogSource,
+  /<img src="\$\{r\.thumbnail\}" loading="lazy" decoding="async"/,
+  'Related article thumbnails should lazy-load'
 );
 
 console.log('Sprint 2 smoke tests passed.');

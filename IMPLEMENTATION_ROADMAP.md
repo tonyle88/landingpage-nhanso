@@ -83,10 +83,10 @@ Mục tiêu:
 
 Việc làm:
 
-- [ ] Rà kích thước ảnh lớn trong `assets/images`.
-- [ ] Bump cache-buster có chủ đích khi đổi CSS/JS.
+- [x] Rà kích thước ảnh lớn trong `assets/images`.
+- [x] Bump cache-buster có chủ đích khi đổi CSS/JS.
 - [ ] Giảm inline CSS trùng lặp ở blog nếu cần.
-- [ ] Kiểm tra lazy loading ảnh feedback/blog.
+- [x] Kiểm tra lazy loading ảnh feedback/blog.
 
 Xác minh:
 

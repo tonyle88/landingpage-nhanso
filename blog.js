@@ -307,7 +307,7 @@ function renderBlogHome() {
           <!-- Thumbnail -->
           <div style="width: 100%; height: 210px; overflow: hidden; position: relative;">
             ${a.thumbnail
-              ? `<img src="${a.thumbnail}" style="width:100%; height:100%; object-fit:cover; transition: transform 0.5s ease;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">`
+              ? `<img src="${a.thumbnail}" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover; transition: transform 0.5s ease;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">`
               : `<div style="width:100%; height:100%; background: linear-gradient(135deg, #1a1006, #2e1f07); display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-star" style="font-size:3rem; color: rgba(212,168,67,0.3);"></i></div>`
             }
             <!-- Dark gradient overlay at bottom -->
@@ -564,7 +564,7 @@ function renderArticleDetail(id) {
       <!-- Hero image -->
       ${article.thumbnail ? `
         <div style="width:100%; border-radius:20px; overflow:hidden; margin-bottom:40px; box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(212,168,67,0.15); position:relative;">
-          <img src="${article.thumbnail}" style="width:100%; max-height:480px; object-fit:cover; display:block;">
+          <img src="${article.thumbnail}" loading="eager" decoding="async" fetchpriority="high" style="width:100%; max-height:480px; object-fit:cover; display:block;">
           <div style="position:absolute; bottom:0; left:0; right:0; height:120px; background:linear-gradient(to top, rgba(10,7,3,0.9), transparent);"></div>
         </div>` : ''}
       
@@ -611,7 +611,7 @@ function renderArticleDetail(id) {
     related.forEach(r => {
       html += `
         <a href="?id=${r.id}" style="display:flex; gap:16px; padding:16px; background:linear-gradient(135deg, rgba(26,16,6,0.8), rgba(15,10,3,0.9)); border:1px solid rgba(212,168,67,0.2); border-radius:12px; text-decoration:none; color:inherit; transition:all 0.3s;" onmouseover="this.style.borderColor='rgba(212,168,67,0.6)'; this.style.boxShadow='0 0 20px rgba(212,168,67,0.15)'; this.style.transform='translateX(6px)';" onmouseout="this.style.borderColor='rgba(212,168,67,0.2)'; this.style.boxShadow='none'; this.style.transform='none';">
-          ${r.thumbnail ? `<div style="width:110px; height:75px; flex-shrink:0; border-radius:8px; overflow:hidden; border:1px solid rgba(212,168,67,0.3);"><img src="${r.thumbnail}" style="width:100%; height:100%; object-fit:cover;"></div>` : `<div style="width:110px; height:75px; flex-shrink:0; border-radius:8px; background:linear-gradient(135deg,#1a1006,#2e1f07); display:flex; align-items:center; justify-content:center; border:1px solid rgba(212,168,67,0.2);"><i class="fa-solid fa-star" style="color:rgba(212,168,67,0.3);"></i></div>`}
+          ${r.thumbnail ? `<div style="width:110px; height:75px; flex-shrink:0; border-radius:8px; overflow:hidden; border:1px solid rgba(212,168,67,0.3);"><img src="${r.thumbnail}" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover;"></div>` : `<div style="width:110px; height:75px; flex-shrink:0; border-radius:8px; background:linear-gradient(135deg,#1a1006,#2e1f07); display:flex; align-items:center; justify-content:center; border:1px solid rgba(212,168,67,0.2);"><i class="fa-solid fa-star" style="color:rgba(212,168,67,0.3);"></i></div>`}
           <div style="display:flex; flex-direction:column; justify-content:center; flex:1;">
             <h4 style="font-family:'Playfair Display',serif; font-size:1rem; margin-bottom:6px; line-height:1.4; color:#f0e0c0;">${r.title}</h4>
             <div style="font-size:0.8rem; color:rgba(212,168,67,0.6);"><i class="fa-regular fa-clock"></i> ${r.date.replace('T', ' ')}</div>
