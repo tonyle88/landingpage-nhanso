@@ -1,4 +1,5 @@
 const ADMIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3m9zkv9mX-BgMtB7DZj2rMrZtkAAOFDQow2UKxttXRz8G5Zlc4qponSGrvPBxJwEO/exec';
+const BOOKING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbWZXF2iCsWsr0cWL0JVChANywEq7D7l_mCIvrvqZs78vSOsPej3PuXFgHbOiVNoKr/exec';
 const SESSION_KEY = 'clowcat_admin_session';
 const MANAGED_PACKAGE_CONTENT_PREFIXES = [
   'packages.year_',
@@ -47,6 +48,7 @@ const els = {
   sectionHeading: document.getElementById('section-heading'),
   refreshContent: document.getElementById('refresh-content'),
   healthCheck: document.getElementById('health-check'),
+  bookingHealthCheck: document.getElementById('booking-health-check'),
   saveAll: document.getElementById('save-all'),
   syncTemplate: document.getElementById('sync-template'),
   logout: document.getElementById('logout'),
@@ -81,6 +83,7 @@ function bindEvents() {
   });
   els.refreshContent.addEventListener('click', () => loadContent(true));
   els.healthCheck?.addEventListener('click', runHealthCheck);
+  els.bookingHealthCheck?.addEventListener('click', runBookingHealthCheck);
   els.saveAll.addEventListener('click', saveAllDirtyItems);
   els.syncTemplate.addEventListener('click', syncTemplate);
   els.logout.addEventListener('click', logout);
@@ -200,6 +203,41 @@ function summarizeHealthCheck(payload) {
     badProps.forEach((item) => lines.push(`- ${item.key || item.name}: ${item.message || 'Thiếu cấu hình'}`));
   }
   if (!badSheets.length && !badProps.length) lines.push('', 'Tất cả sheet bắt buộc đang đúng header.');
+  return lines.join('\n');
+}
+
+async function runBookingHealthCheck() {
+  setBusy(els.bookingHealthCheck, true);
+  try {
+    const response = await fetch(`${BOOKING_SCRIPT_URL}?action=bookingHealthCheck&_=${Date.now()}`, {
+      method: 'GET',
+      mode: 'cors',
+      cache: 'no-store',
+    });
+    const payload = await response.json();
+    const summary = summarizeBookingHealthCheck(payload);
+    toast(payload.ok ? 'Hệ thống booking ổn.' : 'Booking health check phát hiện lỗi.', payload.ok ? 'success' : 'error');
+    window.alert(summary);
+  } catch (error) {
+    toast(error.message || 'Không kiểm tra được booking.');
+  } finally {
+    setBusy(els.bookingHealthCheck, false);
+  }
+}
+
+function summarizeBookingHealthCheck(payload) {
+  const lines = [
+    payload.ok ? 'Booking health check: OK' : 'Booking health check: CẦN KIỂM TRA',
+    `Script version: ${payload.scriptVersion || 'không rõ'}`,
+  ];
+
+  const badChecks = (payload.checks || []).filter((item) => !item.ok);
+  if (badChecks.length) {
+    lines.push('', 'Mục lỗi:');
+    badChecks.forEach((item) => lines.push(`- ${item.name}: ${item.message}${item.missing?.length ? ` (${item.missing.join(', ')})` : ''}`));
+  } else {
+    lines.push('', 'Booking sheet, Email log, Error log, SePay payments, Calendar và SEPAY_WEBHOOK_SECRET đều OK.');
+  }
   return lines.join('\n');
 }
 

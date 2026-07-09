@@ -45,6 +45,7 @@ Việc làm:
 - [x] Thêm `Audit log` cho các thao tác write admin.
 - [x] Bắt buộc `SEPAY_WEBHOOK_SECRET` qua Script Properties.
 - [x] Cập nhật admin UI để gọi content/admin health check.
+- [x] Cập nhật admin UI để gọi booking health check.
 
 Xác minh:
 

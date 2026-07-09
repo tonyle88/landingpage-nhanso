@@ -243,6 +243,8 @@ Các nhóm chỉnh sửa chính:
 - `Cấu trúc trang`: bật/tắt/sắp xếp section có sẵn, thêm generic section.
 - `Blog`: quản lý chủ đề và bài viết.
 - `User`: tạo/khóa user admin/editor.
+- `Kiểm tra`: kiểm tra content/admin sheet và cấu hình bắt buộc.
+- `Booking`: kiểm tra booking sheet, email/error log, SePay payments, calendar và `SEPAY_WEBHOOK_SECRET`.
 
 Vai trò:
 
