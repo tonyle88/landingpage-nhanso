@@ -2124,8 +2124,6 @@ function ensureSectionsLayoutSheet() {
   let sheet = spreadsheet.getSheetByName(SECTIONS_LAYOUT_SHEET_NAME);
   if (!sheet) {
     sheet = spreadsheet.insertSheet(SECTIONS_LAYOUT_SHEET_NAME);
-    sheet.getRange(1, 1, 1, SECTIONS_LAYOUT_HEADERS.length).setValues([SECTIONS_LAYOUT_HEADERS]);
-    sheet.setFrozenRows(1);
     
     // Insert defaults
     const defaultRows = DEFAULT_SECTIONS_LAYOUT.map(s => [
@@ -2139,8 +2137,10 @@ function ensureSectionsLayoutSheet() {
       ''
     ]);
     sheet.getRange(2, 1, defaultRows.length, SECTIONS_LAYOUT_HEADERS.length).setValues(defaultRows);
-    sheet.autoResizeColumns(1, SECTIONS_LAYOUT_HEADERS.length);
   }
+  sheet.getRange(1, 1, 1, SECTIONS_LAYOUT_HEADERS.length).setValues([SECTIONS_LAYOUT_HEADERS]);
+  sheet.setFrozenRows(1);
+  sheet.autoResizeColumns(1, SECTIONS_LAYOUT_HEADERS.length);
   return sheet;
 }
 
