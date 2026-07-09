@@ -87,6 +87,7 @@ Việc làm:
 - [x] Bump cache-buster có chủ đích khi đổi CSS/JS.
 - [ ] Giảm inline CSS trùng lặp ở blog nếu cần.
 - [x] Kiểm tra lazy loading ảnh feedback/blog.
+- [x] Preload hero WebP và giữ kích thước logo để giảm layout shift.
 
 Xác minh:
 

@@ -69,6 +69,7 @@ assert.deepEqual(
 
 const blogSource = fs.readFileSync(new URL('../blog.js', import.meta.url), 'utf8');
 const indexSource = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const blogHtmlSource = fs.readFileSync(new URL('../blog.html', import.meta.url), 'utf8');
 const styleSource = fs.readFileSync(new URL('../style.css', import.meta.url), 'utf8');
 assert.match(
   blogSource,
@@ -128,6 +129,36 @@ assert.match(
   indexSource,
   /<audio id="bg-music"[^>]*preload="none"/,
   'Landing page music should not preload the full audio file during initial render'
+);
+
+assert.match(
+  indexSource,
+  /<link rel="preload" href="assets\/images\/hero_bg\.webp" as="image" type="image\/webp" fetchpriority="high"/,
+  'Landing page should preload the hero WebP background'
+);
+
+assert.match(
+  indexSource,
+  /class="logo-img" width="568" height="567"/,
+  'Landing navbar logo should reserve image dimensions'
+);
+
+assert.match(
+  indexSource,
+  /class="footer-logo" width="568" height="567" loading="lazy" decoding="async"/,
+  'Landing footer logo should lazy-load'
+);
+
+assert.match(
+  blogHtmlSource,
+  /class="logo-img" width="568" height="567"/,
+  'Blog navbar logo should reserve image dimensions'
+);
+
+assert.match(
+  blogHtmlSource,
+  /class="footer-logo" width="568" height="567" loading="lazy" decoding="async"/,
+  'Blog footer logo should lazy-load'
 );
 
 assert.match(

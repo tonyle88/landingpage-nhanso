@@ -295,7 +295,7 @@ Smoke test logic có thể chạy local:
 node qa/sprint2-smoke-tests.mjs
 ```
 
-Test này kiểm tra công thức mini report, feedback sort mới nhất trước, blog search chỉ index tiêu đề bài viết, carousel blog, lớp render an toàn cho generic section và một số rule hiệu năng như audio không preload, thumbnail blog lazy-load.
+Test này kiểm tra công thức mini report, feedback sort mới nhất trước, blog search chỉ index tiêu đề bài viết, carousel blog, lớp render an toàn cho generic section và một số rule hiệu năng như audio không preload, hero WebP preload, logo giữ kích thước, thumbnail blog lazy-load.
 
 Booking:
 
