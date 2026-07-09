@@ -1,4 +1,5 @@
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3m9zkv9mX-BgMtB7DZj2rMrZtkAAOFDQow2UKxttXRz8G5Zlc4qponSGrvPBxJwEO/exec';
+const RELATED_VIEWED_KEY = 'clowcat_blog_related_viewed';
 
 let blogCategories = [];
 let blogArticles = [];
@@ -11,6 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupNavbar();
   setupMusic();
   initParticles();
+  setupBlogHistoryNavigation();
   
   const CACHE_KEY = 'blog_landing_cache';
   const CACHE_TTL = 5 * 60 * 1000; // 5 phút
@@ -541,11 +543,8 @@ function renderArticleDetail(id) {
   
   const cat = blogCategories.find(c => c.id === article.categoryId);
   const catName = cat ? cat.name : 'Khác';
-  
-  const related = blogArticles
-    .filter(a => a.categoryId === article.categoryId && a.enabled && a.id !== article.id)
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5);
+  markRelatedArticleViewed(article);
+  const related = getFreshRelatedArticles(article, 5);
   
   let html = `
     <div style="max-width: 820px; margin: 0 auto;">
@@ -610,7 +609,7 @@ function renderArticleDetail(id) {
   } else {
     related.forEach(r => {
       html += `
-        <a href="?id=${r.id}" style="display:flex; gap:16px; padding:16px; background:linear-gradient(135deg, rgba(26,16,6,0.8), rgba(15,10,3,0.9)); border:1px solid rgba(212,168,67,0.2); border-radius:12px; text-decoration:none; color:inherit; transition:all 0.3s;" onmouseover="this.style.borderColor='rgba(212,168,67,0.6)'; this.style.boxShadow='0 0 20px rgba(212,168,67,0.15)'; this.style.transform='translateX(6px)';" onmouseout="this.style.borderColor='rgba(212,168,67,0.2)'; this.style.boxShadow='none'; this.style.transform='none';">
+        <a href="?id=${r.id}" data-related-article-id="${escapeAttribute(r.id)}" style="display:flex; gap:16px; padding:16px; background:linear-gradient(135deg, rgba(26,16,6,0.8), rgba(15,10,3,0.9)); border:1px solid rgba(212,168,67,0.2); border-radius:12px; text-decoration:none; color:inherit; transition:all 0.3s;" onmouseover="this.style.borderColor='rgba(212,168,67,0.6)'; this.style.boxShadow='0 0 20px rgba(212,168,67,0.15)'; this.style.transform='translateX(6px)';" onmouseout="this.style.borderColor='rgba(212,168,67,0.2)'; this.style.boxShadow='none'; this.style.transform='none';">
           ${r.thumbnail ? `<div style="width:110px; height:75px; flex-shrink:0; border-radius:8px; overflow:hidden; border:1px solid rgba(212,168,67,0.3);"><img src="${r.thumbnail}" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover;"></div>` : `<div style="width:110px; height:75px; flex-shrink:0; border-radius:8px; background:linear-gradient(135deg,#1a1006,#2e1f07); display:flex; align-items:center; justify-content:center; border:1px solid rgba(212,168,67,0.2);"><i class="fa-solid fa-star" style="color:rgba(212,168,67,0.3);"></i></div>`}
           <div style="display:flex; flex-direction:column; justify-content:center; flex:1;">
             <h4 style="font-family:'Playfair Display',serif; font-size:1rem; margin-bottom:6px; line-height:1.4; color:#f0e0c0;">${r.title}</h4>
@@ -629,4 +628,77 @@ function renderArticleDetail(id) {
   `;
   
   container.innerHTML = html;
+  setupRelatedArticleLinks(container);
+}
+
+function setupBlogHistoryNavigation() {
+  window.addEventListener('popstate', () => {
+    const articleId = new URLSearchParams(window.location.search).get('id');
+    if (articleId) renderArticleDetail(articleId);
+    else renderBlogHome();
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  });
+}
+
+function setupRelatedArticleLinks(container) {
+  container.querySelectorAll('[data-related-article-id]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+      const articleId = link.dataset.relatedArticleId;
+      if (!articleId || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      window.history.pushState({}, '', `?id=${encodeURIComponent(articleId)}`);
+      renderArticleDetail(articleId);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+}
+
+function getFreshRelatedArticles(article, limit) {
+  const candidates = blogArticles
+    .filter(a => a.categoryId === article.categoryId && a.enabled && a.id !== article.id)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  const viewedIds = getViewedRelatedIds(article.categoryId);
+  const unviewed = candidates.filter(a => !viewedIds.includes(a.id));
+
+  if (unviewed.length > 0) return unviewed.slice(0, limit);
+  if (candidates.length > 0) {
+    resetViewedRelatedIds(article.categoryId, article.id);
+    return candidates.slice(0, limit);
+  }
+  return [];
+}
+
+function markRelatedArticleViewed(article) {
+  if (!article || !article.categoryId || !article.id) return;
+  const history = readRelatedViewedHistory();
+  const current = Array.isArray(history[article.categoryId]) ? history[article.categoryId] : [];
+  history[article.categoryId] = [article.id, ...current.filter(id => id !== article.id)].slice(0, 80);
+  writeRelatedViewedHistory(history);
+}
+
+function getViewedRelatedIds(categoryId) {
+  const history = readRelatedViewedHistory();
+  return Array.isArray(history[categoryId]) ? history[categoryId] : [];
+}
+
+function resetViewedRelatedIds(categoryId, currentArticleId) {
+  const history = readRelatedViewedHistory();
+  history[categoryId] = currentArticleId ? [currentArticleId] : [];
+  writeRelatedViewedHistory(history);
+}
+
+function readRelatedViewedHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(RELATED_VIEWED_KEY) || '{}') || {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function writeRelatedViewedHistory(history) {
+  try {
+    localStorage.setItem(RELATED_VIEWED_KEY, JSON.stringify(history || {}));
+  } catch (error) {
+    // History only improves recommendation rotation; failure should not block reading.
+  }
 }

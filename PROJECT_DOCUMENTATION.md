@@ -286,6 +286,7 @@ Landing/admin:
 - [ ] Gói tư vấn sửa trong admin thì bảng giá và form booking cập nhật.
 - [ ] Feedback mới nhất hiển thị trước.
 - [ ] Blog list/detail hiển thị đúng ảnh, HTML nội dung và trạng thái ghim.
+- [ ] Bài viết liên quan ưu tiên bài chưa xem trong cùng chủ đề, bấm bài liên quan không reload toàn trang.
 - [ ] Tra cứu thử tính đúng các case đã chốt.
 - [ ] Mobile không tràn ngang hoặc đè chữ ở các section chính.
 

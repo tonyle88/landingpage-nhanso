@@ -90,6 +90,36 @@ assert.match(
 );
 
 assert.match(
+  blogSource,
+  /const RELATED_VIEWED_KEY = 'clowcat_blog_related_viewed';/,
+  'Related articles should persist viewed history per browser'
+);
+
+assert.match(
+  blogSource,
+  /const related = getFreshRelatedArticles\(article, 5\);/,
+  'Article detail should rotate related articles through unseen posts first'
+);
+
+assert.match(
+  blogSource,
+  /data-related-article-id="\$\{escapeAttribute\(r\.id\)\}"/,
+  'Related article links should be enhanced for in-page navigation'
+);
+
+assert.match(
+  blogSource,
+  /window\.history\.pushState\(\{\}, '', `\?id=\$\{encodeURIComponent\(articleId\)\}`\);/,
+  'Related article clicks should update URL without full page reload'
+);
+
+assert.match(
+  blogSource,
+  /const unviewed = candidates\.filter\(a => !viewedIds\.includes\(a\.id\)\);/,
+  'Related rotation should skip viewed posts until the category is exhausted'
+);
+
+assert.match(
   source,
   /tag\.textContent = sec\.tag;/,
   'Generic section tag should render as text, not raw HTML'

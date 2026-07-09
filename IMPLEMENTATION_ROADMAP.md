@@ -65,6 +65,7 @@ Việc làm:
 - [x] Feedback mới nhất đứng đầu ở admin và landing.
 - [x] Blog search chỉ lọc tiêu đề.
 - [x] Blog theo chủ đề có carousel khi > 3 bài.
+- [x] Bài viết liên quan ưu tiên bài chưa xem và không reload toàn trang khi bấm.
 - [x] Mini report có bộ case kiểm tra công thức.
 - [x] Section layout bật/tắt/sắp xếp đúng.
 - [x] Generic section không phá layout mobile.
