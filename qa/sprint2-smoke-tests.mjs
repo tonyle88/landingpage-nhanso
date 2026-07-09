@@ -120,6 +120,24 @@ assert.match(
 );
 
 assert.match(
+  blogSource,
+  /function setupScrollTopButton\(\)/,
+  'Blog page should initialize the scroll-to-top button'
+);
+
+assert.match(
+  blogSource,
+  /scrollTopBtn\.classList\.toggle\('show', window\.scrollY > threshold\);/,
+  'Blog scroll-to-top button should become visible after scrolling down'
+);
+
+assert.match(
+  blogSource,
+  /window\.scrollTo\(\{ top: 0, behavior: 'smooth' \}\);/,
+  'Blog scroll-to-top button should smoothly scroll back to the top'
+);
+
+assert.match(
   source,
   /tag\.textContent = sec\.tag;/,
   'Generic section tag should render as text, not raw HTML'

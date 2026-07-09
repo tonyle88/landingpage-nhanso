@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupMusic();
   initParticles();
   setupBlogHistoryNavigation();
+  setupScrollTopButton();
   
   const CACHE_KEY = 'blog_landing_cache';
   const CACHE_TTL = 5 * 60 * 1000; // 5 phút
@@ -79,6 +80,22 @@ function setupNavbar() {
       navbar.classList.toggle('scrolled', window.scrollY > 50);
     }, { passive: true });
   }
+}
+
+function setupScrollTopButton() {
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  if (!scrollTopBtn) return;
+
+  const updateScrollTopVisibility = () => {
+    const threshold = Math.min(700, document.body.scrollHeight * 0.35);
+    scrollTopBtn.classList.toggle('show', window.scrollY > threshold);
+  };
+
+  scrollTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  window.addEventListener('scroll', updateScrollTopVisibility, { passive: true });
+  updateScrollTopVisibility();
 }
 
 // ============================================
