@@ -904,7 +904,7 @@ function parseRequestParams(e) {
 
 function handleHealthCheck(params) {
   requireAdminSession(params.token, ['admin']);
-  ensureAuditLogSheet();
+  ensureHealthCheckSheets();
 
   const sheetChecks = [
     checkSheetHeaders(LANDING_CONTENT_SHEET_NAME, LANDING_CONTENT_HEADERS),
@@ -941,6 +941,20 @@ function handleHealthCheck(params) {
     properties: propertyChecks,
     scriptVersion: SCRIPT_VERSION,
   });
+}
+
+function ensureHealthCheckSheets() {
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  const landingSheet = spreadsheet.getSheetByName(LANDING_CONTENT_SHEET_NAME);
+  if (landingSheet) ensureLandingContentHeaderRow(landingSheet);
+  ensurePackagesSheet();
+  ensureFeedbackImagesSheet();
+  ensurePaymentSettingsSheet();
+  ensureSectionsLayoutSheet();
+  ensureBlogCategoriesSheet();
+  ensureBlogArticlesSheet();
+  ensureAdminUsersSheet();
+  ensureAuditLogSheet();
 }
 
 function checkSheetHeaders(sheetName, expectedHeaders) {

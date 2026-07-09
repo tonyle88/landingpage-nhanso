@@ -172,7 +172,7 @@ async function runHealthCheck() {
   if (!state.token) return;
   setBusy(els.healthCheck, true);
   try {
-    const payload = await api('healthCheck', { token: state.token });
+    const payload = await apiAllowFailure('healthCheck', { token: state.token });
     const summary = summarizeHealthCheck(payload);
     toast(payload.ok ? 'Hệ thống content/admin ổn.' : 'Health check phát hiện lỗi.', payload.ok ? 'success' : 'error');
     window.alert(summary);
@@ -863,6 +863,22 @@ async function logout() {
 }
 
 async function api(action, data = {}, includeToken = true) {
+  const payload = await requestApi(action, data, includeToken);
+  if (!payload.ok) {
+    const errorMessage = formatApiErrorMessage(action, payload);
+    if (isSessionExpiredMessage(errorMessage)) {
+      expireSession();
+    }
+    throw new Error(errorMessage);
+  }
+  return payload;
+}
+
+async function apiAllowFailure(action, data = {}, includeToken = true) {
+  return requestApi(action, data, includeToken);
+}
+
+async function requestApi(action, data = {}, includeToken = true) {
   const body = new URLSearchParams();
   body.set('action', action);
   Object.entries(data).forEach(([key, value]) => {
@@ -877,13 +893,6 @@ async function api(action, data = {}, includeToken = true) {
     body,
   });
   const payload = await response.json();
-  if (!payload.ok) {
-    const errorMessage = formatApiErrorMessage(action, payload);
-    if (isSessionExpiredMessage(errorMessage)) {
-      expireSession();
-    }
-    throw new Error(errorMessage);
-  }
   return payload;
 }
 
