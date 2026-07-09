@@ -46,6 +46,7 @@ const els = {
   contentSearch: document.getElementById('content-search'),
   sectionHeading: document.getElementById('section-heading'),
   refreshContent: document.getElementById('refresh-content'),
+  healthCheck: document.getElementById('health-check'),
   saveAll: document.getElementById('save-all'),
   syncTemplate: document.getElementById('sync-template'),
   logout: document.getElementById('logout'),
@@ -79,6 +80,7 @@ function bindEvents() {
     render();
   });
   els.refreshContent.addEventListener('click', () => loadContent(true));
+  els.healthCheck?.addEventListener('click', runHealthCheck);
   els.saveAll.addEventListener('click', saveAllDirtyItems);
   els.syncTemplate.addEventListener('click', syncTemplate);
   els.logout.addEventListener('click', logout);
@@ -164,6 +166,41 @@ async function loadContent(showNotice = false) {
     setBusy(els.refreshContent, false);
     if (els.globalLoader) els.globalLoader.classList.add('is-hidden');
   }
+}
+
+async function runHealthCheck() {
+  if (!state.token) return;
+  setBusy(els.healthCheck, true);
+  try {
+    const payload = await api('healthCheck', { token: state.token });
+    const summary = summarizeHealthCheck(payload);
+    toast(payload.ok ? 'Hệ thống content/admin ổn.' : 'Health check phát hiện lỗi.', payload.ok ? 'success' : 'error');
+    window.alert(summary);
+  } catch (error) {
+    handleSessionError(error);
+  } finally {
+    setBusy(els.healthCheck, false);
+  }
+}
+
+function summarizeHealthCheck(payload) {
+  const lines = [
+    payload.ok ? 'Content/Admin health check: OK' : 'Content/Admin health check: CẦN KIỂM TRA',
+    `Script version: ${payload.scriptVersion || 'không rõ'}`,
+  ];
+
+  const badSheets = (payload.sheets || []).filter((item) => !item.ok);
+  const badProps = (payload.properties || []).filter((item) => !item.ok && item.required);
+  if (badSheets.length) {
+    lines.push('', 'Sheet lỗi:');
+    badSheets.forEach((item) => lines.push(`- ${item.name}: ${item.message}${item.missing?.length ? ` (${item.missing.join(', ')})` : ''}`));
+  }
+  if (badProps.length) {
+    lines.push('', 'Script Properties thiếu:');
+    badProps.forEach((item) => lines.push(`- ${item.key || item.name}: ${item.message || 'Thiếu cấu hình'}`));
+  }
+  if (!badSheets.length && !badProps.length) lines.push('', 'Tất cả sheet bắt buộc đang đúng header.');
+  return lines.join('\n');
 }
 
 function normalizeItem(item) {

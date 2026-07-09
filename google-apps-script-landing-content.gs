@@ -6,6 +6,7 @@
 const SPREADSHEET_ID = '1hxBpzJwNO470xqoHBuaZF26anCGir5pnpQk0iPTxz4k';
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
 const ADMIN_USERS_SHEET_NAME = 'Admin users';
+const AUDIT_LOG_SHEET_NAME = 'Audit log';
 const SCRIPT_VERSION = '2026-06-14-v16-cache-order';
 const ADMIN_SESSION_SECONDS = 21600;
 const LANDING_CONTENT_CACHE_KEY = 'landing_content_payload_v16';
@@ -93,6 +94,41 @@ const ADMIN_USERS_HEADERS = [
   'Ngày cập nhật',
   'Lần đăng nhập cuối',
 ];
+const AUDIT_LOG_HEADERS = [
+  'Timestamp',
+  'Action',
+  'Status',
+  'Username',
+  'Role',
+  'Target type',
+  'Target ID',
+  'Message',
+];
+const AUDITED_ADMIN_ACTIONS = [
+  'loginAdmin',
+  'logoutAdmin',
+  'saveLandingContentItem',
+  'saveLandingContentBatch',
+  'changeAdminPassword',
+  'createAdminUser',
+  'setAdminUserStatus',
+  'syncLandingContentTemplate',
+  'savePackage',
+  'savePackageOrder',
+  'deletePackage',
+  'savePaymentSettings',
+  'uploadFeedbackImage',
+  'uploadImage',
+  'saveFeedbackImage',
+  'deleteFeedbackImage',
+  'saveSectionsLayoutOrder',
+  'saveGenericSection',
+  'deleteSection',
+  'saveBlogCategory',
+  'deleteBlogCategory',
+  'saveBlogArticle',
+  'deleteBlogArticle',
+];
 
 function onOpen() {
   SpreadsheetApp.getUi()
@@ -135,34 +171,39 @@ function doPost(e) {
   const action = cleanValue(params.action);
 
   try {
-    if (action === 'loginAdmin') return handleAdminLogin(params);
-    if (action === 'logoutAdmin') return handleAdminLogout(params);
-    if (action === 'getAdminContent') return handleGetAdminContent(params);
-    if (action === 'saveLandingContentItem') return handleSaveLandingContentItem(params);
-    if (action === 'saveLandingContentBatch') return handleSaveLandingContentBatch(params);
-    if (action === 'changeAdminPassword') return handleChangeAdminPassword(params);
-    if (action === 'listAdminUsers') return handleListAdminUsers(params);
-    if (action === 'createAdminUser') return handleCreateAdminUser(params);
-    if (action === 'setAdminUserStatus') return handleSetAdminUserStatus(params);
-    if (action === 'syncLandingContentTemplate') return handleSyncLandingContentTemplate(params);
-    if (action === 'savePackage') return handleSavePackage(params);
-    if (action === 'savePackageOrder') return handleSavePackageOrder(params);
-    if (action === 'deletePackage') return handleDeletePackage(params);
-    if (action === 'savePaymentSettings') return handleSavePaymentSettings(params);
-    if (action === 'uploadFeedbackImage') return handleUploadFeedbackImage(params);
-    if (action === 'uploadImage') return handleUploadImage(params);
-    if (action === 'saveFeedbackImage') return handleSaveFeedbackImage(params);
-    if (action === 'deleteFeedbackImage') return handleDeleteFeedbackImage(params);
-    if (action === 'saveSectionsLayoutOrder') return handleSaveSectionsLayoutOrder(params);
-    if (action === 'saveGenericSection') return handleSaveGenericSection(params);
-    if (action === 'deleteSection') return handleDeleteSection(params);
-    if (action === 'saveBlogCategory') return handleSaveBlogCategory(params);
-    if (action === 'deleteBlogCategory') return handleDeleteBlogCategory(params);
-    if (action === 'saveBlogArticle') return handleSaveBlogArticle(params);
-    if (action === 'deleteBlogArticle') return handleDeleteBlogArticle(params);
+    let response;
+    if (action === 'loginAdmin') response = handleAdminLogin(params);
+    else if (action === 'logoutAdmin') response = handleAdminLogout(params);
+    else if (action === 'getAdminContent') response = handleGetAdminContent(params);
+    else if (action === 'healthCheck') response = handleHealthCheck(params);
+    else if (action === 'saveLandingContentItem') response = handleSaveLandingContentItem(params);
+    else if (action === 'saveLandingContentBatch') response = handleSaveLandingContentBatch(params);
+    else if (action === 'changeAdminPassword') response = handleChangeAdminPassword(params);
+    else if (action === 'listAdminUsers') response = handleListAdminUsers(params);
+    else if (action === 'createAdminUser') response = handleCreateAdminUser(params);
+    else if (action === 'setAdminUserStatus') response = handleSetAdminUserStatus(params);
+    else if (action === 'syncLandingContentTemplate') response = handleSyncLandingContentTemplate(params);
+    else if (action === 'savePackage') response = handleSavePackage(params);
+    else if (action === 'savePackageOrder') response = handleSavePackageOrder(params);
+    else if (action === 'deletePackage') response = handleDeletePackage(params);
+    else if (action === 'savePaymentSettings') response = handleSavePaymentSettings(params);
+    else if (action === 'uploadFeedbackImage') response = handleUploadFeedbackImage(params);
+    else if (action === 'uploadImage') response = handleUploadImage(params);
+    else if (action === 'saveFeedbackImage') response = handleSaveFeedbackImage(params);
+    else if (action === 'deleteFeedbackImage') response = handleDeleteFeedbackImage(params);
+    else if (action === 'saveSectionsLayoutOrder') response = handleSaveSectionsLayoutOrder(params);
+    else if (action === 'saveGenericSection') response = handleSaveGenericSection(params);
+    else if (action === 'deleteSection') response = handleDeleteSection(params);
+    else if (action === 'saveBlogCategory') response = handleSaveBlogCategory(params);
+    else if (action === 'deleteBlogCategory') response = handleDeleteBlogCategory(params);
+    else if (action === 'saveBlogArticle') response = handleSaveBlogArticle(params);
+    else if (action === 'deleteBlogArticle') response = handleDeleteBlogArticle(params);
+    else response = jsonResponse({ ok: false, message: 'Action khong hop le', scriptVersion: SCRIPT_VERSION });
 
-    return jsonResponse({ ok: false, message: 'Action khong hop le', scriptVersion: SCRIPT_VERSION });
+    auditAdminAction(params, action, response);
+    return response;
   } catch (error) {
+    auditAdminAction(params, action, null, error);
     return jsonResponse({ ok: false, message: error.message, scriptVersion: SCRIPT_VERSION });
   }
 }
@@ -859,6 +900,141 @@ function parseRequestParams(e) {
   }
 
   return params;
+}
+
+function handleHealthCheck(params) {
+  requireAdminSession(params.token, ['admin']);
+  ensureAuditLogSheet();
+
+  const sheetChecks = [
+    checkSheetHeaders(LANDING_CONTENT_SHEET_NAME, LANDING_CONTENT_HEADERS),
+    checkSheetHeaders(PACKAGES_SHEET_NAME, PACKAGES_HEADERS),
+    checkSheetHeaders(FEEDBACK_IMAGES_SHEET_NAME, FEEDBACK_IMAGES_HEADERS),
+    checkSheetHeaders(PAYMENT_SETTINGS_SHEET_NAME, PAYMENT_SETTINGS_HEADERS),
+    checkSheetHeaders(SECTIONS_LAYOUT_SHEET_NAME, SECTIONS_LAYOUT_HEADERS),
+    checkSheetHeaders(BLOG_CATEGORIES_SHEET_NAME, BLOG_CATEGORIES_HEADERS),
+    checkSheetHeaders(BLOG_ARTICLES_SHEET_NAME, BLOG_ARTICLES_HEADERS),
+    checkSheetHeaders(ADMIN_USERS_SHEET_NAME, ADMIN_USERS_HEADERS),
+    checkSheetHeaders(AUDIT_LOG_SHEET_NAME, AUDIT_LOG_HEADERS),
+  ];
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const propertyChecks = [
+    {
+      key: 'IMGBB_API_KEY',
+      ok: Boolean(cleanValue(scriptProperties.getProperty('IMGBB_API_KEY')) || cleanValue(IMGBB_API_KEY)),
+      required: false,
+      message: 'Thieu IMGBB_API_KEY thi upload anh se dung fallback Google Drive.',
+    },
+    {
+      key: SEPAY_SECRET_KEY_PROPERTY,
+      ok: Boolean(cleanValue(scriptProperties.getProperty(SEPAY_SECRET_KEY_PROPERTY))),
+      required: false,
+      message: 'Chi bat buoc khi dung cau hinh SePay co secret key.',
+    },
+  ];
+  const requiredSheetsOk = sheetChecks.every((check) => check.ok);
+  const requiredPropertiesOk = propertyChecks.every((check) => check.ok || !check.required);
+
+  return jsonResponse({
+    ok: requiredSheetsOk && requiredPropertiesOk,
+    sheets: sheetChecks,
+    properties: propertyChecks,
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function checkSheetHeaders(sheetName, expectedHeaders) {
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  const sheet = spreadsheet.getSheetByName(sheetName);
+  if (!sheet) {
+    return { name: sheetName, ok: false, message: 'Thieu sheet' };
+  }
+
+  const actualHeaders = sheet.getRange(1, 1, 1, expectedHeaders.length).getDisplayValues()[0]
+    .map((header) => cleanValue(header));
+  const missing = expectedHeaders.filter((header, index) => actualHeaders[index] !== header);
+  return {
+    name: sheetName,
+    ok: missing.length === 0,
+    missing: missing,
+    message: missing.length ? 'Header khong khop' : 'OK',
+  };
+}
+
+function ensureAuditLogSheet() {
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  let sheet = spreadsheet.getSheetByName(AUDIT_LOG_SHEET_NAME);
+  if (!sheet) sheet = spreadsheet.insertSheet(AUDIT_LOG_SHEET_NAME);
+  sheet.getRange(1, 1, 1, AUDIT_LOG_HEADERS.length).setValues([AUDIT_LOG_HEADERS]);
+  sheet.setFrozenRows(1);
+  sheet.autoResizeColumns(1, AUDIT_LOG_HEADERS.length);
+  return sheet;
+}
+
+function auditAdminAction(params, action, response, error) {
+  if (AUDITED_ADMIN_ACTIONS.indexOf(action) === -1) return;
+
+  try {
+    const session = getAdminSession(params.token) || {};
+    const responsePayload = readJsonResponsePayload(response);
+    const status = error || responsePayload.ok === false ? 'FAIL' : 'OK';
+    const sheet = ensureAuditLogSheet();
+    sheet.appendRow([
+      formatAdminDate(getVietnamNow()),
+      cleanAuditValue(action, 80),
+      status,
+      cleanAuditValue(session.username || params.username || '', 80),
+      cleanAuditValue(session.role || '', 40),
+      getAuditTargetType(action),
+      getAuditTargetId(params),
+      cleanAuditValue(error ? error.message : (responsePayload.message || ''), 300),
+    ]);
+  } catch (auditError) {
+    console.warn('Khong ghi duoc audit log:', auditError);
+  }
+}
+
+function readJsonResponsePayload(response) {
+  if (!response || typeof response.getContent !== 'function') return {};
+  try {
+    return JSON.parse(response.getContent() || '{}');
+  } catch (error) {
+    return {};
+  }
+}
+
+function getAuditTargetType(action) {
+  if (action.indexOf('Package') !== -1) return 'package';
+  if (action.indexOf('Feedback') !== -1 || action === 'uploadImage') return 'feedback';
+  if (action.indexOf('Section') !== -1) return 'section';
+  if (action.indexOf('BlogCategory') !== -1) return 'blog_category';
+  if (action.indexOf('BlogArticle') !== -1) return 'blog_article';
+  if (action.indexOf('User') !== -1 || action === 'changeAdminPassword') return 'admin_user';
+  if (action.indexOf('Payment') !== -1) return 'payment_settings';
+  if (action.indexOf('LandingContent') !== -1 || action === 'syncLandingContentTemplate') return 'landing_content';
+  return 'admin';
+}
+
+function getAuditTargetId(params) {
+  return cleanAuditValue(
+    params.key ||
+    params.code ||
+    params.id ||
+    params.categoryId ||
+    params.articleId ||
+    params.fileId ||
+    params.username ||
+    '',
+    160
+  );
+}
+
+function cleanAuditValue(value, maxLength) {
+  return cleanValue(value)
+    .replace(/[<>]/g, '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .slice(0, maxLength || 200);
 }
 
 function handleAdminLogin(params) {

@@ -112,6 +112,15 @@ function doGet(e) {
     });
   }
 
+  if (params.action === 'bookingHealthCheck') {
+    try {
+      return handleBookingHealthCheck();
+    } catch (error) {
+      logAppError('bookingHealthCheck', error, params);
+      return jsonResponse({ ok: false, message: error.message, scriptVersion: SCRIPT_VERSION });
+    }
+  }
+
   if (params.action === 'completeBooking') {
     try {
       return handleCompleteBooking(params);
@@ -393,7 +402,7 @@ function handleCheckSepayPayment(params) {
 }
 
 function handleSepayWebhook(params) {
-  const configuredSecret = cleanValue(PropertiesService.getScriptProperties().getProperty('SEPAY_WEBHOOK_SECRET')) || '123456Cuong@';
+  const configuredSecret = getSepayWebhookSecret();
   if (cleanValue(params.secret) !== configuredSecret) throw new Error('Secret webhook SePay khong hop le.');
 
   const orderId = extractSepayOrderId(params);
@@ -437,6 +446,73 @@ function handleSepayWebhook(params) {
     paymentOrderId: orderId,
     scriptVersion: SCRIPT_VERSION,
   });
+}
+
+function handleBookingHealthCheck() {
+  const checks = [
+    checkBookingSheetHeaders(SHEET_NAME, HEADERS),
+    checkBookingSheetExists(EMAIL_LOG_SHEET),
+    checkBookingSheetExists(ERROR_LOG_SHEET),
+    checkBookingSheetHeaders(SEPAY_PAYMENTS_SHEET, SEPAY_PAYMENTS_HEADERS),
+    checkBookingCalendar(),
+    checkBookingScriptProperty('SEPAY_WEBHOOK_SECRET'),
+  ];
+
+  return jsonResponse({
+    ok: checks.every((check) => check.ok),
+    checks: checks,
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function checkBookingSheetHeaders(sheetName, expectedHeaders) {
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  const sheet = spreadsheet.getSheetByName(sheetName);
+  if (!sheet) return { name: sheetName, ok: false, message: 'Thieu sheet' };
+
+  const actualHeaders = sheet.getRange(1, 1, 1, expectedHeaders.length).getDisplayValues()[0]
+    .map((header) => cleanValue(header));
+  const missing = expectedHeaders.filter((header, index) => actualHeaders[index] !== header);
+  return {
+    name: sheetName,
+    ok: missing.length === 0,
+    missing: missing,
+    message: missing.length ? 'Header khong khop' : 'OK',
+  };
+}
+
+function checkBookingSheetExists(sheetName) {
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  const sheet = spreadsheet.getSheetByName(sheetName);
+  return {
+    name: sheetName,
+    ok: Boolean(sheet),
+    message: sheet ? 'OK' : 'Thieu sheet',
+  };
+}
+
+function checkBookingCalendar() {
+  const calendar = CalendarApp.getCalendarById(CALENDAR_ID) || CalendarApp.getDefaultCalendar();
+  return {
+    name: 'Calendar',
+    ok: Boolean(calendar),
+    message: calendar ? 'OK' : 'Khong tim thay calendar',
+  };
+}
+
+function checkBookingScriptProperty(key) {
+  const value = cleanValue(PropertiesService.getScriptProperties().getProperty(key));
+  return {
+    name: key,
+    ok: Boolean(value),
+    message: value ? 'OK' : 'Thieu Script Property',
+  };
+}
+
+function getSepayWebhookSecret() {
+  const secret = cleanValue(PropertiesService.getScriptProperties().getProperty('SEPAY_WEBHOOK_SECRET'));
+  if (!secret) throw new Error('Chua cau hinh SEPAY_WEBHOOK_SECRET trong Script Properties.');
+  return secret;
 }
 
 function sendBookingEmails(payload, sheet, rowNumber) {
