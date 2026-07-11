@@ -179,7 +179,7 @@ assert.match(
 
 assert.match(
   blogSource,
-  /fetch\(`\$\{SCRIPT_URL\}\?action=getBlogArticle&id=\$\{encodeURIComponent\(id\)\}`\)/,
+  /fetchBlogJson\(`\$\{SCRIPT_URL\}\?action=getBlogArticle&id=\$\{encodeURIComponent\(id\)\}`\)/,
   'Blog should fetch full content only for the opened article'
 );
 
@@ -193,6 +193,30 @@ assert.match(
   blogSource,
   /function renderBlogHome\(\) \{\s*activeArticleRequest \+= 1;/,
   'Returning to the blog list should cancel an in-flight article render'
+);
+
+assert.match(
+  blogSource,
+  /const BLOG_API_TIMEOUT_MS = 12000;[\s\S]*const BLOG_API_RETRY_COUNT = 1;/,
+  'Blog API reads should have a bounded timeout and one retry'
+);
+
+assert.match(
+  blogSource,
+  /async function fetchBlogJson\(url\)[\s\S]*new AbortController\(\)[\s\S]*signal: controller\.signal/,
+  'Blog API helper should abort stalled requests'
+);
+
+assert.match(
+  blogSource,
+  /async function loadBlogArticleDetail\(id\) \{\s*const data = await fetchBlogJson/,
+  'Article detail should use the resilient blog API helper'
+);
+
+assert.match(
+  blogSource,
+  /if \(!renderedFromCache\) renderBlogLoadError\(\);\s*else console\.warn/,
+  'A failed background refresh should preserve already-rendered cache content'
 );
 
 const publicLandingPayloadBlock = contentScriptSource.slice(

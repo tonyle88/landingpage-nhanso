@@ -1,5 +1,7 @@
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3m9zkv9mX-BgMtB7DZj2rMrZtkAAOFDQow2UKxttXRz8G5Zlc4qponSGrvPBxJwEO/exec';
 const RELATED_VIEWED_KEY = 'clowcat_blog_related_viewed';
+const BLOG_API_TIMEOUT_MS = 12000;
+const BLOG_API_RETRY_COUNT = 1;
 
 let blogCategories = [];
 let blogArticles = [];
@@ -18,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   const CACHE_KEY = 'blog_landing_cache_v2';
   const CACHE_TTL = 5 * 60 * 1000; // 5 phút
+  let renderedFromCache = false;
   try { localStorage.removeItem('blog_landing_cache'); } catch(e) {}
 
   // Hiển thị dữ liệu từ cache ngay lập tức nếu có
@@ -32,6 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const articleId = urlParams.get('id');
         if (articleId) await renderArticleDetail(articleId);
         else renderBlogHome();
+        renderedFromCache = true;
         document.body.classList.remove('landing-content-loading');
       }
     }
@@ -39,35 +43,69 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Luôn fetch mới ở nền để cập nhật cache
   try {
-    let res = await fetch(`${SCRIPT_URL}?action=getBlogContent`);
-    let data = await res.json();
+    let data = await fetchBlogJson(`${SCRIPT_URL}?action=getBlogContent`);
     if (!Array.isArray(data.blogArticles)) {
-      res = await fetch(`${SCRIPT_URL}?action=getLandingContent`);
-      data = await res.json();
+      data = await fetchBlogJson(`${SCRIPT_URL}?action=getLandingContent`);
     }
-    if (data.ok) {
-      // Lưu cache
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+    if (!data.ok || !Array.isArray(data.blogArticles) || !Array.isArray(data.blogCategories)) {
+      throw new Error(data.message || 'Dữ liệu blog không hợp lệ.');
+    }
 
-      blogCategories = data.blogCategories || [];
-      blogArticles = data.blogArticles || [];
-      
-      const urlParams = new URLSearchParams(window.location.search);
-      const articleId = urlParams.get('id');
-      
-      if (articleId) {
-        await renderArticleDetail(articleId);
-      } else {
-        renderBlogHome();
-      }
-      
-      document.body.classList.remove('landing-content-loading');
-    }
+    // Lưu cache
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+
+    blogCategories = data.blogCategories;
+    blogArticles = data.blogArticles;
+    const urlParams = new URLSearchParams(window.location.search);
+    const articleId = urlParams.get('id');
+
+    if (articleId) await renderArticleDetail(articleId);
+    else renderBlogHome();
+
+    document.body.classList.remove('landing-content-loading');
   } catch (error) {
-    document.getElementById('blog-container').innerHTML = '<p>Lỗi tải dữ liệu.</p>';
+    if (!renderedFromCache) renderBlogLoadError();
+    else console.warn('Không cập nhật được dữ liệu blog, tiếp tục dùng cache:', error);
     document.body.classList.remove('landing-content-loading');
   }
 });
+
+async function fetchBlogJson(url) {
+  let lastError;
+  for (let attempt = 0; attempt <= BLOG_API_RETRY_COUNT; attempt += 1) {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), BLOG_API_TIMEOUT_MS);
+    try {
+      const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}try=${attempt + 1}`, {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      lastError = error;
+      if (attempt < BLOG_API_RETRY_COUNT) await new Promise((resolve) => window.setTimeout(resolve, 450));
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  }
+  throw lastError;
+}
+
+function renderBlogLoadError() {
+  const container = document.getElementById('blog-container');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="blog-article-load-error" role="alert">
+      <i class="fa-solid fa-wifi" aria-hidden="true"></i>
+      <h2>Chưa tải được danh sách bài viết</h2>
+      <button type="button" data-retry-blog-list>Thử lại</button>
+    </div>
+  `;
+  container.querySelector('[data-retry-blog-list]')?.addEventListener('click', () => window.location.reload());
+}
 
 function setupNavbar() {
   const hamburger = document.getElementById('hamburger');
@@ -681,8 +719,7 @@ async function renderArticleDetail(id) {
 }
 
 async function loadBlogArticleDetail(id) {
-  const response = await fetch(`${SCRIPT_URL}?action=getBlogArticle&id=${encodeURIComponent(id)}`);
-  const data = await response.json();
+  const data = await fetchBlogJson(`${SCRIPT_URL}?action=getBlogArticle&id=${encodeURIComponent(id)}`);
   if (!data.ok || !data.article) throw new Error(data.message || 'Không tải được bài viết.');
 
   const index = blogArticles.findIndex((article) => article.id === id);
