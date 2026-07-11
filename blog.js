@@ -3,6 +3,7 @@ const RELATED_VIEWED_KEY = 'clowcat_blog_related_viewed';
 
 let blogCategories = [];
 let blogArticles = [];
+let activeArticleRequest = 0;
 let blogSearchState = {
   query: '',
   categoryId: 'ALL',
@@ -15,8 +16,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupBlogHistoryNavigation();
   setupScrollTopButton();
   
-  const CACHE_KEY = 'blog_landing_cache';
+  const CACHE_KEY = 'blog_landing_cache_v2';
   const CACHE_TTL = 5 * 60 * 1000; // 5 phút
+  try { localStorage.removeItem('blog_landing_cache'); } catch(e) {}
 
   // Hiển thị dữ liệu từ cache ngay lập tức nếu có
   try {
@@ -28,7 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         blogArticles = data.blogArticles || [];
         const urlParams = new URLSearchParams(window.location.search);
         const articleId = urlParams.get('id');
-        if (articleId) renderArticleDetail(articleId);
+        if (articleId) await renderArticleDetail(articleId);
         else renderBlogHome();
         document.body.classList.remove('landing-content-loading');
       }
@@ -54,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const articleId = urlParams.get('id');
       
       if (articleId) {
-        renderArticleDetail(articleId);
+        await renderArticleDetail(articleId);
       } else {
         renderBlogHome();
       }
@@ -238,6 +240,7 @@ function initParticles() {
 }
 
 function renderBlogHome() {
+  activeArticleRequest += 1;
   const container = document.getElementById('blog-container');
   const enabledArticles = blogArticles.filter(a => a.enabled);
   const totalArticles = enabledArticles.length;
@@ -549,9 +552,10 @@ function escapeAttribute(value) {
   return escapeHtml(value).replace(/`/g, '&#096;');
 }
 
-function renderArticleDetail(id) {
+async function renderArticleDetail(id) {
   const container = document.getElementById('blog-container');
-  const article = blogArticles.find(a => a.id === id && a.enabled);
+  const requestId = ++activeArticleRequest;
+  let article = blogArticles.find(a => a.id === id && a.enabled);
   
   if (!article) {
     container.innerHTML = `
@@ -564,6 +568,26 @@ function renderArticleDetail(id) {
       </div>
     `;
     return;
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(article, 'contentHtml')) {
+    container.innerHTML = '<div class="blog-article-loading" role="status"><i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i><span>Đang tải bài viết...</span></div>';
+    try {
+      article = await loadBlogArticleDetail(id);
+      if (requestId !== activeArticleRequest) return;
+    } catch (error) {
+      if (requestId !== activeArticleRequest) return;
+      container.innerHTML = `
+        <div class="blog-article-load-error" role="alert">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          <h2>Chưa tải được bài viết</h2>
+          <button type="button" data-retry-blog-article="${escapeAttribute(id)}">Thử lại</button>
+        </div>
+      `;
+      const retryButton = container.querySelector('[data-retry-blog-article]');
+      retryButton?.addEventListener('click', () => renderArticleDetail(id));
+      return;
+    }
   }
   
   const cat = blogCategories.find(c => c.id === article.categoryId);
@@ -654,6 +678,17 @@ function renderArticleDetail(id) {
   
   container.innerHTML = html;
   setupRelatedArticleLinks(container);
+}
+
+async function loadBlogArticleDetail(id) {
+  const response = await fetch(`${SCRIPT_URL}?action=getBlogArticle&id=${encodeURIComponent(id)}`);
+  const data = await response.json();
+  if (!data.ok || !data.article) throw new Error(data.message || 'Không tải được bài viết.');
+
+  const index = blogArticles.findIndex((article) => article.id === id);
+  if (index === -1) throw new Error('Bài viết không còn trong danh sách.');
+  blogArticles[index] = { ...blogArticles[index], ...data.article };
+  return blogArticles[index];
 }
 
 function setupBlogHistoryNavigation() {

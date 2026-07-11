@@ -101,6 +101,46 @@ assert.match(
   'Content Apps Script should expose blog data through a dedicated endpoint'
 );
 
+assert.match(
+  contentScriptSource,
+  /function toPublicBlogArticleSummary\(article\)[\s\S]*summary: article\.summary[\s\S]*\};/,
+  'Public blog list should return article metadata without full content'
+);
+
+const publicBlogSummaryBlock = contentScriptSource.slice(
+  contentScriptSource.indexOf('function toPublicBlogArticleSummary(article)'),
+  contentScriptSource.indexOf('function buildLandingContentPayload()')
+);
+assert.doesNotMatch(
+  publicBlogSummaryBlock,
+  /contentHtml/,
+  'Public blog summaries must not include article content HTML'
+);
+
+assert.match(
+  contentScriptSource,
+  /function handleGetBlogArticle\(params\)/,
+  'Content Apps Script should expose one enabled article by ID'
+);
+
+assert.match(
+  blogSource,
+  /fetch\(`\$\{SCRIPT_URL\}\?action=getBlogArticle&id=\$\{encodeURIComponent\(id\)\}`\)/,
+  'Blog should fetch full content only for the opened article'
+);
+
+assert.match(
+  blogSource,
+  /const requestId = \+\+activeArticleRequest;/,
+  'Article rendering should ignore stale detail requests'
+);
+
+assert.match(
+  blogSource,
+  /function renderBlogHome\(\) \{\s*activeArticleRequest \+= 1;/,
+  'Returning to the blog list should cancel an in-flight article render'
+);
+
 const publicLandingPayloadBlock = contentScriptSource.slice(
   contentScriptSource.indexOf('function buildLandingContentPayload()'),
   contentScriptSource.indexOf('function getLandingContentPayloadFromCache()')

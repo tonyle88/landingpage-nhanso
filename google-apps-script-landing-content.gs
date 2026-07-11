@@ -7,7 +7,7 @@ const SPREADSHEET_ID = '1hxBpzJwNO470xqoHBuaZF26anCGir5pnpQk0iPTxz4k';
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
 const ADMIN_USERS_SHEET_NAME = 'Admin users';
 const AUDIT_LOG_SHEET_NAME = 'Audit log';
-const SCRIPT_VERSION = '2026-07-11-v17-split-blog-content';
+const SCRIPT_VERSION = '2026-07-11-v18-lazy-blog-article';
 const ADMIN_SESSION_SECONDS = 21600;
 const LANDING_CONTENT_CACHE_KEY = 'landing_content_payload_v17';
 const LANDING_CONTENT_CACHE_SECONDS = 3600; // 1 tiếng
@@ -163,6 +163,14 @@ function doGet(e) {
     }
   }
 
+  if (params.action === 'getBlogArticle') {
+    try {
+      return handleGetBlogArticle(params);
+    } catch (error) {
+      return jsonResponse({ ok: false, article: null, message: error.message, scriptVersion: SCRIPT_VERSION });
+    }
+  }
+
   if (params.action === 'version') {
     return jsonResponse({ ok: true, scriptVersion: SCRIPT_VERSION });
   }
@@ -232,9 +240,34 @@ function handleGetBlogContent() {
   return jsonResponse({
     ok: true,
     blogCategories: getBlogCategories(false),
-    blogArticles: getBlogArticles(false),
+    blogArticles: getBlogArticles(false).map(toPublicBlogArticleSummary),
     scriptVersion: SCRIPT_VERSION,
   });
+}
+
+function handleGetBlogArticle(params) {
+  const id = cleanValue(params.id);
+  if (!id) throw new Error('Thieu ma bai viet.');
+  const article = getBlogArticles(false).find((item) => item.id === id) || null;
+  return jsonResponse({
+    ok: Boolean(article),
+    article: article,
+    message: article ? '' : 'Bai viet khong ton tai hoac da bi an.',
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function toPublicBlogArticleSummary(article) {
+  return {
+    enabled: article.enabled,
+    id: article.id,
+    categoryId: article.categoryId,
+    title: article.title,
+    date: article.date,
+    pinned: article.pinned,
+    thumbnail: article.thumbnail,
+    summary: article.summary,
+  };
 }
 
 function buildLandingContentPayload() {

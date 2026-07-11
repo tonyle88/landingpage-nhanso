@@ -182,6 +182,7 @@ Public read:
 ```text
 GET action=getLandingContent
 GET action=getBlogContent
+GET action=getBlogArticle&id=ARTICLE_ID
 GET action=version
 ```
 
