@@ -25,7 +25,7 @@ Co the cau hinh:
 - Thoi gian cho thanh toan.
 - Trang cam on.
 
-Khi tat SePay, trang dung flow cu: khach quet QR va bam `Tôi Đã Chuyển Khoản Thành Công`.
+Khi tat SePay, trang giu cho khung gio trong 15 phut. Sau khi khach bam `Tôi Đã Chuyển Khoản Thành Công`, don chuyen sang `manual_review`; Calendar va email xac nhan chi duoc tao sau khi nguoi quan tri kiem tra giao dich va chon menu `Clow Cat Booking` -> `Xác nhận đơn chuyển khoản đã chọn` trong tab `Dang ky tu van`.
 
 Khi bat SePay, trang hien QR co countdown va tu kiem tra trang thai thanh toan.
 
@@ -96,7 +96,7 @@ thanh cong
 thành công
 ```
 
-Luu y quan trong: webhook URL co `action` va `secret` tren query string, con du lieu giao dich thuong nam trong POST body. Hay deploy ban booking script `2026-06-16-v13-sepay-webhook-body` tro len de Apps Script doc duoc ca query string lan body.
+Luu y quan trong: webhook URL co `action` va `secret` tren query string, con du lieu giao dich thuong nam trong POST body. Hay deploy ban booking script `2026-07-11-v14-booking-reservation` tro len de Apps Script doc duoc ca query string lan body, doi chieu ma don va so tien.
 
 Sau khi khach thanh toan, kiem tra tab:
 
@@ -105,7 +105,7 @@ SePay payments
 ```
 
 - Neu khong co dong moi: SePay chua goi webhook dung URL, hoac URL/secret sai.
-- Neu co dong moi nhung landing van cho: cot `Ma thanh toan` khong khop noi dung chuyen khoan `CCP-...`, hoac cot `Trang thai` khong phai `paid`.
+- Neu co dong moi nhung landing van cho: cot `Ma thanh toan` khong khop noi dung chuyen khoan `CCP-...`, cot `Trang thai` khong phai `paid`, hoac so tien thap hon gia cua don booking.
 - Neu cot `Du lieu goc` co du lieu nhung ma thanh toan trong: can xem field noi dung SePay gui ve ten gi de bo sung parser.
 
 ## 4. Sheet log

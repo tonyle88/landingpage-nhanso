@@ -71,6 +71,7 @@ const blogSource = fs.readFileSync(new URL('../blog.js', import.meta.url), 'utf8
 const indexSource = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const blogHtmlSource = fs.readFileSync(new URL('../blog.html', import.meta.url), 'utf8');
 const styleSource = fs.readFileSync(new URL('../style.css', import.meta.url), 'utf8');
+const bookingSource = fs.readFileSync(new URL('../google-apps-script-booking.gs', import.meta.url), 'utf8');
 assert.match(
   blogSource,
   /const searchText = normalizeSearchText\(\[\s*a\.title,\s*\]\.join\(' '\)\);/,
@@ -219,6 +220,78 @@ assert.match(
   blogSource,
   /<img src="\$\{r\.thumbnail\}" loading="lazy" decoding="async"/,
   'Related article thumbnails should lazy-load'
+);
+
+assert.match(
+  bookingSource,
+  /'ID đặt lịch',\s*'Mã thanh toán',\s*'Phương thức thanh toán',\s*'Trạng thái'/,
+  'Booking sheet should keep an ID and payment state for idempotent processing'
+);
+
+assert.match(
+  bookingSource,
+  /function handleCreateBooking\(params\)/,
+  'Booking should reserve a slot before payment'
+);
+
+assert.match(
+  bookingSource,
+  /function handleConfirmBooking\(params\)/,
+  'Booking confirmation should use the booking ID'
+);
+
+assert.match(
+  bookingSource,
+  /function confirmSelectedManualBooking\(\)/,
+  'Manual transfers should require an explicit administrator confirmation'
+);
+
+assert.doesNotMatch(
+  bookingSource,
+  /title:\s*ev\.getTitle\(\)/,
+  'Public booked slots must not expose Calendar event titles'
+);
+
+assert.doesNotMatch(
+  bookingSource,
+  /params\.action === 'completeBooking'/,
+  'GET should not trigger booking confirmation side effects'
+);
+
+assert.match(
+  bookingSource,
+  /const records = getBookingRecords\(sheet\);/,
+  'Booked-slot reads should use normalized booking records'
+);
+
+assert.doesNotMatch(
+  bookingSource,
+  /sheet\.getRange\(2, slotCol, lastRow, slotCol\)/,
+  'Booked-slot reads must not use the old oversized range'
+);
+
+assert.match(
+  bookingSource,
+  /sheet\.getRange\(rowNumber, 1, 1, HEADERS\.length\)\.setNumberFormat\('@'\)/,
+  'Inserted booking formatting should affect one row only'
+);
+
+assert.doesNotMatch(
+  source,
+  /function saveBookingToSheet\(/,
+  'Frontend should not use opaque no-cors booking saves'
+);
+
+assert.doesNotMatch(
+  source,
+  /function completeBookingOnServer\(/,
+  'Frontend should not trigger booking side effects through GET'
+);
+
+assert.match(
+  source,
+  /return postBookingAction\('createBooking', data\);/,
+  'Frontend should create a reservation through the idempotent POST endpoint'
 );
 
 console.log('Sprint 2 smoke tests passed.');

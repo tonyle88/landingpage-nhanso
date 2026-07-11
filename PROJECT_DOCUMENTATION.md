@@ -1,6 +1,6 @@
 # Nhân Số ClowCat Patronus - Tài Liệu Dự Án Hiện Hành
 
-Cập nhật: 09/07/2026
+Cập nhật: 11/07/2026
 
 Tài liệu này là nguồn tham chiếu vận hành cho repo hiện tại. Các kế hoạch/audit cũ chỉ dùng để tham khảo, không dùng làm schema chính nếu khác nội dung dưới đây.
 
@@ -148,7 +148,7 @@ SePay payments
 Header booking:
 
 ```text
-Ngày giờ Việt Nam | Họ và tên | Ngày sinh | Số điện thoại / Zalo | Email | Hình thức | Gói tư vấn | Lịch hẹn | Số tiền | Lời nhắn | Mã gói | Email khách | Email chủ | Nội dung chuyển khoản
+Ngày giờ Việt Nam | Họ và tên | Ngày sinh | Số điện thoại / Zalo | Email | Hình thức | Gói tư vấn | Lịch hẹn | Số tiền | Lời nhắn | Mã gói | Email khách | Email chủ | Nội dung chuyển khoản | ID đặt lịch | Mã thanh toán | Phương thức thanh toán | Trạng thái | Giữ chỗ đến | Calendar event ID | Đã xác nhận lúc
 ```
 
 ## 5. Script Properties
@@ -222,11 +222,11 @@ Booking/payment:
 ```text
 GET action=getBookedSlots
 GET action=version
-GET action=completeBooking
 GET action=checkSepayPayment
 GET action=bookingHealthCheck
-POST action=saveBooking
-POST action=finalizeBooking
+POST action=createBooking
+POST action=confirmBooking
+POST action=cancelBooking
 POST action=logClientError
 POST action=sepayWebhook
 ```
@@ -246,6 +246,13 @@ Các nhóm chỉnh sửa chính:
 - `Kiểm tra`: kiểm tra content/admin sheet và cấu hình bắt buộc.
 - `Booking`: kiểm tra booking sheet, email/error log, SePay payments, calendar và `SEPAY_WEBHOOK_SECRET`.
 
+Xác nhận QR thủ công:
+
+1. Khách bấm báo đã chuyển khoản, dòng booking chuyển sang `manual_review`.
+2. Mở tab `Dang ky tu van`, chọn đúng dòng đó.
+3. Chọn menu `Clow Cat Booking` -> `Xác nhận đơn chuyển khoản đã chọn`.
+4. Hệ thống tạo Calendar event và gửi email đúng một lần.
+
 Vai trò:
 
 - `admin`: chỉnh toàn bộ nội dung, cấu hình thanh toán, user, section.
@@ -253,14 +260,14 @@ Vai trò:
 
 ## 8. Deploy checklist
 
-1. Deploy `google-apps-script-landing-content.gs`.
-2. Deploy `google-apps-script-booking.gs`.
-3. Cập nhật URL Apps Script trong `script.js`, `blog.js`, `admin/app.js` nếu URL đổi.
-4. Cấu hình Script Properties.
-5. Upload đủ file static lên hosting.
-6. Đăng nhập admin.
-7. Chạy health check content/admin.
-8. Chạy booking health check.
+1. Tạm dừng nhận thanh toán trong lúc release và bảo khách đang mở trang tải lại sau khi hoàn tất.
+2. Deploy `google-apps-script-landing-content.gs` và `google-apps-script-booking.gs`.
+3. Upload đồng thời file static, đặc biệt là `script.js`.
+4. Cập nhật URL Apps Script trong `script.js`, `blog.js`, `admin/app.js` nếu URL đổi.
+5. Cấu hình Script Properties.
+6. Mở admin, chạy booking health check để tự thêm các cột booking mới ở cuối Sheet.
+7. Đăng nhập admin.
+8. Chạy health check content/admin.
 9. Sửa thử một nội dung landing, lưu và reload trang chủ.
 10. Upload thử một ảnh feedback, kiểm tra ảnh mới lên đầu ở admin và landing.
 11. Tạo thử một bài blog, kiểm tra danh sách và trang chi tiết.
@@ -302,10 +309,14 @@ Booking:
 
 - [ ] Form bắt lỗi khi thiếu tên/phone/email.
 - [ ] Chọn online/offline thì dropdown gói lọc đúng.
-- [ ] QR thủ công hoạt động khi SePay tắt.
-- [ ] SePay bật thì trạng thái thanh toán được polling/webhook xác nhận.
-- [ ] Sheet booking có đủ mã đơn, số tiền, trạng thái và nội dung chuyển khoản.
-- [ ] Email khách và email chủ trang gửi đúng flow.
+- [ ] Tạo booking trả `ID đặt lịch`, `Mã thanh toán`, giá server-side và thời gian giữ chỗ.
+- [ ] Hai lần tạo cùng `ID đặt lịch` chỉ có một dòng Sheet.
+- [ ] Khách khác không thể giữ đúng slot đang được giữ hoặc đã xác nhận.
+- [ ] QR thủ công chuyển bản ghi sang `manual_review`, chưa gửi email xác nhận hoặc tạo Calendar.
+- [ ] Chọn dòng `manual_review` trong Sheet và xác nhận bằng menu, hệ thống tạo đúng một Calendar event và gửi email.
+- [ ] SePay chỉ đổi đơn sang `paid` khi mã đơn khớp và số tiền không thấp hơn giá đơn.
+- [ ] `confirmBooking` lặp lại không gửi trùng email hoặc tạo trùng Calendar event.
+- [ ] `getBookedSlots` chỉ trả thời gian bận, không trả tiêu đề Calendar.
 
 ## 10. Cache và hiệu năng
 

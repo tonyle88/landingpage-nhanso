@@ -227,7 +227,10 @@ document.addEventListener('DOMContentLoaded', () => {
     bookingState.consultationType = fd.get('consultationType') || '';
     bookingState.package = fd.get('package') || '';
     bookingState.concern = fd.get('concern') || '';
+    bookingState.bookingId = '';
     bookingState.paymentOrderId = '';
+    bookingState.expectedAmount = 0;
+    bookingState.holdExpiresAt = '';
     const packageSnapshot = getSelectedPackageSnapshot();
     if (!packageSnapshot.price) {
       showToast('Bạn vui lòng chọn lại gói tư vấn để hệ thống cập nhật đúng số tiền.');
@@ -349,17 +352,17 @@ function writeLandingContentCache(payload) {
 }
 
 async function refreshPaymentSettingsBeforePayment() {
-  if (!LANDING_CONTENT_ENABLED || !isConfiguredScriptUrl(LANDING_CONTENT_SCRIPT_URL)) return;
+  if (!LANDING_CONTENT_ENABLED || !isConfiguredScriptUrl(LANDING_CONTENT_SCRIPT_URL)) {
+    throw new Error('Chưa cấu hình được nguồn thanh toán. Vui lòng thử lại sau ít phút.');
+  }
   if (paymentSettingsLoadedFromNetwork && paymentSettingsLoadedAt && Date.now() - paymentSettingsLoadedAt < PAYMENT_SETTINGS_REFRESH_MAX_AGE_MS) return;
 
-  try {
-    const payload = await fetchLandingContentOnce(PAYMENT_SETTINGS_REFRESH_TIMEOUT_MS, 'paymentRefresh=1');
-    if (!isValidLandingContentPayload(payload)) return;
-    applyLandingContent(payload, { fromCache: false });
-    writeLandingContentCache(payload);
-  } catch (error) {
-    console.warn('Không tải kịp cấu hình thanh toán mới, dùng cấu hình hiện có:', error);
+  const payload = await fetchLandingContentOnce(PAYMENT_SETTINGS_REFRESH_TIMEOUT_MS, 'paymentRefresh=1');
+  if (!isValidLandingContentPayload(payload) || !payload.paymentSettings) {
+    throw new Error('Không tải được cấu hình thanh toán mới nhất. Vui lòng thử lại sau ít phút.');
   }
+  applyLandingContent(payload, { fromCache: false });
+  writeLandingContentCache(payload);
 }
 
 function sleep(ms) {
@@ -1094,12 +1097,11 @@ function isConfiguredScriptUrl(url) {
 }
 
 function getBookingDataObject() {
-  const transferContent = paymentSettings.sepayEnabled && bookingState.paymentOrderId
-    ? bookingState.paymentOrderId
-    : buildTransferContent(bookingState.package, bookingState.phone);
+  const transferContent = bookingState.paymentOrderId || buildTransferContent(bookingState.package, bookingState.phone);
   const packageSnapshot = getSelectedPackageSnapshot();
 
   return {
+    bookingId: ensureBookingId(),
     name: bookingState.name,
     dob: formatDobForSheet(bookingState.dob),
     phone: "'" + bookingState.phone,
@@ -1122,22 +1124,23 @@ function getBookingDataObject() {
     submittedAt: new Date().toISOString(),
     pageUrl: window.location.href,
     paymentProvider: paymentSettings.sepayEnabled ? 'sepay' : 'manual_qr',
-    paymentOrderId: bookingState.paymentOrderId || buildPaymentOrderId(bookingState.package, bookingState.phone),
+    paymentOrderId: bookingState.paymentOrderId,
   };
+}
+
+function ensureBookingId() {
+  if (bookingState.bookingId) return bookingState.bookingId;
+  const suffix = window.crypto?.randomUUID
+    ? window.crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  bookingState.bookingId = `BKG-${suffix}`.toUpperCase();
+  return bookingState.bookingId;
 }
 
 function buildTransferContent(packageCode, phone) {
   const cleanPackageCode = String(packageCode || '').trim().toUpperCase();
   const cleanPhone = String(phone || '').replace(/\s+/g, '');
   return `${cleanPackageCode} ${cleanPhone}`.trim();
-}
-
-function buildPaymentOrderId(packageCode, phone) {
-  const prefix = String(paymentSettings.sepayOrderPrefix || 'CCP').trim().toUpperCase();
-  const cleanPackageCode = String(packageCode || '').trim().toUpperCase();
-  const cleanPhone = String(phone || '').replace(/\D/g, '');
-  const timestamp = Date.now().toString().slice(-6);
-  return [prefix, cleanPackageCode, cleanPhone || 'GUEST', timestamp].filter(Boolean).join('-');
 }
 
 function bookingDataToUrlParams(data, action) {
@@ -1151,30 +1154,21 @@ function bookingDataToUrlParams(data, action) {
   return params;
 }
 
-async function saveBookingToSheet(data) {
-  const body = bookingDataToUrlParams(data, 'saveBooking').toString();
-  await fetch(BOOKING_SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
-  });
-}
-
-async function completeBookingOnServer(data) {
-  const query = bookingDataToUrlParams(data, 'completeBooking').toString();
+async function postBookingAction(action, data) {
+  const body = bookingDataToUrlParams(data, action);
   let lastError;
 
   for (let attempt = 0; attempt <= BOOKING_API_RETRY_COUNT; attempt += 1) {
     try {
-      const res = await fetchWithTimeout(`${BOOKING_SCRIPT_URL}?${query}&try=${attempt + 1}`, {
-        method: 'GET',
+      const res = await fetchWithTimeout(BOOKING_SCRIPT_URL, {
+        method: 'POST',
         mode: 'cors',
         cache: 'no-store',
+        body,
       }, BOOKING_API_TIMEOUT_MS);
       const result = await res.json();
       if (!result.ok) {
-        throw new Error(result.message || 'Không hoàn tất được email và lịch Calendar');
+        throw new Error(result.message || 'Không thể hoàn tất thao tác đặt lịch.');
       }
       return result;
     } catch (error) {
@@ -1185,8 +1179,37 @@ async function completeBookingOnServer(data) {
     }
   }
 
-  await logClientError('completeBooking', lastError, data);
+  await logClientError(action, lastError, data);
   throw lastError;
+}
+
+function createBookingOnServer(data) {
+  return postBookingAction('createBooking', data);
+}
+
+function confirmBookingOnServer() {
+  return postBookingAction('confirmBooking', { bookingId: bookingState.bookingId });
+}
+
+function applyBookingReservation(reservation) {
+  bookingState.bookingId = reservation.bookingId || bookingState.bookingId;
+  bookingState.paymentOrderId = reservation.paymentOrderId || '';
+  bookingState.expectedAmount = Number(reservation.amount || 0);
+  bookingState.holdExpiresAt = reservation.holdExpiresAt || '';
+}
+
+async function cancelBookingReservation() {
+  if (!bookingState.bookingId) return;
+  try {
+    await postBookingAction('cancelBooking', { bookingId: bookingState.bookingId });
+  } catch (error) {
+    console.warn('Không thể hủy giữ chỗ cũ:', error);
+  } finally {
+    bookingState.bookingId = '';
+    bookingState.paymentOrderId = '';
+    bookingState.expectedAmount = 0;
+    bookingState.holdExpiresAt = '';
+  }
 }
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
@@ -1623,7 +1646,10 @@ const bookingState = {
   selectedDate: null,   // JS Date object
   selectedTime: null,   // '19:00'
   bookedSlots: [],      // fetched from Apps Script [{start, end}]
+  bookingId: '',
   paymentOrderId: '',
+  expectedAmount: 0,
+  holdExpiresAt: '',
 };
 
 // ---- Modal open/close ----
@@ -1652,16 +1678,25 @@ function initBookingModals() {
     const originalHtml = button.innerHTML;
     button.disabled = true;
     button.innerHTML = '<span>Đang chuẩn bị thanh toán...</span>';
-    await refreshPaymentSettingsBeforePayment();
-    button.disabled = false;
-    button.innerHTML = originalHtml;
-    closeAllModals();
-    openPaymentModal();
+    try {
+      await refreshPaymentSettingsBeforePayment();
+      const reservation = await createBookingOnServer(getBookingDataObject());
+      applyBookingReservation(reservation);
+      closeAllModals();
+      openPaymentModal();
+    } catch (error) {
+      showToast(error.message || 'Không thể giữ chỗ. Vui lòng chọn lại lịch.');
+    } finally {
+      button.disabled = false;
+      button.innerHTML = originalHtml;
+    }
   });
 
-  document.getElementById('btn-back-calendar').addEventListener('click', () => {
+  document.getElementById('btn-back-calendar').addEventListener('click', async () => {
+    await cancelBookingReservation();
     closeAllModals();
     openModal('modal-calendar');
+    loadCalendar();
   });
 
   document.getElementById('btn-confirm-payment').addEventListener('click', finalizeBooking);
@@ -1897,28 +1932,20 @@ function renderTimeSlots(date) {
 // ============================================
 function openPaymentModal() {
   const snapshot = getSelectedPackageSnapshot();
-  const price = snapshot.price;
-  if (!price) {
-    showToast('Bạn vui lòng chọn lại gói tư vấn để hệ thống cập nhật đúng số tiền.');
+  const price = Number(bookingState.expectedAmount || 0);
+  if (!bookingState.bookingId || !bookingState.paymentOrderId || !price) {
+    showToast('Không thể tạo thông tin thanh toán. Vui lòng quay lại chọn lịch.');
     return;
   }
 
   const priceStr = price.toLocaleString('vi-VN') + 'đ';
-  if (paymentSettings.sepayEnabled && !bookingState.paymentOrderId) {
-    bookingState.paymentOrderId = buildPaymentOrderId(snapshot.code, bookingState.phone);
-  }
-  if (!paymentSettings.sepayEnabled) {
-    bookingState.paymentOrderId = '';
-  }
-  const transferContent = paymentSettings.sepayEnabled
-    ? bookingState.paymentOrderId
-    : buildTransferContent(snapshot.code, bookingState.phone);
+  const transferContent = bookingState.paymentOrderId;
   const isSepay = paymentSettings.sepayEnabled;
-  const bankBin = paymentSettings.bankBin || BANK_BIN;
+  const bankBin = paymentSettings.bankBin;
   
-  const displayBankName = isSepay ? (paymentSettings.sepayBankName || 'BIDV') : (paymentSettings.bankName || 'BIDV');
-  const displayBankAccount = isSepay ? (paymentSettings.sepayBankAccount || '96247031088CUONG') : (paymentSettings.bankAccount || BANK_ACCOUNT);
-  const displayBankAccountName = paymentSettings.bankAccountName || BANK_NAME_DISPLAY;
+  const displayBankName = isSepay ? paymentSettings.sepayBankName : paymentSettings.bankName;
+  const displayBankAccount = isSepay ? paymentSettings.sepayBankAccount : paymentSettings.bankAccount;
+  const displayBankAccountName = paymentSettings.bankAccountName;
 
   // Build QR URL
   let qrUrl = '';
@@ -1949,14 +1976,11 @@ function openPaymentModal() {
     detailRow.hidden = false;
   }
 
-  preparePaymentMode({
-    amount: price,
-    transferContent,
-  });
+  preparePaymentMode();
   openModal('modal-payment');
 }
 
-function preparePaymentMode(paymentMeta) {
+function preparePaymentMode() {
   stopSepayWaiting();
   const waiting = document.getElementById('sepay-waiting');
   const confirmBtn = document.getElementById('btn-confirm-payment');
@@ -1970,7 +1994,7 @@ function preparePaymentMode(paymentMeta) {
     confirmBtn.disabled = false;
     confirmBtn.innerHTML = '<span>✓ Tôi Đã Chuyển Khoản Thành Công</span>';
     title.textContent = 'Thanh Toán Chuyển Khoản';
-    noteText.textContent = 'Sau khi chuyển khoản, nhấn nút bên dưới để hoàn tất. Chúng tôi sẽ xác nhận và gửi email cho bạn ngay.';
+    noteText.textContent = 'Sau khi chuyển khoản, nhấn nút bên dưới để thông báo. Lịch được giữ chỗ và sẽ xác nhận sau khi kiểm tra giao dịch.';
     return;
   }
 
@@ -1980,10 +2004,10 @@ function preparePaymentMode(paymentMeta) {
   confirmBtn.disabled = true;
   title.textContent = 'Thanh Toán SePay';
   noteText.textContent = 'Vui lòng quét mã và giữ nguyên nội dung chuyển khoản. Hệ thống sẽ tự xác nhận khi nhận được thanh toán.';
-  startSepayWaiting(paymentMeta);
+  startSepayWaiting();
 }
 
-function startSepayWaiting(paymentMeta) {
+function startSepayWaiting() {
   const countdown = document.getElementById('sepay-countdown');
   const statusText = document.getElementById('sepay-status-text');
   const timeoutSeconds = Math.max(60, Number(paymentSettings.paymentTimeoutMinutes || 15) * 60);
@@ -2003,7 +2027,7 @@ function startSepayWaiting(paymentMeta) {
 
   updateCountdown();
   sepayPaymentTimer = window.setInterval(updateCountdown, 1000);
-  sepayPaymentPoller = window.setInterval(() => checkSepayPaymentStatus(paymentMeta), 5000);
+  sepayPaymentPoller = window.setInterval(checkSepayPaymentStatus, 5000);
 }
 
 function stopSepayWaiting() {
@@ -2013,11 +2037,10 @@ function stopSepayWaiting() {
   sepayPaymentPoller = null;
 }
 
-async function checkSepayPaymentStatus(paymentMeta) {
+async function checkSepayPaymentStatus() {
   if (!paymentSettings.sepayEnabled || !isConfiguredGoogleScriptUrl()) return;
   try {
-    const data = getBookingDataObject();
-    const params = bookingDataToUrlParams(Object.assign({}, data, paymentMeta), 'checkSepayPayment').toString();
+    const params = bookingDataToUrlParams({ paymentOrderId: bookingState.paymentOrderId }, 'checkSepayPayment').toString();
     const res = await fetchWithTimeout(`${BOOKING_SCRIPT_URL}?${params}`, {
       method: 'GET',
       mode: 'cors',
@@ -2033,11 +2056,11 @@ async function checkSepayPaymentStatus(paymentMeta) {
     const countdown = document.getElementById('sepay-countdown');
     if (countdown) countdown.style.display = 'none';
 
-    await saveBookingToSheet(data);
-    await completeBookingOnServer(data);
+    const confirmation = await confirmBookingOnServer();
+    if (confirmation.status !== 'confirmed') return;
 
     closeAllModals();
-    showSuccessModal();
+    showSuccessModal('confirmed');
   } catch (error) {
     console.warn('SePay status check failed:', error);
   }
@@ -2057,22 +2080,10 @@ async function finalizeBooking() {
   btn.disabled = true;
 
   try {
-    const data = getBookingDataObject();
-
-    // Bước 1: Lưu Sheet (POST no-cors – thường chỉ chạy được phần này)
-    await saveBookingToSheet(data);
-
-    // Bước 2: Gửi email + tạo Google Calendar (GET cors – chạy đủ và có phản hồi)
-    const result = await completeBookingOnServer(data);
-
-    if (result.emailStatus && !result.emailStatus.customer?.sent) {
-      const errMsg = result.emailStatus.customer?.error || 'chưa xác định';
-      console.warn('Customer email failed:', errMsg);
-      showToast('Đã lưu đăng ký. Email xác nhận chưa gửi được — kiểm tra Spam hoặc nhắn Zalo.');
-    }
+    const result = await confirmBookingOnServer();
 
     closeAllModals();
-    showSuccessModal();
+    showSuccessModal(result.status === 'confirmed' ? 'confirmed' : 'manual-review');
   } catch (err) {
     await logClientError('finalizeBooking', err, getBookingDataObject());
     showToast('Có lỗi khi xử lý. Vui lòng chụp màn hình và liên hệ qua Zalo/Facebook để được hỗ trợ.');
@@ -2137,9 +2148,20 @@ function validateDobValue(value) {
 // ============================================
 // SUCCESS MODAL
 // ============================================
-function showSuccessModal() {
+function showSuccessModal(mode = 'confirmed') {
+  const isManualReview = mode === 'manual-review';
+  const title = document.getElementById('modal-suc-title');
+  const emailNote = document.querySelector('#modal-success .success-email-note');
+  if (title) title.textContent = isManualReview ? 'Đã Ghi Nhận Thanh Toán!' : 'Đặt Lịch Thành Công!';
+  if (emailNote) {
+    emailNote.textContent = isManualReview
+      ? 'Lịch đang được giữ chỗ. Clow Cat Patronus sẽ xác nhận sau khi kiểm tra giao dịch chuyển khoản.'
+      : 'Email xác nhận đã được gửi đến hộp thư của bạn. Vui lòng kiểm tra cả mục Spam nếu không thấy trong hộp thư đến.';
+  }
   document.getElementById('success-greeting').textContent =
-    `Chào mừng ${bookingState.name}! Lịch tư vấn của bạn đã được xác nhận.`;
+    isManualReview
+      ? `Cảm ơn ${bookingState.name}! Chúng mình đã ghi nhận thông báo chuyển khoản của bạn.`
+      : `Chào mừng ${bookingState.name}! Lịch tư vấn của bạn đã được xác nhận.`;
 
   const typeLabel = CONSULTATION_TYPE_LABELS[bookingState.consultationType] || bookingState.consultationType;
   const packageSnapshot = getSelectedPackageSnapshot();

@@ -41,6 +41,13 @@ const HEADERS = [
   'Email khách',
   'Email chủ',
   'Nội dung chuyển khoản',
+  'ID đặt lịch',
+  'Mã thanh toán',
+  'Phương thức thanh toán',
+  'Trạng thái',
+  'Giữ chỗ đến',
+  'Calendar event ID',
+  'Đã xác nhận lúc',
 ];
 
 const CONSULTATION_TYPE_LABELS = {
@@ -71,8 +78,17 @@ const OFFLINE_TRAVEL_FEE = 50000;
 const PRICE_NUMBER_FORMAT = '#,##0';
 const BOOKING_RATE_LIMIT_SECONDS = 15 * 60;
 const BOOKING_RATE_LIMIT_MAX = 3;
-const SCRIPT_VERSION = '2026-06-16-v13-sepay-webhook-body';
+const BOOKING_HOLD_MINUTES = 15;
+const MANUAL_REVIEW_HOLD_MINUTES = 24 * 60;
+const SCRIPT_VERSION = '2026-07-11-v14-booking-reservation';
 let LANDING_CONTENT_VALUE_CACHE = null;
+
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('Clow Cat Booking')
+    .addItem('Xác nhận đơn chuyển khoản đã chọn', 'confirmSelectedManualBooking')
+    .addToUi();
+}
 // =============================================
 //  doGet – Trả về danh sách slot đã đặt (30 ngày tới)
 // =============================================
@@ -89,7 +105,6 @@ function doGet(e) {
       const calendarBooked = events.map((ev) => ({
         start: ev.getStartTime().toISOString(),
         end: ev.getEndTime().toISOString(),
-        title: ev.getTitle(),
         source: 'calendar',
       }));
 
@@ -117,15 +132,6 @@ function doGet(e) {
       return handleBookingHealthCheck();
     } catch (error) {
       logAppError('bookingHealthCheck', error, params);
-      return jsonResponse({ ok: false, message: error.message, scriptVersion: SCRIPT_VERSION });
-    }
-  }
-
-  if (params.action === 'completeBooking') {
-    try {
-      return handleCompleteBooking(params);
-    } catch (error) {
-      logAppError('completeBooking', error, params);
       return jsonResponse({ ok: false, message: error.message, scriptVersion: SCRIPT_VERSION });
     }
   }
@@ -166,8 +172,16 @@ function doPost(e) {
       return handleSepayWebhook(params);
     }
 
-    if (params.action === 'saveBooking' || params.action === 'finalizeBooking') {
-      return handleSaveBooking(params);
+    if (params.action === 'createBooking' || params.action === 'saveBooking' || params.action === 'finalizeBooking') {
+      return handleCreateBooking(params);
+    }
+
+    if (params.action === 'confirmBooking') {
+      return handleConfirmBooking(params);
+    }
+
+    if (params.action === 'cancelBooking') {
+      return handleCancelBooking(params);
     }
 
     // Legacy fallback (nếu còn dùng form cũ)
@@ -276,111 +290,193 @@ function flattenObject(value, prefix, output) {
 }
 
 // =============================================
-//  POST – chỉ lưu Sheet (nhanh, dùng với no-cors từ website)
+//  POST – giữ chỗ và xác nhận theo booking ID
 // =============================================
-function handleSaveBooking(params) {
+function handleCreateBooking(params) {
   const sheet = getTargetSheet();
   ensureHeaderRow(sheet);
   const booking = resolveBookingDetails(params);
   validateBookingParams(params, booking);
-  enforceBookingRateLimit(params, 'save');
+  if (!params.slotStart || !params.slotEnd || !params.slotLabel) {
+    throw new Error('Vui long chon khung gio truoc khi thanh toan.');
+  }
+  enforceBookingRateLimit(params, 'create');
 
+  const bookingId = cleanBookingId(params.bookingId) || createBookingId();
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
 
-  let rowNumber = 0;
   try {
-    sheet.appendRow(buildSheetRow(params, booking));
-    rowNumber = sheet.getLastRow();
+    const existingRow = findBookingRowById(sheet, bookingId);
+    if (existingRow) {
+      const existing = getBookingRecordByRow(sheet, existingRow);
+      if (existing && existing.status !== 'cancelled' && !isBookingExpired(existing)) {
+        return jsonResponse(buildBookingResponse(existing, 'Da giu cho voi ma dat lich hien tai.'));
+      }
+      throw new Error('Ma dat lich da het han. Vui long chon lai khung gio.');
+    }
+
+    ensureBookingSlotAvailable(sheet, params, bookingId);
+
+    const paymentProvider = cleanValue(params.paymentProvider) === 'sepay' ? 'sepay' : 'manual_qr';
+    const paymentOrderId = createPaymentOrderId(bookingId);
+    const holdExpiresAt = new Date(Date.now() + BOOKING_HOLD_MINUTES * 60 * 1000).toISOString();
+    const status = paymentProvider === 'sepay' ? 'pending_payment' : 'pending_manual_payment';
+
+    sheet.appendRow(buildSheetRow(params, booking, {
+      bookingId: bookingId,
+      paymentOrderId: paymentOrderId,
+      paymentProvider: paymentProvider,
+      status: status,
+      holdExpiresAt: holdExpiresAt,
+    }));
+
+    const rowNumber = sheet.getLastRow();
     formatInsertedRow(sheet, rowNumber);
+    const record = getBookingRecordByRow(sheet, rowNumber);
+    return jsonResponse(buildBookingResponse(record, 'Da giu cho khung gio.'));
   } finally {
     lock.releaseLock();
   }
-
-  return jsonResponse({
-    ok: true,
-    message: 'Da luu Sheet',
-    scriptVersion: SCRIPT_VERSION,
-    rowNumber: rowNumber,
-  });
 }
 
-// =============================================
-//  GET – gửi email + tạo Calendar (chạy đủ, website đọc được kết quả)
-// =============================================
-function handleCompleteBooking(params) {
+function handleConfirmBooking(params) {
+  const bookingId = cleanBookingId(params.bookingId);
+  if (!bookingId) throw new Error('Thieu ma dat lich. Vui long quay lai chon lich.');
+
   const sheet = getTargetSheet();
-  const booking = resolveBookingDetails(params);
-  validateBookingParams(params, booking);
-  enforceBookingRateLimit(params, 'complete');
-  const rowNumber = findLatestBookingRow(sheet, params);
-  const payload = Object.assign({}, params, booking);
+  ensureHeaderRow(sheet);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
 
-  const emailStatus = sendBookingEmails(payload, sheet, rowNumber);
-
-  let calendarEventId = '';
-  let calendarNote = '';
   try {
-    calendarEventId = createCalendarEventIfNeeded(params, booking);
-    calendarNote = calendarEventId ? 'created' : 'skipped';
-  } catch (calendarErr) {
-    calendarNote = calendarErr.message || String(calendarErr);
-    console.error('Calendar error:', calendarErr);
-  }
+    const rowNumber = findBookingRowById(sheet, bookingId);
+    if (!rowNumber) throw new Error('Khong tim thay dat lich. Vui long chon lai khung gio.');
 
-  return jsonResponse({
-    ok: true,
-    message: 'Hoan tat dat lich',
-    scriptVersion: SCRIPT_VERSION,
-    rowNumber: rowNumber,
-    emailStatus: emailStatus,
-    calendarEventId: calendarEventId,
-    calendarNote: calendarNote,
-  });
-}
+    const record = getBookingRecordByRow(sheet, rowNumber);
+    if (!record) throw new Error('Du lieu dat lich khong hop le.');
+    enforceBookingRateLimit({ phone: record.phone, email: record.email }, 'confirm');
 
-function findLatestBookingRow(sheet, params) {
-  const phone = cleanValue(params.phone).replace(/^'/, '');
-  const slotLabel = cleanValue(params.slotLabel);
-  const email = cleanValue(params.email);
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return 0;
-
-  const phoneCol = HEADERS.indexOf('Số điện thoại / Zalo');
-  const slotCol = HEADERS.indexOf('Lịch hẹn');
-  const emailCol = HEADERS.indexOf('Email');
-  const data = sheet.getRange(2, 1, lastRow, HEADERS.length).getValues();
-
-  for (let i = data.length - 1; i >= 0; i--) {
-    const row = data[i];
-    const rowPhone = String(row[phoneCol] || '').replace(/^'/, '');
-    const rowSlot = String(row[slotCol] || '');
-    const rowEmail = String(row[emailCol] || '');
-    if (rowPhone === phone && rowSlot === slotLabel && rowEmail === email) {
-      return i + 2;
+    if (record.status === 'confirmed') {
+      return jsonResponse(buildBookingResponse(record, 'Dat lich da duoc xac nhan truoc do.'));
     }
-  }
+    if (isBookingExpired(record)) {
+      updateBookingRecord(sheet, rowNumber, { 'Trạng thái': 'expired' });
+      throw new Error('Khung gio giu cho da het han. Vui long chon lai lich.');
+    }
 
-  return lastRow;
+    if (record.paymentProvider !== 'sepay') {
+      if (record.status === 'pending_manual_payment') {
+        updateBookingRecord(sheet, rowNumber, {
+          'Trạng thái': 'manual_review',
+          'Giữ chỗ đến': new Date(Date.now() + MANUAL_REVIEW_HOLD_MINUTES * 60 * 1000).toISOString(),
+        });
+        return jsonResponse(buildBookingResponse(getBookingRecordByRow(sheet, rowNumber), 'Da ghi nhan thong bao chuyen khoan. Lich se duoc xac nhan sau khi kiem tra thanh toan.'));
+      }
+      return jsonResponse(buildBookingResponse(record, 'Dang cho kiem tra thanh toan.'));
+    }
+
+    if (record.status !== 'paid') {
+      throw new Error('Thanh toan chua duoc xac nhan. Vui long doi he thong kiem tra giao dich.');
+    }
+
+    return jsonResponse(completeConfirmedBooking(sheet, rowNumber, record));
+  } finally {
+    lock.releaseLock();
+  }
 }
 
-function createCalendarEventIfNeeded(params, booking) {
-  if (!params.slotStart || !params.slotEnd) return '';
+function confirmSelectedManualBooking() {
+  const sheet = getTargetSheet();
+  ensureHeaderRow(sheet);
+  if (SpreadsheetApp.getActiveSheet().getSheetId() !== sheet.getSheetId()) {
+    throw new Error('Hay mo tab Dang ky tu van va chon dung dong can xac nhan.');
+  }
+  const rowNumber = sheet.getActiveRange().getRow();
+  if (rowNumber < 2) throw new Error('Hay chon dong dat lich can xac nhan.');
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const record = getBookingRecordByRow(sheet, rowNumber);
+    if (!record || record.paymentProvider !== 'manual_qr' || record.status !== 'manual_review') {
+      throw new Error('Dong da chon khong o trang thai cho kiem tra chuyen khoan.');
+    }
+    const result = completeConfirmedBooking(sheet, rowNumber, record);
+    SpreadsheetApp.getUi().alert('Da xac nhan don va gui email.');
+    return result.message;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function completeConfirmedBooking(sheet, rowNumber, record) {
+  if (record.status === 'confirmed') {
+    return buildBookingResponse(record, 'Dat lich da duoc xac nhan truoc do.');
+  }
+  if (isBookingExpired(record)) {
+    updateBookingRecord(sheet, rowNumber, { 'Trạng thái': 'expired' });
+    throw new Error('Khung gio giu cho da het han. Vui long doi lich cho khach.');
+  }
+  if (record.paymentProvider === 'sepay' && record.status !== 'paid') {
+    throw new Error('Thanh toan SePay chua duoc xac nhan.');
+  }
+  if (record.paymentProvider === 'manual_qr' && record.status !== 'manual_review') {
+    throw new Error('Don chuyen khoan thu cong chua duoc khach thong bao thanh toan.');
+  }
+
+  const booking = getBookingDetailsFromRecord(record);
+  const calendarEventId = record.calendarEventId || createCalendarEventIfNeeded(getBookingParamsFromRecord(record), booking, record.bookingId);
+  updateBookingRecord(sheet, rowNumber, { 'Calendar event ID': calendarEventId });
+
+  const emailStatus = sendBookingEmails(getBookingParamsFromRecord(record), sheet, rowNumber);
+  updateBookingRecord(sheet, rowNumber, {
+    'Trạng thái': 'confirmed',
+    'Đã xác nhận lúc': new Date().toISOString(),
+  });
+
+  const confirmed = getBookingRecordByRow(sheet, rowNumber);
+  const response = buildBookingResponse(confirmed, 'Dat lich da duoc xac nhan.');
+  response.emailStatus = emailStatus;
+  response.calendarEventId = calendarEventId;
+  return response;
+}
+
+function handleCancelBooking(params) {
+  const bookingId = cleanBookingId(params.bookingId);
+  if (!bookingId) throw new Error('Thieu ma dat lich.');
+
+  const sheet = getTargetSheet();
+  ensureHeaderRow(sheet);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+
+  try {
+    const rowNumber = findBookingRowById(sheet, bookingId);
+    if (!rowNumber) return jsonResponse({ ok: true, message: 'Khong co gi de huy.', scriptVersion: SCRIPT_VERSION });
+    const record = getBookingRecordByRow(sheet, rowNumber);
+    if (record.status === 'pending_payment' || record.status === 'pending_manual_payment') {
+      updateBookingRecord(sheet, rowNumber, { 'Trạng thái': 'cancelled' });
+    }
+    return jsonResponse({ ok: true, message: 'Da huy giu cho.', scriptVersion: SCRIPT_VERSION });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function createCalendarEventIfNeeded(params, booking, bookingId) {
+  if (!params.slotStart || !params.slotEnd) throw new Error('Khung gio dat lich khong hop le.');
 
   const startDt = new Date(params.slotStart);
   const endDt = new Date(params.slotEnd);
   const cal = CalendarApp.getCalendarById(CALENDAR_ID) || CalendarApp.getDefaultCalendar();
   const existing = cal.getEvents(startDt, endDt);
-  const marker = `[Nhân Số] ${booking.name}`;
+  const marker = '[' + bookingId + ']';
+  const ownEvent = existing.find((ev) => ev.getTitle().indexOf(marker) !== -1);
+  if (ownEvent) return ownEvent.getId();
+  if (existing.length) throw new Error('Khung gio vua duoc dat boi lich khac. Vui long chon lai.');
 
-  const alreadyExists = existing.some((ev) => ev.getTitle().indexOf(booking.name) !== -1);
-  if (alreadyExists) return 'exists';
-
-  return createCalendarEvent(params, booking);
-}
-
-function handleFinalizeBooking(params) {
-  return handleSaveBooking(params);
+  return createCalendarEvent(params, booking, bookingId);
 }
 
 function handleLogClientError(params) {
@@ -392,11 +488,18 @@ function handleCheckSepayPayment(params) {
   const orderId = sanitizePlainText(params.paymentOrderId || params.transferContent, 120);
   if (!orderId) throw new Error('Thieu ma thanh toan SePay.');
 
-  const payment = findSepayPayment(orderId);
+  const sheet = getTargetSheet();
+  ensureHeaderRow(sheet);
+  const rowNumber = findBookingRowByPaymentOrderId(sheet, orderId);
+  const booking = rowNumber ? getBookingRecordByRow(sheet, rowNumber) : null;
   return jsonResponse({
     ok: true,
-    status: payment ? payment.status : 'pending',
-    payment: payment || null,
+    status: booking ? booking.status : 'pending',
+    payment: booking ? {
+      paymentOrderId: booking.paymentOrderId,
+      expectedAmount: booking.amount,
+      status: booking.status,
+    } : null,
     scriptVersion: SCRIPT_VERSION,
   });
 }
@@ -433,11 +536,47 @@ function handleSepayWebhook(params) {
     'data.transfer_amount',
   ]));
   
-  // Log first to debug
-  saveSepayPaymentStatus(orderId || 'UNKNOWN', status, amount, params);
-
   if (!orderId) {
+    saveSepayPaymentStatus('UNKNOWN', status, amount, params);
     throw new Error('Webhook SePay thieu ma thanh toan. Vui long kiem tra cot Du lieu goc.');
+  }
+
+  const sheet = getTargetSheet();
+  ensureHeaderRow(sheet);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+
+  try {
+    const rowNumber = findBookingRowByPaymentOrderId(sheet, orderId);
+    if (!rowNumber) {
+      saveSepayPaymentStatus(orderId, 'unmatched', amount, params);
+      throw new Error('Khong tim thay dat lich tuong ung voi ma thanh toan.');
+    }
+
+    const booking = getBookingRecordByRow(sheet, rowNumber);
+    if (!booking || booking.paymentProvider !== 'sepay') {
+      saveSepayPaymentStatus(orderId, 'unmatched', amount, params);
+      throw new Error('Ma thanh toan khong thuoc don SePay dang cho xu ly.');
+    }
+
+    if (isBookingExpired(booking)) {
+      saveSepayPaymentStatus(orderId, 'expired', amount, params);
+      updateBookingRecord(sheet, rowNumber, { 'Trạng thái': 'expired' });
+      throw new Error('Don hang da het han giu cho. Vui long lien he de ho tro doi lich.');
+    }
+
+    if (status === 'paid' && amount < booking.amount) {
+      saveSepayPaymentStatus(orderId, 'amount_mismatch', amount, params);
+      updateBookingRecord(sheet, rowNumber, { 'Trạng thái': 'payment_issue' });
+      throw new Error('So tien thanh toan chua du so voi don hang.');
+    }
+
+    saveSepayPaymentStatus(orderId, status, amount, params);
+    if (status === 'paid') {
+      updateBookingRecord(sheet, rowNumber, { 'Trạng thái': 'paid' });
+    }
+  } finally {
+    lock.releaseLock();
   }
 
   return jsonResponse({
@@ -449,6 +588,7 @@ function handleSepayWebhook(params) {
 }
 
 function handleBookingHealthCheck() {
+  ensureHeaderRow(getTargetSheet());
   const checks = [
     checkBookingSheetHeaders(SHEET_NAME, HEADERS),
     checkBookingSheetExists(EMAIL_LOG_SHEET),
@@ -516,10 +656,11 @@ function getSepayWebhookSecret() {
 }
 
 function sendBookingEmails(payload, sheet, rowNumber) {
+  const existingStatus = getExistingEmailStatus(sheet, rowNumber);
   const status = {
     sender: getScriptSenderEmail(),
-    customer: { attempted: false, sent: false, to: '', error: '' },
-    owner: { attempted: false, sent: false, to: '', error: '' },
+    customer: { attempted: false, sent: existingStatus.customerSent, to: '', error: '' },
+    owner: { attempted: false, sent: existingStatus.ownerSent, to: '', error: '' },
   };
 
   if (!status.sender) {
@@ -532,7 +673,9 @@ function sendBookingEmails(payload, sheet, rowNumber) {
   }
 
   const customerEmail = cleanValue(resolveBookingDetails(payload).email);
-  if (isValidEmail(customerEmail)) {
+  if (status.customer.sent) {
+    status.customer.to = customerEmail;
+  } else if (isValidEmail(customerEmail)) {
     status.customer.attempted = true;
     status.customer.to = customerEmail;
     try {
@@ -549,7 +692,9 @@ function sendBookingEmails(payload, sheet, rowNumber) {
   }
 
   const ownerEmail = getOwnerEmail();
-  if (isValidEmail(ownerEmail)) {
+  if (status.owner.sent) {
+    status.owner.to = ownerEmail;
+  } else if (isValidEmail(ownerEmail)) {
     status.owner.attempted = true;
     status.owner.to = ownerEmail;
     try {
@@ -567,6 +712,16 @@ function sendBookingEmails(payload, sheet, rowNumber) {
 
   writeEmailStatusToRow(sheet, rowNumber, status);
   return status;
+}
+
+function getExistingEmailStatus(sheet, rowNumber) {
+  if (!sheet || !rowNumber || rowNumber < 2) return { customerSent: false, ownerSent: false };
+  const customerCol = HEADERS.indexOf('Email khách') + 1;
+  const ownerCol = HEADERS.indexOf('Email chủ') + 1;
+  return {
+    customerSent: cleanValue(sheet.getRange(rowNumber, customerCol).getDisplayValue()) === 'DA GUI',
+    ownerSent: cleanValue(sheet.getRange(rowNumber, ownerCol).getDisplayValue()) === 'DA GUI',
+  };
 }
 
 function writeEmailStatusToRow(sheet, rowNumber, status) {
@@ -587,7 +742,8 @@ function writeEmailStatusToRow(sheet, rowNumber, status) {
   sheet.getRange(rowNumber, ownerCol).setValue(ownerCell);
 }
 
-function buildSheetRow(params, booking) {
+function buildSheetRow(params, booking, meta) {
+  const bookingMeta = meta || {};
   return [
     getVietnamDateTime(params.submittedAt),
     booking.name,
@@ -603,6 +759,13 @@ function buildSheetRow(params, booking) {
     '',
     '',
     booking.transferContent,
+    cleanBookingId(bookingMeta.bookingId),
+    cleanValue(bookingMeta.paymentOrderId),
+    cleanValue(bookingMeta.paymentProvider),
+    cleanValue(bookingMeta.status),
+    cleanValue(bookingMeta.holdExpiresAt),
+    cleanValue(bookingMeta.calendarEventId),
+    cleanValue(bookingMeta.confirmedAt),
   ];
 }
 
@@ -612,15 +775,17 @@ function getBookedSlotsFromSheet() {
     const lastRow = sheet.getLastRow();
     if (lastRow < 2) return [];
 
-    const slotCol = HEADERS.indexOf('Lịch hẹn') + 1;
-    if (slotCol < 1) return [];
-
-    const values = sheet.getRange(2, slotCol, lastRow, slotCol).getValues();
+    const records = getBookingRecords(sheet);
     const booked = [];
 
-    values.forEach((row) => {
-      const parsed = parseSlotLabelVN(String(row[0] || ''));
-      if (parsed) booked.push(parsed);
+    records.forEach((record) => {
+      if (!bookingRecordBlocksSlot(record)) return;
+      const parsed = parseSlotLabelVN(record.slotLabel);
+      if (parsed) booked.push({
+        start: parsed.start,
+        end: parsed.end,
+        source: 'sheet',
+      });
     });
 
     return booked;
@@ -646,12 +811,7 @@ function parseSlotLabelVN(label) {
   const end = new Date(Date.UTC(yyyy, mm - 1, dd, eh - 7, em, 0));
   if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) return null;
 
-  return {
-    start: start.toISOString(),
-    end: end.toISOString(),
-    title: 'Sheet: ' + label,
-    source: 'sheet',
-  };
+  return { start: start.toISOString(), end: end.toISOString() };
 }
 
 function mergeBookedSlots() {
@@ -671,14 +831,14 @@ function mergeBookedSlots() {
   return merged;
 }
 
-function createCalendarEvent(params, booking) {
+function createCalendarEvent(params, booking, bookingId) {
   if (!params.slotStart || !params.slotEnd) return '';
 
   const startDt = new Date(params.slotStart);
   const endDt   = new Date(params.slotEnd);
   const cal     = CalendarApp.getCalendarById(CALENDAR_ID) || CalendarApp.getDefaultCalendar();
 
-  const eventTitle = `[Nhân Số] ${booking.name} – ${booking.packageLabel}`;
+  const eventTitle = `[Nhân Số][${bookingId}] ${booking.name} – ${booking.packageLabel}`;
   const eventDescLines = [
     `Khách hàng: ${booking.name}`,
     `SĐT/Zalo: ${booking.phone}`,
@@ -1013,7 +1173,10 @@ function saveSepayPaymentStatus(orderId, status, amount, rawParams) {
 function normalizeSepayStatus(status) {
   const value = cleanValue(status).toLowerCase();
   if (['paid', 'success', 'succeeded', 'completed', 'complete', 'thanh cong', 'thành công'].indexOf(value) !== -1) return 'paid';
-  if (['failed', 'error', 'cancelled', 'canceled', 'expired'].indexOf(value) !== -1) return value;
+  if (['amount_mismatch', 'underpaid'].indexOf(value) !== -1) return 'amount_mismatch';
+  if (value === 'unmatched') return 'unmatched';
+  if (value === 'expired') return 'expired';
+  if (['failed', 'error', 'cancelled', 'canceled'].indexOf(value) !== -1) return value;
   return value || 'pending';
 }
 
@@ -1036,13 +1199,13 @@ function extractSepayOrderId(params) {
   if (looksLikeSepayOrderId(direct)) return direct.toUpperCase();
 
   const content = sanitizePlainText(getSepayContent(params), 1000).toUpperCase();
-  const match = content.match(/[A-Z]{2,12}[-_]?[A-Z0-9]{2,40}[-_]?[A-Z0-9]{4,16}[-_]?[0-9]{4,16}/);
-  if (match) return match[0];
+  const match = content.match(/[A-Z]{2,12}-[A-Z0-9-]{8,60}/);
+  if (match && looksLikeSepayOrderId(match[0])) return match[0];
   return looksLikeSepayOrderId(direct) ? direct.toUpperCase() : '';
 }
 
 function looksLikeSepayOrderId(value) {
-  return /^[A-Z]{2,12}[-_]?[A-Z0-9]{2,40}[-_]?[A-Z0-9]{4,16}[-_]?[0-9]{4,16}$/i.test(cleanValue(value));
+  return /^(?:[A-Z]{2,12}-[A-Z0-9]{8,40}|[A-Z]{2,12}[-_]?[A-Z0-9]{2,40}[-_]?[A-Z0-9]{4,16}[-_]?[0-9]{4,16})$/i.test(cleanValue(value));
 }
 
 function getSepayContent(params) {
@@ -1103,10 +1266,199 @@ function getSpreadsheetByIdOrActive() {
 }
 
 function ensureHeaderRow(sheet) {
-  trimExtraColumns(sheet);
+  const missingColumns = HEADERS.length - sheet.getMaxColumns();
+  if (missingColumns > 0) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), missingColumns);
+  }
   sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
   if (sheet.getLastRow() <= 1) sheet.setFrozenRows(1);
   sheet.autoResizeColumns(1, HEADERS.length);
+}
+
+function getBookingHeaderIndexes() {
+  const indexes = {};
+  HEADERS.forEach((header, index) => { indexes[header] = index; });
+  return indexes;
+}
+
+function cleanBookingId(value) {
+  const id = cleanValue(value).toUpperCase();
+  return /^BKG-[A-Z0-9-]{12,64}$/.test(id) ? id : '';
+}
+
+function createBookingId() {
+  return 'BKG-' + Utilities.getUuid().toUpperCase();
+}
+
+function createPaymentOrderId(bookingId) {
+  return 'CCP-' + cleanBookingId(bookingId).replace(/[^A-Z0-9]/g, '').slice(-16);
+}
+
+function getBookingRecords(sheet) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  const indexes = getBookingHeaderIndexes();
+  const rows = sheet.getRange(2, 1, lastRow - 1, HEADERS.length).getDisplayValues();
+  return rows.map((row, index) => bookingRowToRecord(row, index + 2, indexes));
+}
+
+function getBookingRecordByRow(sheet, rowNumber) {
+  if (!rowNumber || rowNumber < 2) return null;
+  const indexes = getBookingHeaderIndexes();
+  const row = sheet.getRange(rowNumber, 1, 1, HEADERS.length).getDisplayValues()[0];
+  return bookingRowToRecord(row, rowNumber, indexes);
+}
+
+function bookingRowToRecord(row, rowNumber, indexes) {
+  const value = (header) => cleanValue(row[indexes[header]]);
+  return {
+    rowNumber: rowNumber,
+    name: value('Họ và tên'),
+    dob: value('Ngày sinh'),
+    phone: value('Số điện thoại / Zalo').replace(/^'/, ''),
+    email: value('Email').toLowerCase(),
+    consultationTypeLabel: value('Hình thức'),
+    consultationType: normalizeConsultationType(value('Hình thức')),
+    packageLabel: value('Gói tư vấn'),
+    amount: parsePriceNumber(value('Số tiền')),
+    concern: value('Lời nhắn'),
+    package: cleanPackageCode(value('Mã gói')),
+    transferContent: value('Nội dung chuyển khoản'),
+    slotLabel: value('Lịch hẹn'),
+    bookingId: cleanBookingId(value('ID đặt lịch')),
+    paymentOrderId: value('Mã thanh toán'),
+    paymentProvider: value('Phương thức thanh toán') || 'legacy',
+    status: normalizeBookingStatus(value('Trạng thái')),
+    holdExpiresAt: value('Giữ chỗ đến'),
+    calendarEventId: value('Calendar event ID'),
+    confirmedAt: value('Đã xác nhận lúc'),
+  };
+}
+
+function normalizeBookingStatus(value) {
+  const status = cleanValue(value).toLowerCase();
+  return status || 'legacy';
+}
+
+function findBookingRowById(sheet, bookingId) {
+  const target = cleanBookingId(bookingId);
+  if (!target || sheet.getLastRow() < 2) return 0;
+  const column = getBookingHeaderIndexes()['ID đặt lịch'] + 1;
+  const values = sheet.getRange(2, column, sheet.getLastRow() - 1, 1).getDisplayValues();
+  for (let index = 0; index < values.length; index += 1) {
+    if (cleanBookingId(values[index][0]) === target) return index + 2;
+  }
+  return 0;
+}
+
+function findBookingRowByPaymentOrderId(sheet, paymentOrderId) {
+  const target = cleanValue(paymentOrderId).replace(/[-_]/g, '');
+  if (!target || sheet.getLastRow() < 2) return 0;
+  const column = getBookingHeaderIndexes()['Mã thanh toán'] + 1;
+  const values = sheet.getRange(2, column, sheet.getLastRow() - 1, 1).getDisplayValues();
+  for (let index = values.length - 1; index >= 0; index -= 1) {
+    if (cleanValue(values[index][0]).replace(/[-_]/g, '') === target) return index + 2;
+  }
+  return 0;
+}
+
+function updateBookingRecord(sheet, rowNumber, valuesByHeader) {
+  const indexes = getBookingHeaderIndexes();
+  Object.keys(valuesByHeader || {}).forEach((header) => {
+    if (indexes[header] === undefined) return;
+    sheet.getRange(rowNumber, indexes[header] + 1).setValue(valuesByHeader[header]);
+  });
+}
+
+function isBookingExpired(record) {
+  if (!record || ['paid', 'confirmed', 'legacy'].indexOf(record.status) !== -1) return false;
+  if (record.status === 'cancelled' || record.status === 'expired') return true;
+  const expiresAt = new Date(record.holdExpiresAt);
+  return !record.holdExpiresAt || isNaN(expiresAt.getTime()) || expiresAt.getTime() <= Date.now();
+}
+
+function bookingRecordBlocksSlot(record) {
+  if (!record || !record.slotLabel) return false;
+  if (record.status === 'cancelled' || record.status === 'expired' || record.status === 'payment_issue') return false;
+  return !isBookingExpired(record);
+}
+
+function ensureBookingSlotAvailable(sheet, params, bookingId) {
+  const start = new Date(params.slotStart);
+  const end = new Date(params.slotEnd);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
+    throw new Error('Khung gio dat lich khong hop le.');
+  }
+
+  const sheetConflict = getBookingRecords(sheet).some((record) => {
+    if (record.bookingId === bookingId || !bookingRecordBlocksSlot(record)) return false;
+    const slot = parseSlotLabelVN(record.slotLabel);
+    return slot && start < new Date(slot.end) && end > new Date(slot.start);
+  });
+  if (sheetConflict) throw new Error('Khung gio nay vua duoc giu cho. Vui long chon gio khac.');
+
+  const calendar = CalendarApp.getCalendarById(CALENDAR_ID) || CalendarApp.getDefaultCalendar();
+  if (calendar.getEvents(start, end).length) {
+    throw new Error('Khung gio nay vua duoc dat. Vui long chon gio khac.');
+  }
+}
+
+function getBookingDetailsFromRecord(record) {
+  const packageOption = getPackageOption(record.consultationType, record.package);
+  return {
+    name: record.name,
+    dob: record.dob,
+    phone: record.phone,
+    email: record.email,
+    concern: record.concern,
+    consultationType: record.consultationType,
+    consultationTypeLabel: record.consultationTypeLabel,
+    package: record.package,
+    packageLabel: record.packageLabel,
+    packagePrice: record.amount,
+    packageUnit: packageOption ? packageOption.unit : '/buổi',
+    transferContent: record.transferContent,
+    isOffline: record.consultationType === 'offline',
+    hasOfflineTravelFee: Boolean(packageOption && packageOption.offlinePrice > packageOption.onlinePrice && record.consultationType === 'offline'),
+  };
+}
+
+function getBookingParamsFromRecord(record) {
+  const slot = parseSlotLabelVN(record.slotLabel);
+  return {
+    name: record.name,
+    dob: record.dob,
+    phone: record.phone,
+    email: record.email,
+    concern: record.concern,
+    consultationType: record.consultationType,
+    consultationTypeLabel: record.consultationTypeLabel,
+    package: record.package,
+    packageLabel: record.packageLabel,
+    packagePrice: String(record.amount),
+    slotLabel: record.slotLabel,
+    slotStart: slot ? slot.start : '',
+    slotEnd: slot ? slot.end : '',
+    transferContent: record.transferContent,
+    bookingId: record.bookingId,
+    paymentOrderId: record.paymentOrderId,
+  };
+}
+
+function buildBookingResponse(record, message) {
+  return {
+    ok: true,
+    message: message,
+    bookingId: record.bookingId,
+    paymentOrderId: record.paymentOrderId,
+    transferContent: record.paymentOrderId || record.transferContent,
+    status: record.status,
+    paymentProvider: record.paymentProvider,
+    amount: record.amount,
+    holdExpiresAt: record.holdExpiresAt,
+    rowNumber: record.rowNumber,
+    scriptVersion: SCRIPT_VERSION,
+  };
 }
 
 function getPriceColumnIndex() {
@@ -1117,7 +1469,7 @@ function formatInsertedRow(sheet, rowNumber) {
   if (!rowNumber || rowNumber < 2) return;
 
   const priceCol = getPriceColumnIndex();
-  sheet.getRange(rowNumber, 1, rowNumber, HEADERS.length).setNumberFormat('@');
+  sheet.getRange(rowNumber, 1, 1, HEADERS.length).setNumberFormat('@');
   sheet.getRange(rowNumber, priceCol).setNumberFormat(PRICE_NUMBER_FORMAT);
   normalizeLegacyPriceCells(sheet);
 }
@@ -1128,7 +1480,7 @@ function repairSheetFormats() {
   ensureHeaderRow(sheet);
   const lastRow = Math.max(sheet.getLastRow(), 1);
   for (let col = 1; col <= HEADERS.length; col++) {
-    const range = sheet.getRange(1, col, lastRow, col);
+    const range = sheet.getRange(1, col, lastRow, 1);
     range.setNumberFormat(col === getPriceColumnIndex() ? PRICE_NUMBER_FORMAT : '@');
   }
   normalizeLegacyPriceCells(sheet);
@@ -1139,7 +1491,7 @@ function normalizeLegacyPriceCells(sheet) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return;
 
-  const range = sheet.getRange(2, col, lastRow, col);
+  const range = sheet.getRange(2, col, lastRow - 1, 1);
   const values = range.getValues();
   let changed = false;
 
@@ -1160,11 +1512,6 @@ function normalizeLegacyPriceCells(sheet) {
 function parsePriceNumber(value) {
   const digits = String(value || '').replace(/[^\d]/g, '');
   return digits ? parseInt(digits, 10) : 0;
-}
-
-function trimExtraColumns(sheet) {
-  const extra = sheet.getMaxColumns() - HEADERS.length;
-  if (extra > 0) sheet.deleteColumns(HEADERS.length + 1, extra);
 }
 
 function getVietnamDateTime(value) {
@@ -1263,6 +1610,9 @@ function maskSensitiveParams(params) {
     }
     if (lowerKey.indexOf('email') !== -1) {
       value = value.replace(/^(.{1,2}).*(@.*)$/, '$1***$2');
+    }
+    if (/(secret|signature|token|authorization|api[_-]?key)/.test(lowerKey)) {
+      value = value ? '***' : '';
     }
     safe[key] = sanitizePlainText(value, 500);
   });
@@ -1588,22 +1938,12 @@ function testAuth() {
   GmailApp.getInboxUnreadCount();
 }
 
-function testSaveRow() {
-  const params = {
-    submittedAt: new Date().toISOString(),
-    name: 'TEST KHACH',
-    dob: '01/01/1990',
-    phone: "'0900000000",
-    email: getOwnerEmail() || 'test@example.com',
-    consultationType: 'online',
-    package: 'year',
-    concern: 'Dong test tu Apps Script',
-    slotLabel: 'TEST - khong tao lich',
-    slotStart: '',
-    slotEnd: '',
-  };
-  Logger.log(handleSaveBooking(params).getContent());
-  Logger.log(handleCompleteBooking(params).getContent());
+function testBookingIds() {
+  const bookingId = createBookingId();
+  Logger.log(JSON.stringify({
+    bookingId: bookingId,
+    paymentOrderId: createPaymentOrderId(bookingId),
+  }));
 }
 
 function testSendEmails() {
