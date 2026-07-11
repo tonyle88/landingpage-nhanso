@@ -4003,6 +4003,102 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   100% { box-shadow: 0 0 0 0 rgba(212, 168, 67, 0); }
 }
 
+/* Blog */
+.blog-page-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+}
+
+.blog-container {
+  max-width: 1200px;
+  margin: 120px auto 40px;
+  padding: 0 20px;
+}
+
+.article-content {
+  color: #f0e8d8 !important;
+  font-size: 1.1rem;
+  line-height: 1.9;
+}
+
+.article-content p {
+  color: #eedfc2 !important;
+  margin-bottom: 1.2em;
+}
+
+.article-content h1,
+.article-content h2,
+.article-content h3,
+.article-content h4,
+.article-content h5,
+.article-content h6 {
+  color: #f8e8b0 !important;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  margin: 1.4em 0 0.6em;
+  line-height: 1.4;
+}
+
+.article-content h1 { font-size: 1.9rem; }
+.article-content h2 { font-size: 1.6rem; border-bottom: 1px solid rgba(212,168,67,0.3); padding-bottom: 8px; }
+.article-content h3 { font-size: 1.3rem; color: #f5d98a !important; }
+
+.article-content strong,
+.article-content b {
+  color: #f5d98a !important;
+  font-weight: 700;
+}
+
+.article-content em,
+.article-content i {
+  color: #f0ddb0 !important;
+}
+
+.article-content a {
+  color: #f5d98a !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.article-content ul,
+.article-content ol {
+  padding-left: 1.5em;
+  margin-bottom: 1.2em;
+}
+
+.article-content li {
+  color: #eedfc2 !important;
+  margin-bottom: 0.4em;
+}
+
+.article-content blockquote {
+  border-left: 3px solid rgba(212,168,67,0.6);
+  padding: 12px 20px;
+  margin: 1.5em 0;
+  background: rgba(212,168,67,0.05);
+  border-radius: 0 8px 8px 0;
+  color: #f5d98a !important;
+  font-style: italic;
+}
+
+.article-content img {
+  max-width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(212,168,67,0.25);
+  margin: 1em 0;
+}
+
+.article-content hr {
+  border: none;
+  border-top: 1px solid rgba(212,168,67,0.3);
+  margin: 2em 0;
+}
+
+.blog-card-link h3 {
+  color: #f5ecd8 !important;
+}
+
 /* Blog Search */
 .blog-search-panel {
   margin: 0 auto 58px;

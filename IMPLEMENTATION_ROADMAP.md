@@ -86,7 +86,7 @@ Việc làm:
 
 - [x] Rà kích thước ảnh lớn trong `assets/images`.
 - [x] Bump cache-buster có chủ đích khi đổi CSS/JS.
-- [ ] Giảm inline CSS trùng lặp ở blog nếu cần.
+- [x] Chuyển CSS riêng của blog khỏi HTML vào stylesheet dùng chung.
 - [x] Kiểm tra lazy loading ảnh feedback/blog.
 - [x] Preload hero WebP và giữ kích thước logo để giảm layout shift.
 - [x] Thêm sanitizer cục bộ dự phòng, không render HTML thô khi CDN DOMPurify lỗi.
@@ -101,7 +101,7 @@ Xác minh:
 
 - [ ] Không tràn ngang mobile.
 - [ ] Ảnh chính render đúng.
-- [ ] Không tải script không dùng trên blog.
+- [x] Không tải script landing/admin không dùng trên blog.
 
 ## Sprint 4 - Chuẩn bị migration MySQL/shared hosting
 

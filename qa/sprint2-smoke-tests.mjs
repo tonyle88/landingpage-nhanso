@@ -77,6 +77,31 @@ const adminHtmlSource = fs.readFileSync(new URL('../admin/index.html', import.me
 const adminSource = fs.readFileSync(new URL('../admin/app.js', import.meta.url), 'utf8');
 const blogAdminSource = fs.readFileSync(new URL('../admin/blog_admin.js', import.meta.url), 'utf8');
 const sanitizerSource = fs.readFileSync(new URL('../assets/js/sanitize-html.js', import.meta.url), 'utf8');
+
+assert.doesNotMatch(
+  blogHtmlSource,
+  /<style(?:\s|>)/i,
+  'Blog-specific styles should live in the shared stylesheet'
+);
+
+assert.doesNotMatch(
+  blogHtmlSource,
+  /\sstyle=/i,
+  'Blog markup should not contain inline style attributes'
+);
+
+assert.match(
+  blogHtmlSource,
+  /<script src="assets\/js\/sanitize-html\.js[^>]*><\/script>[\s\S]*<script src="blog\.js[^>]*defer><\/script>/,
+  'Blog should load only its sanitizer and blog application scripts locally'
+);
+
+assert.doesNotMatch(
+  blogHtmlSource,
+  /<script[^>]+src="(?:script\.js|admin\/app\.js|admin\/blog_admin\.js)/,
+  'Blog must not load landing or admin application scripts'
+);
+
 assert.match(
   blogSource,
   /const searchText = normalizeSearchText\(\[\s*a\.title,\s*\]\.join\(' '\)\);/,
