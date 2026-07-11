@@ -429,10 +429,10 @@ window.openBlogArticleModal = function(article = null) {
   modal.querySelector('#article-date').value = dateValue;
   modal.querySelector('#article-thumbnail').value = article ? (article.thumbnail || '') : '';
   if (window.summaryQuill) {
-    window.summaryQuill.root.innerHTML = article ? (window.DOMPurify ? window.DOMPurify.sanitize(article.summary || '') : (article.summary || '')) : '';
+    window.summaryQuill.root.innerHTML = article ? window.ClowSanitizeHtml(article.summary || '') : '';
   }
   if (window.articleQuill) {
-    window.articleQuill.root.innerHTML = article ? (window.DOMPurify ? window.DOMPurify.sanitize(article.contentHtml) : article.contentHtml) : '';
+    window.articleQuill.root.innerHTML = article ? window.ClowSanitizeHtml(article.contentHtml) : '';
   }
   modal.querySelector('#article-enabled').checked = article ? article.enabled : true;
   modal.querySelector('#article-pinned').checked = article ? article.pinned : false;

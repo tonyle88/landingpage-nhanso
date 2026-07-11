@@ -1,6 +1,6 @@
 # Implementation Roadmap - ClowCat Patronus
 
-Cập nhật: 09/07/2026
+Cập nhật: 11/07/2026
 
 Roadmap này bám theo repo hiện tại sau khi rà soát. Mục tiêu là triển khai từng bước nhỏ, dễ kiểm chứng, không refactor lớn khi chưa cần.
 
@@ -89,6 +89,8 @@ Việc làm:
 - [ ] Giảm inline CSS trùng lặp ở blog nếu cần.
 - [x] Kiểm tra lazy loading ảnh feedback/blog.
 - [x] Preload hero WebP và giữ kích thước logo để giảm layout shift.
+- [x] Thêm sanitizer cục bộ dự phòng, không render HTML thô khi CDN DOMPurify lỗi.
+- [x] Tách dữ liệu blog khỏi payload landing để landing không tải nội dung bài viết không dùng.
 
 Xác minh:
 

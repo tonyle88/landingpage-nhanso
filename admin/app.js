@@ -1967,7 +1967,7 @@ function openGenericSectionModal(sec = null) {
   modal.querySelector('#generic-sec-tag').value = sec && sec.tag ? sec.tag : '';
   modal.querySelector('#generic-sec-title').value = sec ? sec.title : '';
   if (window.genericQuill) {
-    window.genericQuill.root.innerHTML = sec ? (window.DOMPurify ? window.DOMPurify.sanitize(sec.contentHtml) : sec.contentHtml) : '';
+    window.genericQuill.root.innerHTML = sec ? window.ClowSanitizeHtml(sec.contentHtml) : '';
   }
   modal.querySelector('#generic-sec-enabled').checked = sec ? sec.enabled : true;
   

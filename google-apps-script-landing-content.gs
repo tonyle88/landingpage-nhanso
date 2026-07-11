@@ -7,9 +7,9 @@ const SPREADSHEET_ID = '1hxBpzJwNO470xqoHBuaZF26anCGir5pnpQk0iPTxz4k';
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
 const ADMIN_USERS_SHEET_NAME = 'Admin users';
 const AUDIT_LOG_SHEET_NAME = 'Audit log';
-const SCRIPT_VERSION = '2026-06-14-v16-cache-order';
+const SCRIPT_VERSION = '2026-07-11-v17-split-blog-content';
 const ADMIN_SESSION_SECONDS = 21600;
-const LANDING_CONTENT_CACHE_KEY = 'landing_content_payload_v16';
+const LANDING_CONTENT_CACHE_KEY = 'landing_content_payload_v17';
 const LANDING_CONTENT_CACHE_SECONDS = 3600; // 1 tiếng
 const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
 const ADMIN_SHEET_DATE_FORMAT = 'dd/MM/yyyy HH:mm:ss';
@@ -155,6 +155,14 @@ function doGet(e) {
     }
   }
 
+  if (params.action === 'getBlogContent') {
+    try {
+      return handleGetBlogContent();
+    } catch (error) {
+      return jsonResponse({ ok: false, blogCategories: [], blogArticles: [], message: error.message, scriptVersion: SCRIPT_VERSION });
+    }
+  }
+
   if (params.action === 'version') {
     return jsonResponse({ ok: true, scriptVersion: SCRIPT_VERSION });
   }
@@ -220,6 +228,15 @@ function handleGetLandingContent() {
   return jsonResponse(payload);
 }
 
+function handleGetBlogContent() {
+  return jsonResponse({
+    ok: true,
+    blogCategories: getBlogCategories(false),
+    blogArticles: getBlogArticles(false),
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
 function buildLandingContentPayload() {
   const spreadsheet = getSpreadsheetByIdOrActive();
   const sheet = spreadsheet.getSheetByName(LANDING_CONTENT_SHEET_NAME);
@@ -231,8 +248,6 @@ function buildLandingContentPayload() {
       feedbackImages: getFeedbackImages(),
       paymentSettings: getPaymentSettings(false),
       sectionsLayout: getSectionsLayout(false),
-      blogCategories: getBlogCategories(false),
-      blogArticles: getBlogArticles(false),
       message: 'Chua co tab Landing content. Hay chay initializeLandingContentSheet mot lan trong Apps Script.',
       scriptVersion: SCRIPT_VERSION,
     };
@@ -241,7 +256,7 @@ function buildLandingContentPayload() {
   ensureLandingContentHeaderRow(sheet);
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
-    return { ok: true, items: [], packages: getPackages(false), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(false), sectionsLayout: getSectionsLayout(false), blogCategories: getBlogCategories(false), blogArticles: getBlogArticles(false), scriptVersion: SCRIPT_VERSION };
+    return { ok: true, items: [], packages: getPackages(false), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(false), sectionsLayout: getSectionsLayout(false), scriptVersion: SCRIPT_VERSION };
   }
 
   const range = sheet.getRange(2, 1, lastRow - 1, LANDING_CONTENT_HEADERS.length);
@@ -261,8 +276,6 @@ function buildLandingContentPayload() {
     packages: getPackages(false),
     paymentSettings: getPaymentSettings(false),
     sectionsLayout: getSectionsLayout(false),
-    blogCategories: getBlogCategories(false),
-    blogArticles: getBlogArticles(false),
     scriptVersion: SCRIPT_VERSION,
   };
 }

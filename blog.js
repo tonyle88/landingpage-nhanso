@@ -37,8 +37,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Luôn fetch mới ở nền để cập nhật cache
   try {
-    const res = await fetch(`${SCRIPT_URL}?action=getLandingContent`);
-    const data = await res.json();
+    let res = await fetch(`${SCRIPT_URL}?action=getBlogContent`);
+    let data = await res.json();
+    if (!Array.isArray(data.blogArticles)) {
+      res = await fetch(`${SCRIPT_URL}?action=getLandingContent`);
+      data = await res.json();
+    }
     if (data.ok) {
       // Lưu cache
       try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
@@ -537,6 +541,10 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+function sanitizeBlogHtml(value) {
+  return window.ClowSanitizeHtml(value);
+}
+
 function escapeAttribute(value) {
   return escapeHtml(value).replace(/`/g, '&#096;');
 }
@@ -602,7 +610,7 @@ function renderArticleDetail(id) {
         <div style="position:absolute; top:0; right:0; width:24px; height:24px; border-top:2px solid rgba(212,168,67,0.5); border-right:2px solid rgba(212,168,67,0.5); border-radius:0 20px 0 0;"></div>
         <div style="position:absolute; bottom:0; left:0; width:24px; height:24px; border-bottom:2px solid rgba(212,168,67,0.5); border-left:2px solid rgba(212,168,67,0.5); border-radius:0 0 0 20px;"></div>
         <div style="position:absolute; bottom:0; right:0; width:24px; height:24px; border-bottom:2px solid rgba(212,168,67,0.5); border-right:2px solid rgba(212,168,67,0.5); border-radius:0 0 20px 0;"></div>
-        ${window.DOMPurify ? window.DOMPurify.sanitize(article.contentHtml) : article.contentHtml}
+        ${sanitizeBlogHtml(article.contentHtml)}
       </div>
 
       <!-- Bottom action -->

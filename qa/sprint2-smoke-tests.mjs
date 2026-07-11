@@ -72,10 +72,43 @@ const indexSource = fs.readFileSync(new URL('../index.html', import.meta.url), '
 const blogHtmlSource = fs.readFileSync(new URL('../blog.html', import.meta.url), 'utf8');
 const styleSource = fs.readFileSync(new URL('../style.css', import.meta.url), 'utf8');
 const bookingSource = fs.readFileSync(new URL('../google-apps-script-booking.gs', import.meta.url), 'utf8');
+const contentScriptSource = fs.readFileSync(new URL('../google-apps-script-landing-content.gs', import.meta.url), 'utf8');
+const adminHtmlSource = fs.readFileSync(new URL('../admin/index.html', import.meta.url), 'utf8');
+const adminSource = fs.readFileSync(new URL('../admin/app.js', import.meta.url), 'utf8');
+const blogAdminSource = fs.readFileSync(new URL('../admin/blog_admin.js', import.meta.url), 'utf8');
+const sanitizerSource = fs.readFileSync(new URL('../assets/js/sanitize-html.js', import.meta.url), 'utf8');
 assert.match(
   blogSource,
   /const searchText = normalizeSearchText\(\[\s*a\.title,\s*\]\.join\(' '\)\);/,
   'Blog search index should only include article title'
+);
+
+assert.match(
+  blogSource,
+  /action=getBlogContent/,
+  'Blog should load from its dedicated public endpoint'
+);
+
+assert.match(
+  blogSource,
+  /if \(!Array\.isArray\(data\.blogArticles\)\)[\s\S]*action=getLandingContent/,
+  'Blog should remain compatible while the new Apps Script deployment is rolling out'
+);
+
+assert.match(
+  contentScriptSource,
+  /function handleGetBlogContent\(\)[\s\S]*blogCategories: getBlogCategories\(false\)[\s\S]*blogArticles: getBlogArticles\(false\)/,
+  'Content Apps Script should expose blog data through a dedicated endpoint'
+);
+
+const publicLandingPayloadBlock = contentScriptSource.slice(
+  contentScriptSource.indexOf('function buildLandingContentPayload()'),
+  contentScriptSource.indexOf('function getLandingContentPayloadFromCache()')
+);
+assert.doesNotMatch(
+  publicLandingPayloadBlock,
+  /blogArticles:|blogCategories:/,
+  'Landing content payload should not include unused blog data'
 );
 
 assert.match(
@@ -154,6 +187,34 @@ assert.match(
   source,
   /content\.innerHTML = sanitizeGenericSectionHtml\(sec\.contentHtml\);/,
   'Generic section content should pass through sanitizer before render'
+);
+
+assert.match(
+  sanitizerSource,
+  /global\.ClowSanitizeHtml = function ClowSanitizeHtml/,
+  'A local HTML sanitizer fallback should be available when the CDN is unavailable'
+);
+
+assert.match(
+  sanitizerSource,
+  /removedWithContent = new Set\([\s\S]*'SCRIPT'/,
+  'The local sanitizer should remove executable elements with their content'
+);
+
+assert.match(
+  sanitizerSource,
+  /name\.indexOf\('on'\) === 0/,
+  'The local sanitizer should remove event-handler attributes'
+);
+
+assert.match(indexSource, /assets\/js\/sanitize-html\.js/, 'Landing should load the local sanitizer fallback');
+assert.match(blogHtmlSource, /assets\/js\/sanitize-html\.js/, 'Blog should load the local sanitizer fallback');
+assert.match(adminHtmlSource, /assets\/js\/sanitize-html\.js/, 'Admin should load the local sanitizer fallback');
+
+assert.doesNotMatch(
+  `${source}\n${blogSource}\n${adminSource}\n${blogAdminSource}`,
+  /window\.DOMPurify\s*\?[^:]+:\s*(?:article|sec|raw)/,
+  'Rich HTML rendering must not fall back to unsanitized content'
 );
 
 assert.match(

@@ -462,8 +462,7 @@ function applySectionsLayout(layout) {
 }
 
 function sanitizeGenericSectionHtml(html) {
-  const raw = String(html || '');
-  return window.DOMPurify ? window.DOMPurify.sanitize(raw) : raw;
+  return window.ClowSanitizeHtml(html);
 }
 
 function normalizePaymentSettings(settings = {}) {
