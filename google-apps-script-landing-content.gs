@@ -7,10 +7,14 @@ const SPREADSHEET_ID = '1hxBpzJwNO470xqoHBuaZF26anCGir5pnpQk0iPTxz4k';
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
 const ADMIN_USERS_SHEET_NAME = 'Admin users';
 const AUDIT_LOG_SHEET_NAME = 'Audit log';
-const SCRIPT_VERSION = '2026-07-11-v18-lazy-blog-article';
+const SCRIPT_VERSION = '2026-07-11-v20-payload-health';
 const ADMIN_SESSION_SECONDS = 21600;
 const LANDING_CONTENT_CACHE_KEY = 'landing_content_payload_v17';
 const LANDING_CONTENT_CACHE_SECONDS = 3600; // 1 tiếng
+const BLOG_CONTENT_CACHE_KEY = 'blog_content_summaries_v19';
+const BLOG_ARTICLE_CACHE_PREFIX = 'blog_article_v19_';
+const BLOG_CONTENT_CACHE_SECONDS = 600; // 10 phút
+const CACHE_VALUE_MAX_BYTES = 95000;
 const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
 const ADMIN_SHEET_DATE_FORMAT = 'dd/MM/yyyy HH:mm:ss';
 const IMGBB_API_KEY = '';
@@ -237,24 +241,35 @@ function handleGetLandingContent() {
 }
 
 function handleGetBlogContent() {
-  return jsonResponse({
+  const cachedPayload = getJsonCacheValue(BLOG_CONTENT_CACHE_KEY);
+  if (cachedPayload) return jsonResponse(cachedPayload);
+
+  const payload = {
     ok: true,
     blogCategories: getBlogCategories(false),
     blogArticles: getBlogArticles(false).map(toPublicBlogArticleSummary),
     scriptVersion: SCRIPT_VERSION,
-  });
+  };
+  putJsonCacheValue(BLOG_CONTENT_CACHE_KEY, payload, BLOG_CONTENT_CACHE_SECONDS);
+  return jsonResponse(payload);
 }
 
 function handleGetBlogArticle(params) {
   const id = cleanValue(params.id);
   if (!id) throw new Error('Thieu ma bai viet.');
+  const cacheKey = getBlogArticleCacheKey(id);
+  const cachedPayload = getJsonCacheValue(cacheKey);
+  if (cachedPayload) return jsonResponse(cachedPayload);
+
   const article = getBlogArticles(false).find((item) => item.id === id) || null;
-  return jsonResponse({
+  const payload = {
     ok: Boolean(article),
     article: article,
     message: article ? '' : 'Bai viet khong ton tai hoac da bi an.',
     scriptVersion: SCRIPT_VERSION,
-  });
+  };
+  if (article) putJsonCacheValue(cacheKey, payload, BLOG_CONTENT_CACHE_SECONDS);
+  return jsonResponse(payload);
 }
 
 function toPublicBlogArticleSummary(article) {
@@ -323,11 +338,7 @@ function getLandingContentPayloadFromCache() {
 }
 
 function putLandingContentPayloadToCache(payload) {
-  try {
-    CacheService.getScriptCache().put(LANDING_CONTENT_CACHE_KEY, JSON.stringify(payload), LANDING_CONTENT_CACHE_SECONDS);
-  } catch (error) {
-    console.warn('Khong luu duoc landing content cache:', error);
-  }
+  putJsonCacheValue(LANDING_CONTENT_CACHE_KEY, payload, LANDING_CONTENT_CACHE_SECONDS);
 }
 
 function clearLandingContentCache() {
@@ -335,6 +346,41 @@ function clearLandingContentCache() {
     CacheService.getScriptCache().remove(LANDING_CONTENT_CACHE_KEY);
   } catch (error) {
     console.warn('Khong xoa duoc landing content cache:', error);
+  }
+}
+
+function getJsonCacheValue(key) {
+  try {
+    const raw = CacheService.getScriptCache().get(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function putJsonCacheValue(key, payload, expirationSeconds) {
+  try {
+    const serialized = JSON.stringify(payload);
+    if (Utilities.newBlob(serialized).getBytes().length > CACHE_VALUE_MAX_BYTES) return false;
+    CacheService.getScriptCache().put(key, serialized, expirationSeconds);
+    return true;
+  } catch (error) {
+    console.warn('Khong luu duoc cache ' + key + ':', error);
+    return false;
+  }
+}
+
+function getBlogArticleCacheKey(id) {
+  return BLOG_ARTICLE_CACHE_PREFIX + cleanValue(id).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 120);
+}
+
+function clearBlogContentCache(articleId) {
+  try {
+    const cache = CacheService.getScriptCache();
+    cache.remove(BLOG_CONTENT_CACHE_KEY);
+    if (articleId) cache.remove(getBlogArticleCacheKey(articleId));
+  } catch (error) {
+    console.warn('Khong xoa duoc blog cache:', error);
   }
 }
 
@@ -980,13 +1026,50 @@ function handleHealthCheck(params) {
   ];
   const requiredSheetsOk = sheetChecks.every((check) => check.ok);
   const requiredPropertiesOk = propertyChecks.every((check) => check.ok || !check.required);
+  const performance = buildPayloadHealthMetrics();
+  const performanceOk = performance.landing.cacheable && performance.blogList.cacheable;
 
   return jsonResponse({
-    ok: requiredSheetsOk && requiredPropertiesOk,
+    ok: requiredSheetsOk && requiredPropertiesOk && performanceOk,
     sheets: sheetChecks,
     properties: propertyChecks,
+    performance: performance,
     scriptVersion: SCRIPT_VERSION,
   });
+}
+
+function buildPayloadHealthMetrics() {
+  const articles = getBlogArticles(false);
+  const landingPayload = buildLandingContentPayload();
+  const blogListPayload = {
+    ok: true,
+    blogCategories: getBlogCategories(false),
+    blogArticles: articles.map(toPublicBlogArticleSummary),
+    scriptVersion: SCRIPT_VERSION,
+  };
+  let largestArticle = { name: 'Bai blog lon nhat', id: '', bytes: 0, kilobytes: 0, cacheable: true };
+
+  articles.forEach((article) => {
+    const metric = measureJsonPayload('Bai blog lon nhat', { ok: true, article: article, scriptVersion: SCRIPT_VERSION });
+    if (metric.bytes > largestArticle.bytes) largestArticle = Object.assign(metric, { id: article.id });
+  });
+
+  return {
+    cacheLimitBytes: CACHE_VALUE_MAX_BYTES,
+    landing: measureJsonPayload('Landing content', landingPayload),
+    blogList: measureJsonPayload('Danh sach blog', blogListPayload),
+    largestArticle: largestArticle,
+  };
+}
+
+function measureJsonPayload(name, payload) {
+  const bytes = Utilities.newBlob(JSON.stringify(payload)).getBytes().length;
+  return {
+    name: name,
+    bytes: bytes,
+    kilobytes: Math.round(bytes / 102.4) / 10,
+    cacheable: bytes <= CACHE_VALUE_MAX_BYTES,
+  };
 }
 
 function ensureHealthCheckSheets() {
@@ -2378,7 +2461,7 @@ function handleSaveBlogCategory(params) {
     sheet.appendRow([id, name, order]);
   }
   
-  clearLandingContentCache();
+  clearBlogContentCache();
   return jsonResponse({ ok: true, message: 'Đã lưu chủ đề', blogCategories: getBlogCategories(true), scriptVersion: SCRIPT_VERSION });
 }
 
@@ -2396,7 +2479,7 @@ function handleDeleteBlogCategory(params) {
     }
   }
   
-  clearLandingContentCache();
+  clearBlogContentCache();
   return jsonResponse({ ok: true, message: 'Đã xóa chủ đề', blogCategories: getBlogCategories(true), scriptVersion: SCRIPT_VERSION });
 }
 
@@ -2469,7 +2552,7 @@ function handleSaveBlogArticle(params) {
     sheet.appendRow([enabled, id, categoryId, title, contentHtml, date, pinned, thumbnail, summary]);
   }
   
-  clearLandingContentCache();
+  clearBlogContentCache(id);
   return jsonResponse({ ok: true, message: 'Đã lưu bài viết', blogArticles: getBlogArticles(true), scriptVersion: SCRIPT_VERSION });
 }
 
@@ -2487,6 +2570,6 @@ function handleDeleteBlogArticle(params) {
     }
   }
   
-  clearLandingContentCache();
+  clearBlogContentCache(id);
   return jsonResponse({ ok: true, message: 'Đã xóa bài viết', blogArticles: getBlogArticles(true), scriptVersion: SCRIPT_VERSION });
 }

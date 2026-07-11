@@ -202,6 +202,14 @@ function summarizeHealthCheck(payload) {
     lines.push('', 'Script Properties thiếu:');
     badProps.forEach((item) => lines.push(`- ${item.key || item.name}: ${item.message || 'Thiếu cấu hình'}`));
   }
+  if (payload.performance) {
+    const metrics = [payload.performance.landing, payload.performance.blogList, payload.performance.largestArticle].filter(Boolean);
+    lines.push('', `Kích thước payload (giới hạn cache ${Math.round((payload.performance.cacheLimitBytes || 0) / 1024)} KB):`);
+    metrics.forEach((item) => {
+      const articleId = item.id ? ` [${item.id}]` : '';
+      lines.push(`- ${item.name}${articleId}: ${item.kilobytes || 0} KB - ${item.cacheable ? 'cache OK' : 'vượt ngưỡng cache'}`);
+    });
+  }
   if (!badSheets.length && !badProps.length) lines.push('', 'Tất cả sheet bắt buộc đang đúng header.');
   return lines.join('\n');
 }

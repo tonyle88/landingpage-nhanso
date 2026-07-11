@@ -92,6 +92,8 @@ Việc làm:
 - [x] Thêm sanitizer cục bộ dự phòng, không render HTML thô khi CDN DOMPurify lỗi.
 - [x] Tách dữ liệu blog khỏi payload landing để landing không tải nội dung bài viết không dùng.
 - [x] Tách nội dung chi tiết bài blog, chỉ tải `contentHtml` khi khách mở bài.
+- [x] Cache riêng danh sách blog và từng bài, có giới hạn kích thước và xóa cache khi admin cập nhật.
+- [x] Hiển thị kích thước landing/blog trong health check để phát hiện payload vượt ngưỡng cache.
 
 Xác minh:
 

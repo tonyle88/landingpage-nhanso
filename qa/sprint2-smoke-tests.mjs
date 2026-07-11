@@ -124,6 +124,60 @@ assert.match(
 );
 
 assert.match(
+  contentScriptSource,
+  /const CACHE_VALUE_MAX_BYTES = 95000;/,
+  'Apps Script cache entries should stay below the per-key size limit'
+);
+
+assert.match(
+  contentScriptSource,
+  /function handleGetBlogContent\(\)[\s\S]*getJsonCacheValue\(BLOG_CONTENT_CACHE_KEY\)[\s\S]*putJsonCacheValue\(BLOG_CONTENT_CACHE_KEY, payload, BLOG_CONTENT_CACHE_SECONDS\)/,
+  'Public blog summaries should use the dedicated cache'
+);
+
+assert.match(
+  contentScriptSource,
+  /function handleGetBlogArticle\(params\)[\s\S]*getBlogArticleCacheKey\(id\)[\s\S]*putJsonCacheValue\(cacheKey, payload, BLOG_CONTENT_CACHE_SECONDS\)/,
+  'Individual blog articles should use per-article cache keys'
+);
+
+assert.match(
+  contentScriptSource,
+  /function putJsonCacheValue\(key, payload, expirationSeconds\)[\s\S]*Utilities\.newBlob\(serialized\)\.getBytes\(\)\.length > CACHE_VALUE_MAX_BYTES/,
+  'Oversized payloads should skip Apps Script cache safely'
+);
+
+assert.match(
+  contentScriptSource,
+  /function handleSaveBlogArticle\(params\)[\s\S]*clearBlogContentCache\(id\)/,
+  'Saving an article should invalidate its detail and the blog summary cache'
+);
+
+assert.match(
+  contentScriptSource,
+  /function handleDeleteBlogArticle\(params\)[\s\S]*clearBlogContentCache\(id\)/,
+  'Deleting an article should invalidate its detail and the blog summary cache'
+);
+
+assert.match(
+  contentScriptSource,
+  /function buildPayloadHealthMetrics\(\)/,
+  'Content health check should report public payload sizes'
+);
+
+assert.match(
+  contentScriptSource,
+  /performanceOk = performance\.landing\.cacheable && performance\.blogList\.cacheable/,
+  'Health check should fail when a shared public payload exceeds the cache limit'
+);
+
+assert.match(
+  adminSource,
+  /Kích thước payload \(giới hạn cache/,
+  'Admin health summary should display payload size and cache status'
+);
+
+assert.match(
   blogSource,
   /fetch\(`\$\{SCRIPT_URL\}\?action=getBlogArticle&id=\$\{encodeURIComponent\(id\)\}`\)/,
   'Blog should fetch full content only for the opened article'
