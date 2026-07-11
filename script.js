@@ -2047,7 +2047,16 @@ async function checkSepayPaymentStatus() {
       cache: 'no-store',
     }, BOOKING_API_TIMEOUT_MS);
     const result = await res.json();
-    if (!result.ok || result.status !== 'paid') return;
+    if (!result.ok) return;
+
+    if (result.status === 'confirmed') {
+      stopSepayWaiting();
+      closeAllModals();
+      showSuccessModal('confirmed');
+      return;
+    }
+
+    if (result.status !== 'paid') return;
 
     stopSepayWaiting();
 

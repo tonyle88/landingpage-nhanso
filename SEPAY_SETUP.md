@@ -98,6 +98,22 @@ thành công
 
 Luu y quan trong: webhook URL co `action` va `secret` tren query string, con du lieu giao dich thuong nam trong POST body. Hay deploy ban booking script `2026-07-11-v14-booking-reservation` tro len de Apps Script doc duoc ca query string lan body, doi chieu ma don va so tien.
 
+### Kiem tra webhook truoc khi thanh toan that
+
+Trong SePay Dashboard, webhook can duoc cau hinh voi cac dieu kien sau:
+
+- Dung tai khoan BIDV dang hien tren ma QR.
+- Chi nhan giao dich vao (`In_only`) va webhook dang `Active`.
+- Neu dung loc prefix ma thanh toan, them `CCP` (phan biet hoa-thuong).
+- URL dung chinh xac URL o tren, bao gom ca `action=sepayWebhook` va `secret`.
+- Voi Apps Script hien tai, chon `No_Authen`; endpoint tu doi chieu secret trong URL. Khong chon HMAC/API Key neu chua bo sung endpoint server doc header tu SePay.
+
+Dung nut `Test send` trong SePay de kiem tra ket noi. Apps Script ContentService co the khien SePay hien `HTTP 302` du request da chay; kiem tra tab `SePay payments` co them dong moi moi la dau hieu request da vao script. Do ma test khong trung don `CCP...` dang cho, no se khong tu xac nhan lich.
+
+De kiem tra end-to-end, can co mot giao dich vao dung `500.000d` voi noi dung chinh xac `CCP...` dang hien tren QR. Chi sau buoc nay dong booking moi chuyen tu `pending_payment` sang `paid`, roi landing page tao Calendar/email va hien trang cam on.
+
+Neu mot giao dich that da vao `SePay payments` nhung dong booking van `pending_payment`, mo Sheet dat lich va chon menu `Clow Cat Booking` -> `Doi soat giao dich SePay dang cho`. Muc nay dung de sua cac giao dich cu co ma `CCP-...` hoac `CCP...` ma phien ban parser truoc chua nhan dien; no chi xac nhan giao dich SePay du tien, dung ma don va co thoi diem thanh toan nam trong thoi gian giu cho.
+
 Sau khi khach thanh toan, kiem tra tab:
 
 ```text
@@ -105,8 +121,11 @@ SePay payments
 ```
 
 - Neu khong co dong moi: SePay chua goi webhook dung URL, hoac URL/secret sai.
-- Neu co dong moi nhung landing van cho: cot `Ma thanh toan` khong khop noi dung chuyen khoan `CCP-...`, cot `Trang thai` khong phai `paid`, hoac so tien thap hon gia cua don booking.
+- Neu webhook dang loc prefix `CPP` trong khi ma don la `CCP...`: doi filter webhook thanh `CCP`; sai mot ky tu se khien SePay bo giao dich truoc khi gui va Sheet se khong co log.
+- Neu co dong moi nhung landing van cho: cot `Ma thanh toan` khong khop noi dung chuyen khoan `CCP...`, cot `Trang thai` khong phai `paid`, hoac so tien thap hon gia cua don booking.
 - Neu cot `Du lieu goc` co du lieu nhung ma thanh toan trong: can xem field noi dung SePay gui ve ten gi de bo sung parser.
+
+Neu khach da thanh toan nhung webhook bi loc nen khong co log, quan tri vien kiem tra giao dich tren BIDV, chon dung dong `pending_payment` trong `Dang ky tu van`, roi chon `Clow Cat Booking` -> `Xac nhan thu cong don SePay da chon`. He thong se hoi lai truoc khi xac nhan, ghi log `manual_sheet_confirmation`, tao Calendar va gui email.
 
 ## 4. Sheet log
 

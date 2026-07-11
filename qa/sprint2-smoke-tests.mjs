@@ -236,14 +236,62 @@ assert.match(
 
 assert.match(
   bookingSource,
+  /return 'CCP' \+ cleanBookingId\(bookingId\)[\s\S]*\.slice\(-16\);/,
+  'New SePay payment codes should use the CCP prefix followed by 16 alphanumeric characters'
+);
+
+assert.match(
+  bookingSource,
   /function handleConfirmBooking\(params\)/,
   'Booking confirmation should use the booking ID'
 );
 
 assert.match(
   bookingSource,
+  /success:\s*true,\s*\n\s*status:\s*status,/,
+  'SePay webhook should acknowledge a successful delivery'
+);
+
+assert.match(
+  bookingSource,
   /function confirmSelectedManualBooking\(\)/,
   'Manual transfers should require an explicit administrator confirmation'
+);
+
+assert.match(
+  bookingSource,
+  /function reconcilePendingSepayBookings\(\)/,
+  'Administrators should be able to reconcile a received SePay payment that an older parser did not match'
+);
+
+assert.match(
+  bookingSource,
+  /function confirmSelectedSepayBookingManually\(\)/,
+  'Administrators should have an audited fallback for a paid SePay booking when no webhook was delivered'
+);
+
+assert.match(
+  bookingSource,
+  /source:\s*'manual_sheet_confirmation'/,
+  'Manual SePay confirmation should leave an audit entry in the payment log'
+);
+
+assert.match(
+  bookingSource,
+  /function didPaymentArriveWithinHold\(paymentTime, booking\)/,
+  'SePay reconciliation should honor the time the payment arrived, not just when an admin runs reconciliation'
+);
+
+assert.match(
+  bookingSource,
+  /CCP-\?\[A-Z0-9\]\{16\}/,
+  'SePay parsing should accept both legacy CCP- and current CCP payment codes'
+);
+
+assert.match(
+  source,
+  /if \(result\.status === 'confirmed'\)/,
+  'Frontend should finish a payment flow that an administrator reconciled first'
 );
 
 assert.doesNotMatch(

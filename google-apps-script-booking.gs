@@ -87,6 +87,8 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Clow Cat Booking')
     .addItem('Xác nhận đơn chuyển khoản đã chọn', 'confirmSelectedManualBooking')
+    .addItem('Xác nhận thủ công đơn SePay đã chọn', 'confirmSelectedSepayBookingManually')
+    .addItem('Đối soát giao dịch SePay đang chờ', 'reconcilePendingSepayBookings')
     .addToUi();
 }
 // =============================================
@@ -410,6 +412,95 @@ function confirmSelectedManualBooking() {
   }
 }
 
+function confirmSelectedSepayBookingManually() {
+  const sheet = getTargetSheet();
+  ensureHeaderRow(sheet);
+  if (SpreadsheetApp.getActiveSheet().getSheetId() !== sheet.getSheetId()) {
+    throw new Error('Hay mo tab Dang ky tu van va chon dung dong can xac nhan.');
+  }
+
+  const rowNumber = sheet.getActiveRange().getRow();
+  if (rowNumber < 2) throw new Error('Hay chon dong dat lich can xac nhan.');
+
+  const ui = SpreadsheetApp.getUi();
+  const answer = ui.alert(
+    'Xac nhan thu cong SePay',
+    'Chi tiep tuc khi da kiem tra tai khoan BIDV va thay giao dich du tien, dung ma thanh toan cua dong da chon.',
+    ui.ButtonSet.YES_NO
+  );
+  if (answer !== ui.Button.YES) return;
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const record = getBookingRecordByRow(sheet, rowNumber);
+    if (!record || record.paymentProvider !== 'sepay' || ['pending_payment', 'payment_issue', 'expired'].indexOf(record.status) === -1) {
+      throw new Error('Dong da chon khong phai don SePay dang cho xac nhan.');
+    }
+
+    saveSepayPaymentStatus(record.paymentOrderId, 'paid', record.amount, {
+      content: record.paymentOrderId,
+      source: 'manual_sheet_confirmation',
+    });
+    updateBookingRecord(sheet, rowNumber, { 'Trạng thái': 'paid' });
+    const result = completeConfirmedBooking(sheet, rowNumber, getBookingRecordByRow(sheet, rowNumber));
+    ui.alert('Da xac nhan don SePay, tao lich va gui email.');
+    return result.message;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function reconcilePendingSepayBookings() {
+  const bookingSheet = getTargetSheet();
+  ensureHeaderRow(bookingSheet);
+  const paymentSheet = ensureSepayPaymentsSheet();
+  const lastRow = paymentSheet.getLastRow();
+  if (lastRow < 2) {
+    SpreadsheetApp.getUi().alert('Chua co giao dich SePay nao de doi soat.');
+    return;
+  }
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  let confirmed = 0;
+  let skipped = 0;
+
+  try {
+    const payments = paymentSheet.getRange(2, 1, lastRow - 1, SEPAY_PAYMENTS_HEADERS.length).getDisplayValues();
+    payments.forEach((payment) => {
+      if (normalizeSepayStatus(payment[2]) !== 'paid') return;
+
+      const paymentOrderId = extractSepayOrderId({ content: payment[4] });
+      const bookingRow = findBookingRowByPaymentOrderId(bookingSheet, paymentOrderId);
+      if (!bookingRow) {
+        skipped += 1;
+        return;
+      }
+
+      const booking = getBookingRecordByRow(bookingSheet, bookingRow);
+      const amount = parsePriceNumber(payment[3]);
+      const paymentArrivedWithinHold = didPaymentArriveWithinHold(payment[0], booking);
+      if (!booking || booking.paymentProvider !== 'sepay' || booking.status === 'confirmed' || (!paymentArrivedWithinHold && isBookingExpired(booking)) || amount < booking.amount) {
+        skipped += 1;
+        return;
+      }
+
+      updateBookingRecord(bookingSheet, bookingRow, { 'Trạng thái': 'paid' });
+      completeConfirmedBooking(bookingSheet, bookingRow, getBookingRecordByRow(bookingSheet, bookingRow));
+      confirmed += 1;
+    });
+  } finally {
+    lock.releaseLock();
+  }
+
+  SpreadsheetApp.getUi().alert(
+    confirmed
+      ? 'Da xac nhan ' + confirmed + ' don SePay. Lich va email da duoc xu ly.'
+      : 'Khong co don SePay dang cho nao khop de xac nhan. Bo qua: ' + skipped + '.'
+  );
+}
+
 function completeConfirmedBooking(sheet, rowNumber, record) {
   if (record.status === 'confirmed') {
     return buildBookingResponse(record, 'Dat lich da duoc xac nhan truoc do.');
@@ -581,6 +672,7 @@ function handleSepayWebhook(params) {
 
   return jsonResponse({
     ok: true,
+    success: true,
     status: status,
     paymentOrderId: orderId,
     scriptVersion: SCRIPT_VERSION,
@@ -1199,13 +1291,14 @@ function extractSepayOrderId(params) {
   if (looksLikeSepayOrderId(direct)) return direct.toUpperCase();
 
   const content = sanitizePlainText(getSepayContent(params), 1000).toUpperCase();
-  const match = content.match(/[A-Z]{2,12}-[A-Z0-9-]{8,60}/);
-  if (match && looksLikeSepayOrderId(match[0])) return match[0];
+  const matches = content.match(/\b(?:CCP-?[A-Z0-9]{16}|[A-Z]{2,12}-[A-Z0-9-]{8,60})\b/g) || [];
+  const match = matches.find((candidate) => looksLikeSepayOrderId(candidate));
+  if (match) return match;
   return looksLikeSepayOrderId(direct) ? direct.toUpperCase() : '';
 }
 
 function looksLikeSepayOrderId(value) {
-  return /^(?:[A-Z]{2,12}-[A-Z0-9]{8,40}|[A-Z]{2,12}[-_]?[A-Z0-9]{2,40}[-_]?[A-Z0-9]{4,16}[-_]?[0-9]{4,16})$/i.test(cleanValue(value));
+  return /^(?:CCP-?[A-Z0-9]{16}|[A-Z]{2,12}-[A-Z0-9]{8,40}|[A-Z]{2,12}[-_]?[A-Z0-9]{2,40}[-_]?[A-Z0-9]{4,16}[-_]?[0-9]{4,16})$/i.test(cleanValue(value));
 }
 
 function getSepayContent(params) {
@@ -1291,7 +1384,7 @@ function createBookingId() {
 }
 
 function createPaymentOrderId(bookingId) {
-  return 'CCP-' + cleanBookingId(bookingId).replace(/[^A-Z0-9]/g, '').slice(-16);
+  return 'CCP' + cleanBookingId(bookingId).replace(/[^A-Z0-9]/g, '').slice(-16);
 }
 
 function getBookingRecords(sheet) {
@@ -1375,6 +1468,26 @@ function isBookingExpired(record) {
   if (record.status === 'cancelled' || record.status === 'expired') return true;
   const expiresAt = new Date(record.holdExpiresAt);
   return !record.holdExpiresAt || isNaN(expiresAt.getTime()) || expiresAt.getTime() <= Date.now();
+}
+
+function didPaymentArriveWithinHold(paymentTime, booking) {
+  if (!booking || !booking.holdExpiresAt) return false;
+  const paidAt = parseVietnamDateTime(paymentTime);
+  const holdExpiresAt = new Date(booking.holdExpiresAt);
+  return !isNaN(paidAt.getTime()) && !isNaN(holdExpiresAt.getTime()) && paidAt.getTime() <= holdExpiresAt.getTime();
+}
+
+function parseVietnamDateTime(value) {
+  const match = cleanValue(value).match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
+  if (!match) return new Date('');
+  return new Date(Date.UTC(
+    Number(match[3]),
+    Number(match[2]) - 1,
+    Number(match[1]),
+    Number(match[4]) - 7,
+    Number(match[5]),
+    Number(match[6])
+  ));
 }
 
 function bookingRecordBlocksSlot(record) {
