@@ -131,6 +131,12 @@ assert.match(
 
 assert.match(
   contentScriptSource,
+  /const CACHE_SCHEMA_VERSION = 'v21';[\s\S]*LANDING_CONTENT_CACHE_KEY = 'landing_content_payload_' \+ CACHE_SCHEMA_VERSION;[\s\S]*BLOG_CONTENT_CACHE_KEY = 'blog_content_summaries_' \+ CACHE_SCHEMA_VERSION;[\s\S]*BLOG_ARTICLE_CACHE_PREFIX = 'blog_article_' \+ CACHE_SCHEMA_VERSION \+ '_';/,
+  'Public payload caches should share one schema version for deployment invalidation'
+);
+
+assert.match(
+  contentScriptSource,
   /function handleGetBlogContent\(\)[\s\S]*getJsonCacheValue\(BLOG_CONTENT_CACHE_KEY\)[\s\S]*putJsonCacheValue\(BLOG_CONTENT_CACHE_KEY, payload, BLOG_CONTENT_CACHE_SECONDS\)/,
   'Public blog summaries should use the dedicated cache'
 );

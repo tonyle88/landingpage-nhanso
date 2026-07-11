@@ -95,6 +95,7 @@ Việc làm:
 - [x] Cache riêng danh sách blog và từng bài, có giới hạn kích thước và xóa cache khi admin cập nhật.
 - [x] Hiển thị kích thước landing/blog trong health check để phát hiện payload vượt ngưỡng cache.
 - [x] Thêm timeout/retry cho blog và giữ nội dung cache khi refresh nền thất bại.
+- [x] Đồng bộ version cache landing/blog để deploy mới không phục vụ payload cũ.
 
 Xác minh:
 
