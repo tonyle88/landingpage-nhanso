@@ -274,6 +274,24 @@ assert.match(
 
 assert.match(
   contentScriptSource,
+  /function getBackupScheduleStatus\(\)[\s\S]*catch \(error\)[\s\S]*isTriggerPermissionError\(error\)/,
+  'Missing trigger scope must not prevent the rest of the admin payload from loading'
+);
+
+assert.match(
+  contentScriptSource,
+  /function authorizeBackupAutomation\(\)[\s\S]*DriveApp\.getFolderById\(folderId\)[\s\S]*ScriptApp\.getProjectTriggers\(\)/,
+  'Project owner should have a one-time function that requests backup automation scopes'
+);
+
+assert.match(
+  contentScriptSource,
+  /\.addItem\('Cấp quyền backup tự động', 'authorizeBackupAutomation'\)/,
+  'Spreadsheet menu should expose the one-time backup authorization action'
+);
+
+assert.match(
+  contentScriptSource,
   /function runScheduledBackup\(\)[\s\S]*'auto_sheet'[\s\S]*pruneAutomaticBackups\(folderId\)/,
   'Scheduled backup should create an automatic copy and then apply retention'
 );
@@ -336,6 +354,12 @@ assert.match(
   adminSource,
   /async function toggleBackupSchedule\(\)[\s\S]*api\('setBackupSchedule'[\s\S]*renderBackupStatus\(\)/,
   'Admin should toggle and immediately render weekly backup schedule state'
+);
+
+assert.match(
+  adminSource,
+  /permissionRequired \? 'Cấp quyền'/,
+  'Admin should show a clear state when trigger authorization is required'
 );
 
 assert.match(

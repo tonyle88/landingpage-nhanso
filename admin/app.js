@@ -262,14 +262,17 @@ function renderBackupStatus() {
   if (!els.latestBackupLink) return;
   if (els.backupSchedule) {
     const enabled = Boolean(state.backupSchedule?.enabled);
+    const permissionRequired = Boolean(state.backupSchedule?.permissionRequired);
     const label = els.backupSchedule.querySelector('span');
     const icon = els.backupSchedule.querySelector('i');
-    if (label) label.textContent = enabled ? 'Lịch đã bật' : 'Bật lịch';
-    if (icon) icon.className = enabled ? 'fa-solid fa-calendar-check' : 'fa-regular fa-calendar';
+    if (label) label.textContent = permissionRequired ? 'Cấp quyền' : (enabled ? 'Lịch đã bật' : 'Bật lịch');
+    if (icon) icon.className = permissionRequired ? 'fa-solid fa-triangle-exclamation' : (enabled ? 'fa-solid fa-calendar-check' : 'fa-regular fa-calendar');
     const lastRun = state.backupSchedule?.lastRun;
-    els.backupSchedule.title = enabled
+    els.backupSchedule.title = permissionRequired
+      ? 'Chạy authorizeBackupAutomation một lần trong Apps Script Editor rồi deploy lại'
+      : (enabled
       ? `Chủ Nhật 02:00-03:00. Lần chạy gần nhất: ${lastRun?.timestamp || 'chưa chạy'}`
-      : 'Bật sao lưu tự động hằng tuần';
+      : 'Bật sao lưu tự động hằng tuần');
   }
   if (els.restoreBackup) {
     const canRestore = state.user?.role === 'admin' && Boolean(state.restoreCandidate?.fileId);
@@ -335,6 +338,7 @@ function summarizeHealthCheck(payload) {
     lines.push(`- Lịch tuần: ${schedule.enabled ? `${schedule.day} ${schedule.hour} (${schedule.timezone})` : 'chưa bật'}`);
     lines.push(`- Số trigger: ${schedule.triggerCount || 0}`);
     lines.push(`- Giữ tối đa: ${schedule.retention || 0} bản tự động không gắn sao`);
+    if (schedule.permissionRequired) lines.push('- Quyền trigger: chưa cấp; chạy authorizeBackupAutomation trong Apps Script Editor');
     if (schedule.lastRun) lines.push(`- Lần chạy gần nhất: ${schedule.lastRun.timestamp} - ${schedule.lastRun.status}`);
   }
   if (!badSheets.length && !badProps.length) lines.push('', 'Tất cả sheet bắt buộc đang đúng header.');

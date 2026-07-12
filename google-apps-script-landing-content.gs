@@ -15,7 +15,7 @@ const BACKUP_TRIGGER_FUNCTION = 'runScheduledBackup';
 const AUTOMATIC_BACKUP_PREFIX = 'ClowCat-Auto-Sheet-';
 const AUTOMATIC_BACKUP_RETENTION = 12;
 const RESTORE_CONFIRMATION_TEXT = 'PHUC HOI';
-const SCRIPT_VERSION = '2026-07-12-v24-weekly-backup';
+const SCRIPT_VERSION = '2026-07-12-v26-trigger-authorization-menu';
 const ADMIN_SESSION_SECONDS = 21600;
 const CACHE_SCHEMA_VERSION = 'v21';
 const LANDING_CONTENT_CACHE_KEY = 'landing_content_payload_' + CACHE_SCHEMA_VERSION;
@@ -160,6 +160,8 @@ function onOpen() {
     .createMenu('Clow Cat')
     .addItem('Tạo bảng nội dung landing page', 'initializeLandingContentSheet')
     .addItem('Đồng bộ dòng nội dung mới', 'syncLandingContentSheet')
+    .addSeparator()
+    .addItem('Cấp quyền backup tự động', 'authorizeBackupAutomation')
     .addSeparator()
     .addItem('Sửa định dạng ngày giờ Admin users', 'repairAdminUserDateFormats')
     .addToUi();
@@ -1100,9 +1102,11 @@ function buildBackupHealthStatus() {
     folderOk: folderOk,
     folderMessage: folderMessage,
     schedule: schedule,
-    message: !schedule.enabled
+    message: schedule.permissionRequired
+      ? 'Chua cap quyen script.scriptapp. Chay authorizeBackupAutomation trong Apps Script Editor.'
+      : (!schedule.enabled
       ? 'Chua bat lich backup hang tuan.'
-      : (schedule.triggerCount !== 1 ? 'So luong trigger backup khong hop le.' : (lastRunOk ? 'OK' : 'Lan backup tu dong gan nhat bi loi.')),
+      : (schedule.triggerCount !== 1 ? 'So luong trigger backup khong hop le.' : (lastRunOk ? 'OK' : 'Lan backup tu dong gan nhat bi loi.'))),
   };
 }
 
@@ -1234,16 +1238,23 @@ function handleCreateBackup(params) {
 function handleSetBackupSchedule(params) {
   requireAdminSession(params.token, ['admin']);
   const enabled = isTruthy(params.enabled);
-  const triggers = getBackupScheduleTriggers();
-  triggers.forEach((trigger) => ScriptApp.deleteTrigger(trigger));
+  try {
+    const triggers = getBackupScheduleTriggers();
+    triggers.forEach((trigger) => ScriptApp.deleteTrigger(trigger));
 
-  if (enabled) {
-    ScriptApp.newTrigger(BACKUP_TRIGGER_FUNCTION)
-      .timeBased()
-      .onWeekDay(ScriptApp.WeekDay.SUNDAY)
-      .atHour(2)
-      .inTimezone(VIETNAM_TIMEZONE)
-      .create();
+    if (enabled) {
+      ScriptApp.newTrigger(BACKUP_TRIGGER_FUNCTION)
+        .timeBased()
+        .onWeekDay(ScriptApp.WeekDay.SUNDAY)
+        .atHour(2)
+        .inTimezone(VIETNAM_TIMEZONE)
+        .create();
+    }
+  } catch (error) {
+    if (isTriggerPermissionError(error)) {
+      throw new Error('Chua cap quyen quan ly trigger. Mo Apps Script Editor, chay ham authorizeBackupAutomation mot lan, chap nhan quyen roi deploy lai.');
+    }
+    throw error;
   }
 
   const schedule = getBackupScheduleStatus();
@@ -1307,16 +1318,44 @@ function getBackupScheduleTriggers() {
 }
 
 function getBackupScheduleStatus() {
-  const triggers = getBackupScheduleTriggers();
+  try {
+    const triggers = getBackupScheduleTriggers();
+    return buildBackupScheduleStatus(triggers.length, false, '');
+  } catch (error) {
+    return buildBackupScheduleStatus(0, isTriggerPermissionError(error), error.message);
+  }
+}
+
+function buildBackupScheduleStatus(triggerCount, permissionRequired, errorMessage) {
   return {
-    enabled: triggers.length > 0,
-    triggerCount: triggers.length,
+    enabled: triggerCount > 0,
+    triggerCount: triggerCount,
+    permissionRequired: permissionRequired,
+    error: cleanAuditValue(errorMessage, 300),
     day: 'Chủ Nhật',
     hour: '02:00-03:00',
     timezone: VIETNAM_TIMEZONE,
     retention: AUTOMATIC_BACKUP_RETENTION,
     lastRun: getLatestBackupStatusByType('auto_sheet'),
   };
+}
+
+function isTriggerPermissionError(error) {
+  return /script\.scriptapp|getProjectTriggers|permission|quyen|authorization/i.test(String(error && error.message || error || ''));
+}
+
+function authorizeBackupAutomation() {
+  const folderId = cleanValue(PropertiesService.getScriptProperties().getProperty(BACKUP_FOLDER_ID_PROPERTY));
+  if (!folderId) throw new Error('Chua cau hinh Script Property BACKUP_FOLDER_ID.');
+  DriveApp.getFolderById(folderId).getName();
+  ScriptApp.getProjectTriggers();
+  const message = 'Da cap quyen backup tu dong. Hay quay lai admin va bam Bat lich.';
+  try {
+    SpreadsheetApp.getUi().alert(message);
+  } catch (error) {
+    console.log(message);
+  }
+  return message;
 }
 
 function handleRestoreBackup(params) {

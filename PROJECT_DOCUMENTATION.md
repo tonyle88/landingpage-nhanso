@@ -273,13 +273,18 @@ Phục hồi giữ nguyên `SPREADSHEET_ID`. Script Properties, source Apps Scri
 
 Sao lưu tự động:
 
-1. Trong admin, bấm `Bật lịch` và xác nhận.
-2. Trigger chạy vào Chủ Nhật khoảng 02:00-03:00 theo timezone `Asia/Ho_Chi_Minh`.
-3. Hệ thống giữ 12 file `ClowCat-Auto-Sheet-*` gần nhất và chuyển bản cũ hơn vào thùng rác.
-4. Muốn giữ vĩnh viễn một bản tự động, mở Google Drive và gắn sao cho file đó; retention sẽ bỏ qua file đã gắn sao.
-5. Nút đổi thành `Lịch đã bật`; di chuột để xem lần chạy gần nhất.
-6. Bấm lại nút này để tắt lịch. Tắt lịch không xóa những backup đã có.
-7. Nút `Kiểm tra` hiển thị quyền truy cập thư mục, số trigger, lịch chạy, retention và kết quả tự động gần nhất.
+1. Sau khi deploy, tải lại Google Sheet rồi chọn menu `Clow Cat` -> `Cấp quyền backup tự động` và chấp nhận quyền Google yêu cầu. Hàm này chỉ kiểm tra quyền Drive và `script.scriptapp`, không tạo backup hoặc trigger.
+2. Nếu menu chưa xuất hiện, mở Apps Script Editor, chọn hàm `authorizeBackupAutomation`, bấm `Run` và chấp nhận quyền.
+3. Quay lại admin; chỉ cần deploy lại nếu bạn chưa deploy version có chức năng backup tự động.
+4. Trong admin, bấm `Bật lịch` và xác nhận.
+5. Trigger chạy vào Chủ Nhật khoảng 02:00-03:00 theo timezone `Asia/Ho_Chi_Minh`.
+6. Hệ thống giữ 12 file `ClowCat-Auto-Sheet-*` gần nhất và chuyển bản cũ hơn vào thùng rác.
+7. Muốn giữ vĩnh viễn một bản tự động, mở Google Drive và gắn sao cho file đó; retention sẽ bỏ qua file đã gắn sao.
+8. Nút đổi thành `Lịch đã bật`; di chuột để xem lần chạy gần nhất.
+9. Bấm lại nút này để tắt lịch. Tắt lịch không xóa những backup đã có.
+10. Nút `Kiểm tra` hiển thị quyền truy cập thư mục, quyền trigger, số trigger, lịch chạy, retention và kết quả tự động gần nhất.
+
+Nếu nút báo `Cấp quyền` hoặc lỗi chứa `script.scriptapp`, thực hiện lại menu `Clow Cat` -> `Cấp quyền backup tự động` bằng đúng tài khoản sở hữu deployment. Admin vẫn phải tải nội dung bình thường trong lúc quyền trigger chưa được cấp.
 
 Xác nhận QR thủ công:
 
