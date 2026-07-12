@@ -209,6 +209,42 @@ assert.match(
 );
 
 assert.match(
+  contentScriptSource,
+  /function handleCreateBackup\(params\)[\s\S]*requireAdminSession\(params\.token, \['admin'\]\)[\s\S]*sourceFile\.makeCopy\(backupName, folder\)/,
+  'Manual Sheet backup should require an administrator and copy into the configured Drive folder'
+);
+
+assert.match(
+  contentScriptSource,
+  /function handleGetAdminContent\(params\)[\s\S]*session\.role === 'admin' \? getLatestBackupStatus\(\) : null/,
+  'Editor responses must not expose the latest backup URL'
+);
+
+assert.match(
+  contentScriptSource,
+  /LockService\.getScriptLock\(\)[\s\S]*cache\.put\(rateLimitKey, '1', BACKUP_RATE_LIMIT_SECONDS\)/,
+  'Manual backup should prevent concurrent and repeated runs'
+);
+
+assert.match(
+  contentScriptSource,
+  /function appendBackupLog\(result\)[\s\S]*BACKUP_LOG_HEADERS/,
+  'Every backup attempt should be written to Backup log'
+);
+
+assert.match(
+  adminHtmlSource,
+  /id="create-backup"[\s\S]*id="latest-backup-link"/,
+  'Admin should expose backup and latest-copy controls'
+);
+
+assert.match(
+  adminSource,
+  /async function createBackup\(\)[\s\S]*api\('createBackup'/,
+  'Admin backup control should call the protected backup endpoint'
+);
+
+assert.match(
   blogSource,
   /fetchBlogJson\(`\$\{SCRIPT_URL\}\?action=getBlogArticle&id=\$\{encodeURIComponent\(id\)\}`\)/,
   'Blog should fetch full content only for the opened article'

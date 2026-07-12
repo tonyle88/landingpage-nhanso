@@ -16,6 +16,7 @@ const state = {
   packages: [],
   feedbackImages: [],
   paymentSettings: {},
+  backupStatus: null,
   search: '',
   selectedSection: 'all',
   miniReportFilter: { type: 'life_path', number: '1' },
@@ -49,6 +50,8 @@ const els = {
   refreshContent: document.getElementById('refresh-content'),
   healthCheck: document.getElementById('health-check'),
   bookingHealthCheck: document.getElementById('booking-health-check'),
+  createBackup: document.getElementById('create-backup'),
+  latestBackupLink: document.getElementById('latest-backup-link'),
   saveAll: document.getElementById('save-all'),
   syncTemplate: document.getElementById('sync-template'),
   logout: document.getElementById('logout'),
@@ -84,6 +87,7 @@ function bindEvents() {
   els.refreshContent.addEventListener('click', () => loadContent(true));
   els.healthCheck?.addEventListener('click', runHealthCheck);
   els.bookingHealthCheck?.addEventListener('click', runBookingHealthCheck);
+  els.createBackup?.addEventListener('click', createBackup);
   els.saveAll.addEventListener('click', saveAllDirtyItems);
   els.syncTemplate.addEventListener('click', syncTemplate);
   els.logout.addEventListener('click', logout);
@@ -160,8 +164,10 @@ async function loadContent(showNotice = false) {
     state.paymentSettings = normalizePaymentSettings(payload.paymentSettings);
     state.blogCategories = payload.blogCategories || [];
     state.blogArticles = payload.blogArticles || [];
+    state.backupStatus = payload.backupStatus || null;
     state.originals = new Map(state.items.map((item) => [item.key, snapshotItem(item)]));
     render();
+    renderBackupStatus();
     if (showNotice) toast('Đã tải lại nội dung mới nhất.');
   } catch (error) {
     handleSessionError(error);
@@ -169,6 +175,36 @@ async function loadContent(showNotice = false) {
     setBusy(els.refreshContent, false);
     if (els.globalLoader) els.globalLoader.classList.add('is-hidden');
   }
+}
+
+async function createBackup() {
+  if (!state.token || state.user?.role !== 'admin') return;
+  if (!window.confirm('Tạo một bản sao Google Sheet vào thư mục backup trên Google Drive?')) return;
+
+  setBusy(els.createBackup, true);
+  try {
+    const payload = await api('createBackup', { token: state.token });
+    state.backupStatus = payload.backup || null;
+    renderBackupStatus();
+    toast('Đã sao lưu Google Sheet thành công.', 'success');
+  } catch (error) {
+    handleSessionError(error);
+  } finally {
+    setBusy(els.createBackup, false);
+  }
+}
+
+function renderBackupStatus() {
+  if (!els.latestBackupLink) return;
+  const backup = state.backupStatus;
+  const available = backup?.status === 'OK' && /^https:\/\//i.test(backup.url || '');
+  els.latestBackupLink.classList.toggle('is-hidden', !available || state.user?.role !== 'admin');
+  if (!available) {
+    els.latestBackupLink.removeAttribute('href');
+    return;
+  }
+  els.latestBackupLink.href = backup.url;
+  els.latestBackupLink.title = `Mở bản sao gần nhất: ${backup.timestamp || backup.name || ''}`;
 }
 
 async function runHealthCheck() {

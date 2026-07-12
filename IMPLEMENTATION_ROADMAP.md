@@ -103,6 +103,44 @@ Xác minh:
 - [ ] Ảnh chính render đúng.
 - [x] Không tải script landing/admin không dùng trên blog.
 
+## Sprint 3.5 - Sao lưu Google Sheet và Apps Script
+
+Mục tiêu:
+
+- Quản trị viên có thể tạo bản sao lưu ngay trong admin và biết lần backup gần nhất có thành công hay không.
+- Google Sheet và source của hai Apps Script được sao lưu định kỳ vào một thư mục Google Drive riêng.
+- Có quy trình khôi phục đã được kiểm tra, không chỉ tạo file backup để đó.
+
+Giả định và giới hạn:
+
+- Web App tiếp tục chạy dưới tài khoản chủ sở hữu có quyền đọc Sheet, hai Apps Script và thư mục backup.
+- Bản sao Google Sheet không thay thế backup source Apps Script; hai loại được lưu riêng trong cùng một phiên backup.
+- Không ghi giá trị Script Properties như `SEPAY_WEBHOOK_SECRET` vào Drive. Chỉ lưu danh sách tên property và trạng thái có/thiếu.
+- Sao lưu source Apps Script cần bật Apps Script API và cấp quyền phù hợp; triển khai sau khi backup Sheet hoạt động ổn định.
+
+Việc làm:
+
+- [ ] Tạo thư mục Drive chuyên dụng và lưu ID bằng Script Property `BACKUP_FOLDER_ID`.
+- [x] Thêm sheet `Backup log` với thời gian, loại backup, file ID/URL, dung lượng, trạng thái và thông báo lỗi.
+- [x] Thêm endpoint admin-only `createBackup`, không cho tài khoản editor thường gọi.
+- [x] Thêm nút `Sao lưu` trong admin, có trạng thái đang chạy, kết quả gần nhất và liên kết mở bản backup.
+- [x] Sao lưu Google Sheet bằng bản copy có tên chứa ngày giờ và timezone Việt Nam.
+- [x] Thêm khóa chống chạy trùng và giới hạn tần suất thao tác thủ công.
+- [ ] Tạo time-driven trigger chạy tự động hằng tuần và hiển thị trạng thái lịch trong admin.
+- [ ] Bật Apps Script API và xuất source project content/admin cùng booking thành file JSON trong mỗi phiên backup.
+- [ ] Áp dụng retention đơn giản: giữ 12 bản tự động gần nhất, không tự xóa bản được đánh dấu giữ lại.
+- [ ] Thêm health check cho thư mục backup, trigger, lần chạy gần nhất và lỗi backup gần nhất.
+- [ ] Viết tài liệu khôi phục Sheet, source Apps Script, deployment URL và Script Properties.
+
+Xác minh:
+
+- [ ] Bấm `Sao lưu` trong admin tạo đúng một phiên backup và ghi một dòng `Backup log`.
+- [ ] Editor không thể gọi endpoint backup hoặc xem URL file backup.
+- [ ] Trigger tự động tạo backup khi không mở admin.
+- [ ] Source backup chứa đủ file của cả hai Apps Script nhưng không chứa secret.
+- [ ] Giả lập lỗi quyền Drive trả thông báo rõ trong admin và ghi log.
+- [ ] Khôi phục thử sang một Sheet/project test, chạy health check đạt trước khi đánh dấu hoàn thành.
+
 ## Sprint 4 - Chuẩn bị migration MySQL/shared hosting
 
 Mục tiêu:
@@ -126,4 +164,5 @@ Xác minh:
 
 1. Hoàn tất Sprint 1.
 2. QA Sprint 2.
-3. Chỉ bắt đầu Sprint 4 khi landing/admin/booking đã ổn định.
+3. Triển khai Sprint 3.5 theo hai bước: backup Sheet trước, backup source Apps Script sau.
+4. Chỉ bắt đầu Sprint 4 khi landing/admin/booking và quy trình backup đã ổn định.

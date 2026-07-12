@@ -7,7 +7,11 @@ const SPREADSHEET_ID = '1hxBpzJwNO470xqoHBuaZF26anCGir5pnpQk0iPTxz4k';
 const LANDING_CONTENT_SHEET_NAME = 'Landing content';
 const ADMIN_USERS_SHEET_NAME = 'Admin users';
 const AUDIT_LOG_SHEET_NAME = 'Audit log';
-const SCRIPT_VERSION = '2026-07-12-v21-cache-schema';
+const BACKUP_LOG_SHEET_NAME = 'Backup log';
+const BACKUP_FOLDER_ID_PROPERTY = 'BACKUP_FOLDER_ID';
+const BACKUP_LOG_HEADERS = ['Timestamp', 'Type', 'Status', 'File ID', 'File URL', 'File name', 'Size', 'Username', 'Message'];
+const BACKUP_RATE_LIMIT_SECONDS = 120;
+const SCRIPT_VERSION = '2026-07-12-v22-manual-sheet-backup';
 const ADMIN_SESSION_SECONDS = 21600;
 const CACHE_SCHEMA_VERSION = 'v21';
 const LANDING_CONTENT_CACHE_KEY = 'landing_content_payload_' + CACHE_SCHEMA_VERSION;
@@ -133,6 +137,7 @@ const AUDITED_ADMIN_ACTIONS = [
   'deleteBlogCategory',
   'saveBlogArticle',
   'deleteBlogArticle',
+  'createBackup',
 ];
 
 function onOpen() {
@@ -197,6 +202,7 @@ function doPost(e) {
     else if (action === 'logoutAdmin') response = handleAdminLogout(params);
     else if (action === 'getAdminContent') response = handleGetAdminContent(params);
     else if (action === 'healthCheck') response = handleHealthCheck(params);
+    else if (action === 'createBackup') response = handleCreateBackup(params);
     else if (action === 'saveLandingContentItem') response = handleSaveLandingContentItem(params);
     else if (action === 'saveLandingContentBatch') response = handleSaveLandingContentBatch(params);
     else if (action === 'changeAdminPassword') response = handleChangeAdminPassword(params);
@@ -386,7 +392,8 @@ function clearBlogContentCache(articleId) {
 }
 
 function handleGetAdminContent(params) {
-  requireAdminSession(params.token);
+  const session = requireAdminSession(params.token);
+  const backupStatus = session.role === 'admin' ? getLatestBackupStatus() : null;
   const spreadsheet = getSpreadsheetByIdOrActive();
   const sheet = spreadsheet.getSheetByName(LANDING_CONTENT_SHEET_NAME);
   if (!sheet) {
@@ -400,6 +407,7 @@ function handleGetAdminContent(params) {
       sectionsLayout: getSectionsLayout(true),
       blogCategories: getBlogCategories(true),
       blogArticles: getBlogArticles(true),
+      backupStatus: backupStatus,
       message: 'Chua co tab Landing content. Hay chay initializeLandingContentSheet mot lan.',
       scriptVersion: SCRIPT_VERSION,
     });
@@ -408,7 +416,7 @@ function handleGetAdminContent(params) {
   ensureLandingContentHeaderRow(sheet);
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
-    return jsonResponse({ ok: true, items: [], sections: [], packages: getPackages(true), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(true), sectionsLayout: getSectionsLayout(true), blogCategories: getBlogCategories(true), blogArticles: getBlogArticles(true), scriptVersion: SCRIPT_VERSION });
+    return jsonResponse({ ok: true, items: [], sections: [], packages: getPackages(true), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(true), sectionsLayout: getSectionsLayout(true), blogCategories: getBlogCategories(true), blogArticles: getBlogArticles(true), backupStatus: backupStatus, scriptVersion: SCRIPT_VERSION });
   }
 
   const range = sheet.getRange(2, 1, lastRow - 1, LANDING_CONTENT_HEADERS.length);
@@ -448,6 +456,7 @@ function handleGetAdminContent(params) {
     sectionsLayout: getSectionsLayout(true),
     blogCategories: getBlogCategories(true),
     blogArticles: getBlogArticles(true),
+    backupStatus: backupStatus,
     scriptVersion: SCRIPT_VERSION,
   });
 }
@@ -1009,6 +1018,7 @@ function handleHealthCheck(params) {
     checkSheetHeaders(BLOG_ARTICLES_SHEET_NAME, BLOG_ARTICLES_HEADERS),
     checkSheetHeaders(ADMIN_USERS_SHEET_NAME, ADMIN_USERS_HEADERS),
     checkSheetHeaders(AUDIT_LOG_SHEET_NAME, AUDIT_LOG_HEADERS),
+    checkSheetHeaders(BACKUP_LOG_SHEET_NAME, BACKUP_LOG_HEADERS),
   ];
   const scriptProperties = PropertiesService.getScriptProperties();
   const propertyChecks = [
@@ -1023,6 +1033,12 @@ function handleHealthCheck(params) {
       ok: Boolean(cleanValue(scriptProperties.getProperty(SEPAY_SECRET_KEY_PROPERTY))),
       required: false,
       message: 'Chi bat buoc khi dung cau hinh SePay co secret key.',
+    },
+    {
+      key: BACKUP_FOLDER_ID_PROPERTY,
+      ok: Boolean(cleanValue(scriptProperties.getProperty(BACKUP_FOLDER_ID_PROPERTY))),
+      required: true,
+      message: 'Thieu BACKUP_FOLDER_ID thi admin khong the sao luu Google Sheet.',
     },
   ];
   const requiredSheetsOk = sheetChecks.every((check) => check.ok);
@@ -1085,6 +1101,7 @@ function ensureHealthCheckSheets() {
   ensureBlogArticlesSheet();
   ensureAdminUsersSheet();
   ensureAuditLogSheet();
+  ensureBackupLogSheet();
 }
 
 function checkSheetHeaders(sheetName, expectedHeaders) {
@@ -1113,6 +1130,102 @@ function ensureAuditLogSheet() {
   sheet.setFrozenRows(1);
   sheet.autoResizeColumns(1, AUDIT_LOG_HEADERS.length);
   return sheet;
+}
+
+function ensureBackupLogSheet() {
+  const spreadsheet = getSpreadsheetByIdOrActive();
+  let sheet = spreadsheet.getSheetByName(BACKUP_LOG_SHEET_NAME);
+  if (!sheet) sheet = spreadsheet.insertSheet(BACKUP_LOG_SHEET_NAME);
+  sheet.getRange(1, 1, 1, BACKUP_LOG_HEADERS.length).setValues([BACKUP_LOG_HEADERS]);
+  sheet.setFrozenRows(1);
+  sheet.autoResizeColumns(1, BACKUP_LOG_HEADERS.length);
+  return sheet;
+}
+
+function handleCreateBackup(params) {
+  const session = requireAdminSession(params.token, ['admin']);
+  const rateLimitKey = 'backup-rate-' + session.username;
+  const cache = CacheService.getScriptCache();
+  if (cache.get(rateLimitKey)) {
+    throw new Error('Vui long cho 2 phut truoc khi tao ban sao luu tiep theo.');
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) throw new Error('Mot phien sao luu khac dang chay. Vui long thu lai sau.');
+
+  try {
+    const folderId = cleanValue(PropertiesService.getScriptProperties().getProperty(BACKUP_FOLDER_ID_PROPERTY));
+    if (!folderId) throw new Error('Chua cau hinh Script Property BACKUP_FOLDER_ID.');
+
+    const folder = DriveApp.getFolderById(folderId);
+    const sourceFile = DriveApp.getFileById(SPREADSHEET_ID);
+    const timestamp = Utilities.formatDate(getVietnamNow(), VIETNAM_TIMEZONE, 'yyyyMMdd-HHmmss');
+    const backupName = 'ClowCat-Landing-Sheet-' + timestamp;
+    const backupFile = sourceFile.makeCopy(backupName, folder);
+    const result = {
+      timestamp: formatAdminDate(getVietnamNow()),
+      type: 'manual_sheet',
+      status: 'OK',
+      fileId: backupFile.getId(),
+      url: backupFile.getUrl(),
+      name: backupFile.getName(),
+      size: backupFile.getSize(),
+      username: session.username,
+      message: 'Da sao luu Google Sheet.',
+    };
+    appendBackupLog(result);
+    cache.put(rateLimitKey, '1', BACKUP_RATE_LIMIT_SECONDS);
+    return jsonResponse({
+      ok: true,
+      backup: result,
+      message: result.message,
+      scriptVersion: SCRIPT_VERSION,
+    });
+  } catch (error) {
+    appendBackupLog({
+      timestamp: formatAdminDate(getVietnamNow()),
+      type: 'manual_sheet',
+      status: 'FAIL',
+      username: session.username,
+      message: error.message,
+    });
+    throw error;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function appendBackupLog(result) {
+  const sheet = ensureBackupLogSheet();
+  sheet.appendRow([
+    cleanAuditValue(result.timestamp, 40),
+    cleanAuditValue(result.type, 40),
+    cleanAuditValue(result.status, 20),
+    cleanAuditValue(result.fileId, 160),
+    cleanAuditValue(result.url, 500),
+    cleanAuditValue(result.name, 200),
+    Number(result.size || 0),
+    cleanAuditValue(result.username, 80),
+    cleanAuditValue(result.message, 300),
+  ]);
+}
+
+function getLatestBackupStatus() {
+  const sheet = ensureBackupLogSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+  const row = sheet.getRange(lastRow, 1, 1, BACKUP_LOG_HEADERS.length).getDisplayValues()[0];
+  return {
+    timestamp: cleanValue(row[0]),
+    type: cleanValue(row[1]),
+    status: cleanValue(row[2]),
+    fileId: cleanValue(row[3]),
+    url: cleanValue(row[4]),
+    name: cleanValue(row[5]),
+    size: Number(String(row[6] || '').replace(/[^0-9.-]/g, '')) || 0,
+    username: cleanValue(row[7]),
+    message: cleanValue(row[8]),
+  };
 }
 
 function auditAdminAction(params, action, response, error) {
@@ -1148,6 +1261,7 @@ function readJsonResponsePayload(response) {
 }
 
 function getAuditTargetType(action) {
+  if (action === 'createBackup') return 'backup';
   if (action.indexOf('Package') !== -1) return 'package';
   if (action.indexOf('Feedback') !== -1 || action === 'uploadImage') return 'feedback';
   if (action.indexOf('Section') !== -1) return 'section';

@@ -247,6 +247,18 @@ Các nhóm chỉnh sửa chính:
 - `User`: tạo/khóa user admin/editor.
 - `Kiểm tra`: kiểm tra content/admin sheet và cấu hình bắt buộc.
 - `Booking`: kiểm tra booking sheet, email/error log, SePay payments, calendar và `SEPAY_WEBHOOK_SECRET`.
+- `Sao lưu`: admin tạo bản copy Google Sheet vào thư mục Drive và mở lại bản gần nhất.
+
+Thiết lập sao lưu Google Sheet:
+
+1. Tạo một thư mục riêng trên Google Drive bằng tài khoản đang sở hữu Web App.
+2. Copy phần ID trong URL thư mục Drive.
+3. Trong Apps Script content/admin, mở `Project Settings` -> `Script Properties`.
+4. Thêm property `BACKUP_FOLDER_ID` với giá trị là ID thư mục vừa tạo.
+5. Deploy lại Web App, mở admin và bấm `Kiểm tra`; `BACKUP_FOLDER_ID` và sheet `Backup log` phải báo OK.
+6. Bấm `Sao lưu`, sau đó dùng nút thư mục bên cạnh để mở bản copy gần nhất.
+
+Chỉ role `admin` được tạo hoặc xem liên kết backup. Hệ thống giới hạn một lần mỗi 2 phút và ghi cả kết quả thành công/lỗi vào `Backup log`.
 
 Xác nhận QR thủ công:
 
@@ -276,6 +288,7 @@ Vai trò:
 12. Test booking khi SePay tắt.
 13. Test booking khi SePay bật.
 14. Kiểm tra `Audit log`, `Email log`, `Error log`, `SePay payments`.
+15. Bấm `Sao lưu`, mở bản gần nhất và kiểm tra một dòng mới trong `Backup log`.
 
 ## 9. QA checklist
 
