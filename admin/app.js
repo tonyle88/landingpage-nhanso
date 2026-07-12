@@ -17,6 +17,7 @@ const state = {
   feedbackImages: [],
   paymentSettings: {},
   backupStatus: null,
+  restoreCandidate: null,
   search: '',
   selectedSection: 'all',
   miniReportFilter: { type: 'life_path', number: '1' },
@@ -51,6 +52,7 @@ const els = {
   healthCheck: document.getElementById('health-check'),
   bookingHealthCheck: document.getElementById('booking-health-check'),
   createBackup: document.getElementById('create-backup'),
+  restoreBackup: document.getElementById('restore-backup'),
   latestBackupLink: document.getElementById('latest-backup-link'),
   saveAll: document.getElementById('save-all'),
   syncTemplate: document.getElementById('sync-template'),
@@ -88,6 +90,7 @@ function bindEvents() {
   els.healthCheck?.addEventListener('click', runHealthCheck);
   els.bookingHealthCheck?.addEventListener('click', runBookingHealthCheck);
   els.createBackup?.addEventListener('click', createBackup);
+  els.restoreBackup?.addEventListener('click', restoreBackup);
   els.saveAll.addEventListener('click', saveAllDirtyItems);
   els.syncTemplate.addEventListener('click', syncTemplate);
   els.logout.addEventListener('click', logout);
@@ -165,6 +168,7 @@ async function loadContent(showNotice = false) {
     state.blogCategories = payload.blogCategories || [];
     state.blogArticles = payload.blogArticles || [];
     state.backupStatus = payload.backupStatus || null;
+    state.restoreCandidate = payload.restoreCandidate || null;
     state.originals = new Map(state.items.map((item) => [item.key, snapshotItem(item)]));
     render();
     renderBackupStatus();
@@ -185,6 +189,7 @@ async function createBackup() {
   try {
     const payload = await api('createBackup', { token: state.token });
     state.backupStatus = payload.backup || null;
+    state.restoreCandidate = payload.backup || null;
     renderBackupStatus();
     toast('Đã sao lưu Google Sheet thành công.', 'success');
   } catch (error) {
@@ -194,8 +199,46 @@ async function createBackup() {
   }
 }
 
+async function restoreBackup() {
+  if (!state.token || state.user?.role !== 'admin' || !state.restoreCandidate?.fileId) return;
+  const candidate = state.restoreCandidate;
+  const confirmation = window.prompt(
+    `Phục hồi dữ liệu từ bản "${candidate.name || candidate.timestamp}"?\n\nHệ thống sẽ tự sao lưu trạng thái hiện tại trước khi phục hồi. Nhập PHUC HOI để tiếp tục.`
+  );
+  if (confirmation !== 'PHUC HOI') {
+    if (confirmation !== null) toast('Đã hủy vì cụm từ xác nhận không đúng.');
+    return;
+  }
+
+  setBusy(els.restoreBackup, true);
+  setBusy(els.createBackup, true);
+  if (els.globalLoader) els.globalLoader.classList.remove('is-hidden');
+  try {
+    await api('restoreBackup', {
+      token: state.token,
+      backupFileId: candidate.fileId,
+      confirmation,
+    });
+    toast('Đã phục hồi dữ liệu. Đang tải lại admin...', 'success');
+    await loadContent();
+  } catch (error) {
+    handleSessionError(error);
+  } finally {
+    setBusy(els.restoreBackup, false);
+    setBusy(els.createBackup, false);
+    if (els.globalLoader) els.globalLoader.classList.add('is-hidden');
+  }
+}
+
 function renderBackupStatus() {
   if (!els.latestBackupLink) return;
+  if (els.restoreBackup) {
+    const canRestore = state.user?.role === 'admin' && Boolean(state.restoreCandidate?.fileId);
+    els.restoreBackup.disabled = !canRestore;
+    els.restoreBackup.title = canRestore
+      ? `Phục hồi từ: ${state.restoreCandidate.timestamp || state.restoreCandidate.name || ''}`
+      : 'Chưa có bản sao hợp lệ để phục hồi';
+  }
   const backup = state.backupStatus;
   const available = backup?.status === 'OK' && /^https:\/\//i.test(backup.url || '');
   els.latestBackupLink.classList.toggle('is-hidden', !available || state.user?.role !== 'admin');
@@ -350,10 +393,13 @@ function expireSession() {
   state.user = null;
   state.items = [];
   state.originals = new Map();
-    state.feedbackImages = [];
-    state.packages = [];
-    state.sectionsLayout = [];
-    state.paymentSettings = {};
+  state.feedbackImages = [];
+  state.packages = [];
+  state.sectionsLayout = [];
+  state.paymentSettings = {};
+  state.backupStatus = null;
+  state.restoreCandidate = null;
+  els.latestBackupLink?.removeAttribute('href');
   sessionStorage.removeItem(SESSION_KEY);
   showLogin();
 }
@@ -940,6 +986,9 @@ async function logout() {
   state.user = null;
   state.items = [];
   state.originals = new Map();
+  state.backupStatus = null;
+  state.restoreCandidate = null;
+  els.latestBackupLink?.removeAttribute('href');
   sessionStorage.removeItem(SESSION_KEY);
   showLogin();
 }

@@ -260,6 +260,17 @@ Thiết lập sao lưu Google Sheet:
 
 Chỉ role `admin` được tạo hoặc xem liên kết backup. Hệ thống giới hạn một lần mỗi 2 phút và ghi cả kết quả thành công/lỗi vào `Backup log`.
 
+Phục hồi bản sao:
+
+1. Kiểm tra nút thư mục để chắc chắn đúng bản backup gần nhất muốn dùng.
+2. Bấm `Phục hồi` và nhập chính xác `PHUC HOI`.
+3. Hệ thống kiểm tra file thuộc đúng thư mục backup và có đủ các sheet nghiệp vụ.
+4. Trước khi ghi đè, hệ thống tự tạo bản `ClowCat-Before-Restore-*` để có thể hoàn tác.
+5. Hệ thống phục hồi 7 sheet nội dung, feedback, packages, payment, sections và blog; `Admin users`, `Audit log` cùng `Backup log` hiện tại được giữ nguyên để tránh mất quyền truy cập và dấu vết vận hành.
+6. Sau khi admin tải lại, chạy `Kiểm tra` và kiểm tra landing/blog. Nếu cần hoàn tác, bản `pre_restore` vừa tạo sẽ trở thành ứng viên phục hồi gần nhất.
+
+Phục hồi giữ nguyên `SPREADSHEET_ID`. Script Properties, source Apps Script, deployment URL, `Admin users`, `Audit log` và `Backup log` không bị ghi đè bởi luồng này. Khi thật sự cần phục hồi tài khoản, thực hiện thủ công từ tab `Admin users` trong file backup sau khi đã kiểm tra quyền truy cập.
+
 Xác nhận QR thủ công:
 
 1. Khách bấm báo đã chuyển khoản, dòng booking chuyển sang `manual_review`.
@@ -289,6 +300,7 @@ Vai trò:
 13. Test booking khi SePay bật.
 14. Kiểm tra `Audit log`, `Email log`, `Error log`, `SePay payments`.
 15. Bấm `Sao lưu`, mở bản gần nhất và kiểm tra một dòng mới trong `Backup log`.
+16. Trên dữ liệu test, sửa một nội dung, phục hồi bản backup và xác nhận nội dung quay lại đúng trạng thái.
 
 ## 9. QA checklist
 

@@ -126,6 +126,7 @@ Việc làm:
 - [x] Thêm nút `Sao lưu` trong admin, có trạng thái đang chạy, kết quả gần nhất và liên kết mở bản backup.
 - [x] Sao lưu Google Sheet bằng bản copy có tên chứa ngày giờ và timezone Việt Nam.
 - [x] Thêm khóa chống chạy trùng và giới hạn tần suất thao tác thủ công.
+- [x] Thêm luồng phục hồi bản gần nhất, xác nhận bắt buộc và tự tạo bản an toàn trước khi ghi đè.
 - [ ] Tạo time-driven trigger chạy tự động hằng tuần và hiển thị trạng thái lịch trong admin.
 - [ ] Bật Apps Script API và xuất source project content/admin cùng booking thành file JSON trong mỗi phiên backup.
 - [ ] Áp dụng retention đơn giản: giữ 12 bản tự động gần nhất, không tự xóa bản được đánh dấu giữ lại.
@@ -136,6 +137,7 @@ Xác minh:
 
 - [ ] Bấm `Sao lưu` trong admin tạo đúng một phiên backup và ghi một dòng `Backup log`.
 - [ ] Editor không thể gọi endpoint backup hoặc xem URL file backup.
+- [ ] Phục hồi thử một bản backup; dữ liệu trở về đúng trạng thái và có bản `pre_restore` để hoàn tác.
 - [ ] Trigger tự động tạo backup khi không mở admin.
 - [ ] Source backup chứa đủ file của cả hai Apps Script nhưng không chứa secret.
 - [ ] Giả lập lỗi quyền Drive trả thông báo rõ trong admin và ghi log.

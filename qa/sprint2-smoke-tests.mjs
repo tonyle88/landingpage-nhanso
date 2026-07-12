@@ -210,14 +210,54 @@ assert.match(
 
 assert.match(
   contentScriptSource,
-  /function handleCreateBackup\(params\)[\s\S]*requireAdminSession\(params\.token, \['admin'\]\)[\s\S]*sourceFile\.makeCopy\(backupName, folder\)/,
+  /function handleCreateBackup\(params\)[\s\S]*requireAdminSession\(params\.token, \['admin'\]\)[\s\S]*createSpreadsheetBackupFile\(folderId, session\.username, 'manual_sheet'/,
   'Manual Sheet backup should require an administrator and copy into the configured Drive folder'
+);
+
+assert.match(
+  contentScriptSource,
+  /function createSpreadsheetBackupFile\(folderId, username, type, namePrefix\)[\s\S]*sourceFile\.makeCopy\(namePrefix \+ '-' \+ timestamp, folder\)/,
+  'Sheet backup helper should create the copy in the configured Drive folder'
 );
 
 assert.match(
   contentScriptSource,
   /function handleGetAdminContent\(params\)[\s\S]*session\.role === 'admin' \? getLatestBackupStatus\(\) : null/,
   'Editor responses must not expose the latest backup URL'
+);
+
+assert.match(
+  contentScriptSource,
+  /function handleRestoreBackup\(params\)[\s\S]*requireAdminSession\(params\.token, \['admin'\]\)[\s\S]*confirmation !== RESTORE_CONFIRMATION_TEXT/,
+  'Restore should require an administrator and an explicit confirmation phrase'
+);
+
+assert.match(
+  contentScriptSource,
+  /validateRestorableBackupFile\(backupFileId, folderId\)[\s\S]*validateRestoreSourceSheets\(sourceSpreadsheet\)[\s\S]*'pre_restore'/,
+  'Restore should validate its source and create a safety backup before changing data'
+);
+
+assert.match(
+  contentScriptSource,
+  /const RESTORABLE_SHEET_NAMES = \[[\s\S]*BLOG_ARTICLES_SHEET_NAME,[\s\S]*\];/,
+  'Restore should use an explicit allowlist that excludes audit and backup logs'
+);
+
+const restorableSheetsBlock = contentScriptSource.slice(
+  contentScriptSource.indexOf('const RESTORABLE_SHEET_NAMES = ['),
+  contentScriptSource.indexOf('const BLOG_CATEGORIES_HEADERS')
+);
+assert.doesNotMatch(
+  restorableSheetsBlock,
+  /ADMIN_USERS_SHEET_NAME|AUDIT_LOG_SHEET_NAME|BACKUP_LOG_SHEET_NAME/,
+  'One-click restore must preserve admin access and operational logs'
+);
+
+assert.match(
+  contentScriptSource,
+  /function clearCachesAfterRestore\(articleIds\)[\s\S]*cache\.removeAll/,
+  'Restore should invalidate landing, blog list, and article detail caches'
 );
 
 assert.match(
@@ -239,9 +279,21 @@ assert.match(
 );
 
 assert.match(
+  adminHtmlSource,
+  /id="restore-backup"/,
+  'Admin should expose the protected restore control'
+);
+
+assert.match(
   adminSource,
   /async function createBackup\(\)[\s\S]*api\('createBackup'/,
   'Admin backup control should call the protected backup endpoint'
+);
+
+assert.match(
+  adminSource,
+  /async function restoreBackup\(\)[\s\S]*window\.prompt\([\s\S]*confirmation !== 'PHUC HOI'[\s\S]*api\('restoreBackup'/,
+  'Admin restore should require typed confirmation before calling the endpoint'
 );
 
 assert.match(
