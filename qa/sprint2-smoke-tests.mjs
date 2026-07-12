@@ -228,6 +228,12 @@ assert.match(
 
 assert.match(
   contentScriptSource,
+  /session\.role === 'admin' \? getBackupScheduleStatus\(\) : null/,
+  'Editor responses must not expose backup trigger status'
+);
+
+assert.match(
+  contentScriptSource,
   /function handleRestoreBackup\(params\)[\s\S]*requireAdminSession\(params\.token, \['admin'\]\)[\s\S]*confirmation !== RESTORE_CONFIRMATION_TEXT/,
   'Restore should require an administrator and an explicit confirmation phrase'
 );
@@ -262,6 +268,30 @@ assert.match(
 
 assert.match(
   contentScriptSource,
+  /function handleSetBackupSchedule\(params\)[\s\S]*requireAdminSession\(params\.token, \['admin'\]\)[\s\S]*ScriptApp\.newTrigger\(BACKUP_TRIGGER_FUNCTION\)[\s\S]*onWeekDay\(ScriptApp\.WeekDay\.SUNDAY\)[\s\S]*inTimezone\(VIETNAM_TIMEZONE\)/,
+  'Only administrators should create the weekly Sunday backup trigger'
+);
+
+assert.match(
+  contentScriptSource,
+  /function runScheduledBackup\(\)[\s\S]*'auto_sheet'[\s\S]*pruneAutomaticBackups\(folderId\)/,
+  'Scheduled backup should create an automatic copy and then apply retention'
+);
+
+assert.match(
+  contentScriptSource,
+  /const AUTOMATIC_BACKUP_RETENTION = 12;[\s\S]*function pruneAutomaticBackups\(folderId\)[\s\S]*file\.getName\(\)\.indexOf\(AUTOMATIC_BACKUP_PREFIX\) !== 0 \|\| file\.isStarred\(\)[\s\S]*candidates\.slice\(AUTOMATIC_BACKUP_RETENTION\)/,
+  'Retention should keep 12 automatic backups and preserve starred files'
+);
+
+assert.match(
+  contentScriptSource,
+  /function buildBackupHealthStatus\(\)[\s\S]*getBackupScheduleStatus\(\)[\s\S]*lastRun\.status === 'OK'/,
+  'Content health check should report folder, trigger, and latest automatic backup status'
+);
+
+assert.match(
+  contentScriptSource,
   /LockService\.getScriptLock\(\)[\s\S]*cache\.put\(rateLimitKey, '1', BACKUP_RATE_LIMIT_SECONDS\)/,
   'Manual backup should prevent concurrent and repeated runs'
 );
@@ -285,6 +315,12 @@ assert.match(
 );
 
 assert.match(
+  adminHtmlSource,
+  /id="backup-schedule"/,
+  'Admin should expose weekly backup schedule control'
+);
+
+assert.match(
   adminSource,
   /async function createBackup\(\)[\s\S]*api\('createBackup'/,
   'Admin backup control should call the protected backup endpoint'
@@ -294,6 +330,12 @@ assert.match(
   adminSource,
   /async function restoreBackup\(\)[\s\S]*window\.prompt\([\s\S]*confirmation !== 'PHUC HOI'[\s\S]*api\('restoreBackup'/,
   'Admin restore should require typed confirmation before calling the endpoint'
+);
+
+assert.match(
+  adminSource,
+  /async function toggleBackupSchedule\(\)[\s\S]*api\('setBackupSchedule'[\s\S]*renderBackupStatus\(\)/,
+  'Admin should toggle and immediately render weekly backup schedule state'
 );
 
 assert.match(

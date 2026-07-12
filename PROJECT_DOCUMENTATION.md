@@ -271,6 +271,16 @@ Phục hồi bản sao:
 
 Phục hồi giữ nguyên `SPREADSHEET_ID`. Script Properties, source Apps Script, deployment URL, `Admin users`, `Audit log` và `Backup log` không bị ghi đè bởi luồng này. Khi thật sự cần phục hồi tài khoản, thực hiện thủ công từ tab `Admin users` trong file backup sau khi đã kiểm tra quyền truy cập.
 
+Sao lưu tự động:
+
+1. Trong admin, bấm `Bật lịch` và xác nhận.
+2. Trigger chạy vào Chủ Nhật khoảng 02:00-03:00 theo timezone `Asia/Ho_Chi_Minh`.
+3. Hệ thống giữ 12 file `ClowCat-Auto-Sheet-*` gần nhất và chuyển bản cũ hơn vào thùng rác.
+4. Muốn giữ vĩnh viễn một bản tự động, mở Google Drive và gắn sao cho file đó; retention sẽ bỏ qua file đã gắn sao.
+5. Nút đổi thành `Lịch đã bật`; di chuột để xem lần chạy gần nhất.
+6. Bấm lại nút này để tắt lịch. Tắt lịch không xóa những backup đã có.
+7. Nút `Kiểm tra` hiển thị quyền truy cập thư mục, số trigger, lịch chạy, retention và kết quả tự động gần nhất.
+
 Xác nhận QR thủ công:
 
 1. Khách bấm báo đã chuyển khoản, dòng booking chuyển sang `manual_review`.
@@ -301,6 +311,7 @@ Vai trò:
 14. Kiểm tra `Audit log`, `Email log`, `Error log`, `SePay payments`.
 15. Bấm `Sao lưu`, mở bản gần nhất và kiểm tra một dòng mới trong `Backup log`.
 16. Trên dữ liệu test, sửa một nội dung, phục hồi bản backup và xác nhận nội dung quay lại đúng trạng thái.
+17. Bật lịch backup, chạy health check và xác nhận có đúng một trigger.
 
 ## 9. QA checklist
 

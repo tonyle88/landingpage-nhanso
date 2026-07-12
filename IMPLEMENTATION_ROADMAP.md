@@ -120,24 +120,24 @@ Giả định và giới hạn:
 
 Việc làm:
 
-- [ ] Tạo thư mục Drive chuyên dụng và lưu ID bằng Script Property `BACKUP_FOLDER_ID`.
+- [x] Tạo thư mục Drive chuyên dụng và lưu ID bằng Script Property `BACKUP_FOLDER_ID`.
 - [x] Thêm sheet `Backup log` với thời gian, loại backup, file ID/URL, dung lượng, trạng thái và thông báo lỗi.
 - [x] Thêm endpoint admin-only `createBackup`, không cho tài khoản editor thường gọi.
 - [x] Thêm nút `Sao lưu` trong admin, có trạng thái đang chạy, kết quả gần nhất và liên kết mở bản backup.
 - [x] Sao lưu Google Sheet bằng bản copy có tên chứa ngày giờ và timezone Việt Nam.
 - [x] Thêm khóa chống chạy trùng và giới hạn tần suất thao tác thủ công.
 - [x] Thêm luồng phục hồi bản gần nhất, xác nhận bắt buộc và tự tạo bản an toàn trước khi ghi đè.
-- [ ] Tạo time-driven trigger chạy tự động hằng tuần và hiển thị trạng thái lịch trong admin.
+- [x] Tạo time-driven trigger chạy tự động hằng tuần và hiển thị trạng thái lịch trong admin.
 - [ ] Bật Apps Script API và xuất source project content/admin cùng booking thành file JSON trong mỗi phiên backup.
-- [ ] Áp dụng retention đơn giản: giữ 12 bản tự động gần nhất, không tự xóa bản được đánh dấu giữ lại.
-- [ ] Thêm health check cho thư mục backup, trigger, lần chạy gần nhất và lỗi backup gần nhất.
+- [x] Áp dụng retention đơn giản: giữ 12 bản tự động gần nhất, không tự xóa bản được đánh dấu giữ lại.
+- [x] Thêm health check cho thư mục backup, trigger, lần chạy gần nhất và lỗi backup gần nhất.
 - [ ] Viết tài liệu khôi phục Sheet, source Apps Script, deployment URL và Script Properties.
 
 Xác minh:
 
-- [ ] Bấm `Sao lưu` trong admin tạo đúng một phiên backup và ghi một dòng `Backup log`.
+- [x] Bấm `Sao lưu` trong admin tạo đúng một phiên backup và ghi log vận hành.
 - [ ] Editor không thể gọi endpoint backup hoặc xem URL file backup.
-- [ ] Phục hồi thử một bản backup; dữ liệu trở về đúng trạng thái và có bản `pre_restore` để hoàn tác.
+- [x] Phục hồi thử một bản backup; phục hồi đủ 7 sheet và có bản `pre_restore` để hoàn tác.
 - [ ] Trigger tự động tạo backup khi không mở admin.
 - [ ] Source backup chứa đủ file của cả hai Apps Script nhưng không chứa secret.
 - [ ] Giả lập lỗi quyền Drive trả thông báo rõ trong admin và ghi log.

@@ -18,6 +18,7 @@ const state = {
   paymentSettings: {},
   backupStatus: null,
   restoreCandidate: null,
+  backupSchedule: null,
   search: '',
   selectedSection: 'all',
   miniReportFilter: { type: 'life_path', number: '1' },
@@ -52,6 +53,7 @@ const els = {
   healthCheck: document.getElementById('health-check'),
   bookingHealthCheck: document.getElementById('booking-health-check'),
   createBackup: document.getElementById('create-backup'),
+  backupSchedule: document.getElementById('backup-schedule'),
   restoreBackup: document.getElementById('restore-backup'),
   latestBackupLink: document.getElementById('latest-backup-link'),
   saveAll: document.getElementById('save-all'),
@@ -90,6 +92,7 @@ function bindEvents() {
   els.healthCheck?.addEventListener('click', runHealthCheck);
   els.bookingHealthCheck?.addEventListener('click', runBookingHealthCheck);
   els.createBackup?.addEventListener('click', createBackup);
+  els.backupSchedule?.addEventListener('click', toggleBackupSchedule);
   els.restoreBackup?.addEventListener('click', restoreBackup);
   els.saveAll.addEventListener('click', saveAllDirtyItems);
   els.syncTemplate.addEventListener('click', syncTemplate);
@@ -169,6 +172,7 @@ async function loadContent(showNotice = false) {
     state.blogArticles = payload.blogArticles || [];
     state.backupStatus = payload.backupStatus || null;
     state.restoreCandidate = payload.restoreCandidate || null;
+    state.backupSchedule = payload.backupSchedule || null;
     state.originals = new Map(state.items.map((item) => [item.key, snapshotItem(item)]));
     render();
     renderBackupStatus();
@@ -178,6 +182,30 @@ async function loadContent(showNotice = false) {
   } finally {
     setBusy(els.refreshContent, false);
     if (els.globalLoader) els.globalLoader.classList.add('is-hidden');
+  }
+}
+
+async function toggleBackupSchedule() {
+  if (!state.token || state.user?.role !== 'admin') return;
+  const willEnable = !state.backupSchedule?.enabled;
+  const prompt = willEnable
+    ? 'Bật sao lưu tự động vào Chủ Nhật khoảng 02:00-03:00? Hệ thống sẽ giữ 12 bản tự động gần nhất.'
+    : 'Tắt lịch sao lưu tự động hằng tuần? Các file backup hiện có vẫn được giữ lại.';
+  if (!window.confirm(prompt)) return;
+
+  setBusy(els.backupSchedule, true);
+  try {
+    const payload = await api('setBackupSchedule', {
+      token: state.token,
+      enabled: willEnable ? 'true' : 'false',
+    });
+    state.backupSchedule = payload.backupSchedule || null;
+    renderBackupStatus();
+    toast(willEnable ? 'Đã bật lịch sao lưu hằng tuần.' : 'Đã tắt lịch sao lưu.', 'success');
+  } catch (error) {
+    handleSessionError(error);
+  } finally {
+    setBusy(els.backupSchedule, false);
   }
 }
 
@@ -232,6 +260,17 @@ async function restoreBackup() {
 
 function renderBackupStatus() {
   if (!els.latestBackupLink) return;
+  if (els.backupSchedule) {
+    const enabled = Boolean(state.backupSchedule?.enabled);
+    const label = els.backupSchedule.querySelector('span');
+    const icon = els.backupSchedule.querySelector('i');
+    if (label) label.textContent = enabled ? 'Lịch đã bật' : 'Bật lịch';
+    if (icon) icon.className = enabled ? 'fa-solid fa-calendar-check' : 'fa-regular fa-calendar';
+    const lastRun = state.backupSchedule?.lastRun;
+    els.backupSchedule.title = enabled
+      ? `Chủ Nhật 02:00-03:00. Lần chạy gần nhất: ${lastRun?.timestamp || 'chưa chạy'}`
+      : 'Bật sao lưu tự động hằng tuần';
+  }
   if (els.restoreBackup) {
     const canRestore = state.user?.role === 'admin' && Boolean(state.restoreCandidate?.fileId);
     els.restoreBackup.disabled = !canRestore;
@@ -288,6 +327,15 @@ function summarizeHealthCheck(payload) {
       const articleId = item.id ? ` [${item.id}]` : '';
       lines.push(`- ${item.name}${articleId}: ${item.kilobytes || 0} KB - ${item.cacheable ? 'cache OK' : 'vượt ngưỡng cache'}`);
     });
+  }
+  if (payload.backup) {
+    const schedule = payload.backup.schedule || {};
+    lines.push('', 'Sao lưu tự động:');
+    lines.push(`- Thư mục Drive: ${payload.backup.folderOk ? 'OK' : payload.backup.folderMessage}`);
+    lines.push(`- Lịch tuần: ${schedule.enabled ? `${schedule.day} ${schedule.hour} (${schedule.timezone})` : 'chưa bật'}`);
+    lines.push(`- Số trigger: ${schedule.triggerCount || 0}`);
+    lines.push(`- Giữ tối đa: ${schedule.retention || 0} bản tự động không gắn sao`);
+    if (schedule.lastRun) lines.push(`- Lần chạy gần nhất: ${schedule.lastRun.timestamp} - ${schedule.lastRun.status}`);
   }
   if (!badSheets.length && !badProps.length) lines.push('', 'Tất cả sheet bắt buộc đang đúng header.');
   return lines.join('\n');
@@ -399,6 +447,7 @@ function expireSession() {
   state.paymentSettings = {};
   state.backupStatus = null;
   state.restoreCandidate = null;
+  state.backupSchedule = null;
   els.latestBackupLink?.removeAttribute('href');
   sessionStorage.removeItem(SESSION_KEY);
   showLogin();
@@ -988,6 +1037,7 @@ async function logout() {
   state.originals = new Map();
   state.backupStatus = null;
   state.restoreCandidate = null;
+  state.backupSchedule = null;
   els.latestBackupLink?.removeAttribute('href');
   sessionStorage.removeItem(SESSION_KEY);
   showLogin();

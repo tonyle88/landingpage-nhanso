@@ -11,8 +11,11 @@ const BACKUP_LOG_SHEET_NAME = 'Backup log';
 const BACKUP_FOLDER_ID_PROPERTY = 'BACKUP_FOLDER_ID';
 const BACKUP_LOG_HEADERS = ['Timestamp', 'Type', 'Status', 'File ID', 'File URL', 'File name', 'Size', 'Username', 'Message'];
 const BACKUP_RATE_LIMIT_SECONDS = 120;
+const BACKUP_TRIGGER_FUNCTION = 'runScheduledBackup';
+const AUTOMATIC_BACKUP_PREFIX = 'ClowCat-Auto-Sheet-';
+const AUTOMATIC_BACKUP_RETENTION = 12;
 const RESTORE_CONFIRMATION_TEXT = 'PHUC HOI';
-const SCRIPT_VERSION = '2026-07-12-v23-sheet-restore';
+const SCRIPT_VERSION = '2026-07-12-v24-weekly-backup';
 const ADMIN_SESSION_SECONDS = 21600;
 const CACHE_SCHEMA_VERSION = 'v21';
 const LANDING_CONTENT_CACHE_KEY = 'landing_content_payload_' + CACHE_SCHEMA_VERSION;
@@ -149,6 +152,7 @@ const AUDITED_ADMIN_ACTIONS = [
   'deleteBlogArticle',
   'createBackup',
   'restoreBackup',
+  'setBackupSchedule',
 ];
 
 function onOpen() {
@@ -215,6 +219,7 @@ function doPost(e) {
     else if (action === 'healthCheck') response = handleHealthCheck(params);
     else if (action === 'createBackup') response = handleCreateBackup(params);
     else if (action === 'restoreBackup') response = handleRestoreBackup(params);
+    else if (action === 'setBackupSchedule') response = handleSetBackupSchedule(params);
     else if (action === 'saveLandingContentItem') response = handleSaveLandingContentItem(params);
     else if (action === 'saveLandingContentBatch') response = handleSaveLandingContentBatch(params);
     else if (action === 'changeAdminPassword') response = handleChangeAdminPassword(params);
@@ -407,6 +412,7 @@ function handleGetAdminContent(params) {
   const session = requireAdminSession(params.token);
   const backupStatus = session.role === 'admin' ? getLatestBackupStatus() : null;
   const restoreCandidate = session.role === 'admin' ? getLatestSuccessfulBackupStatus() : null;
+  const backupSchedule = session.role === 'admin' ? getBackupScheduleStatus() : null;
   const spreadsheet = getSpreadsheetByIdOrActive();
   const sheet = spreadsheet.getSheetByName(LANDING_CONTENT_SHEET_NAME);
   if (!sheet) {
@@ -422,6 +428,7 @@ function handleGetAdminContent(params) {
       blogArticles: getBlogArticles(true),
       backupStatus: backupStatus,
       restoreCandidate: restoreCandidate,
+      backupSchedule: backupSchedule,
       message: 'Chua co tab Landing content. Hay chay initializeLandingContentSheet mot lan.',
       scriptVersion: SCRIPT_VERSION,
     });
@@ -430,7 +437,7 @@ function handleGetAdminContent(params) {
   ensureLandingContentHeaderRow(sheet);
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
-    return jsonResponse({ ok: true, items: [], sections: [], packages: getPackages(true), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(true), sectionsLayout: getSectionsLayout(true), blogCategories: getBlogCategories(true), blogArticles: getBlogArticles(true), backupStatus: backupStatus, restoreCandidate: restoreCandidate, scriptVersion: SCRIPT_VERSION });
+    return jsonResponse({ ok: true, items: [], sections: [], packages: getPackages(true), feedbackImages: getFeedbackImages(), paymentSettings: getPaymentSettings(true), sectionsLayout: getSectionsLayout(true), blogCategories: getBlogCategories(true), blogArticles: getBlogArticles(true), backupStatus: backupStatus, restoreCandidate: restoreCandidate, backupSchedule: backupSchedule, scriptVersion: SCRIPT_VERSION });
   }
 
   const range = sheet.getRange(2, 1, lastRow - 1, LANDING_CONTENT_HEADERS.length);
@@ -472,6 +479,7 @@ function handleGetAdminContent(params) {
     blogArticles: getBlogArticles(true),
     backupStatus: backupStatus,
     restoreCandidate: restoreCandidate,
+    backupSchedule: backupSchedule,
     scriptVersion: SCRIPT_VERSION,
   });
 }
@@ -1060,14 +1068,42 @@ function handleHealthCheck(params) {
   const requiredPropertiesOk = propertyChecks.every((check) => check.ok || !check.required);
   const performance = buildPayloadHealthMetrics();
   const performanceOk = performance.landing.cacheable && performance.blogList.cacheable;
+  const backup = buildBackupHealthStatus();
 
   return jsonResponse({
-    ok: requiredSheetsOk && requiredPropertiesOk && performanceOk,
+    ok: requiredSheetsOk && requiredPropertiesOk && performanceOk && backup.ok,
     sheets: sheetChecks,
     properties: propertyChecks,
     performance: performance,
+    backup: backup,
     scriptVersion: SCRIPT_VERSION,
   });
+}
+
+function buildBackupHealthStatus() {
+  const folderId = cleanValue(PropertiesService.getScriptProperties().getProperty(BACKUP_FOLDER_ID_PROPERTY));
+  let folderOk = false;
+  let folderMessage = 'Thieu BACKUP_FOLDER_ID.';
+  if (folderId) {
+    try {
+      DriveApp.getFolderById(folderId).getName();
+      folderOk = true;
+      folderMessage = 'OK';
+    } catch (error) {
+      folderMessage = 'Khong truy cap duoc thu muc backup: ' + error.message;
+    }
+  }
+  const schedule = getBackupScheduleStatus();
+  const lastRunOk = !schedule.lastRun || schedule.lastRun.status === 'OK';
+  return {
+    ok: folderOk && schedule.enabled && schedule.triggerCount === 1 && lastRunOk,
+    folderOk: folderOk,
+    folderMessage: folderMessage,
+    schedule: schedule,
+    message: !schedule.enabled
+      ? 'Chua bat lich backup hang tuan.'
+      : (schedule.triggerCount !== 1 ? 'So luong trigger backup khong hop le.' : (lastRunOk ? 'OK' : 'Lan backup tu dong gan nhat bi loi.')),
+  };
 }
 
 function buildPayloadHealthMetrics() {
@@ -1193,6 +1229,94 @@ function handleCreateBackup(params) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function handleSetBackupSchedule(params) {
+  requireAdminSession(params.token, ['admin']);
+  const enabled = isTruthy(params.enabled);
+  const triggers = getBackupScheduleTriggers();
+  triggers.forEach((trigger) => ScriptApp.deleteTrigger(trigger));
+
+  if (enabled) {
+    ScriptApp.newTrigger(BACKUP_TRIGGER_FUNCTION)
+      .timeBased()
+      .onWeekDay(ScriptApp.WeekDay.SUNDAY)
+      .atHour(2)
+      .inTimezone(VIETNAM_TIMEZONE)
+      .create();
+  }
+
+  const schedule = getBackupScheduleStatus();
+  return jsonResponse({
+    ok: true,
+    backupSchedule: schedule,
+    message: enabled ? 'Da bat sao luu tu dong hang tuan.' : 'Da tat sao luu tu dong.',
+    scriptVersion: SCRIPT_VERSION,
+  });
+}
+
+function runScheduledBackup() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) return;
+
+  try {
+    const folderId = cleanValue(PropertiesService.getScriptProperties().getProperty(BACKUP_FOLDER_ID_PROPERTY));
+    if (!folderId) throw new Error('Chua cau hinh Script Property BACKUP_FOLDER_ID.');
+    const result = createSpreadsheetBackupFile(folderId, 'system', 'auto_sheet', AUTOMATIC_BACKUP_PREFIX.slice(0, -1));
+    try {
+      const removed = pruneAutomaticBackups(folderId);
+      result.message = 'Da sao luu tu dong. Da don ' + removed + ' ban cu.';
+    } catch (retentionError) {
+      result.message = 'Da sao luu tu dong, nhung khong don duoc ban cu: ' + retentionError.message;
+    }
+    appendBackupLog(result);
+  } catch (error) {
+    appendBackupLog({
+      timestamp: formatAdminDate(getVietnamNow()),
+      type: 'auto_sheet',
+      status: 'FAIL',
+      username: 'system',
+      message: error.message,
+    });
+    throw error;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function pruneAutomaticBackups(folderId) {
+  const folder = DriveApp.getFolderById(folderId);
+  const iterator = folder.getFiles();
+  const candidates = [];
+  while (iterator.hasNext()) {
+    const file = iterator.next();
+    if (file.getName().indexOf(AUTOMATIC_BACKUP_PREFIX) !== 0 || file.isStarred()) continue;
+    candidates.push(file);
+  }
+  candidates.sort((left, right) => right.getDateCreated().getTime() - left.getDateCreated().getTime());
+  let removed = 0;
+  candidates.slice(AUTOMATIC_BACKUP_RETENTION).forEach((file) => {
+    file.setTrashed(true);
+    removed += 1;
+  });
+  return removed;
+}
+
+function getBackupScheduleTriggers() {
+  return ScriptApp.getProjectTriggers().filter((trigger) => trigger.getHandlerFunction() === BACKUP_TRIGGER_FUNCTION);
+}
+
+function getBackupScheduleStatus() {
+  const triggers = getBackupScheduleTriggers();
+  return {
+    enabled: triggers.length > 0,
+    triggerCount: triggers.length,
+    day: 'Chủ Nhật',
+    hour: '02:00-03:00',
+    timezone: VIETNAM_TIMEZONE,
+    retention: AUTOMATIC_BACKUP_RETENTION,
+    lastRun: getLatestBackupStatusByType('auto_sheet'),
+  };
 }
 
 function handleRestoreBackup(params) {
@@ -1364,6 +1488,18 @@ function getLatestSuccessfulBackupStatus() {
   return null;
 }
 
+function getLatestBackupStatusByType(type) {
+  const sheet = ensureBackupLogSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+  const values = sheet.getRange(2, 1, lastRow - 1, BACKUP_LOG_HEADERS.length).getDisplayValues();
+  for (let index = values.length - 1; index >= 0; index -= 1) {
+    const status = backupLogRowToStatus(values[index]);
+    if (status.type === type) return status;
+  }
+  return null;
+}
+
 function backupLogRowToStatus(row) {
   return {
     timestamp: cleanValue(row[0]),
@@ -1411,7 +1547,7 @@ function readJsonResponsePayload(response) {
 }
 
 function getAuditTargetType(action) {
-  if (action === 'createBackup' || action === 'restoreBackup') return 'backup';
+  if (action === 'createBackup' || action === 'restoreBackup' || action === 'setBackupSchedule') return 'backup';
   if (action.indexOf('Package') !== -1) return 'package';
   if (action.indexOf('Feedback') !== -1 || action === 'uploadImage') return 'feedback';
   if (action.indexOf('Section') !== -1) return 'section';
