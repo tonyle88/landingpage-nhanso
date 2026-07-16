@@ -71,6 +71,8 @@ Nen cac muc trong plan lien quan den `thankUrl`, `confirmManualTransfer`, `SEPAY
 - Da them Vercel security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`.
 - Da them `Content-Security-Policy-Report-Only` theo allowlist tai nguyen hien tai. Can theo doi violation truoc khi doi sang enforcement.
 - CSP violation duoc gui den `/api/csp-report`; endpoint chi log URL da loai query/hash de tranh ghi token hoac du lieu nhay cam.
+- DOMPurify 3.0.6, Font Awesome 6.4.0, Quill 1.3.6 va Google Fonts da duoc self-host de loai runtime CDN/SRI risk; CSP da bo allowlist cac CDN nay.
+- Da them `Cross-Origin-Resource-Policy: same-site` va `X-Permitted-Cross-Domain-Policies: none`.
 - Da them `/api/sepay-webhook` de xac minh HMAC-SHA256 tren raw body va timestamp truoc khi forward vao Apps Script.
 - Apps Script booking dung `SEPAY_PROXY_SECRET` thay cho secret tren query string, va ghi/chan trung `SePay transaction ID`.
 - Endpoint `checkSepayPayment` yeu cau dong thoi `paymentOrderId` va `bookingId` UUID, chi tra trang thai toi thieu de giam nguy co IDOR/ro ri so tien.
