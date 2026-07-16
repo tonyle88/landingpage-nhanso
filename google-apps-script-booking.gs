@@ -24,6 +24,7 @@ const SEPAY_PAYMENTS_HEADERS = [
   'Số tiền',
   'Nội dung',
   'Dữ liệu gốc',
+  'SePay transaction ID',
 ];
 
 const HEADERS = [
@@ -80,7 +81,7 @@ const BOOKING_RATE_LIMIT_SECONDS = 15 * 60;
 const BOOKING_RATE_LIMIT_MAX = 3;
 const BOOKING_HOLD_MINUTES = 15;
 const MANUAL_REVIEW_HOLD_MINUTES = 24 * 60;
-const SCRIPT_VERSION = '2026-07-11-v14-booking-reservation';
+const SCRIPT_VERSION = '2026-07-16-v16-sepay-signed-test';
 let LANDING_CONTENT_VALUE_CACHE = null;
 
 function onOpen() {
@@ -596,10 +597,13 @@ function handleCheckSepayPayment(params) {
 }
 
 function handleSepayWebhook(params) {
-  const configuredSecret = getSepayWebhookSecret();
-  if (cleanValue(params.secret) !== configuredSecret) throw new Error('Secret webhook SePay khong hop le.');
+  const configuredSecret = getSepayProxySecret();
+  if (!constantTimeStringEquals(cleanValue(params.proxySecret), configuredSecret)) {
+    throw new Error('Yeu cau webhook SePay khong den tu cong xac thuc.');
+  }
 
   const orderId = extractSepayOrderId(params);
+  const transactionId = extractSepayTransactionId(params);
   const status = normalizeSepayStatus(
     getFirstParamValue(params, [
       'status',
@@ -626,6 +630,17 @@ function handleSepayWebhook(params) {
     'data.transferAmount',
     'data.transfer_amount',
   ]));
+
+  if (isSepaySignedTestWebhook(params, orderId)) {
+    saveSepayPaymentStatus('SEPAY_TEST', 'test', amount, params);
+    return jsonResponse({
+      ok: true,
+      success: true,
+      test: true,
+      status: 'test',
+      scriptVersion: SCRIPT_VERSION,
+    });
+  }
   
   if (!orderId) {
     saveSepayPaymentStatus('UNKNOWN', status, amount, params);
@@ -638,6 +653,17 @@ function handleSepayWebhook(params) {
   lock.waitLock(10000);
 
   try {
+    if (transactionId && findSepayPaymentByTransactionId(transactionId)) {
+      return jsonResponse({
+        ok: true,
+        success: true,
+        duplicate: true,
+        status: status,
+        paymentOrderId: orderId,
+        scriptVersion: SCRIPT_VERSION,
+      });
+    }
+
     const rowNumber = findBookingRowByPaymentOrderId(sheet, orderId);
     if (!rowNumber) {
       saveSepayPaymentStatus(orderId, 'unmatched', amount, params);
@@ -679,6 +705,13 @@ function handleSepayWebhook(params) {
   });
 }
 
+function isSepaySignedTestWebhook(params, orderId) {
+  if (orderId) return false;
+  const gateway = cleanValue(getFirstParamValue(params, ['gateway', 'data.gateway'])).toLowerCase();
+  const content = cleanValue(getSepayContent(params)).toUpperCase();
+  return gateway === 'sepay' && content === 'SEPAY TEST WEBHOOK';
+}
+
 function handleBookingHealthCheck() {
   ensureHeaderRow(getTargetSheet());
   const checks = [
@@ -687,7 +720,7 @@ function handleBookingHealthCheck() {
     checkBookingSheetExists(ERROR_LOG_SHEET),
     checkBookingSheetHeaders(SEPAY_PAYMENTS_SHEET, SEPAY_PAYMENTS_HEADERS),
     checkBookingCalendar(),
-    checkBookingScriptProperty('SEPAY_WEBHOOK_SECRET'),
+    checkBookingScriptProperty('SEPAY_PROXY_SECRET'),
   ];
 
   return jsonResponse({
@@ -741,10 +774,18 @@ function checkBookingScriptProperty(key) {
   };
 }
 
-function getSepayWebhookSecret() {
-  const secret = cleanValue(PropertiesService.getScriptProperties().getProperty('SEPAY_WEBHOOK_SECRET'));
-  if (!secret) throw new Error('Chua cau hinh SEPAY_WEBHOOK_SECRET trong Script Properties.');
+function getSepayProxySecret() {
+  const secret = cleanValue(PropertiesService.getScriptProperties().getProperty('SEPAY_PROXY_SECRET'));
+  if (!secret) throw new Error('Chua cau hinh SEPAY_PROXY_SECRET trong Script Properties.');
   return secret;
+}
+
+function constantTimeStringEquals(actual, expected) {
+  const left = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, cleanValue(actual));
+  const right = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, cleanValue(expected));
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) difference |= left[index] ^ right[index];
+  return difference === 0;
 }
 
 function sendBookingEmails(payload, sheet, rowNumber) {
@@ -1257,9 +1298,37 @@ function saveSepayPaymentStatus(orderId, status, amount, rawParams) {
     amount || '',
     sanitizePlainText(content, 500),
     JSON.stringify(maskSensitiveParams(rawParams || {})).slice(0, 4500),
+    extractSepayTransactionId(rawParams || {}),
   ]);
   sheet.getRange(sheet.getLastRow(), 4).setNumberFormat(PRICE_NUMBER_FORMAT);
   return normalizedStatus;
+}
+
+function findSepayPaymentByTransactionId(transactionId) {
+  const target = cleanValue(transactionId);
+  if (!target || target === '0') return null;
+  const sheet = ensureSepayPaymentsSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+  const values = sheet.getRange(2, 7, lastRow - 1, 1).getDisplayValues();
+  for (let index = values.length - 1; index >= 0; index -= 1) {
+    if (cleanValue(values[index][0]) === target) return index + 2;
+  }
+  return null;
+}
+
+function extractSepayTransactionId(params) {
+  return sanitizePlainText(getFirstParamValue(params, [
+    'id',
+    'transactionId',
+    'transaction_id',
+    'referenceCode',
+    'reference_code',
+    'data.id',
+    'data.transactionId',
+    'data.transaction_id',
+    'data.referenceCode',
+  ]), 160);
 }
 
 function normalizeSepayStatus(status) {

@@ -7,3 +7,5 @@ venv/
 Pdf create/previews/
 /mentor_bao.png
 /mentor_cuong.png
+.vercel
+.env*

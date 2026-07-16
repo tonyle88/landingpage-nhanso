@@ -66,4 +66,11 @@ Code.gs
 ```
 
 Nen cac muc trong plan lien quan den `thankUrl`, `confirmManualTransfer`, `SEPAY_SECRET`, `extractAmount()` va `getSpreadsheet()` cua `Code.gs` khong the sua truc tiep trong repo nay.
+# Security deployment 2026-07-16
+
+- Da them Vercel security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`.
+- Da them `Content-Security-Policy-Report-Only` theo allowlist tai nguyen hien tai. Can theo doi violation truoc khi doi sang enforcement.
+- Da them `/api/sepay-webhook` de xac minh HMAC-SHA256 tren raw body va timestamp truoc khi forward vao Apps Script.
+- Apps Script booking dung `SEPAY_PROXY_SECRET` thay cho secret tren query string, va ghi/chan trung `SePay transaction ID`.
+- Sau deploy phai rotate secret cu, cau hinh ba environment variables tren Vercel va chuyen SePay production sang HMAC-SHA256.
 
