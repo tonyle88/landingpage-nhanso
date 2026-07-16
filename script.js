@@ -2039,7 +2039,10 @@ function stopSepayWaiting() {
 async function checkSepayPaymentStatus() {
   if (!paymentSettings.sepayEnabled || !isConfiguredGoogleScriptUrl()) return;
   try {
-    const params = bookingDataToUrlParams({ paymentOrderId: bookingState.paymentOrderId }, 'checkSepayPayment').toString();
+    const params = bookingDataToUrlParams({
+      paymentOrderId: bookingState.paymentOrderId,
+      bookingId: bookingState.bookingId,
+    }, 'checkSepayPayment').toString();
     const res = await fetchWithTimeout(`${BOOKING_SCRIPT_URL}?${params}`, {
       method: 'GET',
       mode: 'cors',

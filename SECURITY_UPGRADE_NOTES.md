@@ -73,4 +73,5 @@ Nen cac muc trong plan lien quan den `thankUrl`, `confirmManualTransfer`, `SEPAY
 - CSP violation duoc gui den `/api/csp-report`; endpoint chi log URL da loai query/hash de tranh ghi token hoac du lieu nhay cam.
 - Da them `/api/sepay-webhook` de xac minh HMAC-SHA256 tren raw body va timestamp truoc khi forward vao Apps Script.
 - Apps Script booking dung `SEPAY_PROXY_SECRET` thay cho secret tren query string, va ghi/chan trung `SePay transaction ID`.
+- Endpoint `checkSepayPayment` yeu cau dong thoi `paymentOrderId` va `bookingId` UUID, chi tra trang thai toi thieu de giam nguy co IDOR/ro ri so tien.
 - Sau deploy phai rotate secret cu, cau hinh ba environment variables tren Vercel va chuyen SePay production sang HMAC-SHA256.

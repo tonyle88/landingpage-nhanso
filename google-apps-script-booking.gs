@@ -81,7 +81,7 @@ const BOOKING_RATE_LIMIT_SECONDS = 15 * 60;
 const BOOKING_RATE_LIMIT_MAX = 3;
 const BOOKING_HOLD_MINUTES = 15;
 const MANUAL_REVIEW_HOLD_MINUTES = 24 * 60;
-const SCRIPT_VERSION = '2026-07-16-v16-sepay-signed-test';
+const SCRIPT_VERSION = '2026-07-16-v17-payment-status-idor';
 let LANDING_CONTENT_VALUE_CACHE = null;
 
 function onOpen() {
@@ -578,20 +578,20 @@ function handleLogClientError(params) {
 
 function handleCheckSepayPayment(params) {
   const orderId = sanitizePlainText(params.paymentOrderId || params.transferContent, 120);
+  const bookingId = cleanBookingId(params.bookingId);
   if (!orderId) throw new Error('Thieu ma thanh toan SePay.');
+  if (!bookingId) throw new Error('Thieu ma phien dat lich.');
 
   const sheet = getTargetSheet();
   ensureHeaderRow(sheet);
   const rowNumber = findBookingRowByPaymentOrderId(sheet, orderId);
   const booking = rowNumber ? getBookingRecordByRow(sheet, rowNumber) : null;
+  if (booking && !constantTimeStringEquals(booking.bookingId, bookingId)) {
+    throw new Error('Khong tim thay phien thanh toan phu hop.');
+  }
   return jsonResponse({
     ok: true,
     status: booking ? booking.status : 'pending',
-    payment: booking ? {
-      paymentOrderId: booking.paymentOrderId,
-      expectedAmount: booking.amount,
-      status: booking.status,
-    } : null,
     scriptVersion: SCRIPT_VERSION,
   });
 }

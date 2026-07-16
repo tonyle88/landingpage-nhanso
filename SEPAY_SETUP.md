@@ -164,6 +164,8 @@ Frontend se poll action:
 checkSepayPayment
 ```
 
+Moi request poll phai gui ca `paymentOrderId` va `bookingId`. Backend doi chieu constant-time va chi tra `status`, khong tra lai so tien hay chi tiet booking.
+
 Neu thay status `paid`, trang se:
 
 1. Luu booking vao Sheet.
