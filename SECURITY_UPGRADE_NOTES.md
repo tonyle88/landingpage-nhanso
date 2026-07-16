@@ -70,7 +70,7 @@ Nen cac muc trong plan lien quan den `thankUrl`, `confirmManualTransfer`, `SEPAY
 
 - Da them Vercel security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`.
 - Da them `Content-Security-Policy-Report-Only` theo allowlist tai nguyen hien tai. Can theo doi violation truoc khi doi sang enforcement.
+- CSP violation duoc gui den `/api/csp-report`; endpoint chi log URL da loai query/hash de tranh ghi token hoac du lieu nhay cam.
 - Da them `/api/sepay-webhook` de xac minh HMAC-SHA256 tren raw body va timestamp truoc khi forward vao Apps Script.
 - Apps Script booking dung `SEPAY_PROXY_SECRET` thay cho secret tren query string, va ghi/chan trung `SePay transaction ID`.
 - Sau deploy phai rotate secret cu, cau hinh ba environment variables tren Vercel va chuyen SePay production sang HMAC-SHA256.
-
