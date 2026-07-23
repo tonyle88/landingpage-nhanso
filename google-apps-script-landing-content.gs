@@ -1350,11 +1350,7 @@ function authorizeBackupAutomation() {
   DriveApp.getFolderById(folderId).getName();
   ScriptApp.getProjectTriggers();
   const message = 'Da cap quyen backup tu dong. Hay quay lai admin va bam Bat lich.';
-  try {
-    SpreadsheetApp.getUi().alert(message);
-  } catch (error) {
-    console.log(message);
-  }
+  console.log(message);
   return message;
 }
 

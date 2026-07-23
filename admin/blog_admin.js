@@ -275,9 +275,13 @@ window.openBlogArticleModal = function(article = null) {
               <div style="margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                 <input type="file" id="article-thumb-file" accept="image/jpeg,image/png,image/webp" style="display:none;">
                 <button type="button" class="ghost-button" id="article-thumb-upload-btn" style="font-size: 0.85rem; padding: 6px 12px;" onclick="document.getElementById('article-thumb-file').click()">
-                  <i class="fa-solid fa-cloud-arrow-up"></i> Tải ảnh lên ImgBB
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Tải ảnh lên Drive
                 </button>
                 <span id="article-thumb-upload-status" style="font-size: 0.85rem; color: var(--text-muted);"></span>
+              </div>
+              <div id="article-thumb-preview" class="article-thumb-preview" hidden>
+                <img id="article-thumb-preview-image" alt="Xem trước ảnh thumbnail">
+                <span id="article-thumb-preview-message">Đang tải ảnh xem trước...</span>
               </div>
             </div>
           </div>
@@ -344,6 +348,10 @@ window.openBlogArticleModal = function(article = null) {
       theme: 'snow',
       modules: { toolbar: FULL_TOOLBAR }
     });
+
+    document.getElementById('article-thumbnail').addEventListener('input', function() {
+      updateArticleThumbnailPreview(this.value);
+    });
     
     // Thumbnail file upload via api uploadImage
     document.getElementById('article-thumb-file').addEventListener('change', async function() {
@@ -364,6 +372,7 @@ window.openBlogArticleModal = function(article = null) {
         });
         if (res.url) {
           document.getElementById('article-thumbnail').value = res.url;
+          updateArticleThumbnailPreview(res.url);
           statusEl.textContent = '✓ Tải lên thành công!';
           statusEl.style.color = 'var(--primary)';
         }
@@ -428,6 +437,8 @@ window.openBlogArticleModal = function(article = null) {
   modal.querySelector('#article-original-date').value = article ? (article.date || '') : '';
   modal.querySelector('#article-date').value = dateValue;
   modal.querySelector('#article-thumbnail').value = article ? (article.thumbnail || '') : '';
+  modal.querySelector('#article-thumb-upload-status').textContent = '';
+  updateArticleThumbnailPreview(article ? article.thumbnail : '');
   if (window.summaryQuill) {
     window.summaryQuill.root.innerHTML = article ? window.ClowSanitizeHtml(article.summary || '') : '';
   }
@@ -439,6 +450,40 @@ window.openBlogArticleModal = function(article = null) {
   
   openModal(modal);
 };
+
+function updateArticleThumbnailPreview(url) {
+  const preview = document.getElementById('article-thumb-preview');
+  const image = document.getElementById('article-thumb-preview-image');
+  const message = document.getElementById('article-thumb-preview-message');
+  if (!preview || !image || !message) return;
+
+  const imageUrl = String(url || '').trim();
+  if (!imageUrl) {
+    preview.hidden = true;
+    image.hidden = true;
+    image.removeAttribute('src');
+    message.textContent = '';
+    return;
+  }
+
+  preview.hidden = false;
+  image.hidden = true;
+  message.hidden = false;
+  message.textContent = 'Đang tải ảnh xem trước...';
+  image.dataset.requestedUrl = imageUrl;
+  image.onload = function() {
+    if (this.dataset.requestedUrl !== imageUrl) return;
+    this.hidden = false;
+    message.hidden = true;
+  };
+  image.onerror = function() {
+    if (this.dataset.requestedUrl !== imageUrl) return;
+    this.hidden = true;
+    message.hidden = false;
+    message.textContent = 'Không thể tải ảnh xem trước. Hãy kiểm tra quyền chia sẻ của ảnh.';
+  };
+  image.src = imageUrl;
+}
 
 window.deleteBlogCategory = async function(id) {
   if (!confirm('Bạn có chắc chắn muốn xóa chủ đề này?')) return;
