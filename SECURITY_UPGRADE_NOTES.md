@@ -11,6 +11,7 @@ Tai lieu nay ghi lai cac muc trong `implementation_plan.md` da ap dung duoc vao 
 - Neu session admin het han, frontend se xoa session va dua ve man hinh dang nhap.
 - Nut nhac nen se tu dong dong bo icon khi trinh duyet tu pause/play audio.
 - ImgBB API key da duoc lay qua Apps Script Script Properties, khong nen hardcode trong source.
+- Content Security Policy da chuyen tu che do chi bao cao sang enforcement sau giai doan theo doi violation.
 
 ## ImgBB API Key migration
 
@@ -69,7 +70,7 @@ Nen cac muc trong plan lien quan den `thankUrl`, `confirmManualTransfer`, `SEPAY
 # Security deployment 2026-07-16
 
 - Da them Vercel security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`.
-- Da them `Content-Security-Policy-Report-Only` theo allowlist tai nguyen hien tai. Can theo doi violation truoc khi doi sang enforcement.
+- Da bat `Content-Security-Policy` enforcement theo allowlist tai nguyen hien tai; violation van duoc gui ve endpoint bao cao.
 - CSP violation duoc gui den `/api/csp-report`; endpoint chi log URL da loai query/hash de tranh ghi token hoac du lieu nhay cam.
 - DOMPurify 3.0.6, Font Awesome 6.4.0, Quill 1.3.6 va Google Fonts da duoc self-host de loai runtime CDN/SRI risk; CSP da bo allowlist cac CDN nay.
 - Da them `Cross-Origin-Resource-Policy: same-site` va `X-Permitted-Cross-Domain-Policies: none`.
