@@ -2,6 +2,42 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3m9zkv9mX-BgMtB7DZ
 const RELATED_VIEWED_KEY = 'clowcat_blog_related_viewed';
 const BLOG_API_TIMEOUT_MS = 12000;
 const BLOG_API_RETRY_COUNT = 1;
+const BLOG_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+
+function formatBlogDateTime(value) {
+  const text = String(value || '').trim();
+  if (!text) return '—';
+
+  // Giá trị từ ô datetime-local không có múi giờ. Đây là giờ Việt Nam đã nhập,
+  // vì vậy giữ nguyên các thành phần thay vì để trình duyệt tự chuyển múi giờ.
+  const localMatch = text.match(
+    /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?)?$/
+  );
+  if (localMatch) {
+    const [, year, month, day, hour = '00', minute = '00'] = localMatch;
+    return `${day}/${month}/${year}, ${hour}:${minute}`;
+  }
+
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) return '—';
+
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('vi-VN', {
+      timeZone: BLOG_TIME_ZONE,
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    })
+      .formatToParts(date)
+      .filter((part) => part.type !== 'literal')
+      .map((part) => [part.type, part.value])
+  );
+
+  return `${parts.day}/${parts.month}/${parts.year}, ${parts.hour}:${parts.minute}`;
+}
 
 let blogCategories = [];
 let blogArticles = [];
@@ -382,7 +418,7 @@ function renderBlogHome() {
           <div style="padding: 22px 20px 20px; flex: 1; display: flex; flex-direction: column;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
               <span style="width:4px; height:4px; border-radius:50%; background: var(--primary); display:inline-block;"></span>
-              <span style="font-size: 0.8rem; color: rgba(212,168,67,0.7); letter-spacing:1px;"><i class="fa-regular fa-clock"></i> ${a.date.replace('T', ' ')}</span>
+              <span style="font-size: 0.8rem; color: rgba(212,168,67,0.7); letter-spacing:1px;"><i class="fa-regular fa-clock"></i> ${formatBlogDateTime(a.date)}</span>
             </div>
             <h3 style="font-family:'Playfair Display',serif; font-size:1.2rem; margin-bottom:12px; line-height:1.55; text-align:justify; color: #f0e0c0; font-weight:700;">${escapeHtml(a.title)}</h3>
             <div style="color: rgba(235,215,185,0.9); font-size:0.9rem; line-height:1.65; flex:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;">${escapeHtml((a.summary || '').replace(/<[^>]*>/g, ''))}</div>
@@ -643,7 +679,7 @@ async function renderArticleDetail(id) {
         </a>
         <div style="display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
           <span style="background: linear-gradient(135deg, rgba(212,168,67,0.2), rgba(212,168,67,0.05)); border: 1px solid rgba(212,168,67,0.4); color: var(--primary); padding:6px 16px; border-radius:20px; font-size:0.8rem; font-weight:700; letter-spacing:1px; white-space:nowrap;">${catName}</span>
-          <span style="font-size:0.82rem; color:rgba(212,168,67,0.6); white-space:nowrap;"><i class="fa-regular fa-clock"></i> ${article.date.replace('T', ' ')}</span>
+          <span style="font-size:0.82rem; color:rgba(212,168,67,0.6); white-space:nowrap;"><i class="fa-regular fa-clock"></i> ${formatBlogDateTime(article.date)}</span>
         </div>
       </div>
 
@@ -700,7 +736,7 @@ async function renderArticleDetail(id) {
           ${r.thumbnail ? `<div style="width:110px; height:75px; flex-shrink:0; border-radius:8px; overflow:hidden; border:1px solid rgba(212,168,67,0.3);"><img src="${r.thumbnail}" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover;"></div>` : `<div style="width:110px; height:75px; flex-shrink:0; border-radius:8px; background:linear-gradient(135deg,#1a1006,#2e1f07); display:flex; align-items:center; justify-content:center; border:1px solid rgba(212,168,67,0.2);"><i class="fa-solid fa-star" style="color:rgba(212,168,67,0.3);"></i></div>`}
           <div style="display:flex; flex-direction:column; justify-content:center; flex:1;">
             <h4 style="font-family:'Playfair Display',serif; font-size:1rem; margin-bottom:6px; line-height:1.4; color:#f0e0c0;">${r.title}</h4>
-            <div style="font-size:0.8rem; color:rgba(212,168,67,0.6);"><i class="fa-regular fa-clock"></i> ${r.date.replace('T', ' ')}</div>
+            <div style="font-size:0.8rem; color:rgba(212,168,67,0.6);"><i class="fa-regular fa-clock"></i> ${formatBlogDateTime(r.date)}</div>
           </div>
           <div style="display:flex; align-items:center; color:rgba(212,168,67,0.5); font-size:0.9rem;"><i class="fa-solid fa-chevron-right"></i></div>
         </a>
