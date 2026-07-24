@@ -1,0 +1,42 @@
+{
+  "name": "nhanso-next-app",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "staging:dry-run": "node ../qa/run-supabase-staging-cli.mjs dry-run",
+    "staging:gen-types": "node ../qa/generate-supabase-staging-types.mjs",
+    "staging:link": "node ../qa/run-supabase-staging-cli.mjs link",
+    "staging:migrations": "node ../qa/run-supabase-staging-cli.mjs migrations",
+    "staging:preflight": "node --env-file=.env.staging.local ../qa/supabase-staging-preflight.mjs",
+    "staging:push": "node ../qa/run-supabase-staging-cli.mjs push",
+    "staging:smoke": "node ../qa/supabase-staging-smoke.mjs",
+    "test:parity": "node --test ../qa/nextjs-m1-parity-tests.mjs",
+    "test:public-read": "node --test ../qa/nextjs-m3-public-read-tests.mjs",
+    "test:rls": "node ../qa/run-supabase-rls-isolated.mjs",
+    "test:schema": "node --test ../qa/supabase-schema-tests.mjs",
+    "test:security": "node --test ../qa/csp-report-tests.mjs ../qa/sepay-webhook-security-tests.mjs ../qa/sprint2-smoke-tests.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.110.8",
+    "next": "16.2.11",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "supabase": "2.109.1",
+    "typescript": "5.9.3"
+  },
+  "overrides": {
+    "postcss": "8.5.22",
+    "sharp": "0.35.3"
+  },
+  "engines": {
+    "node": ">=24 <27"
+  }
+}

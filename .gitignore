@@ -8,4 +8,8 @@ Pdf create/previews/
 /mentor_bao.png
 /mentor_cuong.png
 .vercel
+.next/
+node_modules/
 .env*
+!.env.example
+!next-app/.env.example
