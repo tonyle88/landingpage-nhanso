@@ -1,8 +1,10 @@
 import { headers } from "next/headers";
 import { connection } from "next/server";
+import type { Metadata } from "next";
 import BlogRuntime from "./blog-runtime";
 import { serializeJsonForHtml } from "@/lib/blog";
 import { getPublicBlogCategories } from "@/lib/supabase/public-blog-categories";
+import { getPublicBlogPosts } from "@/lib/supabase/public-blog-posts";
 
 const navItems = [
   { href: "/#about", label: "Về Chúng Tôi" },
@@ -40,16 +42,114 @@ const socialLinks = [
   },
 ];
 
-export default async function BlogPage() {
+type BlogPageProps = {
+  searchParams: Promise<{ id?: string | string[] }>;
+};
+
+function requestedArticleId(value: string | string[] | undefined) {
+  return typeof value === "string" ? value : "";
+}
+
+export async function generateMetadata({
+  searchParams,
+}: BlogPageProps): Promise<Metadata> {
+  const articleId = requestedArticleId((await searchParams).id);
+  const publicBlogPosts = await getPublicBlogPosts();
+  const article = publicBlogPosts.posts.find((post) => post.id === articleId);
+
+  if (!article) {
+    return {
+      title: "Giải Mã Nhân Số Học | Clow Cat Patronus",
+      description:
+        "Bài viết giúp bạn khám phá bản thân, tính cách, điểm mạnh và hành trình phát triển qua nhân số học.",
+      alternates: { canonical: "/blog" },
+      openGraph: {
+        title: "Giải Mã Nhân Số Học | Clow Cat Patronus",
+        description:
+          "Khám phá bản thân và hành trình phát triển của chính mình qua nhân số học.",
+        images: ["/assets/images/hero_bg.png"],
+      },
+    };
+  }
+
+  const canonical = `/blog?id=${encodeURIComponent(article.id)}`;
+  return {
+    title: `${article.title} | Clow Cat Patronus`,
+    description: article.summary,
+    alternates: { canonical },
+    openGraph: {
+      type: "article",
+      title: article.title,
+      description: article.summary,
+      publishedTime: article.date,
+      url: canonical,
+      images: article.thumbnail
+        ? [article.thumbnail]
+        : ["/assets/images/hero_bg.png"],
+    },
+  };
+}
+
+export default async function BlogPage({ searchParams }: BlogPageProps) {
   await connection();
-  const [requestHeaders, publicBlogCategories] = await Promise.all([
-    headers(),
-    getPublicBlogCategories(),
-  ]);
+  const [requestHeaders, publicBlogCategories, publicBlogPosts, params] =
+    await Promise.all([
+      headers(),
+      getPublicBlogCategories(),
+      getPublicBlogPosts(),
+      searchParams,
+    ]);
   const nonce = requestHeaders.get("x-nonce") || undefined;
+  const articleId = requestedArticleId(params.id);
+  const article = publicBlogPosts.posts.find((post) => post.id === articleId);
+  const category = article
+    ? publicBlogCategories.categories.find(
+        (item) => item.id === article.categoryId,
+      )
+    : undefined;
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://nhanso.clowcat.com.vn";
   const initialBlogData = serializeJsonForHtml({
     categories: publicBlogCategories.categories,
+    posts: publicBlogPosts.posts,
   });
+  const structuredData = serializeJsonForHtml(
+    article
+      ? {
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          headline: article.title,
+          description: article.summary,
+          image: article.thumbnail || undefined,
+          datePublished: article.date,
+          articleSection: category?.name,
+          mainEntityOfPage: new URL(
+            `/blog?id=${encodeURIComponent(article.id)}`,
+            siteUrl,
+          ).href,
+          publisher: {
+            "@type": "Organization",
+            name: "Clow Cat Patronus",
+          },
+        }
+      : {
+          "@context": "https://schema.org",
+          "@type": "Blog",
+          name: "Giải Mã Nhân Số Học",
+          description:
+            "Khám phá bản thân và hành trình phát triển qua nhân số học.",
+          url: new URL("/blog", siteUrl).href,
+          blogPost: publicBlogPosts.posts.map((post) => ({
+            "@type": "BlogPosting",
+            headline: post.title,
+            datePublished: post.date,
+            url: new URL(
+              `/blog?id=${encodeURIComponent(post.id)}`,
+              siteUrl,
+            ).href,
+          })),
+        },
+  );
 
   return (
     <>
@@ -58,6 +158,11 @@ export default async function BlogPage() {
         type="application/json"
         nonce={nonce}
         dangerouslySetInnerHTML={{ __html: initialBlogData }}
+      />
+      <script
+        type="application/ld+json"
+        nonce={nonce}
+        dangerouslySetInnerHTML={{ __html: structuredData }}
       />
       <BlogRuntime />
 

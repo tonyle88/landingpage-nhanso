@@ -41,20 +41,25 @@ function formatBlogDateTime(value) {
 
 let blogCategories = [];
 let blogArticles = [];
-const initialBlogCategories = readInitialBlogCategories();
+const initialBlogData = readInitialBlogData();
+const initialBlogCategories = initialBlogData.categories;
+const initialBlogArticles = initialBlogData.posts;
 let activeArticleRequest = 0;
 let blogSearchState = {
   query: '',
   categoryId: 'ALL',
 };
 
-function readInitialBlogCategories() {
+function readInitialBlogData() {
   try {
     const element = document.getElementById('blog-initial-data');
     const data = JSON.parse(element?.textContent || '{}');
-    return Array.isArray(data.categories) ? data.categories : [];
+    return {
+      categories: Array.isArray(data.categories) ? data.categories : [],
+      posts: Array.isArray(data.posts) ? data.posts : [],
+    };
   } catch {
-    return [];
+    return { categories: [], posts: [] };
   }
 }
 
@@ -63,6 +68,14 @@ function chooseBlogCategories(fallbackCategories) {
     ? initialBlogCategories
     : Array.isArray(fallbackCategories)
       ? fallbackCategories
+      : [];
+}
+
+function chooseBlogArticles(fallbackArticles) {
+  return initialBlogArticles.length
+    ? initialBlogArticles
+    : Array.isArray(fallbackArticles)
+      ? fallbackArticles
       : [];
 }
 
@@ -85,7 +98,7 @@ async function initializeBlogPage() {
       const { ts, data } = JSON.parse(cached);
       if (Date.now() - ts < CACHE_TTL) {
         blogCategories = chooseBlogCategories(data.blogCategories);
-        blogArticles = data.blogArticles || [];
+        blogArticles = chooseBlogArticles(data.blogArticles);
         const urlParams = new URLSearchParams(window.location.search);
         const articleId = urlParams.get('id');
         if (articleId) await renderArticleDetail(articleId);
@@ -96,6 +109,16 @@ async function initializeBlogPage() {
     }
   } catch(e) {}
 
+  if (!renderedFromCache && initialBlogArticles.length) {
+    blogCategories = chooseBlogCategories([]);
+    blogArticles = initialBlogArticles;
+    const articleId = new URLSearchParams(window.location.search).get('id');
+    if (articleId) await renderArticleDetail(articleId);
+    else renderBlogHome();
+    renderedFromCache = true;
+    document.body.classList.remove('landing-content-loading');
+  }
+
   // Luôn fetch mới ở nền để cập nhật cache
   try {
     let data = await fetchBlogJson(`${SCRIPT_URL}?action=getBlogContent`);
@@ -104,7 +127,7 @@ async function initializeBlogPage() {
     }
     if (
       !data.ok ||
-      !Array.isArray(data.blogArticles) ||
+      (!initialBlogArticles.length && !Array.isArray(data.blogArticles)) ||
       (!initialBlogCategories.length && !Array.isArray(data.blogCategories))
     ) {
       throw new Error(data.message || 'Dữ liệu blog không hợp lệ.');
@@ -113,12 +136,13 @@ async function initializeBlogPage() {
     const mergedData = {
       ...data,
       blogCategories: chooseBlogCategories(data.blogCategories),
+      blogArticles: chooseBlogArticles(data.blogArticles),
     };
     // Lưu cache
     try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: mergedData })); } catch(e) {}
 
     blogCategories = mergedData.blogCategories;
-    blogArticles = data.blogArticles;
+    blogArticles = mergedData.blogArticles;
     const urlParams = new URLSearchParams(window.location.search);
     const articleId = urlParams.get('id');
 

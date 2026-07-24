@@ -170,7 +170,7 @@ Definition of Done:
 
 ### M2 - Supabase schema va local/staging security
 
-Trang thai: `[~] IN PROGRESS`
+Trang thai: `[x] COMPLETE`
 
 Schema du kien:
 
@@ -211,7 +211,7 @@ Definition of Done:
 
 ### M3 - Public read migration
 
-Trang thai: `[~] IN PROGRESS`
+Trang thai: `[x] COMPLETE`
 
 Thu tu:
 
@@ -226,12 +226,13 @@ Cong viec:
 - [x] Sinh `Database` TypeScript types tu schema staging da migrate; khong chua
   credential hay row data.
 - [x] Tao server-only Supabase client.
-- [ ] Tao browser client chi neu that su can.
-- [ ] Chuyen public reads sang Server Components.
-- [ ] Them caching/revalidation co chu dich.
-- [ ] Them fallback khi Supabase staging tam loi.
-- [ ] Kiem tra SEO metadata, sitemap, canonical va structured data.
-- [ ] Doi chieu so record va noi dung voi baseline.
+- [x] Khong tao browser client vi cac public read hien tai deu duoc phuc vu qua
+  Server Components.
+- [x] Chuyen public reads sang Server Components.
+- [x] Them caching/revalidation co chu dich.
+- [x] Them fallback khi Supabase staging tam loi.
+- [x] Kiem tra SEO metadata, sitemap, canonical va structured data.
+- [x] Doi chieu so record va noi dung voi baseline.
 
 Definition of Done:
 
@@ -241,15 +242,25 @@ Definition of Done:
 
 ### M4 - Supabase Auth va admin
 
-Trang thai: `[ ] TODO`
+Trang thai: `[~] IN PROGRESS`
 
-- [ ] Chot role matrix: `owner`, `admin`, `editor`.
-- [ ] Cau hinh Supabase Auth, khong cho public signup neu khong can.
-- [ ] Session cookie an toan va refresh flow.
-- [ ] Chuyen admin login.
-- [ ] Chuyen CRUD packages/testimonials/blog/settings.
+- [x] Chot role matrix: `owner`, `admin`, `editor`; giu `auditor` read-only cho
+  du lieu van hanh va audit.
+- [x] Cau hinh Supabase Auth staging invite-only: public signup va anonymous
+  sign-in deu tat; email confirmation bat.
+- [x] Tao foundation session cookie SSR va refresh flow trong Next.js; chi
+  `getClaims()` duoc dung de gate identity, role duoc resolve server-side.
+- [x] Tao Auth user owner staging va bootstrap `profiles` +
+  `admin_roles(owner)` trong transaction co allowlist, rollback va hau kiem
+  `1 user / 1 profile / 1 owner`; khong doc/in danh tinh.
+- [x] Chuyen admin login; valid owner login tren staging pass sau khi build/start
+  voi public Supabase config va loai secret khoi child process.
+- [~] Chuyen CRUD packages/testimonials/blog/settings: Packages foundation,
+  transactional RPC + audit, admin UI va live create/update/delete QA da pass;
+  con ba nhom noi dung con lai.
 - [ ] Ghi `audit_logs` cho thao tac quan trong.
-- [ ] Test session expiry, privilege escalation va unauthorized access.
+- [x] Test invalid/expired session cookie, live user khong co role, dynamic role
+  restore, logout, privilege matrix RLS va unauthorized access.
 
 Definition of Done:
 
@@ -452,10 +463,26 @@ se tu dat secret vao dashboard/local ignored file.
 | 2026-07-24 | M3 | Public Testimonials read qua Server Component; ho tro image URL/media asset, alt text, timeout 4s, cache 5 phut va Google/static fallback; synthetic 3/3, M3 3/3, parity 4/4, security 9/9, build, staging RLS smoke va audit pass; lsof ghi nhan TLS `172.64.149.246:443` | PASS |
 | 2026-07-24 | M3 | Public landing content/settings read qua Server Component; map public setting co contract va section layout rieng, ownership tung nguon, timeout 4s, cache 5 phut va Google fallback tung phan; synthetic 4/4, M3 4/4, parity 4/4, security 9/9, build, staging RLS smoke va audit pass; lsof ghi nhan TLS `172.64.149.246:443` | PASS |
 | 2026-07-24 | M3 | Public blog categories read qua Server Component; JSON bootstrap duoc escape va gan CSP nonce, Supabase chi override category slice con Google/cache giu posts; timeout 4s, cache 5 phut; synthetic 3/3, M3 5/5, parity 4/4, security 9/9, build, staging RLS smoke va audit pass; TLS `104.18.38.10:443` | PASS |
+| 2026-07-24 | M3 | Published blog posts read qua Server Component; draft/future post va unsafe cover URL bi loai, list/detail dung cung JSON bootstrap; them canonical dong, Blog/BlogPosting JSON-LD, sitemap va robots; synthetic 4/4, M3 7/7, parity 4/4, security 9/9, build, staging RLS smoke va audit pass; staging empty dung Google fallback | PASS |
+| 2026-07-24 | M3 | Baseline read-only + import payload deterministic da tao local ignored mode `0600`: Google co 224 settings, 11 sections, 4 packages, 6 testimonials, 4 categories, 24/24 blog details; staging ca 6 bang deu 0; transformer synthetic 4/4, UUID/FK/hash idempotent; 10 network socket snapshots, khong in credential/noi dung | PASS - NOT IMPORTED |
+| 2026-07-24 | M3 | Sinh SQL transaction/upsert local ignored mode `0600`; synthetic PostgreSQL emulator chay hai lan khong duplicate, 7/7 import tests pass. Docker image gate khong chay duoc do Docker Desktop Keychain error, nen khong khang dinh da co container-level network-none evidence cho rieng import | PASS WITH LIMITATION |
+| 2026-07-24 | M3 | Nap 273 public records vao staging `dwledqvsooobegpqljur` hai lan qua session pooler; count 224/11/4/6/4/24 khong doi, 0 orphan blog post; lsof ghi nhan `52.77.146.31:5432`; production khong bi ghi | PASS |
+| 2026-07-24 | M3 | Baseline/hash 6/6 bang khop sau khi canonicalize timestamp tuong duong; public read 7/7, parity 4/4, security 9/9, build va audit 0 pass; M3 gates closed | PASS |
+| 2026-07-24 | M4 | Chot role matrix owner/admin/editor/auditor va break-glass owner; them migration owner + RLS matrix, `current_admin_role()`, Supabase SSR cookie client va Proxy refresh chi cho `/admin`; local Auth config invite-only, password >=12, session 12h/inactivity 2h. Synthetic role gate 1/1, auth 4/4, schema 6/6, public read 7/7, security 9/9, build va audit 0 pass. Migration/config chua push staging, chua tao user | PASS - NOT APPLIED |
+| 2026-07-24 | M4 | Dry-run chi ra dung migration `002`/`003`; push staging thanh cong, local/remote history khop 001/002/003. Read-only verifier xac nhan owner role, `current_admin_role()`, 18/18 policies, 0 Auth user; lsof ghi nhan DB `54.255.219.82:5432` va CLI `52.74.252.201:5432` + API TLS. Canh bao pg-delta cache CA xuat hien sau apply nhung migration history va catalog check deu pass | PASS |
+| 2026-07-24 | M4 | Khong dung `config push` vi co the day ca local URL/config ngoai Auth. Access token local da thu hoi/rong; Supabase Dashboard trong in-app browser chua dang nhap, nen remote `disable_signup` chua thay doi va khong duoc danh dau hoan tat | BLOCKED - DASHBOARD LOGIN |
+| 2026-07-24 | M4 | Owner dang nhap Supabase Dashboard; tat `Allow new users to sign up`, giu anonymous sign-in tat va email confirmation bat; UI xac nhan switch off va Save disabled sau khi luu | PASS |
+| 2026-07-24 | M4 | Tao `/admin/login`, protected `/admin` va POST `/admin/logout`; khong co signup hay browser storage token, login error generic, JWT + role gate server-side, noindex va private/no-store. Synthetic 1/1, auth 5/5, security 9/9, parity 4/4, build va audit 0 pass; anonymous smoke: login 200, admin 307 den unauthorized, logout 303 | PASS - NO VALID USER YET |
+| 2026-07-24 | M4 | Owner tao Auth user staging. Bootstrap idempotent allowlist dung transaction, khoa `admin_roles`, rollback khi state lech va khong in email/UUID; ket qua 1 Auth user, 1 profile, 1 owner. Hau kiem catalog 18/18 policies, owner role/function, auth 5/5, security 9/9 va production build pass; lsof ghi nhan DB staging `52.77.146.31:5432` va `54.255.219.82:5432` | PASS |
+| 2026-07-24 | M4 | Recovery token bi lo qua browser context trong luc debug redirect local. Owner da ban user tren Dashboard; tam go dung 1 `admin_roles(owner)` bang transaction allowlist, giu 1 Auth user + 1 profile va dua role ve 0; lsof ghi nhan DB staging `52.77.146.31:5432`. Dung server recovery local; cho JWT het han truoc khi phuc hoi role | CONTAINED - WAIT TOKEN EXPIRY |
+| 2026-07-24 | M4 | Sau khi token cu het han: unban user, dat mat khau qua local loopback provisioning co CSRF dung mot lan + Supabase Admin SDK; khong ghi password/token, process tu tat. Phuc hoi owner bang transaction allowlist; hau kiem 1 user/1 profile/1 owner, 18/18 policies va Auth 6/6 pass; TLS staging `172.64.149.246:443`, DB `52.77.146.31:5432`/`54.255.219.82:5432` | RECOVERED |
+| 2026-07-24 | M4 | Rebuild/start staging bundle voi `NEXT_PUBLIC_SUPABASE_*`, loai secret key/DB password/access token khoi child process. Valid password login pass, `/admin` resolve dung role `owner`; admin login gate hoan tat, logout va negative-role tests con cho | PASS |
+| 2026-07-24 | M4 | Sua logout local: bo `upgrade-insecure-requests` rieng loopback, giu tren HTTPS deploy; redirect 303 tuong doi, private/no-store. Browser logout pass; anonymous `/admin` redirect 307 den unauthorized login. Auth 6/6, security 9/9 va staging build pass | PASS |
+| 2026-07-24 | M4 | Live negative-role test: tam go role bang transaction, login dung password bi redirect den `/admin/login?reason=unauthorized`; sau xac nhan phuc hoi owner idempotent, hau kiem 1 user/1 profile/1 owner va 18/18 policies; DB staging `54.255.219.82:5432`/`52.74.252.201:5432` | PASS |
+| 2026-07-24 | M4 | Dynamic role test pass tren cung session: role 0 bi tu choi, phuc hoi owner thi `/admin` mo lai khong can token moi. Cookie gia lap expired/invalid bi redirect 307 den unauthorized login, private/no-store, khong 500/khong lo admin | PASS |
+| 2026-07-24 | M4 | Migration 004 package CRUD: RPC create/update/delete va audit cung transaction, role owner/admin/editor, input validation va RLS. Dry-run chi 004; catalog hau kiem migration + 2 functions + audit policy, DB staging `52.77.146.31:5432`. Them `/admin/packages`, server actions, confirm-code delete; tests package 4/4, auth 6/6, security 9/9, build pass; anonymous route bi redirect | PASS - LIVE MUTATION QA PENDING |
+| 2026-07-24 | M4 | Packages live QA qua owner UI: create gia 1000/an, update gia 2000/noi bat voi before+after audit, delete bang confirm code. Hau kiem record test = 0, packages tro lai baseline 4, audit create/update/delete = 1/1/1; DB evidence `54.255.219.82:5432`/`52.74.252.201:5432`, tests 4/4 | PASS |
 
 ## 9. Cong viec tiep theo
 
-1. Chuyen public read tiep theo la blog posts bang server-only client hien co.
-2. Doi chieu record packages/testimonials/landing content/blog truoc khi nap
-   staging data.
-3. Dong cac gate M3 cho public read, caching/fallback va SEO metadata.
+1. Mo rong pattern CRUD transaction + audit sang Testimonials, Blog va Settings.

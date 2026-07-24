@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: "Nhân Số Học Khai Phá Tiềm Năng | Clow Cat Patronus",
   description:
     "Khám phá bản thân qua Nhân Số Học. Hơn 3 năm kinh nghiệm, 800+ ca tư vấn. Hiểu mình hơn – Sống đúng hướng hơn. Đặt lịch tư vấn ngay!",
+  alternates: {
+    canonical: "/",
+  },
   icons: {
     icon: "/assets/images/logo2.png",
     apple: "/assets/images/logo2.png",

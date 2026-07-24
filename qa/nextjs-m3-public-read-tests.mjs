@@ -100,7 +100,50 @@ test("blog categories are server-rendered and override only the Google category 
   assert.match(query, /revalidate: 300/);
   assert.match(query, /\.from\("blog_categories"\)/);
   assert.match(mapper, /\.replace\(\/<\/g, "\\\\u003c"\)/);
-  assert.match(legacy, /readInitialBlogCategories\(\)/);
+  assert.match(legacy, /readInitialBlogData\(\)/);
   assert.match(legacy, /initialBlogCategories\.length/);
   assert.match(legacy, /chooseBlogCategories\(data\.blogCategories\)/);
+});
+
+test("published blog posts are server-rendered while drafts and unsafe covers stay excluded", async () => {
+  const [page, query, mapper, legacy] = await Promise.all([
+    read("app/blog/page.tsx"),
+    read("lib/supabase/public-blog-posts.ts"),
+    read("lib/blog.ts"),
+    read("public/blog.js"),
+  ]);
+
+  assert.match(page, /getPublicBlogPosts\(\)/);
+  assert.match(page, /posts: publicBlogPosts\.posts/);
+  assert.match(query, /^import "server-only";/);
+  assert.match(query, /BLOG_POSTS_TIMEOUT_MS = 4_000/);
+  assert.match(query, /revalidate: 300/);
+  assert.match(query, /\.from\("blog_posts"\)/);
+  assert.match(query, /\.eq\("status", "published"\)/);
+  assert.match(query, /\.lte\("published_at", now\.toISOString\(\)\)/);
+  assert.match(query, /media_assets\(public_url\)/);
+  assert.match(mapper, /row\.status !== "published"/);
+  assert.match(mapper, /url\.protocol === "https:"/);
+  assert.match(legacy, /initialBlogArticles\.length/);
+  assert.match(legacy, /if \(!renderedFromCache && initialBlogArticles\.length\)/);
+  assert.match(legacy, /chooseBlogArticles\(data\.blogArticles\)/);
+});
+
+test("public routes expose canonical metadata, structured data, sitemap and robots", async () => {
+  const [rootLayout, blogPage, sitemap, robots] = await Promise.all([
+    read("app/layout.tsx"),
+    read("app/blog/page.tsx"),
+    read("app/sitemap.ts"),
+    read("app/robots.ts"),
+  ]);
+
+  assert.match(rootLayout, /canonical: "\/"/);
+  assert.match(blogPage, /generateMetadata/);
+  assert.match(blogPage, /canonical: "\/blog"/);
+  assert.match(blogPage, /type="application\/ld\+json"/);
+  assert.match(blogPage, /"@type": "BlogPosting"/);
+  assert.match(sitemap, /getPublicBlogPosts/);
+  assert.match(sitemap, /encodeURIComponent\(post\.id\)/);
+  assert.match(robots, /sitemap\.xml/);
+  assert.match(robots, /disallow: \["\/api\/"\]/);
 });

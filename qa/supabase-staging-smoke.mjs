@@ -60,9 +60,9 @@ try {
     'anon must read enabled landing sections through RLS',
   );
   assert.equal(
-    await request('blog_posts?select=slug&limit=1'),
+    await request('blog_posts?select=id,slug,media_assets(public_url)&status=eq.published&limit=1'),
     200,
-    'anon must read published blog posts through RLS',
+    'anon must read published blog posts and public cover media through RLS',
   );
 
   const bookingRead = await request('bookings?select=id&limit=1');

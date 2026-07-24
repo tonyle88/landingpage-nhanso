@@ -61,13 +61,20 @@ if (existsSync(linkedRefPath)) {
 
 const clientStaticDir = resolve(appRoot, '.next/static');
 if (existsSync(clientStaticDir)) {
+  const secretNeedles = [
+    process.env.SUPABASE_SECRET_KEY,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+  ].filter((value) => typeof value === 'string' && value.length >= 20);
+  const patterns = ['sb_secret_[A-Za-z0-9_-]{20,}', ...secretNeedles];
   const scan = spawnSync(
     'rg',
-    ['-n', 'service_role|sb_secret_|SUPABASE_SERVICE_ROLE_KEY', clientStaticDir],
+    ['-l', patterns.join('|'), clientStaticDir],
     { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
   );
   assert.ok(scan.status === 0 || scan.status === 1, 'Client bundle scan failed');
-  assert.equal(scan.stdout, '', 'A server-only Supabase secret marker exists in the client bundle');
+  if (scan.stdout.trim()) {
+    throw new Error('A concrete server-only Supabase secret exists in the client bundle');
+  }
 }
 
 console.log('Supabase staging preflight passed without printing credential values.');

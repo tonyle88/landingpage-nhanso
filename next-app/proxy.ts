@@ -1,6 +1,8 @@
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import type { Database } from "@/lib/supabase/database.types";
 
-function createContentSecurityPolicy(nonce: string) {
+function createContentSecurityPolicy(nonce: string, isLoopback: boolean) {
   const isDevelopment = process.env.NODE_ENV === "development";
   return [
     "default-src 'self'",
@@ -31,27 +33,66 @@ function createContentSecurityPolicy(nonce: string) {
       "https://script.google.com",
       "https://script.googleusercontent.com",
       "https://api.imgbb.com",
+      "https://*.supabase.co",
     ].join(" "),
     "frame-src https://www.youtube.com",
     "media-src 'self'",
     "form-action 'self'",
-    "upgrade-insecure-requests",
+    isLoopback ? "" : "upgrade-insecure-requests",
     "report-uri /api/csp-report",
-  ].join("; ");
+  ].filter(Boolean).join("; ");
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
-  const contentSecurityPolicy = createContentSecurityPolicy(nonce);
+  const isLoopback =
+    request.nextUrl.hostname === "127.0.0.1" ||
+    request.nextUrl.hostname === "localhost";
+  const contentSecurityPolicy = createContentSecurityPolicy(nonce, isLoopback);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
 
-  const response = NextResponse.next({
+  let response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (
+    request.nextUrl.pathname.startsWith("/admin") &&
+    supabaseUrl &&
+    publishableKey
+  ) {
+    const supabase = createServerClient<Database>(
+      supabaseUrl,
+      publishableKey,
+      {
+        cookies: {
+          getAll: () => request.cookies.getAll(),
+          setAll(cookiesToSet, cacheHeaders) {
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value),
+            );
+            response = NextResponse.next({
+              request: { headers: requestHeaders },
+            });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options),
+            );
+            Object.entries(cacheHeaders).forEach(([name, value]) =>
+              response.headers.set(name, value),
+            );
+          },
+        },
+      },
+    );
+    // getClaims validates the signed token; getSession must not gate access.
+    await supabase.auth.getClaims();
+  }
+
   response.headers.set("Content-Security-Policy", contentSecurityPolicy);
   return response;
 }

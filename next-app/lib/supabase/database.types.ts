@@ -669,13 +669,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_package: {
+        Args: { p_id: string }
+        Returns: string
+      }
+      admin_save_package: {
+        Args: { p_id: string | null; p_payload: Json }
+        Returns: Database["public"]["Tables"]["packages"]["Row"]
+      }
+      admin_delete_testimonial: {
+        Args: { p_id: string }
+        Returns: string
+      }
+      admin_save_testimonial: {
+        Args: { p_id: string | null; p_payload: Json }
+        Returns: Database["public"]["Tables"]["testimonials"]["Row"]
+      }
+      current_admin_role: { Args: never; Returns: Database["public"]["Enums"]["admin_role"] }
       has_admin_role: {
         Args: { required_roles: Database["public"]["Enums"]["admin_role"][] }
         Returns: boolean
       }
     }
     Enums: {
-      admin_role: "admin" | "editor" | "auditor"
+      admin_role: "owner" | "admin" | "editor" | "auditor"
       booking_status:
         | "pending"
         | "held"
@@ -816,7 +833,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      admin_role: ["admin", "editor", "auditor"],
+      admin_role: ["owner", "admin", "editor", "auditor"],
       booking_status: [
         "pending",
         "held",

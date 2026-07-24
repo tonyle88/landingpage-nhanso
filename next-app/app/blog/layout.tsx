@@ -4,12 +4,6 @@ export const metadata: Metadata = {
   title: "Giải Mã Nhân Số Học | Clow Cat Patronus",
   description:
     "Bài viết giúp bạn khám phá bản thân, tính cách, điểm mạnh và hành trình phát triển qua nhân số học.",
-  openGraph: {
-    title: "Giải Mã Nhân Số Học | Clow Cat Patronus",
-    description:
-      "Khám phá bản thân và hành trình phát triển của chính mình qua nhân số học.",
-    images: ["/assets/images/hero_bg.png"],
-  },
 };
 
 export default function BlogLayout({

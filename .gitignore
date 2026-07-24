@@ -13,3 +13,4 @@ node_modules/
 .env*
 !.env.example
 !next-app/.env.example
+.staging-import/
