@@ -29,7 +29,8 @@
   `https://nhanso-staging-9qjhyw9ca-cuongle88.vercel.app`.
 - [x] Da chup DNS cong khai/HTTPS baseline va export Cloudflare zone day du;
   file zone nam ngoai Git, mode `0600`, chi ghi metadata/hash vao runbook.
-- [ ] Chot cua so cutover, owner thuc hien va owner phe duyet rollback.
+- [x] Owner yeu cau cutover ngay, tu lam nguoi thuc hien va nguoi quyet dinh
+  rollback; mutation van bi chan boi production backend/env preflight.
 - [~] Da tao baseline read-only Google/public content; owner van can chot
   snapshot cuoi sau freeze.
 - [~] Delta tooling da bao ve media va rehearsal pass; van can tao final delta
@@ -72,6 +73,30 @@ Chi doi chieu **ten va noi quan ly**, khong doc/in gia tri:
 
 Khong tai su dung staging secret cho production. Neu secret tung xuat hien trong
 anh/chat/Git history, coi la da lo va rotate truoc cutover.
+
+### Final approval va production env preflight - 2026-07-25
+
+- Owner yeu cau cutover ngay lap tuc.
+- Nguoi thuc hien va nguoi quyet dinh rollback: owner.
+- Owner chap thuan rollback khi co bat ky:
+  - loi phan quyen, thanh toan hoac sai checksum;
+  - `3` loi booking lien tiep;
+  - site gian doan qua `5` phut.
+- Read-only `vercel env ls production` tren project `landingpage-nhanso` chi
+  thay ba bien he cu:
+  - `SEPAY_WEBHOOK_SECRET`;
+  - `BOOKING_WEBHOOK_FORWARD_SECRET`;
+  - `BOOKING_SCRIPT_WEBHOOK_URL`.
+- Production dang thieu `NEXT_PUBLIC_SITE_URL`,
+  `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
+  `SUPABASE_SECRET_KEY`, `BOOKING_RATE_LIMIT_SECRET`,
+  `SEPAY_BANK_ACCOUNT_NUMBER` va cac cutover flags can thiet.
+- Gate ket luan: **BLOCKED BEFORE MUTATION**. Khong duoc deploy Next.js vao
+  project production, freeze he cu, doi DNS/webhook hay tai su dung staging
+  Supabase/secrets.
+- Buoc bat buoc: owner xac nhan/tao Supabase production rieng, ap migration va
+  import rehearsal-approved data, sau do dat production env qua Vercel
+  Sensitive Environment Variables va lap lai final preflight.
 
 ## Mini-gate truoc moi production mutation
 
