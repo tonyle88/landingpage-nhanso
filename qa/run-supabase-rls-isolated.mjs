@@ -51,17 +51,25 @@ try {
   ]);
 
   let ready = false;
+  let consecutiveReadyChecks = 0;
   for (let attempt = 0; attempt < 120; attempt += 1) {
     try {
       docker(
         ['exec', container, 'pg_isready', '-U', 'postgres', '-d', 'postgres'],
         { capture: true },
       );
-      ready = true;
-      break;
+      consecutiveReadyChecks += 1;
+      if (consecutiveReadyChecks >= 6) {
+        ready = true;
+        break;
+      }
     } catch {
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 500);
+      consecutiveReadyChecks = 0;
     }
+    // The Supabase image briefly exposes an initialization server and then
+    // restarts PostgreSQL. Require a stable three-second readiness window so
+    // migrations never race that intentional handoff.
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 500);
   }
   if (!ready) throw new Error('Synthetic Supabase Postgres did not become ready');
 

@@ -379,7 +379,18 @@ Definition of Done:
 
 ### M9 - QA, security va observability
 
-Trang thai: `[ ] TODO`
+Trang thai: `[~] DEFERRED - OWNER ACCEPTED RESIDUAL RISK (2026-07-25)`
+
+Quyet dinh chuyen moc:
+
+- Owner chap nhan chuyen sang M10 sau khi live QA staging cac luong chinh cho
+  ket qua on dinh.
+- M9 khong duoc ghi nhan la `PASS`: repository security scan chua seal bao cao
+  cuoi va ket qua so bo con 3 Medium, 4 Low; chua ghi nhan P0/P1.
+- Artifact va durable scan M9 duoc giu lai de tiep tuc sau, khong huy/xoa.
+- M10 chi duoc bat dau voi Phase A read-only/preparation. Cam gan domain
+  production, doi DNS, bat webhook ngan hang that, rotate/set production
+  secret hoac mo production traffic truoc khi mini-gate ben duoi dat.
 
 - [ ] Unit, integration va end-to-end tests.
 - [ ] RLS/authorization test matrix.
@@ -400,7 +411,15 @@ Definition of Done:
 
 ### M10 - Cutover va rollback
 
-Trang thai: `[ ] TODO`
+Trang thai: `[~] IN PROGRESS - PHASE A PREPARATION ONLY`
+
+Mini-gate truoc production mutation:
+
+- [ ] Auth/RLS smoke va adversarial gate khong co P0/P1.
+- [ ] Booking/payment synthetic gate va webhook idempotency pass.
+- [ ] Rollback command, owner, trigger va recovery data path duoc chot.
+- [ ] HTTPS routes va security-header smoke pass tren release candidate.
+- [ ] Owner xac nhan lai residual Medium/Low truoc cutover.
 
 - [ ] Deploy commit release-candidate co SHA duoc ghi nhan.
 - [ ] Backup Google Sheets lan cuoi.
@@ -554,8 +573,12 @@ se tu dat secret vao dashboard/local ignored file.
 | 2026-07-25 | M7 | External media migration rehearsal: dry-run 30 rows (24 blog, 6 testimonial; Drive 26, ImgBB 4), writes 0. Probe co network evidence xac dinh 28 accessible, 2 blog Drive unavailable/private. Applied partial transaction cho dung 28 accessible: UUID object + media metadata + content URL + `media.migrate` audit; 2 URL loi giu nguyen, khong tu y thay noi dung. Post-audit: Supabase Storage 28, Drive 2, ImgBB 0. Network evidence Google/ImgBB/Supabase captured | PASS - 2 OWNER REPLACEMENTS PENDING |
 | 2026-07-25 | M7 | Owner da tai anh thay the cho 2 blog con lai. Read-only hostname audit: 30/30 media rows deu tro toi `dwledqvsooobegpqljur.supabase.co`, unresolved blog 0, ImgBB/Drive 0. Da go domain anh ImgBB/Drive khoi CSP va preconnect; van giu Google Apps Script connect rollback den M10. Storage foundation 8/8, security 9/9, production build PASS; deploy staging `dpl_4TPSdvvCcn5TeLSYW3gHaJAXQjbY` READY. Live HTTPS header evidence: CSP `img-src` chi con self/data/blob, Supabase, VietQR va SePay; HTTP 200 | PASS - M7 STAGING COMPLETE |
 | 2026-07-25 | M8 | Public snapshot local ignored `0600` (224 settings, 11 sections, 4 packages, 6 testimonials, 4 categories, 24 posts), snapshot SHA-256 `7628c93a...93792`, SQL SHA-256 `c43bc55e...7021d`. Rehearsal phat hien migration 016 khong replay-safe khi 015 da co payment status cast; da sua 016 thanh no-op khi cast dung va van fail-closed neu expression la. Hai database Supabase Postgres rong, ap 18 migrations, moi pass import 2 lan: 8.861s va 9.338s, count/hash/key parity 100%, orphan 0, exception 0. Ca hai container `network=none`, ports `{}`, khong dung source/production secret, container/volume da cleanup. M8 foundation 6/6, public import 6/6, SePay foundation 4/4 | PASS - M8 STAGING REHEARSAL COMPLETE |
+| 2026-07-25 | M10 | Phase A local mini-gate: 68/68 auth/booking/payment/upload/header/parity tests pass; isolated RLS pgTAP 11/11, Docker `network=none published={}` va cleanup pass. Sua RLS harness doi readiness on dinh 3 giay de tranh Supabase init-server restart race. Chua chay staging script, chua doc production secret, chua doi DNS/domain/webhook/production data. Local Node tests khong co packet capture rieng nen khong tuyen bo zero egress cho toan phien | PASS - PHASE A LOCAL/ISOLATED ONLY |
 
 ## 9. Cong viec tiep theo
 
-1. Bat dau M9 QA/security/observability: chay test matrix, RLS/adversarial,
-   accessibility/SEO/performance, network evidence va secret/dependency scan.
+1. M10 Phase A read-only: chot release-candidate SHA, lap inventory deployment,
+   backup/freeze/delta checklist, rollback thresholds va production secret
+   names (khong doc/gia tri secret).
+2. Chay mini-gate M10 tren staging; neu fail P0/P1 thi dung va quay lai M9.
+3. Chi lap lich cutover sau khi owner xac nhan mini-gate va residual risk.
