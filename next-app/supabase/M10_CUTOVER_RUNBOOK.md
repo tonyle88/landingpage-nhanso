@@ -27,7 +27,8 @@
 - [x] Ghi deployment cu dung cho rollback staging:
   `dpl_4TPSdvvCcn5TeLSYW3gHaJAXQjbY`,
   `https://nhanso-staging-9qjhyw9ca-cuongle88.vercel.app`.
-- [ ] Xuat DNS truoc cutover; khong ghi token/cookie vao artifact.
+- [~] Da chup DNS cong khai/HTTPS baseline production; van can Cloudflare zone
+  export day du truoc cutover, khong ghi token/cookie vao artifact.
 - [ ] Chot cua so cutover, owner thuc hien va owner phe duyet rollback.
 - [ ] Chot baseline Google Sheets/public content: timestamp, count va SHA-256.
 - [ ] Tao delta dry-run theo `M8_DATA_MIGRATION_RUNBOOK.md`; delete phai co
@@ -189,3 +190,31 @@ day du trong runbook/artifact.
   CLI hien endpoint upload/deployment va deployment ID, nhung khong co packet
   capture day du cho moi ket noi cua build nen khong tuyen bo phien khong co
   egress khac.
+
+## Production read-only inventory - 2026-07-25
+
+- Vercel project binding tai repo root:
+  - project `landingpage-nhanso`;
+  - project ID `prj_7cKO0I69rA6NYaWZlRPrD4IcIbHW`;
+  - org ID `team_yLYGA03h2AUBAzSxEYlGNQco`.
+- Deployment production dang duoc alias:
+  - ID `dpl_9gtqv47s73zeYBLs6C2KPCREkoxZ`;
+  - immutable URL
+    `https://landingpage-nhanso-7nxda0wt7-cuongle88.vercel.app`;
+  - status `READY`, tao luc `2026-07-23 18:56:10 +07`;
+  - aliases gom `https://nhanso.clowcat.com.vn` va
+    `https://landingpage-nhanso.vercel.app`.
+- Ba deployment moi nhat tai thoi diem inventory la `Preview`, khong phai
+  production; khong promote hoac alias deployment nao trong buoc nay.
+- Public DNS snapshot `nhanso.clowcat.com.vn`, TTL `300`:
+  - A: `172.67.209.137`, `104.21.82.242`;
+  - AAAA: `2606:4700:3033::6815:52f2`,
+    `2606:4700:3033::ac43:d189`;
+  - khong co CNAME duoc resolver cong khai tra ve vi record dang qua
+    Cloudflare proxy.
+- HTTPS baseline: `200`, `server: cloudflare`, TLS verify `0`, remote IP
+  `2606:4700:3033::ac43:d189`, Cloudflare Ray
+  `a20ae551fbfb5de6-HKG`, Vercel request ID
+  `hkg1::qnrvw-1784979689312-37bdc1550fd7`.
+- Day la public DNS lookup, khong thay the Cloudflare zone export day du.
+  Khong doc secret, khong sua deployment/alias/DNS va khong export PII.
