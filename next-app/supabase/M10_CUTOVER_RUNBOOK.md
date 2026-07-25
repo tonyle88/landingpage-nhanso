@@ -27,8 +27,8 @@
 - [x] Ghi deployment cu dung cho rollback staging:
   `dpl_4TPSdvvCcn5TeLSYW3gHaJAXQjbY`,
   `https://nhanso-staging-9qjhyw9ca-cuongle88.vercel.app`.
-- [~] Da chup DNS cong khai/HTTPS baseline production; van can Cloudflare zone
-  export day du truoc cutover, khong ghi token/cookie vao artifact.
+- [x] Da chup DNS cong khai/HTTPS baseline va export Cloudflare zone day du;
+  file zone nam ngoai Git, mode `0600`, chi ghi metadata/hash vao runbook.
 - [ ] Chot cua so cutover, owner thuc hien va owner phe duyet rollback.
 - [~] Da tao baseline read-only Google/public content; owner van can chot
   snapshot cuoi sau freeze.
@@ -219,6 +219,15 @@ day du trong runbook/artifact.
   `hkg1::qnrvw-1784979689312-37bdc1550fd7`.
 - Day la public DNS lookup, khong thay the Cloudflare zone export day du.
   Khong doc secret, khong sua deployment/alias/DNS va khong export PII.
+- Owner da export BIND zone file `clowcat.com.vn.txt` luc
+  `2026-07-25T23:32:23+0700`:
+  - size `1857` byte;
+  - mode da duoc siet tu `0644` thanh `0600`;
+  - SHA-256
+    `f833e306f86997cb93c8aff4c540d35048216f9f5c28246fddf76c0f9e047ac1`;
+  - file nam ngoai repo, khong mo/doc noi dung, khong commit vao Git.
+- Export nay ket hop public DNS snapshot phia tren tao rollback DNS artifact.
+  Can export lai neu DNS thay doi truoc cutover.
 
 ## Public-content baseline va delta dry-run - 2026-07-25
 
