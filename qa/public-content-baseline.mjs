@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   hashRows,
   projectRows,
+  stableJson,
   transformGooglePublicContent,
 } from "./lib/public-content-import.mjs";
 
@@ -15,6 +16,14 @@ const outputDirectory = resolve(root, ".staging-import");
 const googleUrl =
   "https://script.google.com/macros/s/AKfycbw3m9zkv9mX-BgMtB7DZj2rMrZtkAAOFDQow2UKxttXRz8G5Zlc4qponSGrvPBxJwEO/exec";
 const shouldPrepare = process.argv.includes("--prepare");
+const conflictKeys = {
+  site_settings: "key",
+  landing_sections: "section_key",
+  packages: "code",
+  testimonials: "id",
+  blog_categories: "slug",
+  blog_posts: "slug",
+};
 
 process.loadEnvFile(resolve(appRoot, ".env.staging.local"));
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -76,6 +85,56 @@ async function readStagingTable(table) {
   return response.json();
 }
 
+function summarizeDelta(table, expectedRows, actualRows, columns) {
+  const conflictKey = conflictKeys[table];
+  assert.ok(conflictKey, `Missing conflict key for ${table}`);
+
+  const expectedByKey = new Map(
+    projectRows(expectedRows, columns).map((row) => [row[conflictKey], row]),
+  );
+  const actualByKey = new Map(
+    projectRows(actualRows, columns).map((row) => [row[conflictKey], row]),
+  );
+  const changedColumns = new Map();
+  let inserts = 0;
+  let updates = 0;
+  let deletes = 0;
+
+  for (const [key, expectedRow] of expectedByKey) {
+    const actualRow = actualByKey.get(key);
+    if (!actualRow) {
+      inserts += 1;
+      continue;
+    }
+    const differingColumns = columns.filter(
+      (column) =>
+        stableJson(expectedRow[column]) !== stableJson(actualRow[column]),
+    );
+    if (differingColumns.length === 0) continue;
+    updates += 1;
+    differingColumns.forEach((column) =>
+      changedColumns.set(column, (changedColumns.get(column) || 0) + 1),
+    );
+  }
+
+  for (const key of actualByKey.keys()) {
+    if (!expectedByKey.has(key)) deletes += 1;
+  }
+
+  return {
+    conflictKey,
+    inserts,
+    updates,
+    deletes,
+    changedColumns: Object.fromEntries(
+      [...changedColumns.entries()].sort(([left], [right]) =>
+        left.localeCompare(right),
+      ),
+    ),
+    deleteManifestRequired: deletes > 0,
+  };
+}
+
 try {
   const [landing, blog] = await Promise.all([
     fetchJson(`${googleUrl}?action=getLandingContent`),
@@ -103,6 +162,7 @@ try {
       const actual = projectRows(staging[table], columns);
       const expectedHash = hashRows(expected);
       const stagingHash = hashRows(actual);
+      const delta = summarizeDelta(table, expected, actual, columns);
       return [
         table,
         {
@@ -112,6 +172,7 @@ try {
           stagingHash,
           matches:
             expected.length === actual.length && expectedHash === stagingHash,
+          delta,
         },
       ];
     }),
@@ -149,14 +210,7 @@ try {
           metadata: {
             generatedAt: report.generatedAt,
             strategy: "upsert",
-            conflictKeys: {
-              site_settings: "key",
-              landing_sections: "section_key",
-              packages: "code",
-              testimonials: "id",
-              blog_categories: "slug",
-              blog_posts: "slug",
-            },
+            conflictKeys,
           },
           tables: payload,
         },
@@ -178,6 +232,7 @@ try {
               expectedCount: item.expectedCount,
               stagingCount: item.stagingCount,
               matches: item.matches,
+              delta: item.delta,
             },
           ]),
         ),

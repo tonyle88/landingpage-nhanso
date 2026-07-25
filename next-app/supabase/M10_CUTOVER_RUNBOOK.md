@@ -30,9 +30,11 @@
 - [~] Da chup DNS cong khai/HTTPS baseline production; van can Cloudflare zone
   export day du truoc cutover, khong ghi token/cookie vao artifact.
 - [ ] Chot cua so cutover, owner thuc hien va owner phe duyet rollback.
-- [ ] Chot baseline Google Sheets/public content: timestamp, count va SHA-256.
-- [ ] Tao delta dry-run theo `M8_DATA_MIGRATION_RUNBOOK.md`; delete phai co
-  manifest owner phe duyet.
+- [~] Da tao baseline read-only Google/public content; owner van can chot
+  snapshot cuoi sau freeze.
+- [~] Da tao delta summary read-only; khong co insert/delete, nhung media
+  columns khac nguon Google do da migrate Storage. Chua duoc apply delta cho
+  den khi media columns duoc bao ve.
 - [ ] Xac nhan Apps Script cu van san sang o che do rollback/read-only.
 - [ ] Chot noi luu network/proxy/firewall evidence va thoi gian luu.
 
@@ -218,3 +220,31 @@ day du trong runbook/artifact.
   `hkg1::qnrvw-1784979689312-37bdc1550fd7`.
 - Day la public DNS lookup, khong thay the Cloudflare zone export day du.
   Khong doc secret, khong sua deployment/alias/DNS va khong export PII.
+
+## Public-content baseline va delta dry-run - 2026-07-25
+
+- Script `qa/public-content-baseline.mjs --prepare` chi doc public Google
+  content va Supabase staging; khong doc auth, booking, payment, webhook,
+  audit hoac PII.
+- Snapshot tao luc `2026-07-25T11:50:07.573Z`, luu local ignored mode `0600`:
+  - baseline SHA-256
+    `7c47e61d9301a9ea473127de115fabfcb1992deb4761893c7124d729d6f93ed1`;
+  - import payload SHA-256
+    `c88aa062f8ccb078e5e8e5f264cf6b68ab00ede03860fe30a8a64cae63c5b8b5`.
+- Count source/staging: settings `224/224`, sections `11/11`, packages `4/4`,
+  testimonials `6/6`, categories `4/4`, posts `24/24`.
+- Delta summary:
+  - moi bang deu `insert=0`, `delete=0`;
+  - settings/sections/packages/categories `update=0`;
+  - testimonials `update=6`, chi `image_url` va `media_asset_id`;
+  - blog posts `update=24`, chi `cover_url` va `cover_asset_id`;
+  - khong can delete manifest o snapshot nay.
+- Chenh lech media phu hop voi M7 Storage migration da xac minh. Day la
+  inference tu ten cot delta va bang chung M7, khong phai phep mien gate.
+- Cam apply payload Google hien tai vi co the ghi de URL/asset Storage. Delta
+  production phai bao ve bon media columns tren hoac lay Supabase lam source
+  of truth cho chung, sau do dry-run lai.
+- Network sampler thu duoc `9` socket observations tu chinh tien trinh. Day
+  khong phai full packet capture nen khong dung de tuyen bo zero egress.
+- Comparator delta dung canonical JSON de tranh bao update gia do thu tu key
+  JSON; `test:public-import` pass `6/6`.
