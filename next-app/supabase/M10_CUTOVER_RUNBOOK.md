@@ -60,8 +60,10 @@ Tat ca muc sau phai dat:
   replay/idempotency,
   amount/account mismatch va manual reconciliation.
 - [x] Upload local/static: role, MIME/magic byte, size, lifecycle cleanup.
-- [~] HTTP local: `/`, `/blog`, legacy redirect va CSP collector pass; HTTPS,
-  `/admin/login`, API no-store va live headers van can release-candidate smoke.
+- [~] HTTP/HTTPS: local parity pass; deployment staging hien tai pass `/`,
+  `/blog`, `/admin/login`, CSP collector `204`, unsigned SePay `401`, API
+  `no-store` va security headers. Van can lap lai tren deployment gan dung
+  release-candidate SHA.
 - [ ] Rollback: nguoi thuc hien, trigger, deployment cu va data recovery path.
 - [ ] Owner xac nhan lai residual 3 Medium/4 Low.
 
@@ -128,3 +130,15 @@ day du trong runbook/artifact.
 - Luu y egress: RLS container co network evidence `network=none`; cac test Node
   local khong co packet/proxy capture rieng, vi vay khong dung ket qua nay de
   tuyen bo toan bo phien khong co egress.
+- Existing staging HTTPS smoke (chua gan release-candidate):
+  - `https://nhanso-staging.vercel.app/`: `200`;
+  - `/blog`: `200`;
+  - `/admin/login`: `200`;
+  - `POST /api/csp-report`: `204`, `Cache-Control: no-store`;
+  - unsigned `POST /api/sepay-webhook`: `401`, `Cache-Control: no-store`;
+  - CSP nonce/strict-dynamic, HSTS, X-Frame-Options, XCTO, Referrer-Policy,
+    Permissions-Policy va CORP deu hien dien;
+  - curl network evidence: remote IP `216.198.79.195`, TLS verify result `0`.
+- Push `d9ad072` chua thanh cong vi Git CLI khong co HTTPS credential. Khong
+  trich xuat token tu GitHub Desktop; owner can push branch bang ung dung da
+  dang nhap, sau do moi deploy/smoke release-candidate.
