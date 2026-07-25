@@ -2,7 +2,8 @@
 
 ## Trang thai va pham vi
 
-- Trang thai: Phase A preparation only.
+- Trang thai: release-candidate staging `READY`; production cutover chua duoc
+  phe duyet.
 - M9 dang `DEFERRED - OWNER ACCEPTED RESIDUAL RISK`, khong phai `PASS`.
 - Ket qua security so bo con 3 Medium va 4 Low; chua ghi nhan P0/P1.
 - Khong thao tac production, DNS, custom domain, webhook ngan hang that hoac
@@ -10,18 +11,22 @@
 
 ## Release candidate
 
-- HEAD tham chieu khi lap runbook:
-  `4c21c2a0f0d002fc01d41b30ac3aa1fdc4ceed18`.
-- Branch: `codex/nextjs-supabase-migration`.
-- SHA tren chua duoc chot lam release candidate vi working tree dang co thay
-  doi ke hoach M10 va cac file PDF/anh ca nhan cua owner.
-- Chi ghi nhan release-candidate SHA sau khi co mot commit sach, review dung
-  pham vi va xac nhan khong dua PDF/anh ca nhan vao Git.
+- Release-candidate source SHA:
+  `03ad8623f2e906da03dfc6d6e1bcdc69cc818325`.
+- Branch: `codex/m10-release-candidate`.
+- Remote branch da duoc owner push va xac minh cung SHA truoc khi deploy.
+- Commit `75bea605ee75743f9bcc3aba208c344a5c71a61e` chi cap nhat bang
+  chung/runbook sau deploy; khong thay doi artifact da deploy.
+- Branch release candidate khong chua commit PDF/anh ca nhan ngoai pham vi.
 
 ## Phase A - read-only preparation
 
-- [ ] Ghi deployment ID va Vercel hostname cua release candidate.
-- [ ] Ghi hostname deployment cu dung cho rollback.
+- [x] Ghi deployment ID va Vercel hostname cua release candidate:
+  `dpl_8D8aZKnJ5mizRX6RDfs7FjKBqe9b`,
+  `https://nhanso-staging-4hxir5vq5-cuongle88.vercel.app`.
+- [x] Ghi deployment cu dung cho rollback staging:
+  `dpl_4TPSdvvCcn5TeLSYW3gHaJAXQjbY`,
+  `https://nhanso-staging-9qjhyw9ca-cuongle88.vercel.app`.
 - [ ] Xuat DNS truoc cutover; khong ghi token/cookie vao artifact.
 - [ ] Chot cua so cutover, owner thuc hien va owner phe duyet rollback.
 - [ ] Chot baseline Google Sheets/public content: timestamp, count va SHA-256.
@@ -60,10 +65,9 @@ Tat ca muc sau phai dat:
   replay/idempotency,
   amount/account mismatch va manual reconciliation.
 - [x] Upload local/static: role, MIME/magic byte, size, lifecycle cleanup.
-- [~] HTTP/HTTPS: local parity pass; deployment staging hien tai pass `/`,
-  `/blog`, `/admin/login`, CSP collector `204`, unsigned SePay `401`, API
-  `no-store` va security headers. Van can lap lai tren deployment gan dung
-  release-candidate SHA.
+- [x] HTTP/HTTPS release candidate: `/`, `/blog`, `/admin/login` pass `200`;
+  CSP collector `204`; unsigned SePay `401`; API `no-store`; CSP nonce va cac
+  security headers hien dien; TLS verify `0`.
 - [ ] Rollback: nguoi thuc hien, trigger, deployment cu va data recovery path.
 - [ ] Owner xac nhan lai residual 3 Medium/4 Low.
 
@@ -83,6 +87,10 @@ rollback chua san sang thi dung M10 va quay lai M9.
 9. Giu he cu read-only; chi tat Apps Script khi traffic bang 0 da co evidence.
 
 ## Rollback
+
+Deployment fallback staging da duoc xac minh `READY`, nhung day chi la bang
+chung ky thuat. Rollback gate van chua dat cho den khi owner dien nguoi thuc
+hien, nguong trigger va data recovery path production.
 
 Trigger:
 
