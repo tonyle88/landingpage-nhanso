@@ -66,10 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', handlePackageCtaClick);
 
   window.addEventListener('clow-booking-form-valid', () => {
-    if (!isConfiguredGoogleScriptUrl()) {
-      showToast('Vui lòng cấu hình Google Apps Script URL.');
-      return;
-    }
     const packageSnapshot = getSelectedPackageSnapshot();
     if (!packageSnapshot.price) {
       showToast('Bạn vui lòng chọn lại gói tư vấn để hệ thống cập nhật đúng số tiền.');
@@ -320,10 +316,11 @@ function getBookingDataObject() {
   const calendarSelection = getCalendarSelection();
 
   return {
-    bookingId: ensureBookingId(),
+    bookingId: state.bookingId,
+    idempotencyKey: state.idempotencyKey,
     name: state.name,
-    dob: formatDobForSheet(state.dob),
-    phone: "'" + state.phone,
+    dob: state.dob,
+    phone: state.phone,
     email: state.email,
     consultationType: state.consultationType,
     consultationTypeLabel: CONSULTATION_TYPE_LABELS[state.consultationType] || state.consultationType,
@@ -345,17 +342,6 @@ function getBookingDataObject() {
     paymentProvider: window.ClowPaymentRuntime?.getSettings().sepayEnabled ? 'sepay' : 'manual_qr',
     paymentOrderId: state.paymentOrderId,
   };
-}
-
-function ensureBookingId() {
-  const state = getBookingState();
-  if (state.bookingId) return state.bookingId;
-  const suffix = window.crypto?.randomUUID
-    ? window.crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  const bookingId = `BKG-${suffix}`.toUpperCase();
-  window.ClowBookingState?.patch({ bookingId });
-  return bookingId;
 }
 
 function buildTransferContent(packageCode, phone) {
@@ -398,12 +384,16 @@ async function cancelBookingReservation() {
   const state = getBookingState();
   if (!state.bookingId) return;
   try {
-    await postBookingAction('cancelBooking', { bookingId: state.bookingId });
+    await postBookingAction('cancelBooking', {
+      bookingId: state.bookingId,
+      idempotencyKey: state.idempotencyKey,
+    });
   } catch (error) {
     console.warn('Không thể hủy giữ chỗ cũ:', error);
   } finally {
     window.ClowBookingState?.patch({
       bookingId: '',
+      idempotencyKey: '',
       paymentOrderId: '',
       expectedAmount: 0,
       holdExpiresAt: '',
@@ -930,13 +920,6 @@ function openPaymentModal() {
 
 function stopSepayWaiting() {
   window.ClowPaymentRuntime?.stop();
-}
-
-function formatDobForSheet(val) {
-  if (!val) return '';
-  const parts = val.split('-');
-  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  return val;
 }
 
 function getTodayDateInputValue() {

@@ -231,9 +231,30 @@ export function useBookingCalendar() {
       continueButton.disabled = true;
       selectedInfo.style.display = "none";
       try {
+        const today = getVnDateParts();
+        const rangeStart = makeVnDateTime(
+          today.year,
+          today.month,
+          today.day,
+        );
+        const rangeEndParts = addDays(today, 22);
+        const rangeEnd = makeVnDateTime(
+          rangeEndParts.year,
+          rangeEndParts.month,
+          rangeEndParts.day,
+        );
+        const nativeUrl = new URL("/api/bookings/slots", window.location.origin);
+        nativeUrl.searchParams.set("from", rangeStart.toISOString());
+        nativeUrl.searchParams.set("to", rangeEnd.toISOString());
+        const nativeEnabled =
+          window.ClowBookingApi?.nativeEnabled === true;
         const response = await window.ClowBookingApi?.fetchWithTimeout(
-          `${BOOKING_URL}?action=getBookedSlots&_=${Date.now()}`,
-          { mode: "cors", cache: "no-store" },
+          nativeEnabled
+            ? nativeUrl
+            : `${BOOKING_URL}?action=getBookedSlots&_=${Date.now()}`,
+          nativeEnabled
+            ? { cache: "no-store" }
+            : { mode: "cors", cache: "no-store" },
           12000,
         );
         if (!response) throw new Error("Booking API chưa sẵn sàng.");
@@ -241,17 +262,25 @@ export function useBookingCalendar() {
           ok?: boolean;
           error?: string;
           booked?: BookedSlot[];
+          slots?: Array<{ slot_start: string; slot_end: string }>;
         };
         if (!result.ok) {
           throw new Error(result.error || "Không tải được lịch đã đặt");
         }
-        bookedSlots = Array.isArray(result.booked) ? result.booked : [];
+        bookedSlots = nativeEnabled
+          ? (Array.isArray(result.slots) ? result.slots : []).map((slot) => ({
+              start: slot.slot_start,
+              end: slot.slot_end,
+            }))
+          : Array.isArray(result.booked)
+            ? result.booked
+            : [];
       } catch (error) {
         bookedSlots = [];
         errorBox.style.display = "block";
         const errorText = errorBox.querySelector("p") || errorBox;
         errorText.textContent =
-          "Không tải được lịch trống từ Google. Vui lòng thử lại hoặc nhắn Zalo để đặt lịch.";
+          "Không tải được lịch trống. Vui lòng thử lại hoặc nhắn Zalo để đặt lịch.";
         void window.ClowBookingApi?.logError("getBookedSlots", error);
       } finally {
         loading.style.display = "none";

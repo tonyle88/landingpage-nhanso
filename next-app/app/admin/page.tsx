@@ -38,6 +38,10 @@ export default async function AdminPage() {
         <nav className={styles.adminNav} aria-label="Quản trị nội dung">
           <Link href="/admin/packages">Quản lý gói dịch vụ</Link>
           <Link href="/admin/testimonials">Quản lý testimonials</Link>
+          <Link href="/admin/blog">Quản lý blog</Link>
+          <Link href="/admin/settings">Quản lý settings</Link>
+          <Link href="/admin/bookings">Quản lý lịch hẹn</Link>
+          <Link href="/admin/payments">Đối soát thanh toán</Link>
         </nav>
       </section>
     </main>

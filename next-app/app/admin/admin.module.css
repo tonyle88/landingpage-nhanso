@@ -86,7 +86,24 @@
   font: inherit;
 }
 
+.field select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid #d8cedf;
+  border-radius: 12px;
+  background: #fff;
+  color: #2e2340;
+  font: inherit;
+}
+
 .field input:focus {
+  border-color: #76509e;
+  outline: 3px solid rgb(118 80 158 / 16%);
+}
+
+.field select:focus,
+.field textarea:focus {
   border-color: #76509e;
   outline: 3px solid rgb(118 80 158 / 16%);
 }
@@ -105,8 +122,62 @@
 
 .adminNav {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   margin-top: 24px;
+}
+
+.bookingMeta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 20px;
+  margin-top: 18px;
+  color: #554b5e;
+  font-size: 0.9rem;
+}
+
+.bookingMeta p {
+  margin: 0;
+}
+
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #e5ddea;
+}
+
+.actionRow button {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.alertPanel {
+  display: grid;
+  gap: 4px;
+  margin: 18px 0;
+  padding: 16px 18px;
+  border: 1px solid #e9a5a5;
+  border-radius: 14px;
+  background: #fff0f0;
+  color: #7c2525;
+}
+
+.paymentMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  margin-top: 14px;
+  color: #655b70;
+  font-size: 0.9rem;
+}
+
+.paymentMeta a {
+  color: #5c377f;
+  font-weight: 800;
 }
 
 .adminNav a,
@@ -305,6 +376,31 @@
   text-align: center;
 }
 
+.codeField {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.86rem;
+}
+
+.searchForm {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.searchForm input {
+  min-width: 0;
+  flex: 1;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid #d8cedf;
+  border-radius: 12px;
+  font: inherit;
+}
+
+.searchForm .submit {
+  padding: 0 18px;
+}
+
 .dashboard {
   width: min(760px, 100%);
   padding: 40px;
@@ -359,6 +455,14 @@
   }
 
   .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .searchForm {
+    display: grid;
+  }
+
+  .bookingMeta {
     grid-template-columns: 1fr;
   }
 }

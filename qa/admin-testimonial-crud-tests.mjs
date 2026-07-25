@@ -7,6 +7,9 @@ const read = (path) => readFile(new URL(path, root), "utf8");
 const migration = await read(
   "next-app/supabase/migrations/202607240005_admin_testimonial_crud.sql",
 );
+const validationFix = await read(
+  "next-app/supabase/migrations/202607240006_fix_testimonial_url_validation.sql",
+);
 
 test("testimonial RPCs validate HTTPS, roles and transactional audit", () => {
   assert.match(migration, /admin_save_testimonial/);
@@ -17,4 +20,10 @@ test("testimonial RPCs validate HTTPS, roles and transactional audit", () => {
   assert.match(migration, /testimonial\.update/);
   assert.match(migration, /testimonial\.delete/);
   assert.match(migration, /grant execute.+authenticated/);
+});
+
+test("testimonial URL validation avoids unsupported regex repetition counts", () => {
+  assert.match(validationFix, /char_length\(v_image_url\) > 2048/);
+  assert.match(validationFix, /\^https:\\?\/\\?\/\[\^\[:space:\]\]\+\$/);
+  assert.doesNotMatch(validationFix, /\{1,2039\}/);
 });

@@ -6,6 +6,8 @@ const CONTENT_URL =
   "https://script.google.com/macros/s/AKfycbw3m9zkv9mX-BgMtB7DZj2rMrZtkAAOFDQow2UKxttXRz8G5Zlc4qponSGrvPBxJwEO/exec";
 const BOOKING_URL =
   "https://script.google.com/macros/s/AKfycbxbWZXF2iCsWsr0cWL0JVChANywEq7D7l_mCIvrvqZs78vSOsPej3PuXFgHbOiVNoKr/exec";
+const NATIVE_BOOKING_API_ENABLED =
+  process.env.NEXT_PUBLIC_BOOKING_API_V2_ENABLED === "true";
 
 type PaymentSettings = {
   sepayEnabled: boolean;
@@ -43,8 +45,9 @@ function normalize(value: unknown): PaymentSettings {
       : {};
   return {
     sepayEnabled:
-      item.sepayEnabled === true ||
-      String(item.sepayEnabled).toLowerCase() === "true",
+      !NATIVE_BOOKING_API_ENABLED &&
+      (item.sepayEnabled === true ||
+        String(item.sepayEnabled).toLowerCase() === "true"),
     bankName: String(item.bankName || DEFAULTS.bankName).trim(),
     bankBin: String(item.bankBin || DEFAULTS.bankBin).trim(),
     bankAccount: String(item.bankAccount || DEFAULTS.bankAccount).trim(),
@@ -224,22 +227,32 @@ export function usePaymentRuntime() {
       const state = window.ClowBookingState?.getState();
       if (!state?.paymentOrderId || !state.bookingId) return;
       try {
-        const params = new URLSearchParams({
-          action: "checkSepayPayment",
-          paymentOrderId: state.paymentOrderId,
-          bookingId: state.bookingId,
-        });
-        const response = await window.ClowBookingApi?.fetchWithTimeout(
-          `${BOOKING_URL}?${params}`,
-          { method: "GET", mode: "cors", cache: "no-store" },
-          12000,
-        );
-        if (!response) return;
-        const result = (await response.json()) as {
+        const result = NATIVE_BOOKING_API_ENABLED
+          ? await window.ClowBookingApi?.postAction(
+              "checkBookingStatus",
+              {
+                bookingId: state.bookingId,
+                idempotencyKey: state.idempotencyKey,
+              },
+            )
+          : await (async () => {
+              const params = new URLSearchParams({
+                action: "checkSepayPayment",
+                paymentOrderId: state.paymentOrderId,
+                bookingId: state.bookingId,
+              });
+              const response =
+                await window.ClowBookingApi?.fetchWithTimeout(
+                  `${BOOKING_URL}?${params}`,
+                  { method: "GET", mode: "cors", cache: "no-store" },
+                  12000,
+                );
+              return response?.json();
+            })() as {
           ok?: boolean;
           status?: string;
         };
-        if (!result.ok) return;
+        if (!result?.ok) return;
         if (result.status === "confirmed") {
           announceConfirmed();
           return;
@@ -257,7 +270,10 @@ export function usePaymentRuntime() {
         if (countdown) countdown.style.display = "none";
         const confirmation = await window.ClowBookingApi?.postAction(
           "confirmBooking",
-          { bookingId: state.bookingId },
+          {
+            bookingId: state.bookingId,
+            idempotencyKey: state.idempotencyKey,
+          },
         );
         if (confirmation?.status === "confirmed") announceConfirmed();
       } catch (error) {
@@ -395,7 +411,10 @@ export function usePaymentRuntime() {
       try {
         const result = await window.ClowBookingApi?.postAction(
           "confirmBooking",
-          { bookingId: state.bookingId },
+          {
+            bookingId: state.bookingId,
+            idempotencyKey: state.idempotencyKey,
+          },
         );
         showSuccess(
           result?.status === "confirmed" ? "confirmed" : "manual-review",

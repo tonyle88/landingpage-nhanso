@@ -242,7 +242,7 @@ Definition of Done:
 
 ### M4 - Supabase Auth va admin
 
-Trang thai: `[~] IN PROGRESS`
+Trang thai: `[x] COMPLETE`
 
 - [x] Chot role matrix: `owner`, `admin`, `editor`; giu `auditor` read-only cho
   du lieu van hanh va audit.
@@ -255,10 +255,10 @@ Trang thai: `[~] IN PROGRESS`
   `1 user / 1 profile / 1 owner`; khong doc/in danh tinh.
 - [x] Chuyen admin login; valid owner login tren staging pass sau khi build/start
   voi public Supabase config va loai secret khoi child process.
-- [~] Chuyen CRUD packages/testimonials/blog/settings: Packages foundation,
-  transactional RPC + audit, admin UI va live create/update/delete QA da pass;
-  con ba nhom noi dung con lai.
-- [ ] Ghi `audit_logs` cho thao tac quan trong.
+- [x] Chuyen CRUD packages/testimonials/blog/settings: tat ca nhom da live
+  create/update/delete QA voi transactional audit; Blog Categories co
+  safe-delete guard, Settings audit chi luu metadata + value hash.
+- [x] Ghi `audit_logs` cho thao tac quan trong.
 - [x] Test invalid/expired session cookie, live user khong co role, dynamic role
   restore, logout, privilege matrix RLS va unauthorized access.
 
@@ -270,16 +270,29 @@ Definition of Done:
 
 ### M5 - Booking migration
 
-Trang thai: `[ ] TODO`
+Trang thai: `[x] COMPLETE`
 
-- [ ] Chot booking state machine.
-- [ ] Validate server-side va normalize input.
-- [ ] Gia goi lay tu database, khong tin gia client gui.
-- [ ] Tao booking UUID/order ID khong doan duoc.
-- [ ] Chong duplicate submit va them idempotency.
-- [ ] Rate limit theo chinh sach duoc phe duyet.
-- [ ] Chuyen admin booking workflow.
-- [ ] Test IDOR, duplicate, retry, timeout va invalid input.
+- [x] Chot booking state machine:
+  `pending -> held -> paid -> confirmed`; nhanh ket thuc
+  `pending/held -> cancelled|expired`, `confirmed -> cancelled`; trigger chan
+  moi transition khong nam trong allowlist.
+- [x] Validate server-side va normalize input: database RPC + Next.js
+  Booking API, JSON body gioi han dung luong, idempotency UUID, safe error
+  mapping; live negative QA request/DB/rate-limit pass.
+- [x] Gia goi lay tu database, khong tin gia client gui.
+- [x] Tao booking UUID/order ID khong doan duoc o database.
+- [x] Chong duplicate submit bang UUID idempotency key + request fingerprint;
+  cung key/cung payload replay ket qua, khac payload bi tu choi.
+- [x] Rate limit theo chinh sach duoc phe duyet: bucket PostgreSQL 15 phut,
+  `5` lan theo email/phone va `20` lan theo IP; IP chi luu HMAC, email/phone
+  chi luu SHA-256. RPC booking chi `service_role`, khong con `anon`.
+- [x] Chuyen admin booking workflow: owner/admin transition theo state machine,
+  auditor read-only, stale-write guard va audit metadata khong PII; live UI
+  transition `held -> paid -> confirmed` da pass.
+- [x] Test IDOR, duplicate, retry, timeout va invalid input: wrong credential
+  404, duplicate/retry replay, invalid input va rate-limit pass; lost-response
+  sau server commit duoc retry an toan bang cung idempotency key, khong tao
+  booking trung.
 
 Definition of Done:
 
@@ -289,34 +302,54 @@ Definition of Done:
 
 ### M6 - SePay/payment migration
 
-Trang thai: `[ ] TODO`
+Trang thai: `[x] COMPLETE (STAGING)`
 
-- [ ] Doc raw body va verify HMAC/timestamp truoc moi xu ly.
-- [ ] Enforce unique transaction ID.
-- [ ] Luu webhook event theo idempotent flow.
-- [ ] Doi chieu booking, amount va transfer content.
-- [ ] Transaction cap nhat booking atomically.
-- [ ] Log duoc redact query, token va du lieu nhay cam.
-- [ ] Chay replay/tamper/expired/duplicate tests.
-- [ ] Rotate secret khi cutover.
+- [x] Doc raw body va verify HMAC-SHA256 tren
+  `{timestamp}.{raw_body}`, constant-time compare va reject timestamp lech qua
+  5 phut truoc moi xu ly; doi chieu lai voi tai lieu SePay 2026.
+- [x] Enforce unique SePay transaction `id` o ca webhook inbox va
+  `payment_transactions`; concurrent replay tra ket qua idempotent.
+- [x] Luu webhook event kem payload hash + signature timestamp theo
+  idempotent flow, chi RPC `service_role` duoc execute.
+- [x] Doi chieu transfer huong `in`, tai khoan nhan server-side, booking payment
+  code va amount; mismatch duoc ghi `ignored`, khong xac nhan booking.
+- [x] Transaction cap nhat `payment_transactions`, booking `held -> paid`,
+  webhook status va audit atomically.
+- [x] Log duoc redact query, token va du lieu nhay cam: route chi log safe
+  message; audit chi status/provider/transaction ID, khong luu raw customer
+  row.
+- [x] Chay live local-route -> staging replay/tamper/expired/duplicate, sai
+  amount va sai account tests; rejected signature khong tao inbox event,
+  mismatch booking van `held`.
+- [x] Chay approved synthetic callback qua public HTTPS staging voi HMAC secret
+  va tai khoan gia rieng: valid/duplicate/tampered/expired/wrong amount/wrong
+  account deu dat; QA cleanup dua database ve dung baseline.
+- [ ] Rotate secret khi cutover (gate cua M10, khong dung staging secret cho
+  production).
 
 Definition of Done:
 
 - Khong co unsigned/expired/duplicate transaction nao cap nhat booking.
-- SePay staging/approved test callback dat.
-- Co alert va manual reconciliation procedure.
+- [x] SePay khong co sandbox account trong tenant hien tai; khong tao webhook
+  thu hai tren tai khoan ngan hang that. Approved controlled HMAC callback qua
+  public HTTPS staging dat va co network evidence.
+- [x] Co alert admin read-only cho webhook `ignored/failed` va manual
+  reconciliation procedure bat buoc doi chieu SePay/ngan hang truoc khi dung
+  booking workflow co audit.
 
 ### M7 - Storage migration
 
-Trang thai: `[ ] TODO`
+Trang thai: `[x] COMPLETE (STAGING)`
 
-- [ ] Phan loai asset co dinh de giu trong `public/`.
-- [ ] Tao Supabase Storage buckets va policies.
-- [ ] Validate MIME, size va path server-side.
-- [ ] Doi ten upload bang UUID.
-- [ ] Chuyen blog/testimonial uploads.
-- [ ] Cap nhat CSP cho Supabase Storage domain.
-- [ ] Xac minh khong con runtime dependency ImgBB/Drive truoc khi tat.
+- [x] Phan loai asset co dinh de giu trong `public/`.
+- [x] Tao Supabase Storage bucket `content-images` public, server-only writes,
+  grant metadata toi thieu cho `service_role`.
+- [x] Validate MIME, 5 MB, magic bytes va path server-side.
+- [x] Doi ten upload bang UUID.
+- [x] Chuyen blog/testimonial upload forms sang Supabase Storage, van giu URL
+  fallback trong giai doan migration.
+- [x] Cap nhat CSP cho Supabase Storage domain.
+- [x] Xac minh khong con runtime dependency ImgBB/Drive truoc khi tat.
 
 Definition of Done:
 
@@ -326,16 +359,17 @@ Definition of Done:
 
 ### M8 - Data migration rehearsal
 
-Trang thai: `[ ] TODO`
+Trang thai: `[x] COMPLETE (STAGING REHEARSAL)`
 
-- [ ] Export ban snapshot duoc phe duyet.
-- [ ] Lam sach/normalize offline.
-- [ ] Import staging.
-- [ ] Doi chieu record count, key fields va checksum.
-- [ ] Chay rehearsal lan 1 va ghi thoi gian.
-- [ ] Sua script/mapping.
-- [ ] Chay rehearsal lan 2 tu database rong.
-- [ ] Chot freeze/delta import procedure.
+- [x] Export ban snapshot public duoc phe duyet vao local ignored mode `0600`.
+- [x] Lam sach/normalize offline bang deterministic transformer.
+- [x] Import staging (M3) va xac minh lai bang rehearsal M8.
+- [x] Doi chieu record count, key fields va SHA-256 checksum.
+- [x] Chay rehearsal lan 1 tu database rong: 8.861 giay.
+- [x] Sua migration 016 replay-safe va bootstrap Storage platform shim toi thieu.
+- [x] Chay rehearsal lan 2 tu database rong: 9.338 giay.
+- [x] Chot freeze/delta import procedure trong
+  `next-app/supabase/M8_DATA_MIGRATION_RUNBOOK.md`.
 
 Definition of Done:
 
@@ -405,7 +439,7 @@ Rollback action:
 | `admin/*` | Next.js `/admin` + Supabase Auth | TODO |
 | Google Sheets | Supabase PostgreSQL | TODO |
 | Google Apps Script | Next.js Route Handlers | TODO |
-| Google Drive/ImgBB | `public/` + Supabase Storage | TODO |
+| Google Drive/ImgBB | `public/` + Supabase Storage | COMPLETE (STAGING) |
 | `api/csp-report.mjs` | `app/api/csp-report/route.ts` | TODO |
 | `api/sepay-webhook.mjs` | `app/api/sepay-webhook/route.ts` | TODO |
 | `vercel.json` headers | Next.js/Vercel header config | TODO |
@@ -482,7 +516,46 @@ se tu dat secret vao dashboard/local ignored file.
 | 2026-07-24 | M4 | Dynamic role test pass tren cung session: role 0 bi tu choi, phuc hoi owner thi `/admin` mo lai khong can token moi. Cookie gia lap expired/invalid bi redirect 307 den unauthorized login, private/no-store, khong 500/khong lo admin | PASS |
 | 2026-07-24 | M4 | Migration 004 package CRUD: RPC create/update/delete va audit cung transaction, role owner/admin/editor, input validation va RLS. Dry-run chi 004; catalog hau kiem migration + 2 functions + audit policy, DB staging `52.77.146.31:5432`. Them `/admin/packages`, server actions, confirm-code delete; tests package 4/4, auth 6/6, security 9/9, build pass; anonymous route bi redirect | PASS - LIVE MUTATION QA PENDING |
 | 2026-07-24 | M4 | Packages live QA qua owner UI: create gia 1000/an, update gia 2000/noi bat voi before+after audit, delete bang confirm code. Hau kiem record test = 0, packages tro lai baseline 4, audit create/update/delete = 1/1/1; DB evidence `54.255.219.82:5432`/`52.74.252.201:5432`, tests 4/4 | PASS |
+| 2026-07-24 | M4 | Migration 005 testimonial CRUD: RPC create/update/delete va audit cung transaction, role owner/admin/editor, bat buoc HTTPS image, alt/sort validation. Dry-run chi 005; catalog hau kiem migration + 2 functions, DB staging `52.77.146.31:5432`. Them `/admin/testimonials`, server actions va confirm-code delete; tests Testimonials 1/1, Packages 4/4 va production build pass | PASS - LIVE MUTATION QA PENDING |
+| 2026-07-24 | M4 | Live QA Testimonials phat hien PostgreSQL regex `{1,2039}` khong hop le (`2201B`) truoc khi insert, khong co thay doi du lieu. Migration 006 tach gioi han URL 2048 ky tu khoi regex HTTPS; tests 2/2, dry-run chi 006, hau kiem migration 005+006 va function definition pass; DB evidence `52.77.146.31:5432` | FIXED - RETEST PENDING |
+| 2026-07-24 | M4 | Testimonials live QA qua owner UI: create an/thu tu 9999, update alt + bat hien thi, sua thu tu 9998, delete bang confirm code. Hau kiem record test = 0, testimonials tro lai baseline 6, audit create/update/delete = 1/2/1 voi before+after; DB evidence `52.77.146.31:5432`/`52.74.252.201:5432`, tests 2/2 | PASS |
+| 2026-07-24 | M4 | Migration 007 Blog Post CRUD: RPC create/update/delete va audit cung transaction, role owner/admin/editor, slug/title/status/category/publish validation, HTML active-content guard va HTTPS cover. Dry-run chi 007; catalog hau kiem migration + 2 functions, DB staging `54.255.219.82:5432`. Them `/admin/blog`; tests 2/2 va production build pass | PASS - LIVE MUTATION QA PENDING |
+| 2026-07-24 | M4 | Blog Posts live QA qua owner UI: create draft khong ghim, update sua slug/title + archived + ghim, delete bang confirm code. Hau kiem record test = 0, blog posts tro lai baseline 24, audit create/update/delete = 1/1/1 voi before+after; DB evidence `52.74.252.201:5432`/`52.77.146.31:5432`, tests 2/2 | PASS |
+| 2026-07-24 | M4 | Migration 008 Blog Category CRUD: RPC create/update/delete va audit cung transaction, role owner/admin/editor, slug/name/description/sort validation va tu choi xoa category dang duoc post su dung. Dry-run chi 008; hau kiem migration 007+008 va 4 Blog functions, DB staging `52.77.146.31:5432`; UI chung `/admin/blog`, tests category 1/1 + post 2/2 va build pass | PASS - LIVE MUTATION QA PENDING |
+| 2026-07-24 | M4 | Blog Categories live QA qua owner UI: create an/thu tu 9999, update ten + bat hien thi + thu tu 9998, delete bang confirm code. Hau kiem record test = 0, categories tro lai baseline 4, khong co post tham chieu, audit create/update/delete = 1/1/1 voi before+after; DB evidence `52.77.146.31:5432`/`54.255.219.82:5432`, tests 1/1 | PASS |
+| 2026-07-24 | M4 | Migration 009 Settings CRUD: RPC upsert/delete va audit cung transaction, role owner/admin/editor, key/JSON/description validation. Audit chi luu key/public/description + SHA-256 value, khong nhan ban raw value. Dry-run chi 009; hau kiem migration + 2 functions + hashed-only definition, DB staging `52.74.252.201:5432`; them `/admin/settings` co search limit 50, tests 1/1 va build pass | PASS - LIVE MUTATION QA PENDING |
+| 2026-07-24 | M4 | Live QA Settings lan dau rollback toan bo voi `42883`: pgcrypto `digest` tren staging nam trong schema `extensions`, khong phai `public`; khong co setting/audit duoc tao. Migration 010 patch co fail-closed function-definition guard; dry-run chi 010, hau kiem 009+010 + `extensions.digest` + hashed-only audit, DB staging `52.74.252.201:5432`, tests 2/2 | FIXED - RETEST PENDING |
+| 2026-07-24 | M4 | Settings live QA qua owner UI: create private JSON v1, update public JSON v2, delete bang confirm code. Hau kiem record test = 0, settings tro lai baseline 224, audit create/update/delete = 1/1/1; moi audit row khong co raw value va hash khop. DB evidence `54.255.219.82:5432`/`52.74.252.201:5432`/`52.77.146.31:5432`; Settings 2/2, Auth 6/6, Security 9/9 | PASS - M4 COMPLETE |
+| 2026-07-24 | M5 | Migration 011 Booking foundation: state transition trigger, UUID idempotency + fingerprint, active-slot unique lock, trusted package price va DB-generated booking/order IDs. Dry-run chi 011; independent verifier catalog + transactional synthetic create/replay/invalid-transition/cancel/rollback pass, booking baseline van 0; DB evidence `52.74.252.201:5432`. Foundation tests 3/3 va production build pass | PASS |
+| 2026-07-24 | M5 | Them Next.js POST-only `/api/bookings/reserve` va `/api/bookings/cancel`: bounded streaming JSON 16 KiB/2 KiB, bat buoc UUID `Idempotency-Key`, safe DB error mapping, no-store va khong tra raw DB error. API tests 3/3, foundation 3/3, production build pass voi 2 route moi | PASS - LIVE NEGATIVE QA PENDING |
+| 2026-07-24 | M5 | Migration 012 distributed rate limit + RPC lockdown: persistent 15-minute buckets, 5/email-or-phone va 20/IP, RLS table khong co public policy; create/cancel/consume chi `service_role`. Independent verifier lan 6 identity + lan 21 IP bi chan, anon privilege revoked, service privilege pass, synthetic buckets/booking rollback; DB evidence `54.255.219.82:5432`. API 4/4 + foundation 4/4 + build pass | PASS |
+| 2026-07-24 | M5 | Local negative API QA: request-layer cases missing idempotency=400, content-type=415, body>16KiB=413 pass; case cham DB fail-closed 503 vi local ignored env chua co `SUPABASE_SECRET_KEY` va `BOOKING_RATE_LIMIT_SECRET`. Khong co booking duoc tao, frontend van dung Google endpoint | BLOCKED - LOCAL RUNTIME SECRETS REQUIRED |
+| 2026-07-25 | M5 | Sau khi local ignored secrets duoc dat: live API negative QA pass missing key=400, content-type=415, oversized=413, invalid DB payload=400, invalid cancel=400; lan 6 identity va lan 21 IP tra 429 + Retry-After. Hau kiem booking baseline 0, DB evidence `52.74.252.201:5432` | PASS |
+| 2026-07-25 | M5 | Migration 013 them service-only slots/status/manual-payment-review RPC, status/slot response khong PII, manual claim chi keo dai hold 48h va khong tu xac nhan thanh toan. Dry-run chi 013; catalog + transactional verifier pass, DB evidence `52.74.252.201:5432`. Them 3 API route; Booking foundation/API tests 5/5 + 5/5, build pass | PASS |
+| 2026-07-25 | M5 | Booking frontend V2 dat sau rollback flag `NEXT_PUBLIC_BOOKING_API_V2_ENABLED`: canonical payload khong gia client, 1 UUID theo reserve/status/manual/cancel, calendar slots native; native mode tam tat SePay va dung manual-review cho den M6. Static cutover tests 4/4, V2 build pass. Local-to-staging workflow reserve 201, replay, trusted price, wrong credential 404, minimal status, busy slot, manual review, cancel pass; exact synthetic cleanup va booking baseline 0, DB evidence `52.77.146.31:5432` | PASS - USER UI QA PENDING |
+| 2026-07-25 | M5 | User UI QA lan dau reserve tra safe 503: browser local khong co Cloudflare/Vercel IP header trong khi API fail-closed. Patch chi fallback `127.0.0.1` khi request hostname la `localhost|127.0.0.1|::1`, production van bat buoc proxy header. API tests 5/5, frontend 4/4, V2 build pass; negative QA khong header tra expected 400 thay vi 503; full reserve/replay/IDOR/status/slot/manual/cancel khong header pass va synthetic cleanup pass | FIXED - USER RETEST PENDING |
+| 2026-07-25 | M5 | User UI retest Booking V2 pass den manual-review: UI hien “Khach hang da chuyen khoan thanh toan, vui long kiem tra”; hau kiem staging co 1 booking that cua user QA, khong phai synthetic residue | PASS |
+| 2026-07-25 | M5 | Migration 014 Admin Booking: owner/admin transition theo state machine, expected-status stale guard, confirmed timestamp; auditor read-only. Audit chi status + manual-payment-claimed boolean, khong PII/raw row. Dry-run chi 014; independent catalog/privilege/definition verifier pass, DB evidence `52.77.146.31:5432`; admin tests 3/3, booking foundation 5/5, API 5/5, production build pass | PASS - LIVE UI TRANSITION QA PENDING |
+| 2026-07-25 | M5 | Admin Booking live UI QA pass: owner xac nhan booking that `held -> paid -> confirmed`. Read-only verifier xac nhan staging co dung 1 booking `confirmed`, `confirmed_at` va manual-payment claim da ghi, dung 2 audit transition theo thu tu, audit chi co status + manual-payment boolean; DB evidence `52.74.252.201:5432` | PASS |
+| 2026-07-25 | M5 | Explicit timeout recovery QA pass: mo phong client mat response sau khi server commit, retry cung payload + UUID idempotency key tra replay va khong tao duplicate. Synthetic booking/rate-limit duoc cleanup chinh xac, booking that baseline van 1; network evidence `127.0.0.1:3100`, `54.255.219.82:5432` | PASS - M5 COMPLETE |
+| 2026-07-25 | M6 | Doi chieu SePay Developer docs 2026: HMAC header `X-SePay-Signature: sha256=...`, signed input `{timestamp}.{raw_body}`, timestamp window 5 phut, transaction `id` la dedup key, callback thanh cong phai 200/201 + `{"success":true}`. Handler hien tai pass raw-body/tamper/expired/unsigned tests nhung van forward Apps Script; chua cho phep cap nhat Supabase | PASS - FOUNDATION ONLY |
+| 2026-07-25 | M6 | Migration 015 them SePay inbox payload hash/signature timestamp + service-only atomic processor; migration 016 sua enum cast do independent verifier bat duoc. Valid payment cap nhat payment + `held -> paid` + webhook + audit atomically; duplicate replay khong tao payment thu hai; synthetic transaction rollback sach, booking that baseline van 1. DB evidence `54.255.219.82:5432`. Server cutover flag van `false` | PASS - CUTOVER DISABLED |
+| 2026-07-25 | M6 | Local route -> staging callback QA voi Supabase cutover chi bat tren server test rieng: valid HMAC callback 200 `success:true`; duplicate duoc acknowledge va payment row van 1; tampered/expired 401 khong tao event; signed wrong amount/account duoc ghi ignored va booking van held. Exact synthetic cleanup pass; network evidence `127.0.0.1:3300`, `52.74.252.201:5432`; server test da dung | PASS - SEPAY TEST MODE PENDING |
+| 2026-07-25 | M6 | Them `/admin/payments` read-only cho owner/admin/auditor: canh bao webhook ignored/failed, hien metadata event/payment an toan, khong query raw payload/PII; dashboard co link doi soat. Runbook yeu cau doi chieu giao dich settled tai SePay/ngan hang roi moi dung booking transition co audit; cam sua DB truc tiep va co quy trinh rotate/disable khi nghi lo secret. Tests 3/3 + SePay foundation 4/4 + production build pass; owner live UI QA hien empty-state dung, 0 webhook/0 transaction va khong co alert gia | PASS |
+| 2026-07-25 | M6 | Tao Vercel project rieng `nhanso-staging`, khong thay doi project production `landingpage-nhanso`/Cloudflare. Cau hinh Supabase + booking secrets bang Vercel Sensitive Environment Variables; SePay cutover van `false`. Deployment HTTPS `https://nhanso-staging.vercel.app` build Next.js 16 thanh cong; homepage va `/admin/login` tra 200, login marker PASS, CSP/HSTS/XFO/XCTO/Referrer/Permissions headers hien dien. Vercel gan deployment dau tien vao Production environment noi bo cua project staging; da dong bo dung staging env va redeploy. Chua co packet/proxy evidence cho upload Vercel do tien trinh ket thuc truoc khi capture; khong tuyen bo khong co egress ngoai cac endpoint Vercel duoc CLI hien thi | PASS - SUPABASE AUTH REDIRECT + SEPAY TEST MODE PENDING |
+| 2026-07-25 | M6 | Owner live QA tren `https://nhanso-staging.vercel.app`: dang nhap Supabase thanh cong, session hien dung email/role `owner`, dashboard hien du 6 menu packages/testimonials/blog/settings/bookings/payment reconciliation. Bang chung UI do user cung cap; khong hien secret | PASS - HTTPS AUTH QA |
+| 2026-07-25 | M6 | User da tao SePay webhook tro toi HTTPS staging. Vercel env name audit xac nhan chua co `SEPAY_WEBHOOK_SECRET` va `SEPAY_BANK_ACCOUNT_NUMBER`; cutover flag van `false`, chua cho phep webhook cap nhat Supabase | PENDING - ADD SENSITIVE ENV |
+| 2026-07-25 | M6 | SePay tenant chi co tai khoan ngan hang that, khong co sandbox/test account; da huy wizard va khong tao webhook staging de tranh dua giao dich that vao staging. Tao HMAC secret ngau nhien + account gia rieng tren Vercel Sensitive Env, bat Supabase processor chi tren `nhanso-staging`, deploy PASS. Approved synthetic callback qua `https://nhanso-staging.vercel.app`: valid 200, duplicate idempotent/1 payment, tampered 401, expired 401, wrong amount/account ignored, mismatch booking van held; exact QA cleanup PASS. Network evidence `216.198.79.195:443` (Vercel HTTPS) va `52.77.146.31:5432` (Supabase staging) | PASS - M6 STAGING COMPLETE |
+| 2026-07-25 | M7 | Phan loai asset: brand/background/font/icon/audio giu trong `public/`; testimonial/blog admin media chuyen Storage. Migrations 017-018 tao public bucket `content-images` (5 MB, JPEG/PNG/WebP), RPC lien ket `media_assets`, service grant toi thieu. Server upload kiem tra role truoc, MIME + magic bytes + size, UUID path, cleanup khi CRUD fail; forms testimonial/blog va CSP Supabase da deploy `nhanso-staging`. Foundation 7/7, legacy CRUD 4/4, security 9/9, build PASS. Synthetic PNG public read + invalid MIME reject + exact cleanup PASS; Storage QA khong capture duoc socket evidence do request ngan, gioi han duoc ghi nhan | PASS - USER UPLOAD QA PENDING |
+| 2026-07-25 | M7 | Owner live QA upload testimonial JPEG thanh cong: URL `storage/v1/object/public/content-images/testimonials/<uuid>.jpg`, `media_asset_id` lien ket, alt `M7 Storage QA`, sort 9999, enabled false. UI cho thay user tao 2 ban QA; da deploy lifecycle cleanup de xoa object + metadata khi xoa content va xoa asset cu khi thay anh | PASS - USER DELETE QA PENDING |
+| 2026-07-25 | M7 | Owner xoa ca 2 testimonial QA qua UI. Independent read-only verifier qua Postgres audit snapshot + Storage API: testimonials con lai 0, delete audit rows 2, orphan `media_assets` 0, orphan Storage objects 0 | PASS - TESTIMONIAL STORAGE LIFECYCLE |
+| 2026-07-25 | M7 | Owner live QA tao blog draft `m7-storage-qa-20260725` kem cover upload. Read-only verifier: 1 draft, `cover_asset_id` lien ket, metadata MIME/size/public/path hop le, object ton tai trong `content-images/blog/<uuid>`, create audit dung 1 row | PASS - USER DELETE BLOG QA PENDING |
+| 2026-07-25 | M7 | Owner xoa blog Storage QA qua UI. Independent read-only verifier: blog row 0, delete audit 1, orphan `media_assets` 0, orphan Storage object 0 | PASS - BLOG STORAGE LIFECYCLE |
+| 2026-07-25 | M7 | External media migration rehearsal: dry-run 30 rows (24 blog, 6 testimonial; Drive 26, ImgBB 4), writes 0. Probe co network evidence xac dinh 28 accessible, 2 blog Drive unavailable/private. Applied partial transaction cho dung 28 accessible: UUID object + media metadata + content URL + `media.migrate` audit; 2 URL loi giu nguyen, khong tu y thay noi dung. Post-audit: Supabase Storage 28, Drive 2, ImgBB 0. Network evidence Google/ImgBB/Supabase captured | PASS - 2 OWNER REPLACEMENTS PENDING |
+| 2026-07-25 | M7 | Owner da tai anh thay the cho 2 blog con lai. Read-only hostname audit: 30/30 media rows deu tro toi `dwledqvsooobegpqljur.supabase.co`, unresolved blog 0, ImgBB/Drive 0. Da go domain anh ImgBB/Drive khoi CSP va preconnect; van giu Google Apps Script connect rollback den M10. Storage foundation 8/8, security 9/9, production build PASS; deploy staging `dpl_4TPSdvvCcn5TeLSYW3gHaJAXQjbY` READY. Live HTTPS header evidence: CSP `img-src` chi con self/data/blob, Supabase, VietQR va SePay; HTTP 200 | PASS - M7 STAGING COMPLETE |
+| 2026-07-25 | M8 | Public snapshot local ignored `0600` (224 settings, 11 sections, 4 packages, 6 testimonials, 4 categories, 24 posts), snapshot SHA-256 `7628c93a...93792`, SQL SHA-256 `c43bc55e...7021d`. Rehearsal phat hien migration 016 khong replay-safe khi 015 da co payment status cast; da sua 016 thanh no-op khi cast dung va van fail-closed neu expression la. Hai database Supabase Postgres rong, ap 18 migrations, moi pass import 2 lan: 8.861s va 9.338s, count/hash/key parity 100%, orphan 0, exception 0. Ca hai container `network=none`, ports `{}`, khong dung source/production secret, container/volume da cleanup. M8 foundation 6/6, public import 6/6, SePay foundation 4/4 | PASS - M8 STAGING REHEARSAL COMPLETE |
 
 ## 9. Cong viec tiep theo
 
-1. Mo rong pattern CRUD transaction + audit sang Testimonials, Blog va Settings.
+1. Bat dau M9 QA/security/observability: chay test matrix, RLS/adversarial,
+   accessibility/SEO/performance, network evidence va secret/dependency scan.

@@ -18,3 +18,18 @@ export function createPublicServerClient(): SupabaseClient<Database> | null {
     },
   });
 }
+
+export function createServiceServerClient(): SupabaseClient<Database> | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const secretKey = process.env.SUPABASE_SECRET_KEY?.trim();
+
+  if (!url || !secretKey) return null;
+
+  return createClient<Database>(url, secretKey, {
+    auth: {
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      persistSession: false,
+    },
+  });
+}

@@ -1,4 +1,6 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createServiceServerClient } from "@/lib/supabase/server";
+import type { Json } from "@/lib/supabase/database.types";
 
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_CLOCK_SKEW_SECONDS = 5 * 60;
@@ -91,6 +93,30 @@ async function forwardToBookingScript(
   return result;
 }
 
+async function processInSupabase(
+  payload: Record<string, unknown>,
+  rawBody: string,
+  timestamp: string,
+) {
+  const expectedAccount = process.env.SEPAY_BANK_ACCOUNT_NUMBER?.trim();
+  const supabase = createServiceServerClient();
+  if (!expectedAccount || !supabase) {
+    throw new Error("Supabase webhook processing is not configured.");
+  }
+
+  const { error } = await supabase.rpc("process_sepay_webhook", {
+    p_payload: payload as Json,
+    p_payload_sha256: createHash("sha256")
+      .update(rawBody, "utf8")
+      .digest("hex"),
+    p_signature_timestamp: Number(timestamp),
+    p_expected_account_number: expectedAccount,
+  });
+  if (error) {
+    throw new Error("Supabase webhook processing failed.");
+  }
+}
+
 export async function handleSepayWebhook(request: Request) {
   const contentType = request.headers.get("content-type") || "";
   if (!contentType.toLowerCase().includes("application/json")) {
@@ -135,6 +161,14 @@ export async function handleSepayWebhook(request: Request) {
   }
 
   try {
+    if (process.env.SEPAY_SUPABASE_WEBHOOK_ENABLED === "true") {
+      await processInSupabase(
+        payload as Record<string, unknown>,
+        rawBody,
+        timestamp,
+      );
+      return json({ success: true });
+    }
     const result = await forwardToBookingScript(
       payload as Record<string, unknown>,
     );

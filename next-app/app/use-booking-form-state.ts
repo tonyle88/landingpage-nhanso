@@ -10,6 +10,7 @@ type BookingState = {
   consultationType: string;
   package: string;
   concern: string;
+  idempotencyKey: string;
   bookingId: string;
   paymentOrderId: string;
   expectedAmount: number;
@@ -24,6 +25,7 @@ const createState = (): BookingState => ({
   consultationType: "",
   package: "",
   concern: "",
+  idempotencyKey: "",
   bookingId: "",
   paymentOrderId: "",
   expectedAmount: 0,
@@ -126,6 +128,7 @@ export function useBookingFormState() {
         consultationType: String(data.get("consultationType") || ""),
         package: String(data.get("package") || ""),
         concern: String(data.get("concern") || ""),
+        idempotencyKey: window.crypto.randomUUID(),
         bookingId: "",
         paymentOrderId: "",
         expectedAmount: 0,

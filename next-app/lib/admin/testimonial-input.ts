@@ -1,5 +1,8 @@
+import { optionalUuid } from "./package-input";
+
 export function testimonialPayloadFromForm(form: FormData) {
   const imageUrl = String(form.get("image_url") || "").trim();
+  const mediaAssetId = optionalUuid(form.get("media_asset_id"));
   const altText = String(form.get("alt_text") || "").trim().slice(0, 240);
   const sortOrder = Number(String(form.get("sort_order") || "0"));
   let parsed: URL;
@@ -16,6 +19,7 @@ export function testimonialPayloadFromForm(form: FormData) {
     throw new Error("invalid order");
   }
   return {
+    media_asset_id: mediaAssetId,
     image_url: imageUrl,
     alt_text: altText,
     enabled: form.get("enabled") === "on",

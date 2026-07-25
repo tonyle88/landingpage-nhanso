@@ -8,8 +8,14 @@ export function TestimonialForm({ item }: { item?: Testimonial }) {
   return (
     <form className={styles.editorForm} action={saveTestimonialAction}>
       {item ? <input type="hidden" name="id" value={item.id} /> : null}
+      <input type="hidden" name="media_asset_id" value={item?.media_asset_id || ""} />
       <label className={styles.field}>URL ảnh HTTPS
-        <input name="image_url" type="url" defaultValue={item?.image_url || ""} required />
+        <input name="image_url" type="url" defaultValue={item?.image_url || ""} />
+        <small>Có thể để trống khi chọn tệp ảnh mới bên dưới.</small>
+      </label>
+      <label className={styles.field}>Hoặc tải ảnh mới lên Supabase Storage
+        <input name="image_file" type="file" accept="image/jpeg,image/png,image/webp" />
+        <small>JPEG, PNG hoặc WebP; tối đa 5 MB. Ảnh tải lên sẽ thay URL phía trên.</small>
       </label>
       <label className={styles.field}>Mô tả ảnh
         <input name="alt_text" maxLength={240} defaultValue={item?.alt_text || ""} required />

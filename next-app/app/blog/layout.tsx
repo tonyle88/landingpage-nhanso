@@ -13,7 +13,6 @@ export default function BlogLayout({
     <>
       <link rel="preconnect" href="https://script.google.com" />
       <link rel="preconnect" href="https://script.googleusercontent.com" />
-      <link rel="preconnect" href="https://drive.google.com" />
       <link rel="stylesheet" href="/assets/vendor/fonts/fonts.css" />
       <link
         rel="stylesheet"

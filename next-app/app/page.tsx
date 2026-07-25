@@ -43,7 +43,6 @@ export default async function LandingPage() {
     <>
       <link rel="preconnect" href="https://script.google.com" />
       <link rel="preconnect" href="https://script.googleusercontent.com" />
-      <link rel="preconnect" href="https://i.ibb.co" />
       <link
         rel="preload"
         href="/assets/images/hero_bg.webp"

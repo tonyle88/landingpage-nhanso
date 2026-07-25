@@ -251,6 +251,8 @@ export type Database = {
           email: string
           hold_expires_at: string | null
           id: string
+          idempotency_key: string | null
+          manual_payment_claimed_at: string | null
           package_code: string
           package_id: string | null
           package_name: string
@@ -258,6 +260,7 @@ export type Database = {
           payment_provider: string | null
           phone: string
           public_id: string
+          request_fingerprint: string | null
           slot_end: string
           slot_start: string
           status: Database["public"]["Enums"]["booking_status"]
@@ -276,6 +279,8 @@ export type Database = {
           email: string
           hold_expires_at?: string | null
           id?: string
+          idempotency_key?: string | null
+          manual_payment_claimed_at?: string | null
           package_code: string
           package_id?: string | null
           package_name: string
@@ -283,6 +288,7 @@ export type Database = {
           payment_provider?: string | null
           phone: string
           public_id: string
+          request_fingerprint?: string | null
           slot_end: string
           slot_start: string
           status?: Database["public"]["Enums"]["booking_status"]
@@ -301,6 +307,8 @@ export type Database = {
           email?: string
           hold_expires_at?: string | null
           id?: string
+          idempotency_key?: string | null
+          manual_payment_claimed_at?: string | null
           package_code?: string
           package_id?: string | null
           package_name?: string
@@ -308,6 +316,7 @@ export type Database = {
           payment_provider?: string | null
           phone?: string
           public_id?: string
+          request_fingerprint?: string | null
           slot_end?: string
           slot_start?: string
           status?: Database["public"]["Enums"]["booking_status"]
@@ -630,9 +639,11 @@ export type Database = {
           event_type: string | null
           id: string
           payload: Json
+          payload_sha256: string | null
           processed_at: string | null
           provider: string
           received_at: string
+          signature_timestamp: string | null
           signature_valid: boolean
           status: Database["public"]["Enums"]["webhook_status"]
         }
@@ -643,9 +654,11 @@ export type Database = {
           event_type?: string | null
           id?: string
           payload?: Json
+          payload_sha256?: string | null
           processed_at?: string | null
           provider: string
           received_at?: string
+          signature_timestamp?: string | null
           signature_valid?: boolean
           status?: Database["public"]["Enums"]["webhook_status"]
         }
@@ -656,9 +669,11 @@ export type Database = {
           event_type?: string | null
           id?: string
           payload?: Json
+          payload_sha256?: string | null
           processed_at?: string | null
           provider?: string
           received_at?: string
+          signature_timestamp?: string | null
           signature_valid?: boolean
           status?: Database["public"]["Enums"]["webhook_status"]
         }
@@ -684,6 +699,75 @@ export type Database = {
       admin_save_testimonial: {
         Args: { p_id: string | null; p_payload: Json }
         Returns: Database["public"]["Tables"]["testimonials"]["Row"]
+      }
+      admin_delete_blog_post: {
+        Args: { p_id: string }
+        Returns: string
+      }
+      admin_save_blog_post: {
+        Args: { p_id: string | null; p_payload: Json }
+        Returns: Database["public"]["Tables"]["blog_posts"]["Row"]
+      }
+      admin_delete_blog_category: {
+        Args: { p_id: string }
+        Returns: string
+      }
+      admin_save_blog_category: {
+        Args: { p_id: string | null; p_payload: Json }
+        Returns: Database["public"]["Tables"]["blog_categories"]["Row"]
+      }
+      admin_delete_site_setting: {
+        Args: { p_key: string }
+        Returns: string
+      }
+      admin_save_site_setting: {
+        Args: { p_key: string; p_payload: Json }
+        Returns: Database["public"]["Tables"]["site_settings"]["Row"]
+      }
+      admin_transition_booking: {
+        Args: {
+          p_id: string
+          p_expected_status: Database["public"]["Enums"]["booking_status"]
+          p_next_status: Database["public"]["Enums"]["booking_status"]
+        }
+        Returns: Database["public"]["Tables"]["bookings"]["Row"]
+      }
+      cancel_booking_reservation: {
+        Args: { p_public_id: string; p_idempotency_key: string }
+        Returns: Json
+      }
+      create_booking_reservation: {
+        Args: { p_idempotency_key: string; p_payload: Json }
+        Returns: Json
+      }
+      consume_booking_rate_limit: {
+        Args: {
+          p_ip_hash: string
+          p_email?: string | null
+          p_phone?: string | null
+        }
+        Returns: Json
+      }
+      list_booking_unavailable_slots: {
+        Args: { p_from: string; p_to: string }
+        Returns: { slot_start: string; slot_end: string }[]
+      }
+      get_booking_reservation_status: {
+        Args: { p_public_id: string; p_idempotency_key: string }
+        Returns: Json
+      }
+      acknowledge_manual_booking_payment: {
+        Args: { p_public_id: string; p_idempotency_key: string }
+        Returns: Json
+      }
+      process_sepay_webhook: {
+        Args: {
+          p_payload: Json
+          p_payload_sha256: string
+          p_signature_timestamp: number
+          p_expected_account_number: string
+        }
+        Returns: Json
       }
       current_admin_role: { Args: never; Returns: Database["public"]["Enums"]["admin_role"] }
       has_admin_role: {
