@@ -35,6 +35,24 @@
 - [ ] Xac nhan Apps Script cu van san sang o che do rollback/read-only.
 - [ ] Chot noi luu network/proxy/firewall evidence va thoi gian luu.
 
+## Buoc ke tiep da chot - Production pre-cutover inventory
+
+Pham vi duoc phep o buoc ke tiep chi la read-only/export:
+
+1. Xac nhan ten project/zone production va deployment hien tai; khong doc gia
+   tri secret.
+2. Export DNS truoc cutover va ghi TTL/record dang phuc vu; khong sua record.
+3. Export backup Google Sheets/public content, ghi timestamp, count va
+   SHA-256; khong khoa ghi.
+4. Tao delta dry-run va bao cao insert/update/delete. Delete phai nam trong
+   manifest rieng de owner phe duyet.
+5. Dien owner thuc hien, owner phe duyet rollback, cua so cutover, nguong
+   rollback va data recovery path.
+
+Diem dung bat buoc: khong freeze he cu, import production, rotate secret,
+chuyen webhook, gan domain hay sua Cloudflare trong buoc nay. Moi mutation can
+mot phe duyet rieng sau khi tat ca artifact tren duoc review.
+
 ## Production secret inventory
 
 Chi doi chieu **ten va noi quan ly**, khong doc/in gia tri:
