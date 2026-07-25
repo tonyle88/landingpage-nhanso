@@ -18,7 +18,7 @@ export default function SetPasswordPage() {
           <Image src="/assets/images/logo2.png" width={50} height={50} alt="" priority />
           <div>
             <strong>Clow Cat Patronus</strong>
-            <span>Admin Console · Supabase staging</span>
+            <span>Admin Console · Supabase</span>
           </div>
         </div>
         <p className={styles.eyebrow}>Hoàn tất lời mời</p>

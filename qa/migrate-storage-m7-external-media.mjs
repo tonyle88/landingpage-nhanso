@@ -15,32 +15,58 @@ const probe = process.argv.includes("--probe");
 const allowPartial = process.argv.includes("--allow-partial");
 const projectRef = process.env.SUPABASE_PROJECT_REF?.trim();
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-const secret = process.env.SUPABASE_SECRET_KEY?.trim();
+const accessToken = process.env.SUPABASE_ACCESS_TOKEN?.trim();
+let secret = process.env.SUPABASE_SECRET_KEY?.trim();
 const password = process.env.SUPABASE_DB_PASSWORD;
-if (
-  projectRef !== "dwledqvsooobegpqljur" ||
-  url !== `https://${projectRef}.supabase.co` ||
-  !secret ||
-  !password
-) {
-  throw new Error("Refusing to migrate media outside approved staging");
+const approvedProjects = {
+  dwledqvsooobegpqljur: {
+    environment: "staging",
+    dbHost: "aws-0-ap-southeast-1.pooler.supabase.com",
+  },
+  nuexmwyyibhkfcisaavw: {
+    environment: "production",
+    dbHost: "aws-0-ap-southeast-1.pooler.supabase.com",
+  },
+};
+const target = approvedProjects[projectRef];
+if (!target || url !== `https://${projectRef}.supabase.co` || !password) {
+  throw new Error("Refusing to migrate media outside an approved project");
 }
 if (apply && process.env.M7_STORAGE_MIGRATION_APPROVED !== projectRef) {
-  throw new Error("Missing explicit M7 staging migration approval");
+  throw new Error("Missing explicit M7 storage migration approval");
 }
+if (apply && !secret) {
+  if (!accessToken) {
+    throw new Error("Missing Supabase secret key or management access token");
+  }
+  const response = await fetch(
+    `https://api.supabase.com/v1/projects/${projectRef}/api-keys`,
+    {
+      headers: { authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(15_000),
+    },
+  );
+  if (!response.ok) {
+    throw new Error("Unable to retrieve the project service key");
+  }
+  const keys = await response.json();
+  secret = keys.find((key) => key.name === "service_role")?.api_key?.trim();
+  if (!secret) throw new Error("Project service key is unavailable");
+}
+if (!apply) secret = "dry-run-no-key";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const allowedHosts = new Set(["drive.google.com", "i.ibb.co"]);
 const db = new pg.Client({
-  host: "aws-0-ap-southeast-1.pooler.supabase.com",
+  host: target.dbHost,
   port: 5432,
   database: "postgres",
   user: `postgres.${projectRef}`,
   password,
   ssl: { rejectUnauthorized: false },
   application_name: apply
-    ? "nhanso-storage-m7-apply"
-    : "nhanso-storage-m7-dry-run",
+    ? `nhanso-${target.environment}-storage-apply`
+    : `nhanso-${target.environment}-storage-dry-run`,
 });
 const supabase = createClient(url, secret, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -120,7 +146,9 @@ async function fetchImage(source) {
     const response = await fetch(candidate, {
       redirect: "follow",
       signal: AbortSignal.timeout(30_000),
-      headers: { "user-agent": "nhanso-staging-media-migration/1.0" },
+      headers: {
+        "user-agent": `nhanso-${target.environment}-media-migration/1.0`,
+      },
     });
     if (!response.ok) continue;
     const declaredLength = Number(response.headers.get("content-length") || 0);
@@ -182,7 +210,8 @@ try {
       console.log(
         JSON.stringify({
           status: "PROBE",
-          staging: projectRef,
+          target: projectRef,
+          environment: target.environment,
           plannedRows: rows.length,
           accessible,
           inaccessible,
@@ -196,7 +225,8 @@ try {
     console.log(
       JSON.stringify({
         status: "DRY_RUN",
-        staging: projectRef,
+        target: projectRef,
+        environment: target.environment,
         plannedRows: rows.length,
         hostCounts,
         kindCounts,
@@ -289,7 +319,7 @@ try {
         `insert into public.audit_logs (
            action, target_type, target_id, message, after_data
          ) values (
-           'media.migrate', $1, $2, 'M7 staging external media migration',
+           'media.migrate', $1, $2, 'M7 external media migration',
            jsonb_build_object(
              'source_host', $3::text,
              'bucket', 'content-images',
@@ -309,7 +339,8 @@ try {
   console.log(
     JSON.stringify({
       status: "PASS",
-      staging: projectRef,
+      target: projectRef,
+      environment: target.environment,
       migratedRows: uploaded.length,
       unavailableRows,
       hostCounts,

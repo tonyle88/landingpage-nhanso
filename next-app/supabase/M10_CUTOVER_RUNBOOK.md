@@ -2,12 +2,83 @@
 
 ## Trang thai va pham vi
 
-- Trang thai: release-candidate staging `READY`; production cutover chua duoc
-  phe duyet.
+- Trang thai: production traffic da promote sang deployment chot; public,
+  booking, Auth owner va signed SePay smoke deu `PASS`.
 - M9 dang `DEFERRED - OWNER ACCEPTED RESIDUAL RISK`, khong phai `PASS`.
 - Ket qua security so bo con 3 Medium va 4 Low; chua ghi nhan P0/P1.
-- Khong thao tac production, DNS, custom domain, webhook ngan hang that hoac
-  gia tri secret trong Phase A.
+- SePay account va owner da duoc owner xac nhan. Payment activation da qua
+  signed-HMAC, replay, tamper, timestamp, amount/account mismatch va cleanup
+  gates tren ca deployment candidate lan custom production domain.
+
+## Production cutover execution - 2026-07-26
+
+- Supabase production duoc owner chot:
+  - project `nhanso-production`;
+  - ref `nuexmwyyibhkfcisaavw`;
+  - preflight: public tables `0`, Auth users `0`, Storage buckets/objects `0/0`;
+  - network evidence: TLS den Supabase DB remote `54.255.219.82:5432`.
+- Schema:
+  - dry-run dung `18` migration, khong co migration la;
+  - apply dat `18/18`, range `202607240001..202607250018`;
+  - verify `14` public tables, `14` RLS tables, `27` policies.
+- Public content:
+  - import chay hai lan de chung minh idempotency;
+  - counts: settings `224`, sections `11`, packages `4`, testimonials `6`,
+    categories `4`, posts `24`;
+  - blog-category orphan `0`.
+- Media:
+  - probe `30` URL, `28` accessible va `2` Google Drive unavailable;
+  - apply commit `28` media metadata/object paths;
+  - mot phep doc qua pooler ngay sau commit tra trang thai tre lam operator
+    nhan dinh nham va xoa object; pipeline dung truoc promote;
+  - repair da khoi phuc dung `28` object vao object path da commit;
+  - final verify: media assets/storage objects `28/28`, testimonial `6`,
+    blog Storage `22`, blog external exception `2`.
+- Vercel:
+  - production project chuyen Framework Preset tu `Other` sang `Next.js`;
+  - production env Supabase/booking duoc set qua stdin, khong ghi/in secret;
+  - `SEPAY_SUPABASE_WEBHOOK_ENABLED=false`;
+  - deployment dau `dpl_HxCGJkYNBZu9ZEkv4E3xgEF4MZcZ` bi loai do
+    booking slots `503` (new-format Supabase secret bi project tu choi);
+  - thay bang legacy project-scoped `service_role` key da kiem chung RPC;
+  - deployment duoc promote:
+    `dpl_BSKHHvQNeaYCRGqiUrCK5fSTh23j`,
+    `https://landingpage-nhanso-cz7k7yf4k-cuongle88.vercel.app`.
+  - Auth production da doi `site_url` sang custom domain, allow-list
+    `/admin/set-password`, khoa public signup; invite owner dat hau dieu kien
+    `Auth users/profiles/owners = 1/1/1`.
+  - owner production: `lechicuong2017@gmail.com`; owner da dat mat khau va
+    xac nhan login custom domain voi role `owner`.
+  - SePay virtual account da duoc set vao Vercel Sensitive Env; service role
+    da dong bo lai truc tiep tu Supabase Management API qua stdin.
+  - HMAC secret da duoc owner nap lai tu nguon SePay vao file local ignored,
+    dong bo sang Vercel Sensitive Env qua stdin, khong in secret.
+  - deployment chot da promote:
+    `dpl_J42tugoEXzyzLAnUMZLkfPrzDYoP`,
+    `https://landingpage-nhanso-87kzbhn4j-cuongle88.vercel.app`.
+  - signed SePay QA tren candidate va sau promote qua
+    `https://nhanso.clowcat.com.vn` deu `PASS`: valid callback, replay
+    idempotent, tamper/timestamp `401`, amount/account mismatch ignored an
+    toan, booking mismatch van `held`, synthetic data cleanup ve baseline.
+  - mot deployment truoc do vo tinh tao tren project `nhanso-staging` do
+    `next-app/.vercel` con link staging; khong gan custom production domain.
+    Link local da sua ve `landingpage-nhanso` truoc cac deployment sau.
+- Public smoke sau promote tren `https://nhanso.clowcat.com.vn`:
+  - `/`, `/blog`, `/admin/login`: `200`;
+  - booking slots co range hop le: `200`, cache `public, max-age=15`;
+  - CSP collector: `204`, `no-store`;
+  - unsigned SePay: `401`, `no-store`;
+  - response qua Cloudflare va co Cloudflare Ray/Vercel request IDs.
+- Final data parity:
+  - count va canonical hash cua settings, sections, packages, testimonials,
+    categories va posts deu khop snapshot;
+  - chi loai tru bon media binding fields da duoc thay co chu dich boi Storage
+    migration; media da doi chieu rieng `28/28`;
+  - `test:public-import` dat `7/7`, `test:storage-foundation` dat `8/8`,
+    local production build/TypeScript dat.
+- Gate con mo:
+  - ghi snapshot/checksum cuoi va tiep tuc hypercare;
+  - theo doi rollback thresholds da duoc owner chap thuan.
 
 ## Release candidate
 

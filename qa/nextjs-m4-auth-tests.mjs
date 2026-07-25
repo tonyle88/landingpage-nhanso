@@ -21,6 +21,7 @@ const [
   adminLogout,
   setPasswordPage,
   setPasswordForm,
+  inviteRedirect,
 ] = await Promise.all([
   read("next-app/lib/supabase/auth-server.ts"),
   read("next-app/lib/supabase/auth-browser.ts"),
@@ -34,6 +35,7 @@ const [
   read("next-app/app/admin/logout/route.ts"),
   read("next-app/app/admin/set-password/page.tsx"),
   read("next-app/app/admin/set-password/set-password-form.tsx"),
+  read("next-app/app/invite-redirect.tsx"),
 ]);
 
 test("role matrix keeps owner recovery distinct from daily admin", () => {
@@ -104,4 +106,13 @@ test("invite completion sets a password without exposing tokens", () => {
   assert.match(setPasswordForm, /supabase\.auth\.updateUser\(\{\s*password\s*\}\)/);
   assert.match(setPasswordForm, /window\.history\.replaceState/);
   assert.doesNotMatch(setPasswordForm, /localStorage|sessionStorage|console\./);
+});
+
+test("landing page forwards misplaced invite and recovery fragments", () => {
+  assert.match(inviteRedirect, /type === "invite"/);
+  assert.match(inviteRedirect, /type === "recovery"/);
+  assert.match(inviteRedirect, /access_token/);
+  assert.match(inviteRedirect, /refresh_token/);
+  assert.match(inviteRedirect, /\/admin\/set-password/);
+  assert.match(inviteRedirect, /window\.location\.replace/);
 });

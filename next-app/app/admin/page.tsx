@@ -32,8 +32,8 @@ export default async function AdminPage() {
           </form>
         </div>
         <p className={styles.description}>
-          Cổng xác thực và phân quyền staging đã hoạt động. Các màn hình quản trị
-          nội dung sẽ được chuyển ở bước tiếp theo.
+          Cổng xác thực và phân quyền production đang hoạt động. Sử dụng các
+          mục bên dưới để quản trị nội dung, lịch hẹn và thanh toán.
         </p>
         <nav className={styles.adminNav} aria-label="Quản trị nội dung">
           <Link href="/admin/packages">Quản lý gói dịch vụ</Link>

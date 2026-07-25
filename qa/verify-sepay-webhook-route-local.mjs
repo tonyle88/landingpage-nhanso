@@ -12,25 +12,40 @@ const baseUrl = process.env.SEPAY_WEBHOOK_BASE_URL || "http://127.0.0.1:3300";
 const projectRef = process.env.SUPABASE_PROJECT_REF?.trim();
 const password = process.env.SUPABASE_DB_PASSWORD;
 const secret =
-  process.env.SEPAY_ROUTE_QA_SECRET || "m6-synthetic-route-secret";
+  process.env.SEPAY_ROUTE_QA_SECRET ||
+  process.env.SEPAY_WEBHOOK_SECRET ||
+  "m6-synthetic-route-secret";
 const expectedAccount =
-  process.env.SEPAY_ROUTE_QA_EXPECTED_ACCOUNT || "M6-SYNTHETIC-ACCOUNT";
-const stagingHosts = {
+  process.env.SEPAY_ROUTE_QA_EXPECTED_ACCOUNT ||
+  process.env.SEPAY_BANK_ACCOUNT_NUMBER ||
+  "M6-SYNTHETIC-ACCOUNT";
+const vercelDeploymentId = process.env.VERCEL_DEPLOYMENT_ID?.trim();
+const approvedHosts = {
   dwledqvsooobegpqljur: "aws-0-ap-southeast-1.pooler.supabase.com",
+  nuexmwyyibhkfcisaavw: "aws-0-ap-southeast-1.pooler.supabase.com",
 };
+const productionApproval =
+  process.env.PRODUCTION_SEPAY_ROUTE_QA_APPROVED?.trim();
 
 const isLocalTarget = /^http:\/\/127\.0\.0\.1:\d+$/.test(baseUrl);
 const isPublicStagingTarget =
   baseUrl === "https://nhanso-staging.vercel.app";
+const isApprovedProductionTarget =
+  projectRef === "nuexmwyyibhkfcisaavw" &&
+  productionApproval === projectRef &&
+  [
+    "https://landingpage-nhanso-cuongle88.vercel.app",
+    "https://nhanso.clowcat.com.vn",
+  ].includes(baseUrl);
 if (
-  (!isLocalTarget && !isPublicStagingTarget) ||
+  (!isLocalTarget && !isPublicStagingTarget && !isApprovedProductionTarget) ||
   !projectRef ||
   !password ||
-  !stagingHosts[projectRef] ||
+  !approvedHosts[projectRef] ||
   !secret ||
   !expectedAccount
 ) {
-  throw new Error("Refusing to run SePay route QA outside approved staging");
+  throw new Error("Refusing to run SePay route QA outside an approved target");
 }
 
 const networkEvidence = new Set();
@@ -52,7 +67,7 @@ const sampleNetwork = async () => {
 };
 
 const client = new pg.Client({
-  host: stagingHosts[projectRef],
+  host: approvedHosts[projectRef],
   port: 5432,
   database: "postgres",
   user: `postgres.${projectRef}`,
@@ -60,7 +75,9 @@ const client = new pg.Client({
   ssl: { rejectUnauthorized: false },
   connectionTimeoutMillis: 15_000,
   query_timeout: 30_000,
-  application_name: "nhanso-sepay-route-qa",
+  application_name: isApprovedProductionTarget
+    ? "nhanso-production-sepay-route-qa"
+    : "nhanso-staging-sepay-route-qa",
 });
 
 const makeTransactionId = () =>
@@ -72,6 +89,29 @@ const sign = (rawBody, timestamp) =>
     .update(`${timestamp}.${rawBody}`, "utf8")
     .digest("hex")}`;
 const postRaw = async (rawBody, timestamp, signature = sign(rawBody, timestamp)) => {
+  if (vercelDeploymentId) {
+    const { stdout } = await execFileAsync("npx", [
+      "--cache", "/private/tmp/nhanso-vercel-npm-cache",
+      "--yes", "vercel@latest", "curl", "/api/sepay-webhook",
+      "--deployment", vercelDeploymentId,
+      "--", "--silent", "--show-error", "--request", "POST",
+      "--header", "content-type: application/json",
+      "--header", `x-sepay-signature: ${signature}`,
+      "--header", `x-sepay-timestamp: ${timestamp}`,
+      "--data-binary", rawBody,
+      "--write-out", "\n%{http_code}",
+    ], {
+      cwd: resolve(root, "next-app"),
+      maxBuffer: 2 * 1024 * 1024,
+    });
+    const separator = stdout.lastIndexOf("\n");
+    const responseBody = stdout.slice(0, separator).trim();
+    const status = Number(stdout.slice(separator + 1).trim());
+    return {
+      response: { status },
+      data: JSON.parse(responseBody),
+    };
+  }
   const response = await fetch(`${baseUrl}/api/sepay-webhook`, {
     method: "POST",
     cache: "no-store",
@@ -170,7 +210,11 @@ try {
     valid.response.status !== 200 ||
     JSON.stringify(valid.data) !== JSON.stringify({ success: true })
   ) {
-    throw new Error("Valid signed SePay route callback failed");
+    throw new Error(
+      `Valid signed SePay route callback failed (${valid.response.status}: ${
+        typeof valid.data?.message === "string" ? valid.data.message : "unexpected response"
+      })`,
+    );
   }
 
   const duplicate = await postRaw(validRaw, now);
@@ -288,7 +332,8 @@ try {
     JSON.stringify({
       status: "PASS",
       target: baseUrl,
-      staging: projectRef,
+      projectRef,
+      production: isApprovedProductionTarget,
       validSignedCallback: true,
       duplicateAcknowledged: true,
       duplicatePaymentRows: 0,

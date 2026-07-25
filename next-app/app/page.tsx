@@ -20,6 +20,7 @@ import {
 import BookingFlow from "@/components/landing/booking-flow";
 import LandingUtilities from "@/components/landing/landing-utilities";
 import LandingRuntime from "./landing-runtime";
+import { InviteRedirect } from "./invite-redirect";
 import { getPublicPackages } from "@/lib/supabase/public-packages";
 import { getPublicTestimonials } from "@/lib/supabase/public-testimonials";
 import { getPublicLandingContent } from "@/lib/supabase/public-landing-content";
@@ -41,6 +42,7 @@ export default async function LandingPage() {
 
   return (
     <>
+      <InviteRedirect />
       <link rel="preconnect" href="https://script.google.com" />
       <link rel="preconnect" href="https://script.googleusercontent.com" />
       <link
