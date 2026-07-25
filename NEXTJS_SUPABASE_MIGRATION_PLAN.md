@@ -575,11 +575,11 @@ se tu dat secret vao dashboard/local ignored file.
 | 2026-07-25 | M8 | Public snapshot local ignored `0600` (224 settings, 11 sections, 4 packages, 6 testimonials, 4 categories, 24 posts), snapshot SHA-256 `7628c93a...93792`, SQL SHA-256 `c43bc55e...7021d`. Rehearsal phat hien migration 016 khong replay-safe khi 015 da co payment status cast; da sua 016 thanh no-op khi cast dung va van fail-closed neu expression la. Hai database Supabase Postgres rong, ap 18 migrations, moi pass import 2 lan: 8.861s va 9.338s, count/hash/key parity 100%, orphan 0, exception 0. Ca hai container `network=none`, ports `{}`, khong dung source/production secret, container/volume da cleanup. M8 foundation 6/6, public import 6/6, SePay foundation 4/4 | PASS - M8 STAGING REHEARSAL COMPLETE |
 | 2026-07-25 | M10 | Phase A local mini-gate: 68/68 auth/booking/payment/upload/header/parity tests pass; isolated RLS pgTAP 11/11, Docker `network=none published={}` va cleanup pass. Sua RLS harness doi readiness on dinh 3 giay de tranh Supabase init-server restart race. Chua chay staging script, chua doc production secret, chua doi DNS/domain/webhook/production data. Local Node tests khong co packet capture rieng nen khong tuyen bo zero egress cho toan phien | PASS - PHASE A LOCAL/ISOLATED ONLY |
 | 2026-07-25 | M10 | Existing staging HTTPS smoke: `/`, `/blog`, `/admin/login` 200; CSP collector 204/no-store; unsigned SePay 401/no-store; CSP nonce/strict-dynamic, HSTS, XFO, XCTO, Referrer, Permissions va CORP present. curl remote IP `216.198.79.195`, TLS verify 0. Commit prep `d9ad072` chua push do Git CLI khong co HTTPS credential; staging hien tai chua duoc xem la release-candidate deployment | PASS - EXISTING STAGING ONLY / RC PUSH PENDING |
+| 2026-07-25 | M10 | Owner push clean branch `codex/m10-release-candidate`; local/remote chot SHA `03ad8623f2e906da03dfc6d6e1bcdc69cc818325`. Deploy tu `next-app` vao project rieng `nhanso-staging`, deployment `dpl_8D8aZKnJ5mizRX6RDfs7FjKBqe9b` READY va alias `https://nhanso-staging.vercel.app`; khong cham project production that. RC smoke: `/`, `/blog`, `/admin/login` 200; CSP collector 204/no-store; unsigned SePay 401/no-store; security headers hien dien; curl remote IP `64.29.17.195`/`216.198.79.195`, TLS verify 0. Khong co full packet capture cho moi ket noi Vercel build nen khong tuyen bo zero egress | PASS - RELEASE CANDIDATE STAGING READY |
 
 ## 9. Cong viec tiep theo
 
-1. M10 Phase A read-only: chot release-candidate SHA, lap inventory deployment,
-   backup/freeze/delta checklist, rollback thresholds va production secret
-   names (khong doc/gia tri secret).
-2. Chay mini-gate M10 tren staging; neu fail P0/P1 thi dung va quay lai M9.
-3. Chi lap lich cutover sau khi owner xac nhan mini-gate va residual risk.
+1. Owner review va phe duyet ket qua release-candidate staging mini-gate.
+2. Dien bang chung backup/freeze/delta va xac nhan rollback owner truoc cutover.
+3. Chi lap lich/chay production cutover sau mot phe duyet rieng; M9 van la
+   `DEFERRED - OWNER ACCEPTED RESIDUAL RISK`, khong duoc ghi nhan la pass.

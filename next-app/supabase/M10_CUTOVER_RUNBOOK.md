@@ -139,6 +139,27 @@ day du trong runbook/artifact.
   - CSP nonce/strict-dynamic, HSTS, X-Frame-Options, XCTO, Referrer-Policy,
     Permissions-Policy va CORP deu hien dien;
   - curl network evidence: remote IP `216.198.79.195`, TLS verify result `0`.
-- Push `d9ad072` chua thanh cong vi Git CLI khong co HTTPS credential. Khong
-  trich xuat token tu GitHub Desktop; owner can push branch bang ung dung da
-  dang nhap, sau do moi deploy/smoke release-candidate.
+- Owner da push clean branch `codex/m10-release-candidate`; remote va local
+  cung tro toi release-candidate SHA
+  `03ad8623f2e906da03dfc6d6e1bcdc69cc818325`.
+- Release candidate da deploy tu dung thu muc `next-app` vao project rieng
+  `nhanso-staging`:
+  - deployment ID `dpl_8D8aZKnJ5mizRX6RDfs7FjKBqe9b`;
+  - deployment URL
+    `https://nhanso-staging-4hxir5vq5-cuongle88.vercel.app`;
+  - stable alias `https://nhanso-staging.vercel.app`;
+  - Vercel state `READY`, build Next.js 16.2.11 va TypeScript pass;
+  - khong deploy/cham project production that `landingpage-nhanso`.
+- Release-candidate HTTPS smoke tren stable alias:
+  - `/`, `/blog`, `/admin/login`: `200`;
+  - `POST /api/csp-report`: `204`, `Cache-Control: no-store`;
+  - unsigned `POST /api/sepay-webhook`: `401`,
+    `Cache-Control: no-store`;
+  - CSP nonce/strict-dynamic, HSTS, X-Frame-Options, XCTO, Referrer-Policy,
+    Permissions-Policy va CORP deu hien dien;
+  - curl network evidence: remote IP `64.29.17.195` va `216.198.79.195`,
+    TLS verify result `0`.
+- Gioi han egress evidence: curl chung minh cac ket noi HTTPS noi tren; Vercel
+  CLI hien endpoint upload/deployment va deployment ID, nhung khong co packet
+  capture day du cho moi ket noi cua build nen khong tuyen bo phien khong co
+  egress khac.
