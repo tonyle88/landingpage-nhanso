@@ -32,9 +32,8 @@
 - [ ] Chot cua so cutover, owner thuc hien va owner phe duyet rollback.
 - [~] Da tao baseline read-only Google/public content; owner van can chot
   snapshot cuoi sau freeze.
-- [~] Da tao delta summary read-only; khong co insert/delete, nhung media
-  columns khac nguon Google do da migrate Storage. Chua duoc apply delta cho
-  den khi media columns duoc bao ve.
+- [~] Delta tooling da bao ve media va rehearsal pass; van can tao final delta
+  sau freeze truoc khi duoc phep apply.
 - [ ] Xac nhan Apps Script cu van san sang o che do rollback/read-only.
 - [ ] Chot noi luu network/proxy/firewall evidence va thoi gian luu.
 
@@ -241,10 +240,23 @@ day du trong runbook/artifact.
   - khong can delete manifest o snapshot nay.
 - Chenh lech media phu hop voi M7 Storage migration da xac minh. Day la
   inference tu ten cot delta va bang chung M7, khong phai phep mien gate.
-- Cam apply payload Google hien tai vi co the ghi de URL/asset Storage. Delta
-  production phai bao ve bon media columns tren hoac lay Supabase lam source
-  of truth cho chung, sau do dry-run lai.
+- SQL upsert da bao ve bon media columns tren khi conflict; insert moi van can
+  quy trinh migrate media rieng. Snapshot hien tai co insert `0`.
+- Test `test:public-import` pass `7/7`, gom assertion SQL khong co assignment
+  ghi de media; `test:m8-rehearsal` foundation pass `6/6`.
+- SQL local ignored SHA-256
+  `09d9d21952836bc5f3e41bac47a6938fc52e67e460974df565f9a558427f75ff`;
+  scan xac nhan media update assignments `0`.
+- Isolated rehearsal hai pass:
+  - moi pass ap `18` migration va import cung SQL hai lan;
+  - count `224/11/4/6/4/24`, hash/key/FK parity dat;
+  - exception `0`, repeatable `true`;
+  - Docker `network=none published={}`;
+  - `sourceSecretsUsed=false`, `productionTargetUsed=false`;
+  - container/volume tam duoc cleanup theo harness.
+- Day moi la rehearsal cua snapshot read-only hien tai. Khong apply staging
+  hoac production; final delta phai tao lai sau freeze va duoc owner review.
 - Network sampler thu duoc `9` socket observations tu chinh tien trinh. Day
   khong phai full packet capture nen khong dung de tuyen bo zero egress.
 - Comparator delta dung canonical JSON de tranh bao update gia do thu tu key
-  JSON; `test:public-import` pass `6/6`.
+  JSON.

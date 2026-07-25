@@ -5,9 +5,17 @@ const TABLES = {
   },
   landing_sections: { conflict: "section_key", json: new Set() },
   packages: { conflict: "code", json: new Set(["features"]) },
-  testimonials: { conflict: "id", json: new Set() },
+  testimonials: {
+    conflict: "id",
+    json: new Set(),
+    preserveOnConflict: new Set(["image_url", "media_asset_id"]),
+  },
   blog_categories: { conflict: "slug", json: new Set() },
-  blog_posts: { conflict: "slug", json: new Set() },
+  blog_posts: {
+    conflict: "slug",
+    json: new Set(),
+    preserveOnConflict: new Set(["cover_url", "cover_asset_id"]),
+  },
 };
 
 function identifier(value) {
@@ -52,7 +60,11 @@ function buildUpsert(table, rows, config) {
     )
     .join(",\n");
   const updates = columns
-    .filter((column) => column !== config.conflict)
+    .filter(
+      (column) =>
+        column !== config.conflict &&
+        !config.preserveOnConflict?.has(column),
+    )
     .map(
       (column) =>
         `${identifier(column)} = EXCLUDED.${identifier(column)}`,

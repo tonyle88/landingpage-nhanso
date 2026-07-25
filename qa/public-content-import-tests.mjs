@@ -106,6 +106,24 @@ test("SQL import is transactional, idempotent, and safely escaped", () => {
   assert.doesNotMatch(sql, /O'Brien/);
 });
 
+test("SQL upserts preserve media already migrated to Storage", () => {
+  const payload = transformGooglePublicContent(synthetic);
+  const sql = buildPublicImportSql(payload);
+
+  assert.doesNotMatch(sql, /"image_url" = EXCLUDED\."image_url"/);
+  assert.doesNotMatch(
+    sql,
+    /"media_asset_id" = EXCLUDED\."media_asset_id"/,
+  );
+  assert.doesNotMatch(sql, /"cover_url" = EXCLUDED\."cover_url"/);
+  assert.doesNotMatch(
+    sql,
+    /"cover_asset_id" = EXCLUDED\."cover_asset_id"/,
+  );
+  assert.match(sql, /"alt_text" = EXCLUDED\."alt_text"/);
+  assert.match(sql, /"title" = EXCLUDED\."title"/);
+});
+
 test("database timestamps normalize before parity hashing", () => {
   assert.deepEqual(
     projectRows(
