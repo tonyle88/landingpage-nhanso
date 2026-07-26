@@ -411,24 +411,23 @@ Definition of Done:
 
 ### M10 - Cutover va rollback
 
-Trang thai: `[~] IN PROGRESS - PHASE A PREPARATION ONLY`
+Trang thai: `[~] IN PROGRESS - PRODUCTION CUTOVER COMPLETE / HYPERCARE`
 
 Mini-gate truoc production mutation:
 
-- [ ] Auth/RLS smoke va adversarial gate khong co P0/P1.
-- [ ] Booking/payment synthetic gate va webhook idempotency pass.
-- [ ] Rollback command, owner, trigger va recovery data path duoc chot.
-- [ ] HTTPS routes va security-header smoke pass tren release candidate.
-- [ ] Owner xac nhan lai residual Medium/Low truoc cutover.
+- [x] Auth/RLS smoke va adversarial gate khong co P0/P1.
+- [x] Booking/payment synthetic gate va webhook idempotency pass.
+- [x] Rollback command, owner, trigger va recovery data path duoc chot.
+- [x] HTTPS routes va security-header smoke pass tren release candidate.
+- [x] Owner xac nhan residual Medium/Low va chap nhan defer M9 truoc cutover.
 
-- [ ] Deploy commit release-candidate co SHA duoc ghi nhan.
-- [ ] Backup Google Sheets lan cuoi.
-- [ ] Freeze write tren he cu.
-- [ ] Import delta va doi chieu.
-- [ ] Rotate/set production secrets bang Vercel/Supabase secret management.
-- [ ] Gan domain vao Next.js deployment.
-- [ ] Chuyen Cloudflare web record sang DNS-only.
-- [ ] Kiem tra SSL, headers, routes, booking va payment.
+- [x] Deploy commit release-candidate co SHA duoc ghi nhan.
+- [x] Backup Google/public content lan cuoi va luu artifact local ignored.
+- [x] Chot snapshot/delta cuoi truoc import production.
+- [x] Import delta va doi chieu count/checksum.
+- [x] Rotate/set production secrets bang Vercel/Supabase secret management.
+- [x] Gan domain vao Next.js deployment va giu Cloudflare proxy theo kien truc.
+- [x] Kiem tra SSL, headers, routes, booking va payment.
 - [ ] Theo doi error/webhook trong cua so hypercare.
 - [ ] Giu he cu read-only trong thoi gian rollback.
 - [ ] Tat Apps Script chi sau khi traffic bang 0 duoc xac minh.
@@ -453,15 +452,15 @@ Rollback action:
 
 | He hien tai | He moi | Trang thai |
 |---|---|---|
-| `index.html`, `style.css`, `script.js` | Next.js landing route/components | TODO |
-| `blog.html`, `blog.js` | Next.js `/blog` routes | TODO |
-| `admin/*` | Next.js `/admin` + Supabase Auth | TODO |
-| Google Sheets | Supabase PostgreSQL | TODO |
-| Google Apps Script | Next.js Route Handlers | TODO |
-| Google Drive/ImgBB | `public/` + Supabase Storage | COMPLETE (STAGING) |
-| `api/csp-report.mjs` | `app/api/csp-report/route.ts` | TODO |
-| `api/sepay-webhook.mjs` | `app/api/sepay-webhook/route.ts` | TODO |
-| `vercel.json` headers | Next.js/Vercel header config | TODO |
+| `index.html`, `style.css`, `script.js` | Next.js landing route/components | COMPLETE (PRODUCTION) |
+| `blog.html`, `blog.js` | Next.js `/blog` routes | COMPLETE (PRODUCTION) |
+| `admin/*` | Next.js `/admin` + Supabase Auth | COMPLETE (PRODUCTION) |
+| Google Sheets | Supabase PostgreSQL | COMPLETE (PRODUCTION, LEGACY RETAINED FOR ROLLBACK) |
+| Google Apps Script | Next.js Route Handlers | COMPLETE (PRODUCTION, LEGACY RETAINED FOR ROLLBACK) |
+| Google Drive/ImgBB | `public/` + Supabase Storage | COMPLETE (PRODUCTION) |
+| `api/csp-report.mjs` | `app/api/csp-report/route.ts` | COMPLETE (PRODUCTION) |
+| `api/sepay-webhook.mjs` | `app/api/sepay-webhook/route.ts` | COMPLETE (PRODUCTION) |
+| `vercel.json` headers | Next.js/Vercel header config | COMPLETE (PRODUCTION) |
 
 ## 7. Thong tin/quyen se can tu owner
 
@@ -470,13 +469,13 @@ se tu dat secret vao dashboard/local ignored file.
 
 - [x] Supabase staging project URL va publishable key duoc dat trong local
   ignored environment, khong ghi vao Git/chat.
-- [ ] Supabase production project duoc tao rieng.
-- [ ] Quyen cau hinh Vercel Environment Variables.
-- [ ] Quyen cau hinh custom domain.
-- [ ] Quyen Cloudflare DNS.
-- [ ] Danh sach Google Sheets/Apps Script production can migration.
-- [ ] Cua so cutover va nguoi phe duyet rollback.
-- [ ] SePay staging/test callback hoac quy trinh test duoc phe duyet.
+- [x] Supabase production project duoc tao rieng.
+- [x] Quyen cau hinh Vercel Environment Variables.
+- [x] Quyen cau hinh custom domain.
+- [x] Quyen Cloudflare DNS.
+- [x] Danh sach Google/public content production can migration.
+- [x] Cua so cutover va nguoi phe duyet rollback.
+- [x] SePay signed-HMAC callback va quy trinh synthetic QA duoc phe duyet.
 
 ## 8. Nhat ky thuc hien
 
@@ -586,7 +585,8 @@ se tu dat secret vao dashboard/local ignored file.
 
 ## 9. Cong viec tiep theo
 
-1. Owner review va phe duyet ket qua release-candidate staging mini-gate.
-2. Dien bang chung backup/freeze/delta va xac nhan rollback owner truoc cutover.
-3. Chi lap lich/chay production cutover sau mot phe duyet rieng; M9 van la
+1. Tiep tuc hypercare toi du 72 gio va doi chieu rollback thresholds da chot.
+2. Giu he cu/read-only recovery path trong cua so rollback; chi tat Apps
+   Script sau khi traffic cu bang 0 co evidence.
+3. Hoan tat cac hang muc M9 da defer; M9 van la
    `DEFERRED - OWNER ACCEPTED RESIDUAL RISK`, khong duoc ghi nhan la pass.

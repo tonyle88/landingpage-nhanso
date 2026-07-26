@@ -108,6 +108,35 @@
 - Gate con mo:
   - tiep tuc hypercare va theo doi rollback thresholds da duoc owner chap
     thuan.
+  - giu recovery path cu cho den khi co evidence traffic Apps Script bang `0`;
+    chua tat Apps Script trong buoc nay.
+
+## GitHub release governance - 2026-07-26
+
+- Pull request `#1` tu `codex/m10-release-candidate` da merge vao `main`:
+  - merge commit `9d89a06`;
+  - Vercel production deployment sau merge `READY`:
+    `dpl_2xz7jBFUTEbzEGYnaYVeatH9RmYf`;
+  - custom production alias van la `https://nhanso.clowcat.com.vn`.
+- Post-merge smoke pass cho `/`, `/blog`, `/admin/login`, booking slots,
+  CSP collector va security headers; unsigned SePay van fail-closed.
+- Snapshot sau merge tao local ignored mode `0600`:
+  `.staging-import/m10-production-final-2026-07-26T03-30-50-480Z.json`;
+  SHA-256
+  `de1edd2c780f2824f996526256f29d4df57dd58b1ce1e80ec2d35436d0abab68`.
+- Snapshot xac nhan catalog `14/14/27`, identity `1/1/1`, public counts
+  `224/11/4/6/4/24`, media/storage `28/28`; booking/payment/webhook synthetic
+  da cleanup va failed webhook gan nhat `0`.
+- GitHub ruleset `Protect main production` (ID `19754669`) da duoc owner
+  xac minh `Active`, target `main`, khong co bypass:
+  - require pull request truoc merge, approvals `0` de tranh deadlock voi
+    solo owner;
+  - required status check `Vercel`;
+  - block force push va restrict deletion;
+  - `require branches to be up to date` tam de `OFF`.
+- Process-level network evidence cho snapshot ghi nhan Supabase DB remote
+  `54.255.219.82:5432`; day khong phai full packet capture va khong duoc dung
+  de tuyen bo zero egress.
 
 ## Release candidate
 
