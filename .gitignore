@@ -8,9 +8,17 @@ Pdf create/previews/
 /mentor_bao.png
 /mentor_cuong.png
 .vercel
-.next/
-node_modules/
 .env*
 !.env.example
 !next-app/.env.example
+
+# Local dependencies and Next.js build output
+node_modules/
+.next/
+
+# Local migration, QA and production snapshot artifacts
 .staging-import/
+
+# Supabase CLI local link/cache state
+next-app/supabase/.temp/
+next-app/supabase/.branches/
