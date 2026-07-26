@@ -90,6 +90,21 @@
   - process network evidence `54.255.219.82:5432`; day khong phai full
     packet capture nen khong dung de tuyen bo zero egress.
   - hypercare bat dau tu moc snapshot tren; rollback thresholds giu nguyen.
+- Hypercare checkpoint 1:
+  - captured `2026-07-26T02:39:50.607Z` (`09:39:50 +07`);
+  - artifact local ignored mode `0600`:
+    `.staging-import/m10-production-final-2026-07-26T02-39-50-607Z.json`;
+  - snapshot SHA-256
+    `983714bc9f6db713722e5c003a9e02618446d8fdcf37d7b9c65eeba98c4c9bd9`;
+  - catalog, identity, public counts, canonical public hashes va operational
+    aggregates deu giong baseline;
+  - public smoke: root/blog/login/slots `200`, unsigned SePay `401`, TLS
+    verify `0`; thoi gian tong quan sat lan luot khoang
+    `0.82s/2.71s/1.92s/2.61s/1.09s`;
+  - booking/payment/webhook aggregates van rong, failed webhooks trong gio
+    gan nhat `0`;
+  - process DB evidence `52.77.146.31:5432`; public HTTPS qua Cloudflare
+    `104.21.82.242` va `172.67.209.137`.
 - Gate con mo:
   - tiep tuc hypercare va theo doi rollback thresholds da duoc owner chap
     thuan.
