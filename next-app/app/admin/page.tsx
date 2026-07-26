@@ -36,6 +36,7 @@ export default async function AdminPage() {
           mục bên dưới để quản trị nội dung, lịch hẹn và thanh toán.
         </p>
         <nav className={styles.adminNav} aria-label="Quản trị nội dung">
+          <Link href="/admin/sections">Quản lý nội dung section</Link>
           <Link href="/admin/packages">Quản lý gói dịch vụ</Link>
           <Link href="/admin/testimonials">Quản lý testimonials</Link>
           <Link href="/admin/blog">Quản lý blog</Link>

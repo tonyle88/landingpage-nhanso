@@ -684,6 +684,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_save_landing_section: {
+        Args: { p_id: string; p_payload: Json }
+        Returns: Database["public"]["Tables"]["landing_sections"]["Row"]
+      }
       admin_delete_package: {
         Args: { p_id: string }
         Returns: string
