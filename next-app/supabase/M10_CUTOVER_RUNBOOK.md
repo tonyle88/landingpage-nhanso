@@ -76,9 +76,23 @@
     migration; media da doi chieu rieng `28/28`;
   - `test:public-import` dat `7/7`, `test:storage-foundation` dat `8/8`,
     local production build/TypeScript dat.
+- Post-cutover snapshot/hypercare baseline:
+  - captured `2026-07-26T02:33:40.105Z` (`09:33:40 +07`);
+  - artifact local ignored mode `0600`:
+    `.staging-import/m10-production-final-2026-07-26T02-33-40-105Z.json`;
+  - snapshot SHA-256
+    `c633485c0b5167804d9443c9edf5ccf81ed7997847b769d2fa37aaa15f99d79c`;
+  - catalog `14` tables, `14` RLS tables, `27` policies;
+  - identity `Auth users/profiles/owners = 1/1/1`;
+  - public counts `224/11/4/6/4/24`, media/storage `28/28`;
+  - booking/payment/webhook aggregates empty after synthetic QA cleanup;
+  - failed webhooks in previous hour `0`;
+  - process network evidence `54.255.219.82:5432`; day khong phai full
+    packet capture nen khong dung de tuyen bo zero egress.
+  - hypercare bat dau tu moc snapshot tren; rollback thresholds giu nguyen.
 - Gate con mo:
-  - ghi snapshot/checksum cuoi va tiep tuc hypercare;
-  - theo doi rollback thresholds da duoc owner chap thuan.
+  - tiep tuc hypercare va theo doi rollback thresholds da duoc owner chap
+    thuan.
 
 ## Release candidate
 
