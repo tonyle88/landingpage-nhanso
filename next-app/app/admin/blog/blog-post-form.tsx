@@ -7,8 +7,21 @@ import styles from "../admin.module.css";
 type BlogPost = Tables<"blog_posts">;
 type BlogCategory = Tables<"blog_categories">;
 
-function localDateTime(value: string | null | undefined) {
-  return value ? new Date(value).toISOString().slice(0, 16) : "";
+function localDateTime(value: string | null | undefined, fallbackToNow = false) {
+  const date = value ? new Date(value) : fallbackToNow ? new Date() : null;
+  if (!date || !Number.isFinite(date.getTime())) return "";
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    "-",
+    pad(date.getMonth() + 1),
+    "-",
+    pad(date.getDate()),
+    "T",
+    pad(date.getHours()),
+    ":",
+    pad(date.getMinutes()),
+  ].join("");
 }
 
 export function BlogPostForm({
@@ -67,7 +80,10 @@ export function BlogPostForm({
       <CoverImageField coverUrl={item?.cover_url} thumbnailUrl={item?.thumbnail_url} />
       <label className={styles.field}>Thời điểm xuất bản
         <input name="published_at" type="datetime-local"
-          defaultValue={localDateTime(item?.published_at)} />
+          defaultValue={localDateTime(item?.published_at, !item)} />
+        <small>{item
+          ? "Giữ nguyên ngày đang lưu nếu anh không thay đổi trường này."
+          : "Bài viết mới mặc định dùng ngày và giờ hiện tại."}</small>
       </label>
       <div className={styles.checkRow}>
         <label><input name="pinned" type="checkbox"

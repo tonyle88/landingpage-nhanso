@@ -656,7 +656,10 @@
 .editorToolbar button { min-width: 34px; min-height: 32px; padding: 0 9px; border: 1px solid transparent; border-radius: 6px; cursor: pointer; background: transparent; color: #213b3f; font: inherit; font-size: .74rem; }
 .editorToolbar button:hover, .editorToolbar .toolbarActive { border-color: rgb(217 78 31 / 30%); background: rgb(240 201 106 / 30%); color: #8d421f; }
 .editorToolbar > span { width: 1px; margin: 3px 4px; background: #ccd6d8; }
-.editorCanvas, .editorSource { width: 100%; min-height: 360px; padding: 18px; outline: none; color: #17272a; background: #fff; font-size: .9rem; font-weight: 400; line-height: 1.7; caret-color: #d94e1f; }
+.editorCanvas, .editorSource { width: 100%; min-height: 360px; max-height: 560px; overflow-y: auto; overscroll-behavior: contain; padding: 18px; outline: none; color: #17272a; background: #fff; font-size: .9rem; font-weight: 400; line-height: 1.7; caret-color: #d94e1f; scrollbar-color: #d4a843 #edf2f2; scrollbar-width: thin; }
+.editorCanvas::-webkit-scrollbar, .editorSource::-webkit-scrollbar { width: 10px; }
+.editorCanvas::-webkit-scrollbar-track, .editorSource::-webkit-scrollbar-track { background: #edf2f2; }
+.editorCanvas::-webkit-scrollbar-thumb, .editorSource::-webkit-scrollbar-thumb { border: 2px solid #edf2f2; border-radius: 999px; background: #d4a843; }
 .editorCanvas:empty::before { content: attr(data-placeholder); color: #7c898c; }
 .editorCanvas h2, .editorCanvas h3 { font-family: Georgia, "Times New Roman", serif; }
 .editorCanvas a { color: #a54420; }
@@ -666,7 +669,7 @@
 .editorCanvas :global(.editor-align-right) { text-align: right; }
 .editorCanvas :global(.editor-align-justify) { text-align: justify; }
 .editorSource { display: block; min-height: 360px; resize: vertical; border: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-.richEditorCompact .editorCanvas, .richEditorCompact .editorSource { min-height: 150px; }
+.richEditorCompact .editorCanvas, .richEditorCompact .editorSource { min-height: 150px; max-height: 280px; }
 .editorHiddenInput, .editorVisualHidden { display: none; }
 .editorHint { padding: 8px 12px; border-top: 1px solid #d8e0e2; color: #53676b; background: #f7f9f9; font-size: .68rem; font-weight: 600; }
 .coverWorkflow { display: grid; gap: 16px; }
@@ -726,7 +729,8 @@
   .pagination a { padding: 0 9px; }
   .pagination span { text-align: center; }
   .editorToolbar { gap: 2px; }
-  .editorCanvas, .editorSource { min-height: 300px; padding: 14px; }
+  .editorCanvas, .editorSource { min-height: 280px; max-height: 440px; padding: 14px; }
+  .richEditorCompact .editorCanvas, .richEditorCompact .editorSource { min-height: 140px; max-height: 240px; }
   .thumbnailPreview { grid-template-columns: 1fr; }
   .adminToast { right: 16px; bottom: 16px; }
 }

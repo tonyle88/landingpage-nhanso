@@ -72,7 +72,12 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: Pr
 
   const supabase = await createAuthServerClient();
   const [{ data: posts, error }, { data: categories }] = await Promise.all([
-    supabase.from("blog_posts").select("*").order("pinned", { ascending: false }).order("updated_at", { ascending: false }),
+    supabase
+      .from("blog_posts")
+      .select("*")
+      .order("pinned", { ascending: false })
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false }),
     supabase.from("blog_categories").select("*").order("sort_order"),
   ]);
   const params = await searchParams;
