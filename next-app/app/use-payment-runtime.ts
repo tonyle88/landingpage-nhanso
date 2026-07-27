@@ -273,6 +273,24 @@ export function usePaymentRuntime() {
           status?: string;
         };
         if (!result?.ok) return;
+        if (result.status === "cancelled" || result.status === "expired") {
+          stop();
+          const statusText =
+            document.querySelector<HTMLElement>("#sepay-status-text");
+          const countdown =
+            document.querySelector<HTMLElement>("#sepay-countdown");
+          if (statusText) {
+            statusText.textContent =
+              result.status === "cancelled"
+                ? "Lịch giữ chỗ này đã bị hủy. Vui lòng quay lại chọn lịch để tạo mã thanh toán mới."
+                : "Mã thanh toán đã hết hạn. Vui lòng quay lại chọn lịch để tạo mã thanh toán mới.";
+          }
+          if (countdown) {
+            countdown.style.display = "";
+            countdown.textContent = "Đã dừng";
+          }
+          return;
+        }
         if (result.status === "confirmed") {
           announceConfirmed();
           return;
