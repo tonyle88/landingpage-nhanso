@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ClipboardEvent } from "react";
 import styles from "../admin.module.css";
 
 type Command = "bold" | "italic" | "underline" | "insertUnorderedList" | "insertOrderedList";
@@ -21,6 +21,23 @@ const alignmentClasses = [
   "editor-align-right",
   "editor-align-justify",
 ];
+
+function sanitizePastedHtml(value: string) {
+  const documentNode = new DOMParser().parseFromString(value, "text/html");
+  documentNode.querySelectorAll("script,iframe,object,embed,style,link,meta").forEach((node) => node.remove());
+  documentNode.body.querySelectorAll<HTMLElement>("*").forEach((element) => {
+    for (const attribute of [...element.attributes]) {
+      const name = attribute.name.toLowerCase();
+      const content = attribute.value.trim();
+      if (name.startsWith("on") || name === "style" || name === "class" || name.startsWith("data-")) {
+        element.removeAttribute(attribute.name);
+      } else if ((name === "href" || name === "src") && /^javascript\s*:/i.test(content)) {
+        element.removeAttribute(attribute.name);
+      }
+    }
+  });
+  return documentNode.body.innerHTML;
+}
 
 export function RichTextEditor({
   compact = false,
@@ -92,6 +109,14 @@ export function RichTextEditor({
     syncFromVisual();
   }
 
+  function pasteSafeHtml(event: ClipboardEvent<HTMLDivElement>) {
+    const html = event.clipboardData.getData("text/html");
+    if (!html) return;
+    event.preventDefault();
+    document.execCommand("insertHTML", false, sanitizePastedHtml(html));
+    syncFromVisual();
+  }
+
   function toggleSource() {
     if (sourceMode && editorRef.current && inputRef.current) {
       htmlRef.current = inputRef.current.value;
@@ -147,6 +172,7 @@ export function RichTextEditor({
         contentEditable
         suppressContentEditableWarning
         onInput={syncFromVisual}
+        onPaste={pasteSafeHtml}
         data-placeholder={placeholder}
       />
       <div className={styles.editorHint}>
