@@ -79,3 +79,13 @@ test("calendar clears stale time slots until the customer selects a date", () =>
     /button\.addEventListener\("click", \(\) => \{[\s\S]*renderTimeSlots\(date\)/,
   );
 });
+
+test("payment polling stops with guidance instead of hanging on an inactive booking", () => {
+  assert.match(
+    payment,
+    /result\.status === "cancelled" \|\| result\.status === "expired"/,
+  );
+  assert.match(payment, /Lịch giữ chỗ này đã bị hủy/);
+  assert.match(payment, /Mã thanh toán đã hết hạn/);
+  assert.match(payment, /countdown\.textContent = "Đã dừng"/);
+});
