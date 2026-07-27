@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { landingPlainText } from "@/lib/landing-text";
 import type {
   LandingContentItem,
   LandingSection,
@@ -156,7 +157,7 @@ function applyContentItem(item: RuntimeLandingContentItem) {
       }
       return;
     }
-    element.textContent = value;
+    element.textContent = landingPlainText(value);
   });
 }
 
