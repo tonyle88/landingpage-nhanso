@@ -83,6 +83,25 @@ async function recordDelivery(
   }
 }
 
+async function recordDeliveryFailure(
+  supabase: SupabaseClient<Database>,
+  bookingId: string,
+  action: string,
+  message: string,
+) {
+  const { error } = await supabase.from("audit_logs").insert({
+    action,
+    target_type: "booking",
+    target_id: bookingId,
+    status: "failure",
+    message: message.slice(0, 500),
+    after_data: { provider: "resend" } satisfies Json,
+  });
+  if (error) {
+    console.error("Unable to record booking email delivery failure.");
+  }
+}
+
 async function sendWithResend({
   apiKey,
   from,
@@ -117,7 +136,18 @@ async function sendWithResend({
       signal: controller.signal,
     });
     if (!response.ok) {
-      throw new Error(`Email provider returned HTTP ${response.status}.`);
+      const providerResponse = (await response
+        .json()
+        .catch(() => null)) as { message?: unknown } | null;
+      const providerMessage =
+        typeof providerResponse?.message === "string"
+          ? providerResponse.message.replaceAll(/\s+/g, " ").slice(0, 300)
+          : "";
+      throw new Error(
+        `Email provider returned HTTP ${response.status}${
+          providerMessage ? `: ${providerMessage}` : ""
+        }.`,
+      );
     }
     const result = (await response.json()) as { id?: unknown };
     if (typeof result.id !== "string" || !result.id) {
@@ -165,10 +195,13 @@ async function deliverOne({
     );
     return "sent";
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown email error.";
     console.error(
       `Booking email delivery failed (${action}):`,
-      error instanceof Error ? error.message : "Unknown email error.",
+      message,
     );
+    await recordDeliveryFailure(supabase, booking.id, action, message);
     return "failed";
   }
 }
@@ -195,9 +228,23 @@ export async function sendBookingEmailsForBookingId(
 
   const configuration = getEmailConfiguration();
   if (!configuration.configured) {
-    console.error(
-      "Booking email is not configured. RESEND_API_KEY and BOOKING_EMAIL_FROM are required.",
-    );
+    const message =
+      "Booking email is not configured. RESEND_API_KEY, BOOKING_EMAIL_FROM and BOOKING_OWNER_EMAIL are required.";
+    console.error(message);
+    await Promise.all([
+      recordDeliveryFailure(
+        supabase,
+        data.id,
+        "booking.email.customer.sent",
+        message,
+      ),
+      recordDeliveryFailure(
+        supabase,
+        data.id,
+        "booking.email.owner.sent",
+        message,
+      ),
+    ]);
     return {
       configured: false,
       customer: "not_configured",

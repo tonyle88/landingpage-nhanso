@@ -63,6 +63,9 @@ test("delivery uses server-only secrets and provider idempotency", () => {
   assert.match(delivery, /booking-confirmed\/customer\//);
   assert.match(delivery, /booking-confirmed\/owner\//);
   assert.match(delivery, /audit_logs/);
+  assert.match(delivery, /recordDeliveryFailure/);
+  assert.match(delivery, /providerResponse/);
+  assert.match(delivery, /status: "failure"/);
   assert.doesNotMatch(delivery, /NEXT_PUBLIC_RESEND/);
 });
 

@@ -56,7 +56,20 @@ test("auditor can read the page but cannot see transition controls", () => {
   assert.match(page, /can\(principal\.role, "read_operations"\)/);
   assert.match(page, /const canManage = can\(principal\.role, "manage_operations"\)/);
   assert.match(page, /canManage && transitions\.length/);
-  assert.match(page, /\.limit\(100\)/);
+  assert.match(page, /const PAGE_SIZE = 6/);
+  assert.match(page, /\.range\(pageStart, pageStart \+ PAGE_SIZE - 1\)/);
+  assert.match(page, /\{ count: "exact" \}/);
+  assert.match(page, /Trang trước/);
+  assert.match(page, /Trang sau/);
+});
+
+test("booking cards stay compact and expose per-recipient email evidence", () => {
+  assert.match(page, /bookingOverview/);
+  assert.match(page, /Xem thông tin đầy đủ/);
+  assert.match(page, /EMAIL_ACTIONS\.customer/);
+  assert.match(page, /EMAIL_ACTIONS\.owner/);
+  assert.match(page, /Email khách/);
+  assert.match(page, /Email chủ/);
 });
 
 test("booking reports require operations access and preserve status filters", () => {

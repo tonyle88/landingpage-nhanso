@@ -463,8 +463,8 @@
 .checkRow label { display: flex; align-items: center; gap: 8px; color: rgb(255 255 255 / 82%); font-weight: 700; }
 .checkRow input { width: 18px; height: 18px; accent-color: var(--gold); }
 
-.recordList { display: grid; gap: 12px; }
-.recordCard { padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: rgb(255 255 255 / 3.5%); }
+.recordList { display: grid; gap: 10px; }
+.recordCard { padding: 13px 14px; border: 1px solid var(--line); border-radius: 8px; background: rgb(255 255 255 / 3.5%); }
 .recordSummary strong,
 .recordSummary span { display: block; }
 .recordSummary div span { margin-top: 4px; color: var(--muted); font-size: .84rem; }
@@ -472,9 +472,21 @@
 .recordCard summary { color: var(--gold-soft); cursor: pointer; font-weight: 800; }
 .recordCard details > .editorForm { margin-top: 20px; }
 
-.bookingMeta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 20px; margin-top: 18px; color: rgb(255 255 255 / 76%); font-size: .88rem; }
+.bookingOverview { display: grid; grid-template-columns: 1fr .8fr 1.2fr; gap: 8px; margin-top: 12px; }
+.bookingOverview p { min-width: 0; display: grid; gap: 3px; margin: 0; padding: 9px 11px; border: 1px solid rgb(255 255 255 / 8%); border-radius: 7px; background: rgb(4 18 21 / 34%); }
+.bookingOverview p > span { color: var(--muted); font-size: .68rem; font-weight: 800; text-transform: uppercase; }
+.bookingOverview p > strong { overflow: hidden; color: #fff; font-size: .85rem; text-overflow: ellipsis; white-space: nowrap; }
+.bookingOverview p > small { overflow: hidden; color: var(--muted); font-size: .73rem; text-overflow: ellipsis; white-space: nowrap; }
+.emailDeliveryRow { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.emailDeliveryRow span { padding: 5px 8px; border-radius: 999px; font-size: .69rem; font-weight: 800; }
+.deliverySent { color: var(--success); background: rgb(115 217 178 / 10%); }
+.deliveryMissing { color: #ffd3a1; background: rgb(255 174 94 / 10%); }
+.bookingDetails { margin-top: 10px !important; }
+.bookingDetails > summary { width: fit-content; color: var(--muted) !important; font-size: .74rem; }
+.bookingDetails[open] > summary { color: var(--gold-soft) !important; }
+.bookingMeta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 20px; margin-top: 12px; padding: 12px; border: 1px solid rgb(255 255 255 / 8%); border-radius: 7px; color: rgb(255 255 255 / 76%); font-size: .82rem; }
 .bookingMeta p { margin: 0; }
-.actionRow { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.actionRow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--line); }
 .actionRow button { border: 0; cursor: pointer; font: inherit; }
 
 .dangerForm { display: flex; align-items: end; gap: 12px; margin-top: 22px; padding-top: 18px; border-top: 1px solid rgb(255 138 128 / 24%); }
@@ -724,6 +736,7 @@
   .dangerForm { display: grid; }
   .adminNav,
   .formGrid,
+  .bookingOverview,
   .bookingMeta { grid-template-columns: 1fr; }
   .slugHint { min-height: 0; }
   .searchForm { display: grid; }

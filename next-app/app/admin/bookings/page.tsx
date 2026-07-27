@@ -39,6 +39,11 @@ const notices: Record<string, string> = {
   stale: "Lịch hẹn đã thay đổi. Trang đã được tải lại để tránh ghi đè.",
   error: "Không thể cập nhật lịch hẹn. Không có thay đổi nào được xác nhận.",
 };
+const PAGE_SIZE = 6;
+const EMAIL_ACTIONS = {
+  customer: "booking.email.customer.sent",
+  owner: "booking.email.owner.sent",
+} as const;
 const nextStatuses: Partial<Record<BookingStatus, BookingStatus[]>> = {
   pending: ["held", "cancelled", "expired"],
   held: ["paid", "cancelled", "expired"],
@@ -46,29 +51,70 @@ const nextStatuses: Partial<Record<BookingStatus, BookingStatus[]>> = {
   confirmed: ["cancelled"],
 };
 
+function parsePage(value: string | undefined) {
+  const page = Number.parseInt(value || "1", 10);
+  return Number.isSafeInteger(page) && page > 0 ? page : 1;
+}
+
+function bookingsHref(filter: BookingStatus | null, page: number) {
+  const params = new URLSearchParams();
+  if (filter) params.set("filter", filter);
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  return query ? `/admin/bookings?${query}` : "/admin/bookings";
+}
+
 export default async function AdminBookingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; filter?: string }>;
+  searchParams: Promise<{ status?: string; filter?: string; page?: string }>;
 }) {
   const principal = await getAdminPrincipal();
   if (!principal) redirect("/admin/login?reason=unauthorized");
   if (!can(principal.role, "read_operations")) redirect("/admin");
-  const { status, filter } = await searchParams;
+  const { status, filter, page } = await searchParams;
   const selectedFilter = parseBookingStatus(filter);
+  const selectedPage = parsePage(page);
+  const pageStart = (selectedPage - 1) * PAGE_SIZE;
 
   const supabase = await createAuthServerClient();
   let request = supabase
     .from("bookings")
     .select(
       "id,public_id,customer_name,phone,email,consultation_type,package_name,amount,currency,slot_start,slot_end,concern,payment_provider,payment_order_id,status,hold_expires_at,manual_payment_claimed_at,confirmed_at,created_at",
+      { count: "exact" },
     )
     .order("created_at", { ascending: false })
-    .limit(100);
+    .range(pageStart, pageStart + PAGE_SIZE - 1);
   if (selectedFilter) request = request.eq("status", selectedFilter);
-  const { data: bookings, error } = await request;
+  const { data: bookings, error, count } = await request;
+  const totalBookings = count || 0;
+  const totalPages = Math.max(1, Math.ceil(totalBookings / PAGE_SIZE));
+  if (!error && totalBookings > 0 && selectedPage > totalPages) {
+    redirect(bookingsHref(selectedFilter, totalPages));
+  }
+
+  const bookingIds = (bookings || []).map((booking) => booking.id);
+  const { data: emailAudits } = bookingIds.length
+    ? await supabase
+        .from("audit_logs")
+        .select("target_id,action")
+        .eq("target_type", "booking")
+        .eq("status", "success")
+        .in("target_id", bookingIds)
+        .in("action", Object.values(EMAIL_ACTIONS))
+    : { data: [] };
+  const emailDelivery = new Map<string, Set<string>>();
+  for (const audit of emailAudits || []) {
+    if (!audit.target_id) continue;
+    const actions = emailDelivery.get(audit.target_id) || new Set<string>();
+    actions.add(audit.action);
+    emailDelivery.set(audit.target_id, actions);
+  }
+
   const canManage = can(principal.role, "manage_operations");
   const emailConfigured = isBookingEmailConfigured();
+  const cleanHref = bookingsHref(selectedFilter, selectedPage);
 
   return (
     <main className={styles.adminShell}>
@@ -87,7 +133,7 @@ export default async function AdminBookingsPage({
       <AdminToast
         message={status ? notices[status] : undefined}
         tone={["invalid", "stale", "error", "email_warning"].includes(status || "") ? "error" : "success"}
-        cleanHref={selectedFilter ? `/admin/bookings?filter=${selectedFilter}` : "/admin/bookings"}
+        cleanHref={cleanHref}
       />
       {error ? <AdminToast message="Không thể tải lịch hẹn." tone="error" cleanHref="/admin/bookings" /> : null}
       {!emailConfigured ? (
@@ -133,12 +179,15 @@ export default async function AdminBookingsPage({
         </div>
         <div className={styles.sectionHeading}>
           <h2>Danh sách gần nhất</h2>
-          <span>{bookings?.length || 0} lịch</span>
+          <span>{totalBookings} lịch · 6 lịch/trang</span>
         </div>
         <div className={styles.recordList}>
           {bookings?.map((booking) => {
             const currentStatus = booking.status as BookingStatus;
             const transitions = nextStatuses[currentStatus] || [];
+            const delivery = emailDelivery.get(booking.id);
+            const customerEmailSent = delivery?.has(EMAIL_ACTIONS.customer);
+            const ownerEmailSent = delivery?.has(EMAIL_ACTIONS.owner);
             return (
               <article className={styles.recordCard} key={booking.id}>
                 <div className={styles.recordSummary}>
@@ -159,28 +208,49 @@ export default async function AdminBookingsPage({
                     {statusLabels[currentStatus]}
                   </span>
                 </div>
-                <div className={styles.bookingMeta}>
-                  <p><strong>Khách:</strong> {booking.customer_name}</p>
-                  <p><strong>Liên hệ:</strong> {booking.phone} · {booking.email}</p>
+                <div className={styles.bookingOverview}>
                   <p>
-                    <strong>Hình thức:</strong> {booking.consultation_type} ·{" "}
-                    {formatMoney(booking.amount, booking.currency)}
+                    <span>Khách</span>
+                    <strong>{booking.customer_name}</strong>
+                    <small>{booking.phone}</small>
                   </p>
                   <p>
-                    <strong>Mã chuyển khoản:</strong>{" "}
-                    <span className={styles.codeField}>
+                    <span>Số tiền</span>
+                    <strong>{formatMoney(booking.amount, booking.currency)}</strong>
+                    <small>{booking.consultation_type}</small>
+                  </p>
+                  <p>
+                    <span>Mã chuyển khoản</span>
+                    <strong className={styles.codeField}>
                       {booking.payment_order_id || "—"}
-                    </span>
+                    </strong>
                   </p>
-                  <p>
-                    <strong>Khách báo chuyển khoản:</strong>{" "}
-                    {formatDateTime(booking.manual_payment_claimed_at)}
-                  </p>
-                  <p><strong>Giữ chỗ đến:</strong> {formatDateTime(booking.hold_expires_at)}</p>
-                  {booking.concern ? (
-                    <p><strong>Nhu cầu:</strong> {booking.concern}</p>
-                  ) : null}
                 </div>
+                {currentStatus === "confirmed" ? (
+                  <div className={styles.emailDeliveryRow} aria-label="Trạng thái email xác nhận">
+                    <span className={customerEmailSent ? styles.deliverySent : styles.deliveryMissing}>
+                      {customerEmailSent ? "✓" : "!"} Email khách
+                    </span>
+                    <span className={ownerEmailSent ? styles.deliverySent : styles.deliveryMissing}>
+                      {ownerEmailSent ? "✓" : "!"} Email chủ
+                    </span>
+                  </div>
+                ) : null}
+                <details className={styles.bookingDetails}>
+                  <summary>Xem thông tin đầy đủ</summary>
+                  <div className={styles.bookingMeta}>
+                    <p><strong>Email:</strong> {booking.email}</p>
+                    <p>
+                      <strong>Khách báo chuyển khoản:</strong>{" "}
+                      {formatDateTime(booking.manual_payment_claimed_at)}
+                    </p>
+                    <p><strong>Giữ chỗ đến:</strong> {formatDateTime(booking.hold_expires_at)}</p>
+                    <p><strong>Ngày tạo:</strong> {formatDateTime(booking.created_at)}</p>
+                    {booking.concern ? (
+                      <p><strong>Nhu cầu:</strong> {booking.concern}</p>
+                    ) : null}
+                  </div>
+                </details>
                 {canManage && transitions.length ? (
                   <div className={styles.actionRow}>
                     {transitions.map((nextStatus) => (
@@ -210,6 +280,25 @@ export default async function AdminBookingsPage({
             <p className={styles.description}>Chưa có lịch hẹn phù hợp.</p>
           ) : null}
         </div>
+        {totalBookings > PAGE_SIZE ? (
+          <nav className={styles.pagination} aria-label="Phân trang lịch hẹn">
+            <Link
+              className={selectedPage <= 1 ? styles.paginationDisabled : ""}
+              href={bookingsHref(selectedFilter, Math.max(1, selectedPage - 1))}
+              aria-disabled={selectedPage <= 1}
+            >
+              ← Trang trước
+            </Link>
+            <span>Trang {selectedPage}/{totalPages}</span>
+            <Link
+              className={selectedPage >= totalPages ? styles.paginationDisabled : ""}
+              href={bookingsHref(selectedFilter, Math.min(totalPages, selectedPage + 1))}
+              aria-disabled={selectedPage >= totalPages}
+            >
+              Trang sau →
+            </Link>
+          </nav>
+        ) : null}
       </section>
     </main>
   );
