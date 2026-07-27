@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { connection } from "next/server";
 import type { Metadata } from "next";
 import BlogRuntime from "./blog-runtime";
+import styles from "./blog.module.css";
 import { serializeJsonForHtml } from "@/lib/blog";
 import { getPublicBlogCategories } from "@/lib/supabase/public-blog-categories";
 import { getPublicBlogPosts } from "@/lib/supabase/public-blog-posts";
@@ -182,7 +183,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
       <div className="hero-bg blog-page-bg" />
 
       <nav
-        className="navbar blog-navbar"
+        className={`navbar ${styles.blogNavbar}`}
         id="navbar"
         aria-label="Điều hướng chính"
       >
@@ -231,7 +232,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
         </div>
       </nav>
 
-      <main className="blog-main">
+      <main className={`blog-main ${styles.blogMain}`}>
         <div id="blog-container" className="blog-container" />
       </main>
 
