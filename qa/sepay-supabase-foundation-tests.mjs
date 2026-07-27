@@ -98,10 +98,10 @@ test("SePay booking and payment updates are atomic and audit contains no PII", (
   assert.match(migration, /status = 'ignored'/);
 });
 
-test("Supabase cutover is server-side, disabled by default and reversible", () => {
-  assert.match(handler, /SEPAY_SUPABASE_WEBHOOK_ENABLED === "true"/);
+test("SePay webhook is locked to Supabase processing", () => {
   assert.match(handler, /processInSupabase/);
-  assert.match(handler, /forwardToBookingScript/);
+  assert.doesNotMatch(handler, /forwardToBookingScript/);
+  assert.doesNotMatch(handler, /SEPAY_SUPABASE_WEBHOOK_ENABLED/);
   assert.match(handler, /SEPAY_BANK_ACCOUNT_NUMBER/);
   assert.match(handler, /createHash\("sha256"\)/);
 });

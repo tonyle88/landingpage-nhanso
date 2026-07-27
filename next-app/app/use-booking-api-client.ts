@@ -2,10 +2,6 @@
 
 import { useEffect } from "react";
 
-const BOOKING_URL =
-  "https://script.google.com/macros/s/AKfycbxbWZXF2iCsWsr0cWL0JVChANywEq7D7l_mCIvrvqZs78vSOsPej3PuXFgHbOiVNoKr/exec";
-const NATIVE_BOOKING_API_ENABLED =
-  process.env.NEXT_PUBLIC_BOOKING_API_V2_ENABLED === "true";
 const REQUEST_TIMEOUT_MS = 12000;
 const RETRY_COUNT = 2;
 
@@ -44,12 +40,6 @@ declare global {
       ) => Promise<void>;
     };
   }
-}
-
-function legacyBookingId(data: BookingData) {
-  if (data.bookingId) return String(data.bookingId);
-  const suffix = window.crypto.randomUUID();
-  return `BKG-${suffix}`.toUpperCase();
 }
 
 function nativeRequest(action: string, data: BookingData) {
@@ -105,16 +95,6 @@ function nativeRequest(action: string, data: BookingData) {
   throw new BookingApiError("Thao tác đặt lịch không hợp lệ.", false);
 }
 
-function toUrlParams(data: BookingData, action: string) {
-  const params = new URLSearchParams({ action });
-  Object.entries(data).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      params.append(key, String(value));
-    }
-  });
-  return params;
-}
-
 async function fetchWithTimeout(
   input: RequestInfo | URL,
   init: RequestInit = {},
@@ -131,60 +111,20 @@ async function fetchWithTimeout(
 
 async function logError(
   context: string,
-  error: unknown,
-  data: BookingData = {},
+  _error: unknown,
+  _data: BookingData = {},
 ) {
-  if (NATIVE_BOOKING_API_ENABLED) {
-    console.warn(`Booking action failed: ${context}`);
-    return;
-  }
-  try {
-    const message =
-      error instanceof Error ? error.message : String(error || "Unknown client error");
-    const body = toUrlParams(
-      {
-        context,
-        message,
-        pageUrl: window.location.href,
-        package: data.package || "",
-        phone: data.phone || "",
-        email: data.email || "",
-        submittedAt: new Date().toISOString(),
-      },
-      "logClientError",
-    ).toString();
-    await fetch(BOOKING_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body,
-    });
-  } catch (logFailure) {
-    console.warn("Không ghi được client error log:", logFailure);
-  }
+  console.warn(`Booking action failed: ${context}`);
 }
 
 async function postAction(action: string, data: BookingData) {
-  const legacyData = {
-    ...data,
-    bookingId:
-      action === "createBooking" ? legacyBookingId(data) : data.bookingId,
-  };
-  const body = toUrlParams(legacyData, action);
   let lastError: unknown;
   for (let attempt = 0; attempt <= RETRY_COUNT; attempt += 1) {
     try {
-      const native = NATIVE_BOOKING_API_ENABLED
-        ? nativeRequest(action, data)
-        : null;
+      const native = nativeRequest(action, data);
       const response = await fetchWithTimeout(
-        native?.url || BOOKING_URL,
-        native?.init || {
-          method: "POST",
-          mode: "cors",
-          cache: "no-store",
-          body,
-        },
+        native.url,
+        native.init,
         REQUEST_TIMEOUT_MS,
       );
       const result = (await response.json()) as BookingResponse;
@@ -215,7 +155,7 @@ async function postAction(action: string, data: BookingData) {
 export function useBookingApiClient() {
   useEffect(() => {
     const runtime = {
-      nativeEnabled: NATIVE_BOOKING_API_ENABLED,
+      nativeEnabled: true,
       fetchWithTimeout,
       postAction,
       logError,

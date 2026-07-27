@@ -4,10 +4,6 @@ import { useEffect } from "react";
 
 const CONTENT_URL =
   "https://script.google.com/macros/s/AKfycbw3m9zkv9mX-BgMtB7DZj2rMrZtkAAOFDQow2UKxttXRz8G5Zlc4qponSGrvPBxJwEO/exec";
-const BOOKING_URL =
-  "https://script.google.com/macros/s/AKfycbxbWZXF2iCsWsr0cWL0JVChANywEq7D7l_mCIvrvqZs78vSOsPej3PuXFgHbOiVNoKr/exec";
-const NATIVE_BOOKING_API_ENABLED =
-  process.env.NEXT_PUBLIC_BOOKING_API_V2_ENABLED === "true";
 
 type PaymentSettings = {
   sepayEnabled: boolean;
@@ -117,26 +113,24 @@ export function usePaymentRuntime() {
           );
         }
         let nextSettings = payload.paymentSettings;
-        if (NATIVE_BOOKING_API_ENABLED) {
-          const nativeResponse = await fetch("/api/payment-settings", {
-            method: "GET",
-            cache: "no-store",
-            signal: controller.signal,
-          });
-          const nativePayload = (await nativeResponse.json()) as {
-            ok?: boolean;
-            sepayEnabled?: boolean;
-          };
-          if (!nativeResponse.ok || !nativePayload.ok) {
-            throw new Error(
-              "Không tải được trạng thái SePay. Vui lòng thử lại sau ít phút.",
-            );
-          }
-          nextSettings = {
-            ...(payload.paymentSettings as Record<string, unknown>),
-            sepayEnabled: nativePayload.sepayEnabled === true,
-          };
+        const nativeResponse = await fetch("/api/payment-settings", {
+          method: "GET",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const nativePayload = (await nativeResponse.json()) as {
+          ok?: boolean;
+          sepayEnabled?: boolean;
+        };
+        if (!nativeResponse.ok || !nativePayload.ok) {
+          throw new Error(
+            "Không tải được trạng thái SePay. Vui lòng thử lại sau ít phút.",
+          );
         }
+        nextSettings = {
+          ...(payload.paymentSettings as Record<string, unknown>),
+          sepayEnabled: nativePayload.sepayEnabled === true,
+        };
         applySettings(nextSettings);
       } finally {
         window.clearTimeout(timeout);
@@ -247,28 +241,13 @@ export function usePaymentRuntime() {
       const state = window.ClowBookingState?.getState();
       if (!state?.paymentOrderId || !state.bookingId) return;
       try {
-        const result = NATIVE_BOOKING_API_ENABLED
-          ? await window.ClowBookingApi?.postAction(
-              "checkBookingStatus",
-              {
-                bookingId: state.bookingId,
-                idempotencyKey: state.idempotencyKey,
-              },
-            )
-          : await (async () => {
-              const params = new URLSearchParams({
-                action: "checkSepayPayment",
-                paymentOrderId: state.paymentOrderId,
-                bookingId: state.bookingId,
-              });
-              const response =
-                await window.ClowBookingApi?.fetchWithTimeout(
-                  `${BOOKING_URL}?${params}`,
-                  { method: "GET", mode: "cors", cache: "no-store" },
-                  12000,
-                );
-              return response?.json();
-            })() as {
+        const result = await window.ClowBookingApi?.postAction(
+          "checkBookingStatus",
+          {
+            bookingId: state.bookingId,
+            idempotencyKey: state.idempotencyKey,
+          },
+        ) as {
           ok?: boolean;
           status?: string;
         };
@@ -306,18 +285,7 @@ export function usePaymentRuntime() {
         const countdown =
           document.querySelector<HTMLElement>("#sepay-countdown");
         if (countdown) countdown.style.display = "none";
-        if (NATIVE_BOOKING_API_ENABLED) {
-          announceConfirmed();
-          return;
-        }
-        const confirmation = await window.ClowBookingApi?.postAction(
-          "confirmBooking",
-          {
-            bookingId: state.bookingId,
-            idempotencyKey: state.idempotencyKey,
-          },
-        );
-        if (confirmation?.status === "confirmed") announceConfirmed();
+        announceConfirmed();
       } catch (error) {
         console.warn("SePay status check failed:", error);
       }
