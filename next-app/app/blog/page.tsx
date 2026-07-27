@@ -181,7 +181,11 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
       <canvas id="particles-canvas" />
       <div className="hero-bg blog-page-bg" />
 
-      <nav className="navbar" id="navbar" aria-label="Điều hướng chính">
+      <nav
+        className="navbar blog-navbar"
+        id="navbar"
+        aria-label="Điều hướng chính"
+      >
         <div className="nav-container">
           <a href="/" className="nav-logo">
             <img
