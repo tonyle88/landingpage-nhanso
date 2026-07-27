@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { blogPostPayloadFromForm } from "@/lib/admin/blog-post-input";
+import { BlogPostInputError, blogPostPayloadFromForm } from "@/lib/admin/blog-post-input";
 import { blogCategoryPayloadFromForm } from "@/lib/admin/blog-category-input";
 import { optionalUuid } from "@/lib/admin/package-input";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
@@ -105,7 +105,12 @@ export async function saveBlogPostAction(form: FormData) {
       phase,
       message: error instanceof Error ? error.message : "unknown error",
     });
-    redirect(`/admin/blog?status=${phase === "upload" ? "image_error" : "invalid"}`);
+    const status = phase === "upload"
+      ? "image_error"
+      : error instanceof BlogPostInputError
+        ? error.code
+        : "invalid";
+    redirect(`/admin/blog?status=${status}`);
   }
   const { error } = await supabase.rpc("admin_save_blog_post", {
     p_id: id,

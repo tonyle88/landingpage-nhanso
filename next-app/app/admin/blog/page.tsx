@@ -21,6 +21,17 @@ const notices: Record<string, string> = {
   saved: "Đã lưu bài viết và ghi audit log.",
   deleted: "Đã xóa bài viết và ghi audit log.",
   invalid: "Dữ liệu bài viết chưa hợp lệ hoặc chứa HTML nguy hiểm.",
+  invalid_slug: "Slug chưa hợp lệ. Chỉ dùng chữ thường không dấu, số và dấu gạch ngang; hoặc để trống để hệ thống tự tạo.",
+  invalid_title: "Tiêu đề phải có từ 2 đến 200 ký tự.",
+  summary_too_long: "Tóm tắt vượt quá 600 ký tự (tính cả định dạng HTML). Hãy rút gọn rồi lưu lại.",
+  unsafe_summary: "Tóm tắt chứa mã HTML không an toàn. Hãy dán lại bằng Editor hoặc xóa script, iframe, style và thuộc tính on…",
+  empty_content: "Nội dung bài viết đang trống. Hãy nhập nội dung trước khi lưu.",
+  content_too_long: "Nội dung bài viết vượt quá giới hạn 100.000 ký tự HTML.",
+  unsafe_content: "Nội dung chứa mã HTML không an toàn. Hãy dán lại bằng Editor hoặc xóa script, iframe, style và thuộc tính on…",
+  invalid_status: "Trạng thái bài viết chưa hợp lệ.",
+  invalid_cover_url: "URL ảnh bìa chưa hợp lệ; URL phải dùng HTTPS.",
+  invalid_thumbnail_url: "URL thumbnail chưa hợp lệ; URL phải dùng HTTPS.",
+  invalid_publish_date: "Thời điểm xuất bản chưa hợp lệ.",
   duplicate: "Slug đã được một bài viết khác sử dụng. Hãy để trống slug để hệ thống tự tạo duy nhất.",
   image_error: "Không thể xử lý hoặc tải ảnh bìa. Hãy dùng JPEG, PNG hoặc WebP tối đa 5 MB rồi thử lại.",
   confirm: "Hãy nhập XOA để xác nhận.",
@@ -84,7 +95,7 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: Pr
   const toastMessage = params.category_status
     ? categoryNotices[params.category_status]
     : params.status ? notices[params.status] : undefined;
-  const toastTone = ["invalid", "duplicate", "image_error", "confirm", "error", "in_use"].includes(toastCode || "") ? "error" : "success";
+  const toastTone = toastCode && toastCode !== "saved" && toastCode !== "deleted" ? "error" : "success";
 
   return (
     <main className={styles.adminShell}>

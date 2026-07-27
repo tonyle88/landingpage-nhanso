@@ -4,6 +4,13 @@ const unsafeHtml =
   /<\s*(script|iframe|object|embed|style)\b|on[a-z]+\s*=|javascript\s*:/i;
 const statuses = new Set(["draft", "published", "archived"]);
 
+export class BlogPostInputError extends Error {
+  constructor(public readonly code: string) {
+    super(code);
+    this.name = "BlogPostInputError";
+  }
+}
+
 export function slugifyBlogTitle(value: string) {
   return value
     .normalize("NFD")
@@ -31,24 +38,23 @@ export function blogPostPayloadFromForm(form: FormData) {
   const categoryId = optionalUuid(form.get("category_id"));
   const publishedInput = String(form.get("published_at") || "").trim();
 
-  if (!/^[a-z0-9][a-z0-9-]{1,159}$/.test(slug)) throw new Error("invalid slug");
-  if (title.length < 2 || title.length > 200) throw new Error("invalid title");
-  if (summary.length > 600 || unsafeHtml.test(summary)) {
-    throw new Error("invalid summary");
-  }
-  if (!contentHtml || contentHtml.length > 100_000 || unsafeHtml.test(contentHtml)) {
-    throw new Error("invalid content");
-  }
-  if (!statuses.has(status)) throw new Error("invalid status");
+  if (!/^[a-z0-9][a-z0-9-]{1,159}$/.test(slug)) throw new BlogPostInputError("invalid_slug");
+  if (title.length < 2 || title.length > 200) throw new BlogPostInputError("invalid_title");
+  if (summary.length > 600) throw new BlogPostInputError("summary_too_long");
+  if (unsafeHtml.test(summary)) throw new BlogPostInputError("unsafe_summary");
+  if (!contentHtml) throw new BlogPostInputError("empty_content");
+  if (contentHtml.length > 100_000) throw new BlogPostInputError("content_too_long");
+  if (unsafeHtml.test(contentHtml)) throw new BlogPostInputError("unsafe_content");
+  if (!statuses.has(status)) throw new BlogPostInputError("invalid_status");
   if (coverUrl) {
     let parsed: URL;
     try {
       parsed = new URL(coverUrl);
     } catch {
-      throw new Error("invalid cover URL");
+      throw new BlogPostInputError("invalid_cover_url");
     }
     if (parsed.protocol !== "https:" || coverUrl.length > 2048) {
-      throw new Error("invalid cover URL");
+      throw new BlogPostInputError("invalid_cover_url");
     }
   }
   if (thumbnailUrl) {
@@ -56,16 +62,16 @@ export function blogPostPayloadFromForm(form: FormData) {
     try {
       parsed = new URL(thumbnailUrl);
     } catch {
-      throw new Error("invalid thumbnail URL");
+      throw new BlogPostInputError("invalid_thumbnail_url");
     }
     if (parsed.protocol !== "https:" || thumbnailUrl.length > 2048) {
-      throw new Error("invalid thumbnail URL");
+      throw new BlogPostInputError("invalid_thumbnail_url");
     }
   }
   let publishedAt = "";
   if (publishedInput) {
     const date = new Date(publishedInput);
-    if (!Number.isFinite(date.getTime())) throw new Error("invalid publish date");
+    if (!Number.isFinite(date.getTime())) throw new BlogPostInputError("invalid_publish_date");
     publishedAt = date.toISOString();
   }
   return {

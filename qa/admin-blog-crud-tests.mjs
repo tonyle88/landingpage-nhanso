@@ -67,5 +67,15 @@ test("new posts receive a unique generated slug and actionable failures", () => 
   assert.match(actions, /ensureUniqueGeneratedSlug/);
   assert.match(actions, /payload\.slug = await ensureUniqueGeneratedSlug/);
   assert.match(actions, /error\.code === "23505" \? "duplicate" : "error"/);
-  assert.match(actions, /phase === "upload" \? "image_error" : "invalid"/);
+  assert.match(actions, /const status = phase === "upload"/);
+});
+
+test("blog validation reports the exact invalid field and paste removes unsafe markup", () => {
+  assert.match(input, /class BlogPostInputError/);
+  assert.match(input, /summary_too_long/);
+  assert.match(input, /unsafe_content/);
+  assert.match(actions, /error instanceof BlogPostInputError/);
+  assert.match(editor, /sanitizePastedHtml/);
+  assert.match(editor, /script,iframe,object,embed,style,link,meta/);
+  assert.match(editor, /onPaste=\{pasteSafeHtml\}/);
 });
