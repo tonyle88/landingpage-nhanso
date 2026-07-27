@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
-import { deleteSettingAction } from "./actions";
+import { deleteSettingAction, setSepayAutoConfirmationAction } from "./actions";
 import { SettingForm } from "./setting-form";
 import styles from "../admin.module.css";
 
@@ -19,7 +19,12 @@ const notices: Record<string, string> = {
   invalid: "Key hoặc JSON value chưa hợp lệ.",
   confirm: "Hãy nhập XOA để xác nhận.",
   error: "Không thể thực hiện thay đổi.",
+  sepay_enabled: "Đã bật tự động xác nhận thanh toán qua SePay.",
+  sepay_disabled: "Đã tắt SePay tự động. Thanh toán đang được xác nhận thủ công.",
+  sepay_error: "Không thể thay đổi chế độ xác nhận SePay.",
 };
+
+const SEPAY_SETTING_KEY = "payments.sepay_auto_confirmation";
 
 export default async function AdminSettingsPage({
   searchParams,
@@ -34,7 +39,18 @@ export default async function AdminSettingsPage({
   const supabase = await createAuthServerClient();
   let request = supabase.from("site_settings").select("*").order("key").limit(50);
   if (query) request = request.ilike("key", `%${query}%`);
-  const { data: items, error } = await request;
+  const [settingsResult, sepayResult] = await Promise.all([
+    request,
+    supabase.from("site_settings").select("*").eq("key", SEPAY_SETTING_KEY).maybeSingle(),
+  ]);
+  const { data: items, error } = settingsResult;
+  const sepaySetting = sepayResult.data;
+  const sepayValue = sepaySetting?.value;
+  const sepayAutoEnabled = Boolean(
+    sepayValue && typeof sepayValue === "object" && !Array.isArray(sepayValue)
+      && "enabled" in sepayValue && sepayValue.enabled === true,
+  );
+  const canManagePayments = can(principal.role, "manage_operations");
 
   return (
     <main className={styles.adminShell}>
@@ -50,6 +66,33 @@ export default async function AdminSettingsPage({
         <p className={styles.notice}>{notices[params.status]}</p>
       ) : null}
       {error ? <p className={styles.message}>Không thể tải settings.</p> : null}
+      <section className={`${styles.adminPanel} ${styles.operationSetting}`}>
+        <div className={styles.operationSettingHeader}>
+          <div>
+            <p className={styles.eyebrow}>Thanh toán · SePay</p>
+            <h2>Tự động xác nhận chuyển khoản</h2>
+          </div>
+          <span className={sepayAutoEnabled ? styles.active : styles.inactive}>
+            {sepayAutoEnabled ? "Đang bật" : "Kiểm tra thủ công"}
+          </span>
+        </div>
+        <p>
+          Khi tắt, webhook hợp lệ vẫn được lưu để đối soát nhưng hệ thống không tự
+          chuyển lịch hẹn sang trạng thái đã thanh toán.
+        </p>
+        {canManagePayments ? (
+          <form action={setSepayAutoConfirmationAction}>
+            <input type="hidden" name="enabled" value={String(!sepayAutoEnabled)} />
+            <button className={sepayAutoEnabled ? styles.dangerButton : styles.submit} type="submit">
+              {sepayAutoEnabled
+                ? "Tắt và chuyển sang kiểm tra thủ công"
+                : "Bật tự động xác nhận qua SePay"}
+            </button>
+          </form>
+        ) : (
+          <p className={styles.securityNote}>Chỉ owner hoặc admin được thay đổi chế độ này.</p>
+        )}
+      </section>
       <section className={styles.adminPanel}>
         <h2>Tạo setting</h2>
         <SettingForm />
@@ -63,7 +106,7 @@ export default async function AdminSettingsPage({
           <button className={styles.submit} type="submit">Tìm kiếm</button>
         </form>
         <div className={styles.recordList}>
-          {items?.map((item) => (
+          {items?.filter((item) => item.key !== SEPAY_SETTING_KEY).map((item) => (
             <article className={styles.recordCard} key={item.key}>
               <div className={styles.recordSummary}>
                 <div><strong>{item.key}</strong><span>{item.description || "Không có mô tả"}</span></div>

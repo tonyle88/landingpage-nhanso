@@ -14,6 +14,33 @@ async function requireContentManager() {
   }
 }
 
+async function requireOperationsManager() {
+  const principal = await getAdminPrincipal();
+  if (!principal || !can(principal.role, "manage_operations")) {
+    redirect("/admin/login?reason=unauthorized");
+  }
+}
+
+export async function setSepayAutoConfirmationAction(form: FormData) {
+  await requireOperationsManager();
+  const enabled = String(form.get("enabled") || "") === "true";
+  const supabase = await createAuthServerClient();
+  const { error } = await supabase.rpc("admin_set_sepay_auto_confirmation", {
+    p_enabled: enabled,
+  });
+  if (error) {
+    console.error("admin_set_sepay_auto_confirmation failed", {
+      code: error.code,
+      message: error.message,
+    });
+    redirect("/admin/settings?status=sepay_error");
+  }
+  revalidatePath("/admin/settings");
+  revalidatePath("/admin/bookings");
+  revalidatePath("/admin/payments");
+  redirect(`/admin/settings?status=${enabled ? "sepay_enabled" : "sepay_disabled"}`);
+}
+
 export async function saveSettingAction(form: FormData) {
   await requireContentManager();
   let parsed;

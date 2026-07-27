@@ -492,6 +492,12 @@
 .reportActions > span { color: var(--muted); font-size: .78rem; }
 .paymentMeta { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px; color: var(--muted); font-size: .88rem; }
 .paymentMeta a { color: var(--gold-soft); font-weight: 800; }
+.operationSetting { border-color: rgb(240 201 106 / 42%); background: linear-gradient(135deg, rgb(240 201 106 / 9%), rgb(217 78 31 / 6%)); }
+.operationSettingHeader { display: flex; align-items: start; justify-content: space-between; gap: 18px; }
+.operationSettingHeader h2 { margin-top: 3px; }
+.operationSetting > p { max-width: 820px; color: var(--muted); }
+.operationSetting form { margin-top: 18px; }
+.operationSetting .dangerButton { min-height: 46px; border-radius: 7px; }
 
 .sectionManager {
   width: min(1280px, 100%);
@@ -642,6 +648,12 @@
 .richEditorCompact .editorCanvas, .richEditorCompact .editorSource { min-height: 150px; }
 .editorHiddenInput, .editorVisualHidden { display: none; }
 .editorHint { padding: 8px 12px; border-top: 1px solid #d8e0e2; color: #53676b; background: #f7f9f9; font-size: .68rem; font-weight: 600; }
+.coverWorkflow { display: grid; gap: 16px; }
+.thumbnailPreview { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 360px); align-items: center; gap: 18px; padding: 16px; border: 1px solid rgb(240 201 106 / 30%); border-radius: 9px; background: rgb(240 201 106 / 7%); }
+.thumbnailPreview > div { display: grid; gap: 6px; }
+.thumbnailPreview strong { color: #fff; }
+.thumbnailPreview small, .thumbnailPreview > span { color: var(--muted); font-size: .76rem; }
+.thumbnailPreview img { width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; object-fit: cover; box-shadow: 0 10px 24px rgb(0 0 0 / 25%); }
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 
 @media (max-width: 760px) {
@@ -656,6 +668,8 @@
   .formGrid,
   .bookingMeta { grid-template-columns: 1fr; }
   .searchForm { display: grid; }
+  .operationSettingHeader { display: grid; }
+  .operationSetting form button { width: 100%; }
   .pageHeader .secondaryLink { width: 100%; }
   .sectionManager { grid-template-columns: 1fr; }
   .sectionIndex { position: static; height: auto; }
@@ -692,6 +706,7 @@
   .pagination span { text-align: center; }
   .editorToolbar { gap: 2px; }
   .editorCanvas, .editorSource { min-height: 300px; padding: 14px; }
+  .thumbnailPreview { grid-template-columns: 1fr; }
   .adminToast { right: 16px; bottom: 16px; }
 }
 

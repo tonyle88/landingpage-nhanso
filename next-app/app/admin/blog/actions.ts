@@ -45,19 +45,6 @@ export async function saveBlogPostAction(form: FormData) {
       previousThumbnailAssetId = previous?.thumbnail_asset_id || null;
       previousSlug = previous?.slug || null;
     }
-    const thumbnailFile = form.get("thumbnail_file");
-    if (thumbnailFile instanceof File && thumbnailFile.size > 0) {
-      thumbnailUpload = await uploadContentImage({
-        file: thumbnailFile,
-        folder: "blog",
-        altText: `Thumbnail ${String(form.get("title") || "")}`,
-        uploadedBy: principal.userId,
-      });
-      if (thumbnailUpload) {
-        form.set("thumbnail_url", thumbnailUpload.publicUrl);
-        form.set("thumbnail_asset_id", thumbnailUpload.id);
-      }
-    }
     const file = form.get("cover_file");
     if (file instanceof File && file.size > 0) {
       upload = await uploadContentImage({
@@ -65,10 +52,20 @@ export async function saveBlogPostAction(form: FormData) {
         folder: "blog",
         altText: String(form.get("title") || ""),
         uploadedBy: principal.userId,
+        webp: { width: 1600, height: 1200, fit: "inside", quality: 70 },
       });
-      if (upload) {
+      thumbnailUpload = await uploadContentImage({
+        file,
+        folder: "blog",
+        altText: `Thumbnail ${String(form.get("title") || "")}`,
+        uploadedBy: principal.userId,
+        webp: { width: 640, height: 360, fit: "cover", quality: 70 },
+      });
+      if (upload && thumbnailUpload) {
         form.set("cover_url", upload.publicUrl);
         form.set("cover_asset_id", upload.id);
+        form.set("thumbnail_url", thumbnailUpload.publicUrl);
+        form.set("thumbnail_asset_id", thumbnailUpload.id);
       }
     }
     if (id && !String(form.get("slug") || "").trim() && previousSlug) {

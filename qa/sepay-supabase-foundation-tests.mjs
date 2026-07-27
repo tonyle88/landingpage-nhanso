@@ -14,6 +14,21 @@ const handler = await readFile(
   new URL("next-app/lib/sepay-webhook.ts", root),
   "utf8",
 );
+const autoConfirmationMigration = await readFile(
+  new URL(
+    "next-app/supabase/migrations/202607270002_sepay_auto_confirmation_setting.sql",
+    root,
+  ),
+  "utf8",
+);
+const settingsPage = await readFile(
+  new URL("next-app/app/admin/settings/page.tsx", root),
+  "utf8",
+);
+const settingsActions = await readFile(
+  new URL("next-app/app/admin/settings/actions.ts", root),
+  "utf8",
+);
 
 test("SePay inbox is service-only and deduplicates provider transactions", () => {
   assert.match(migration, /process_sepay_webhook/);
@@ -49,4 +64,21 @@ test("Supabase cutover is server-side, disabled by default and reversible", () =
   assert.match(handler, /forwardToBookingScript/);
   assert.match(handler, /SEPAY_BANK_ACCOUNT_NUMBER/);
   assert.match(handler, /createHash\("sha256"\)/);
+});
+
+test("SePay automatic confirmation is private, off by default and keeps manual events", () => {
+  assert.match(autoConfirmationMigration, /payments\.sepay_auto_confirmation/);
+  assert.match(autoConfirmationMigration, /\{"enabled":false\}/);
+  assert.match(autoConfirmationMigration, /manual_confirmation_required/);
+  assert.match(autoConfirmationMigration, /insert into public\.payment_transactions/);
+  assert.match(autoConfirmationMigration, /v_role not in \('owner', 'admin'\)/);
+  assert.match(autoConfirmationMigration, /protected operational setting/);
+});
+
+test("admin exposes an operations-protected SePay mode control", () => {
+  assert.match(settingsPage, /Tự động xác nhận chuyển khoản/);
+  assert.match(settingsPage, /Kiểm tra thủ công/);
+  assert.match(settingsPage, /manage_operations/);
+  assert.match(settingsActions, /admin_set_sepay_auto_confirmation/);
+  assert.match(settingsActions, /requireOperationsManager/);
 });

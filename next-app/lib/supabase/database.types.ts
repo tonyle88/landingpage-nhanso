@@ -741,6 +741,10 @@ export type Database = {
         Args: { p_key: string; p_payload: Json }
         Returns: Database["public"]["Tables"]["site_settings"]["Row"]
       }
+      admin_set_sepay_auto_confirmation: {
+        Args: { p_enabled: boolean }
+        Returns: boolean
+      }
       admin_transition_booking: {
         Args: {
           p_id: string
