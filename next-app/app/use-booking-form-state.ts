@@ -1,6 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
+import {
+  normalizeBookingEmail,
+  normalizeBookingName,
+  normalizeVietnamesePhone,
+  validateBookingConcern,
+  validateBookingDob,
+  validateBookingEmail,
+  validateBookingName,
+  validateBookingPhone,
+} from "@/lib/booking-validation";
 
 type BookingState = {
   name: string;
@@ -50,36 +60,21 @@ function todayInputValue() {
   ].join("-");
 }
 
-function validateDob(value: string) {
-  if (!value) return "Vui lòng nhập ngày tháng năm sinh.";
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) {
-    return "Ngày sinh chưa đúng định dạng dd/mm/yyyy, năm phải gồm 4 số.";
-  }
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const today = new Date();
-  if (year < 1900 || year > today.getFullYear()) {
-    return "Năm sinh chưa hợp lệ. Vui lòng nhập năm sinh gồm 4 số.";
-  }
-  const dob = new Date(year, month - 1, day);
-  if (
-    dob.getFullYear() !== year ||
-    dob.getMonth() !== month - 1 ||
-    dob.getDate() !== day
-  ) {
-    return "Ngày sinh không hợp lệ. Vui lòng kiểm tra lại ngày, tháng, năm.";
-  }
-  if (dob > today) return "Ngày sinh không được lớn hơn ngày hiện tại.";
-  return "";
-}
-
 export function useBookingFormState() {
   useEffect(() => {
     const form = document.querySelector<HTMLFormElement>("#booking-form");
-    const dobInput = document.querySelector<HTMLInputElement>("#dob");
-    if (!form || !dobInput) return;
+    if (!form) return;
+    const field = <T extends HTMLInputElement | HTMLTextAreaElement>(
+      name: string,
+    ) => form.elements.namedItem(name) as T | null;
+    const nameInput = field<HTMLInputElement>("name");
+    const dobInput = field<HTMLInputElement>("dob");
+    const phoneInput = field<HTMLInputElement>("phone");
+    const emailInput = field<HTMLInputElement>("email");
+    const concernInput = field<HTMLTextAreaElement>("concern");
+    if (!nameInput || !dobInput || !phoneInput || !emailInput || !concernInput) {
+      return;
+    }
 
     const state = createState();
     const runtime = {
@@ -90,7 +85,7 @@ export function useBookingFormState() {
     dobInput.max = todayInputValue();
 
     const clearDobError = () => {
-      const message = validateDob(dobInput.value);
+      const message = validateBookingDob(dobInput.value);
       dobInput.setCustomValidity(dobInput.value ? message : "");
     };
     const requiredInputs = Array.from(
@@ -110,21 +105,30 @@ export function useBookingFormState() {
     };
     const handleSubmit = (event: SubmitEvent) => {
       event.preventDefault();
-      const dobMessage = validateDob(dobInput.value);
-      dobInput.setCustomValidity(dobMessage);
-      if (dobMessage) {
-        dobInput.reportValidity();
-        dobInput.focus();
+      const validations = [
+        [nameInput, validateBookingName(nameInput.value)],
+        [dobInput, validateBookingDob(dobInput.value)],
+        [phoneInput, validateBookingPhone(phoneInput.value)],
+        [emailInput, validateBookingEmail(emailInput.value)],
+        [concernInput, validateBookingConcern(concernInput.value)],
+      ] as const;
+      validations.forEach(([input, message]) =>
+        input.setCustomValidity(message),
+      );
+      const firstInvalid = validations.find(([, message]) => message)?.[0];
+      if (firstInvalid) {
+        firstInvalid.reportValidity();
+        firstInvalid.focus();
         return;
       }
       if (!form.reportValidity()) return;
 
       const data = new FormData(form);
       runtime.patch({
-        name: String(data.get("name") || ""),
+        name: normalizeBookingName(String(data.get("name") || "")),
         dob: String(data.get("dob") || ""),
-        phone: String(data.get("phone") || ""),
-        email: String(data.get("email") || ""),
+        phone: normalizeVietnamesePhone(String(data.get("phone") || "")),
+        email: normalizeBookingEmail(String(data.get("email") || "")),
         consultationType: String(data.get("consultationType") || ""),
         package: String(data.get("package") || ""),
         concern: String(data.get("concern") || ""),
