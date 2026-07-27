@@ -753,6 +753,12 @@ export type Database = {
         }
         Returns: Database["public"]["Tables"]["bookings"]["Row"]
       }
+      finalize_paid_sepay_booking: {
+        Args: {
+          p_id: string
+        }
+        Returns: Database["public"]["Tables"]["bookings"]["Row"]
+      }
       cancel_booking_reservation: {
         Args: { p_public_id: string; p_idempotency_key: string }
         Returns: Json

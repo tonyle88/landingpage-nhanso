@@ -168,7 +168,10 @@ export function usePaymentRuntime() {
       row.append(icon, text);
       container.appendChild(row);
     };
-    const showSuccess = (mode: "confirmed" | "manual-review") => {
+    const showSuccess = (
+      mode: "confirmed" | "manual-review",
+      customerEmailSent = false,
+    ) => {
       const state = window.ClowBookingState?.getState();
       const calendar = window.ClowBookingCalendar?.getSelection();
       if (!state) return;
@@ -189,7 +192,9 @@ export function usePaymentRuntime() {
       if (emailNote) {
         emailNote.textContent = manualReview
           ? "Lịch đang được giữ chỗ. Clow Cat Patronus sẽ xác nhận sau khi kiểm tra giao dịch chuyển khoản."
-          : "Email xác nhận đã được gửi đến hộp thư của bạn. Vui lòng kiểm tra cả mục Spam nếu không thấy trong hộp thư đến.";
+          : customerEmailSent
+            ? "Email xác nhận đã được gửi đến hộp thư của bạn. Vui lòng kiểm tra cả mục Spam nếu không thấy trong hộp thư đến."
+            : "Lịch hẹn đã được xác nhận. Nếu chưa thấy email, vui lòng kiểm tra lại hộp thư và mục Spam sau ít phút.";
       }
       if (greeting) {
         greeting.textContent = manualReview
@@ -232,9 +237,9 @@ export function usePaymentRuntime() {
       closeModals();
       openModal("modal-success");
     };
-    const announceConfirmed = () => {
+    const announceConfirmed = (customerEmailSent = false) => {
       stop();
-      showSuccess("confirmed");
+      showSuccess("confirmed", customerEmailSent);
     };
     const checkStatus = async () => {
       if (!settings.sepayEnabled) return;
@@ -250,6 +255,9 @@ export function usePaymentRuntime() {
         ) as {
           ok?: boolean;
           status?: string;
+          emailDelivery?: {
+            customer?: string;
+          };
         };
         if (!result?.ok) return;
         if (result.status === "cancelled" || result.status === "expired") {
@@ -271,21 +279,19 @@ export function usePaymentRuntime() {
           return;
         }
         if (result.status === "confirmed") {
-          announceConfirmed();
+          announceConfirmed(
+            result.emailDelivery?.customer === "sent" ||
+              result.emailDelivery?.customer === "already_sent",
+          );
           return;
         }
-        if (result.status !== "paid") return;
-
-        stop();
-        const statusText =
-          document.querySelector<HTMLElement>("#sepay-status-text");
-        if (statusText) {
-          statusText.textContent = "Đang hoàn tất lịch hẹn...";
+        if (result.status === "paid") {
+          const statusText =
+            document.querySelector<HTMLElement>("#sepay-status-text");
+          if (statusText) {
+            statusText.textContent = "Đã nhận thanh toán. Đang hoàn tất lịch hẹn...";
+          }
         }
-        const countdown =
-          document.querySelector<HTMLElement>("#sepay-countdown");
-        if (countdown) countdown.style.display = "none";
-        announceConfirmed();
       } catch (error) {
         console.warn("SePay status check failed:", error);
       }

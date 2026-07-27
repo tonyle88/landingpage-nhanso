@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHmac } from "node:crypto";
 import { isIP } from "node:net";
+import { sendBookingEmailsForBookingId } from "@/lib/booking-email";
 import { validateBookingReservationPayload } from "@/lib/booking-validation";
 import type { Json } from "@/lib/supabase/database.types";
 import { createServiceServerClient } from "@/lib/supabase/server";
@@ -335,7 +336,47 @@ export async function getBookingStatus(request: Request) {
         "Hệ thống đặt lịch tạm thời không khả dụng.",
       );
     }
-    return jsonResponse({ ok: true, ...data }, 200);
+    const result = data as Record<string, Json | undefined>;
+    let emailDelivery;
+    if (result.status === "paid" || result.status === "confirmed") {
+      const { data: booking, error: bookingError } = await supabase
+        .from("bookings")
+        .select("id,status,payment_provider,confirmed_at")
+        .eq("public_id", publicId)
+        .eq("idempotency_key", idempotencyKey)
+        .maybeSingle();
+      if (!bookingError && booking) {
+        if (
+          booking.status === "paid" &&
+          booking.payment_provider === "sepay"
+        ) {
+          const { data: finalized, error: finalizeError } =
+            await supabase.rpc("finalize_paid_sepay_booking", {
+              p_id: booking.id,
+            });
+          if (!finalizeError && finalized) {
+            result.status = "confirmed";
+            result.confirmedAt = finalized.confirmed_at;
+          }
+        }
+        if (result.status === "confirmed") {
+          try {
+            emailDelivery = await sendBookingEmailsForBookingId(
+              supabase,
+              booking.id,
+            );
+          } catch (emailError) {
+            console.error(
+              "Booking status email recovery failed:",
+              emailError instanceof Error
+                ? emailError.message
+                : "Unknown email error.",
+            );
+          }
+        }
+      }
+    }
+    return jsonResponse({ ok: true, ...result, emailDelivery }, 200);
   } catch (error) {
     return handleError(error);
   }

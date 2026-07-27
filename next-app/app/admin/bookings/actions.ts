@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
+import { sendBookingEmailsForBookingId } from "@/lib/booking-email";
 import type { Database } from "@/lib/supabase/database.types";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
+import { createServiceServerClient } from "@/lib/supabase/server";
 
 type BookingStatus = Database["public"]["Enums"]["booking_status"];
 const BOOKING_STATUSES = new Set<BookingStatus>([
@@ -18,6 +20,15 @@ const BOOKING_STATUSES = new Set<BookingStatus>([
 ]);
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function deliverySucceeded(
+  delivery: Awaited<ReturnType<typeof sendBookingEmailsForBookingId>>,
+) {
+  return (
+    ["sent", "already_sent"].includes(delivery.customer) &&
+    ["sent", "already_sent"].includes(delivery.owner)
+  );
+}
 
 export async function transitionBookingAction(form: FormData) {
   const principal = await getAdminPrincipal();
@@ -49,8 +60,47 @@ export async function transitionBookingAction(form: FormData) {
     redirect("/admin/bookings?status=stale");
   }
   if (error) redirect("/admin/bookings?status=error");
+  if (nextStatus === "confirmed") {
+    const serviceClient = createServiceServerClient();
+    if (!serviceClient) {
+      redirect("/admin/bookings?status=email_warning");
+    }
+    let delivered = false;
+    try {
+      const delivery = await sendBookingEmailsForBookingId(serviceClient, id);
+      delivered = deliverySucceeded(delivery);
+    } catch {}
+    if (!delivered) {
+      redirect("/admin/bookings?status=email_warning");
+    }
+  }
   revalidatePath("/admin/bookings");
   revalidatePath("/");
   redirect("/admin/bookings?status=updated");
 }
 
+export async function recoverBookingEmailsAction(form: FormData) {
+  const principal = await getAdminPrincipal();
+  if (!principal || !can(principal.role, "manage_operations")) {
+    redirect("/admin/login?reason=unauthorized");
+  }
+
+  const id = String(form.get("id") || "").trim();
+  if (!UUID_PATTERN.test(id)) {
+    redirect("/admin/bookings?status=invalid");
+  }
+  const serviceClient = createServiceServerClient();
+  if (!serviceClient) {
+    redirect("/admin/bookings?status=email_warning");
+  }
+  let delivered = false;
+  try {
+    const delivery = await sendBookingEmailsForBookingId(serviceClient, id);
+    delivered = deliverySucceeded(delivery);
+  } catch {}
+  if (!delivered) {
+    redirect("/admin/bookings?status=email_warning");
+  }
+  revalidatePath("/admin/bookings");
+  redirect("/admin/bookings?status=email_resent");
+}

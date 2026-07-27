@@ -1,4 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { finalizeAndEmailSepayBooking } from "@/lib/booking-email";
 import { createServiceServerClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/database.types";
 
@@ -66,7 +67,7 @@ async function processInSupabase(
     throw new Error("Supabase webhook processing is not configured.");
   }
 
-  const { error } = await supabase.rpc("process_sepay_webhook", {
+  const { data, error } = await supabase.rpc("process_sepay_webhook", {
     p_payload: payload as Json,
     p_payload_sha256: createHash("sha256")
       .update(rawBody, "utf8")
@@ -76,6 +77,25 @@ async function processInSupabase(
   });
   if (error) {
     throw new Error("Supabase webhook processing failed.");
+  }
+  const result =
+    data && typeof data === "object" && !Array.isArray(data)
+      ? (data as Record<string, Json | undefined>)
+      : {};
+  if (result.processed === true) {
+    const eventId = String(payload.id || "").trim();
+    if (eventId) {
+      try {
+        await finalizeAndEmailSepayBooking(supabase, eventId);
+      } catch (followUpError) {
+        console.error(
+          "SePay booking finalization follow-up failed:",
+          followUpError instanceof Error
+            ? followUpError.message
+            : "Unknown follow-up error.",
+        );
+      }
+    }
   }
 }
 
