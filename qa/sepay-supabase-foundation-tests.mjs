@@ -81,4 +81,7 @@ test("admin exposes an operations-protected SePay mode control", () => {
   assert.match(settingsPage, /manage_operations/);
   assert.match(settingsActions, /admin_set_sepay_auto_confirmation/);
   assert.match(settingsActions, /requireOperationsManager/);
+  assert.match(settingsActions, /sepay_migration_required/);
+  assert.match(settingsPage, /sepaySchemaReady/);
+  assert.match(settingsPage, /202607270002_sepay_auto_confirmation_setting\.sql/);
 });

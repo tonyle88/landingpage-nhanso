@@ -13,6 +13,7 @@ import {
   type BookingStatus,
 } from "@/lib/admin/booking-report";
 import styles from "../admin.module.css";
+import { AdminToast } from "../admin-toast";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -70,10 +71,12 @@ export default async function AdminBookingsPage({
         <Link className={styles.secondaryLink} href="/admin">Tổng quan</Link>
       </header>
 
-      {status && notices[status] ? (
-        <p className={styles.notice} role="status">{notices[status]}</p>
-      ) : null}
-      {error ? <p className={styles.message}>Không thể tải lịch hẹn.</p> : null}
+      <AdminToast
+        message={status ? notices[status] : undefined}
+        tone={["invalid", "stale", "error"].includes(status || "") ? "error" : "success"}
+        cleanHref={selectedFilter ? `/admin/bookings?filter=${selectedFilter}` : "/admin/bookings"}
+      />
+      {error ? <AdminToast message="Không thể tải lịch hẹn." tone="error" cleanHref="/admin/bookings" /> : null}
 
       <section className={styles.adminPanel}>
         <form className={styles.searchForm} method="get">

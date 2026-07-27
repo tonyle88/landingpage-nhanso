@@ -6,6 +6,8 @@ import { can } from "@/lib/auth/roles";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
 import { deleteSettingAction, setSepayAutoConfirmationAction } from "./actions";
 import { SettingForm } from "./setting-form";
+import { AdminToast } from "../admin-toast";
+import { ConfirmToggle } from "../confirm-toggle";
 import styles from "../admin.module.css";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +24,7 @@ const notices: Record<string, string> = {
   sepay_enabled: "Đã bật tự động xác nhận thanh toán qua SePay.",
   sepay_disabled: "Đã tắt SePay tự động. Thanh toán đang được xác nhận thủ công.",
   sepay_error: "Không thể thay đổi chế độ xác nhận SePay.",
+  sepay_migration_required: "Database production chưa được cập nhật chức năng SePay. Hãy áp dụng migration trước khi thay đổi chế độ.",
 };
 
 const SEPAY_SETTING_KEY = "payments.sepay_auto_confirmation";
@@ -45,6 +48,7 @@ export default async function AdminSettingsPage({
   ]);
   const { data: items, error } = settingsResult;
   const sepaySetting = sepayResult.data;
+  const sepaySchemaReady = !sepayResult.error && Boolean(sepaySetting);
   const sepayValue = sepaySetting?.value;
   const sepayAutoEnabled = Boolean(
     sepayValue && typeof sepayValue === "object" && !Array.isArray(sepayValue)
@@ -62,10 +66,12 @@ export default async function AdminSettingsPage({
         </div>
         <Link className={styles.secondaryLink} href="/admin">Tổng quan</Link>
       </header>
-      {params.status && notices[params.status] ? (
-        <p className={styles.notice}>{notices[params.status]}</p>
-      ) : null}
-      {error ? <p className={styles.message}>Không thể tải settings.</p> : null}
+      <AdminToast
+        message={params.status ? notices[params.status] : undefined}
+        tone={["invalid", "confirm", "error", "sepay_error", "sepay_migration_required"].includes(params.status || "") ? "error" : "success"}
+        cleanHref={query ? `/admin/settings?q=${encodeURIComponent(query)}` : "/admin/settings"}
+      />
+      {error ? <AdminToast message="Không thể tải settings." tone="error" cleanHref="/admin/settings" /> : null}
       <section className={`${styles.adminPanel} ${styles.operationSetting}`}>
         <div className={styles.operationSettingHeader}>
           <div>
@@ -80,15 +86,21 @@ export default async function AdminSettingsPage({
           Khi tắt, webhook hợp lệ vẫn được lưu để đối soát nhưng hệ thống không tự
           chuyển lịch hẹn sang trạng thái đã thanh toán.
         </p>
-        {canManagePayments ? (
-          <form action={setSepayAutoConfirmationAction}>
-            <input type="hidden" name="enabled" value={String(!sepayAutoEnabled)} />
-            <button className={sepayAutoEnabled ? styles.dangerButton : styles.submit} type="submit">
-              {sepayAutoEnabled
-                ? "Tắt và chuyển sang kiểm tra thủ công"
-                : "Bật tự động xác nhận qua SePay"}
-            </button>
-          </form>
+        {!sepaySchemaReady ? (
+          <p className={styles.securityNote}>
+            Chức năng đang được khóa an toàn vì database chưa có migration
+            <code> 202607270002_sepay_auto_confirmation_setting.sql</code>.
+          </p>
+        ) : canManagePayments ? (
+          <ConfirmToggle
+            checked={sepayAutoEnabled}
+            action={setSepayAutoConfirmationAction}
+            label="Tự động xác nhận thanh toán qua SePay"
+            confirmTitle={sepayAutoEnabled ? "Tắt xác nhận tự động qua SePay?" : "Bật xác nhận tự động qua SePay?"}
+            confirmMessage={sepayAutoEnabled
+              ? "Các webhook hợp lệ vẫn được lưu, nhưng lịch hẹn chỉ chuyển trạng thái sau khi bạn kiểm tra và xác nhận thủ công."
+              : "Giao dịch khớp tài khoản, số tiền và mã chuyển khoản sẽ tự động chuyển lịch hẹn sang trạng thái đã thanh toán."}
+          />
         ) : (
           <p className={styles.securityNote}>Chỉ owner hoặc admin được thay đổi chế độ này.</p>
         )}

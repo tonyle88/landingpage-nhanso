@@ -7,6 +7,7 @@ import { createAuthServerClient } from "@/lib/supabase/auth-server";
 import { SectionForm } from "./section-form";
 import { ContentItemForm, type AdminLandingContentItem } from "./content-item-form";
 import styles from "../admin.module.css";
+import { AdminToast } from "../admin-toast";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -82,13 +83,12 @@ export default async function AdminSectionsPage({
         </div>
         <Link className={styles.secondaryLink} href="/admin">Tổng quan</Link>
       </header>
-      {params.status && notices[params.status] ? (
-        <p className={styles.notice} role="status">{notices[params.status]}</p>
-      ) : null}
-      {params.content_status && contentNotices[params.content_status] ? (
-        <p className={styles.notice} role="status">{contentNotices[params.content_status]}</p>
-      ) : null}
-      {error ? <p className={styles.message}>Không thể tải danh sách section.</p> : null}
+      <AdminToast
+        message={params.status ? notices[params.status] : params.content_status ? contentNotices[params.content_status] : undefined}
+        tone={["invalid", "error"].includes(params.status || params.content_status || "") ? "error" : "success"}
+        cleanHref={query ? `/admin/sections?q=${encodeURIComponent(query)}` : "/admin/sections"}
+      />
+      {error ? <AdminToast message="Không thể tải danh sách section." tone="error" cleanHref="/admin/sections" /> : null}
       <section className={styles.sectionManager}>
         <aside className={styles.sectionIndex}>
           <p className={styles.eyebrow}>Tất cả section</p>

@@ -6,6 +6,7 @@ import { can } from "@/lib/auth/roles";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
 import { deleteTestimonialAction } from "./actions";
 import { TestimonialForm } from "./testimonial-form";
+import { AdminToast } from "../admin-toast";
 import styles from "../admin.module.css";
 
 export const dynamic = "force-dynamic";
@@ -46,8 +47,12 @@ export default async function AdminTestimonialsPage({
         </div>
         <Link className={styles.secondaryLink} href="/admin">Tổng quan</Link>
       </header>
-      {status && notices[status] ? <p className={styles.notice}>{notices[status]}</p> : null}
-      {error ? <p className={styles.message}>Không thể tải testimonials.</p> : null}
+      <AdminToast
+        message={status ? notices[status] : undefined}
+        tone={["invalid", "confirm", "error"].includes(status || "") ? "error" : "success"}
+        cleanHref="/admin/testimonials"
+      />
+      {error ? <AdminToast message="Không thể tải testimonials." tone="error" cleanHref="/admin/testimonials" /> : null}
       <section className={styles.adminPanel}>
         <h2>Tạo testimonial</h2>
         <TestimonialForm />

@@ -6,6 +6,7 @@ import { can } from "@/lib/auth/roles";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
 import { deletePackageAction } from "./actions";
 import { PackageForm } from "./package-form";
+import { AdminToast } from "../admin-toast";
 import styles from "../admin.module.css";
 
 export const dynamic = "force-dynamic";
@@ -48,10 +49,12 @@ export default async function AdminPackagesPage({
         </div>
         <Link className={styles.secondaryLink} href="/admin">Tổng quan</Link>
       </header>
-      {status && notices[status] ? (
-        <p className={styles.notice} role="status">{notices[status]}</p>
-      ) : null}
-      {error ? <p className={styles.message}>Không thể tải danh sách gói.</p> : null}
+      <AdminToast
+        message={status ? notices[status] : undefined}
+        tone={["invalid", "confirm", "error"].includes(status || "") ? "error" : "success"}
+        cleanHref="/admin/packages"
+      />
+      {error ? <AdminToast message="Không thể tải danh sách gói." tone="error" cleanHref="/admin/packages" /> : null}
 
       <section className={styles.adminPanel}>
         <h2>Tạo gói mới</h2>

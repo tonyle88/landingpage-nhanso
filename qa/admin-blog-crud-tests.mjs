@@ -62,3 +62,10 @@ test("editor and HTML modes share a canonical value without render overwrite", (
   assert.match(editor, /editorRef\.current\.innerHTML = htmlRef\.current/);
   assert.doesNotMatch(editor, /dangerouslySetInnerHTML/);
 });
+
+test("new posts receive a unique generated slug and actionable failures", () => {
+  assert.match(actions, /ensureUniqueGeneratedSlug/);
+  assert.match(actions, /payload\.slug = await ensureUniqueGeneratedSlug/);
+  assert.match(actions, /error\.code === "23505" \? "duplicate" : "error"/);
+  assert.match(actions, /phase === "upload" \? "image_error" : "invalid"/);
+});
