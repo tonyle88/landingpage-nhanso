@@ -3,7 +3,8 @@ import type { Database } from "@/lib/supabase/database.types";
 type BlogCategoryRow =
   Database["public"]["Tables"]["blog_categories"]["Row"];
 type BlogPostRow = Database["public"]["Tables"]["blog_posts"]["Row"] & {
-  media_assets: { public_url: string | null } | null;
+  cover_asset: { public_url: string | null } | null;
+  thumbnail_asset: { public_url: string | null } | null;
 };
 
 export type PublicBlogCategory = {
@@ -104,7 +105,8 @@ export function toPublicBlogPost(
     summaryHtml,
     contentHtml: row.content_html,
     thumbnail: safePublicUrl(
-      row.cover_url || row.media_assets?.public_url,
+      row.thumbnail_url || row.thumbnail_asset?.public_url ||
+        row.cover_url || row.cover_asset?.public_url,
     ),
     pinned: row.pinned,
     enabled: true,

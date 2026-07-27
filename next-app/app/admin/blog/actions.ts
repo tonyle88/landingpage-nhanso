@@ -28,7 +28,9 @@ export async function saveBlogPostAction(form: FormData) {
   let id;
   let payload;
   let upload: UploadedMedia | null = null;
+  let thumbnailUpload: UploadedMedia | null = null;
   let previousMediaAssetId: string | null = null;
+  let previousThumbnailAssetId: string | null = null;
   let previousSlug: string | null = null;
   try {
     id = optionalUuid(form.get("id"));
@@ -36,11 +38,25 @@ export async function saveBlogPostAction(form: FormData) {
       const authClient = await createAuthServerClient();
       const { data: previous } = await authClient
         .from("blog_posts")
-        .select("cover_asset_id,slug")
+        .select("cover_asset_id,thumbnail_asset_id,slug")
         .eq("id", id)
         .maybeSingle();
       previousMediaAssetId = previous?.cover_asset_id || null;
+      previousThumbnailAssetId = previous?.thumbnail_asset_id || null;
       previousSlug = previous?.slug || null;
+    }
+    const thumbnailFile = form.get("thumbnail_file");
+    if (thumbnailFile instanceof File && thumbnailFile.size > 0) {
+      thumbnailUpload = await uploadContentImage({
+        file: thumbnailFile,
+        folder: "blog",
+        altText: `Thumbnail ${String(form.get("title") || "")}`,
+        uploadedBy: principal.userId,
+      });
+      if (thumbnailUpload) {
+        form.set("thumbnail_url", thumbnailUpload.publicUrl);
+        form.set("thumbnail_asset_id", thumbnailUpload.id);
+      }
     }
     const file = form.get("cover_file");
     if (file instanceof File && file.size > 0) {
@@ -61,6 +77,7 @@ export async function saveBlogPostAction(form: FormData) {
     payload = blogPostPayloadFromForm(form);
   } catch {
     await removeUploadedMedia(upload);
+    await removeUploadedMedia(thumbnailUpload);
     redirect("/admin/blog?status=invalid");
   }
   const supabase = await createAuthServerClient();
@@ -70,6 +87,7 @@ export async function saveBlogPostAction(form: FormData) {
   });
   if (error) {
     await removeUploadedMedia(upload);
+    await removeUploadedMedia(thumbnailUpload);
     console.error("admin_save_blog_post failed", {
       code: error.code,
       message: error.message,
@@ -78,6 +96,12 @@ export async function saveBlogPostAction(form: FormData) {
   }
   if (upload && previousMediaAssetId && previousMediaAssetId !== upload.id) {
     await removeStoredMediaById(previousMediaAssetId);
+  }
+  if (
+    thumbnailUpload && previousThumbnailAssetId &&
+    previousThumbnailAssetId !== thumbnailUpload.id
+  ) {
+    await removeStoredMediaById(previousThumbnailAssetId);
   }
   revalidatePath("/admin/blog");
   revalidatePath("/blog");
@@ -99,7 +123,7 @@ export async function deleteBlogPostAction(form: FormData) {
   const supabase = await createAuthServerClient();
   const { data: item } = await supabase
     .from("blog_posts")
-    .select("cover_asset_id")
+    .select("cover_asset_id,thumbnail_asset_id")
     .eq("id", id)
     .maybeSingle();
   const { error } = await supabase.rpc("admin_delete_blog_post", { p_id: id });
@@ -111,6 +135,7 @@ export async function deleteBlogPostAction(form: FormData) {
     redirect("/admin/blog?status=error");
   }
   await removeStoredMediaById(item?.cover_asset_id);
+  await removeStoredMediaById(item?.thumbnail_asset_id);
   revalidatePath("/admin/blog");
   revalidatePath("/blog");
   redirect("/admin/blog?status=deleted");

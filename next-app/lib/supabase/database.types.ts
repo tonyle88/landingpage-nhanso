@@ -171,6 +171,8 @@ export type Database = {
           content_html: string
           cover_asset_id: string | null
           cover_url: string | null
+          thumbnail_asset_id: string | null
+          thumbnail_url: string | null
           created_at: string
           id: string
           pinned: boolean
@@ -187,6 +189,8 @@ export type Database = {
           content_html: string
           cover_asset_id?: string | null
           cover_url?: string | null
+          thumbnail_asset_id?: string | null
+          thumbnail_url?: string | null
           created_at?: string
           id?: string
           pinned?: boolean
@@ -203,6 +207,8 @@ export type Database = {
           content_html?: string
           cover_asset_id?: string | null
           cover_url?: string | null
+          thumbnail_asset_id?: string | null
+          thumbnail_url?: string | null
           created_at?: string
           id?: string
           pinned?: boolean
@@ -231,6 +237,13 @@ export type Database = {
           {
             foreignKeyName: "blog_posts_cover_asset_id_fkey"
             columns: ["cover_asset_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_posts_thumbnail_asset_id_fkey"
+            columns: ["thumbnail_asset_id"]
             isOneToOne: false
             referencedRelation: "media_assets"
             referencedColumns: ["id"]
