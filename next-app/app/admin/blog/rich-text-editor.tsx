@@ -4,8 +4,32 @@ import { useId, useRef, useState } from "react";
 import styles from "../admin.module.css";
 
 type Command = "bold" | "italic" | "underline" | "insertUnorderedList" | "insertOrderedList";
+type Alignment = "left" | "center" | "right" | "justify";
 
-export function RichTextEditor({ initialValue = "" }: { initialValue?: string }) {
+type RichTextEditorProps = {
+  compact?: boolean;
+  initialValue?: string;
+  label?: string;
+  maxLength?: number;
+  name?: string;
+  placeholder?: string;
+};
+
+const alignmentClasses = [
+  "editor-align-left",
+  "editor-align-center",
+  "editor-align-right",
+  "editor-align-justify",
+];
+
+export function RichTextEditor({
+  compact = false,
+  initialValue = "",
+  label = "Nội dung bài viết",
+  maxLength = 100000,
+  name = "content_html",
+  placeholder = "Bắt đầu viết nội dung bài viết…",
+}: RichTextEditorProps) {
   const id = useId();
   const editorRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -27,6 +51,26 @@ export function RichTextEditor({ initialValue = "" }: { initialValue?: string })
     syncFromVisual();
   }
 
+  function normalizeAlignmentMarkup() {
+    editorRef.current?.querySelectorAll<HTMLElement>("[style], [align]").forEach((element) => {
+      const alignment = element.style.textAlign || element.getAttribute("align") || "";
+      if (!alignmentClasses.includes(`editor-align-${alignment}`)) return;
+      element.classList.remove(...alignmentClasses);
+      element.classList.add(`editor-align-${alignment}`);
+      element.style.removeProperty("text-align");
+      if (!element.getAttribute("style")) element.removeAttribute("style");
+      element.removeAttribute("align");
+    });
+  }
+
+  function align(value: Alignment) {
+    editorRef.current?.focus();
+    const command = value === "justify" ? "justifyFull" : `justify${value[0].toUpperCase()}${value.slice(1)}`;
+    document.execCommand(command);
+    normalizeAlignmentMarkup();
+    syncFromVisual();
+  }
+
   function addLink() {
     const url = window.prompt("Nhập URL liên kết HTTPS");
     if (!url) return;
@@ -43,35 +87,46 @@ export function RichTextEditor({ initialValue = "" }: { initialValue?: string })
     if (sourceMode && editorRef.current && inputRef.current) {
       editorRef.current.innerHTML = inputRef.current.value;
     } else {
+      normalizeAlignmentMarkup();
       syncFromVisual();
     }
     setSourceMode((value) => !value);
   }
 
+  const editorClass = `${styles.richEditor}${compact ? ` ${styles.richEditorCompact}` : ""}`;
+
   return (
-    <div className={styles.richEditor}>
-      <div className={styles.editorToolbar} role="toolbar" aria-label="Công cụ soạn thảo">
+    <div className={editorClass}>
+      <div className={styles.editorToolbar} role="toolbar" aria-label={`Công cụ soạn thảo ${label.toLowerCase()}`}>
         <button type="button" onClick={() => block("p")} title="Đoạn văn">P</button>
-        <button type="button" onClick={() => block("h2")} title="Tiêu đề lớn">H2</button>
-        <button type="button" onClick={() => block("h3")} title="Tiêu đề nhỏ">H3</button>
+        {!compact ? <button type="button" onClick={() => block("h2")} title="Tiêu đề lớn">H2</button> : null}
+        {!compact ? <button type="button" onClick={() => block("h3")} title="Tiêu đề nhỏ">H3</button> : null}
         <span />
         <button type="button" onClick={() => run("bold")} title="In đậm"><strong>B</strong></button>
         <button type="button" onClick={() => run("italic")} title="In nghiêng"><em>I</em></button>
         <button type="button" onClick={() => run("underline")} title="Gạch chân"><u>U</u></button>
-        <button type="button" onClick={() => run("insertUnorderedList")} title="Danh sách chấm">• List</button>
-        <button type="button" onClick={() => run("insertOrderedList")} title="Danh sách số">1. List</button>
-        <button type="button" onClick={() => block("blockquote")} title="Trích dẫn">❝</button>
+        <span />
+        <button type="button" onClick={() => align("left")} title="Căn trái" aria-label="Căn trái">≡←</button>
+        <button type="button" onClick={() => align("center")} title="Căn giữa" aria-label="Căn giữa">≡</button>
+        <button type="button" onClick={() => align("right")} title="Căn phải" aria-label="Căn phải">→≡</button>
+        <button type="button" onClick={() => align("justify")} title="Căn đều hai bên" aria-label="Căn đều hai bên">☰</button>
+        {!compact ? <button type="button" onClick={() => run("insertUnorderedList")} title="Danh sách chấm">• List</button> : null}
+        {!compact ? <button type="button" onClick={() => run("insertOrderedList")} title="Danh sách số">1. List</button> : null}
+        {!compact ? <button type="button" onClick={() => block("blockquote")} title="Trích dẫn">❝</button> : null}
         <button type="button" onClick={addLink} title="Thêm liên kết">↗ Link</button>
-        <button className={sourceMode ? styles.toolbarActive : ""} type="button" onClick={toggleSource} title="Xem mã HTML">&lt;/&gt;</button>
+        <button className={sourceMode ? styles.toolbarActive : ""} type="button" onClick={toggleSource}
+          title={sourceMode ? "Chuyển về Editor" : "Chỉnh mã HTML"}>
+          {sourceMode ? "Editor" : "</> HTML"}
+        </button>
       </div>
-      <label className={styles.srOnly} htmlFor={id}>Nội dung bài viết</label>
+      <label className={styles.srOnly} htmlFor={id}>{label}</label>
       <textarea
         ref={inputRef}
         id={id}
-        name="content_html"
+        name={name}
         className={sourceMode ? styles.editorSource : styles.editorHiddenInput}
         defaultValue={initialValue}
-        maxLength={100000}
+        maxLength={maxLength}
         onInput={(event) => {
           if (sourceMode && editorRef.current) editorRef.current.innerHTML = event.currentTarget.value;
         }}
@@ -83,9 +138,11 @@ export function RichTextEditor({ initialValue = "" }: { initialValue?: string })
         suppressContentEditableWarning
         dangerouslySetInnerHTML={{ __html: initialValue }}
         onInput={syncFromVisual}
-        data-placeholder="Bắt đầu viết nội dung bài viết…"
+        data-placeholder={placeholder}
       />
-      <div className={styles.editorHint}>Có thể định dạng trực quan hoặc chuyển sang chế độ &lt;/&gt; để chỉnh HTML an toàn.</div>
+      <div className={styles.editorHint}>
+        Soạn trực quan, căn lề bằng toolbar hoặc chuyển giữa Editor và HTML mà không mất nội dung.
+      </div>
     </div>
   );
 }

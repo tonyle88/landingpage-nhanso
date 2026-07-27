@@ -4099,6 +4099,21 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   color: #f5ecd8 !important;
 }
 
+.blog-card-summary {
+  flex: 1;
+  overflow: hidden;
+  color: rgba(235, 215, 185, 0.9);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.blog-card-summary > :first-child { margin-top: 0; }
+.blog-card-summary > :last-child { margin-bottom: 0; }
+.editor-align-left { text-align: left; }
+.editor-align-center { text-align: center; }
+.editor-align-right { text-align: right; }
+.editor-align-justify { text-align: justify; }
+
 /* Blog Search */
 .blog-search-panel {
   margin: 0 auto 58px;

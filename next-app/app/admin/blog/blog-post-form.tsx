@@ -23,7 +23,9 @@ export function BlogPostForm({
       <input type="hidden" name="cover_asset_id" value={item?.cover_asset_id || ""} />
       <div className={styles.formGrid}>
         <label className={styles.field}>Slug
-          <input name="slug" defaultValue={item?.slug || ""} required />
+          <input name="slug" defaultValue={item?.slug || ""}
+            placeholder="Để trống để tự tạo từ tiêu đề" />
+          <small>Bài mới sẽ tự sinh slug không dấu từ tiêu đề. Slug của bài đã lưu được giữ ổn định.</small>
         </label>
         <label className={styles.field}>Danh mục
           <select name="category_id" defaultValue={item?.category_id || ""}>
@@ -44,10 +46,17 @@ export function BlogPostForm({
       <label className={styles.field}>Tiêu đề
         <input name="title" maxLength={200} defaultValue={item?.title || ""} required />
       </label>
-      <label className={styles.field}>Tóm tắt
-        <textarea name="summary" rows={3} maxLength={600}
-          defaultValue={item?.summary || ""} />
-      </label>
+      <div className={styles.field}>
+        <span>Tóm tắt</span>
+        <RichTextEditor
+          compact
+          initialValue={item?.summary || ""}
+          label="Tóm tắt bài viết"
+          maxLength={600}
+          name="summary"
+          placeholder="Viết tóm tắt ngắn cho thẻ bài viết…"
+        />
+      </div>
       <div className={styles.field}>
         <span>Nội dung bài viết</span>
         <RichTextEditor initialValue={item?.content_html || ""} />

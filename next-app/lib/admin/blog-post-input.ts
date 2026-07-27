@@ -4,9 +4,23 @@ const unsafeHtml =
   /<\s*(script|iframe|object|embed|style)\b|on[a-z]+\s*=|javascript\s*:/i;
 const statuses = new Set(["draft", "published", "archived"]);
 
+export function slugifyBlogTitle(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 160)
+    .replace(/-+$/g, "");
+}
+
 export function blogPostPayloadFromForm(form: FormData) {
-  const slug = String(form.get("slug") || "").trim().toLowerCase();
   const title = String(form.get("title") || "").trim();
+  const requestedSlug = String(form.get("slug") || "").trim().toLowerCase();
+  const slug = requestedSlug || slugifyBlogTitle(title);
   const summary = String(form.get("summary") || "").trim();
   const contentHtml = String(form.get("content_html") || "").trim();
   const coverUrl = String(form.get("cover_url") || "").trim();

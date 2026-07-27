@@ -21,6 +21,7 @@ export type PublicBlogPost = {
   categoryId: string;
   title: string;
   summary: string;
+  summaryHtml: string;
   contentHtml: string;
   thumbnail: string;
   pinned: boolean;
@@ -61,6 +62,20 @@ function safePublicUrl(value: string | null | undefined): string {
   }
 }
 
+function plainTextFromHtml(value: string): string {
+  return value
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function toPublicBlogPost(
   row: BlogPostRow,
   now = Date.now(),
@@ -77,6 +92,7 @@ export function toPublicBlogPost(
   const id = row.id.trim();
   const slug = row.slug.trim();
   const title = row.title.trim();
+  const summaryHtml = row.summary || "";
   if (!id || !slug || !title) return null;
 
   return {
@@ -84,7 +100,8 @@ export function toPublicBlogPost(
     slug,
     categoryId: row.category_id || "",
     title,
-    summary: row.summary || "",
+    summary: plainTextFromHtml(summaryHtml),
+    summaryHtml,
     contentHtml: row.content_html,
     thumbnail: safePublicUrl(
       row.cover_url || row.media_assets?.public_url,

@@ -478,7 +478,7 @@ function renderBlogHome() {
               <span style="font-size: 0.8rem; color: rgba(212,168,67,0.7); letter-spacing:1px;"><i class="fa-regular fa-clock"></i> ${formatBlogDateTime(a.date)}</span>
             </div>
             <h3 style="font-family:'Playfair Display',serif; font-size:1.2rem; margin-bottom:12px; line-height:1.55; text-align:justify; color: #f0e0c0; font-weight:700;">${escapeHtml(a.title)}</h3>
-            <div style="color: rgba(235,215,185,0.9); font-size:0.9rem; line-height:1.65; flex:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;">${escapeHtml((a.summary || '').replace(/<[^>]*>/g, ''))}</div>
+            <div class="blog-card-summary">${sanitizeBlogHtml(a.summaryHtml || a.summary || '')}</div>
             <!-- Read More Button -->
             <div style="margin-top:20px; display:flex; align-items:center; justify-content:center;">
               <span style="display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg, rgba(212,168,67,0.15), rgba(212,168,67,0.05)); border: 1px solid rgba(212,168,67,0.5); border-radius:24px; padding:8px 22px; font-size:0.88rem; font-weight:700; color: var(--primary); letter-spacing:0.5px; transition: all 0.3s; box-shadow: 0 0 12px rgba(212,168,67,0.1);">
