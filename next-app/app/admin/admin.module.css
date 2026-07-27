@@ -448,6 +448,17 @@
 .sectionHeading span { color: var(--muted); font-size: .84rem; font-weight: 700; }
 
 .formGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.blogMetaGrid { align-items: start; }
+.blogMetaGrid > .field {
+  align-self: start;
+  align-content: start;
+}
+.slugHint {
+  display: block;
+  min-height: 2.6em;
+  color: rgb(255 255 255 / 66%);
+  line-height: 1.3;
+}
 .checkRow { display: flex; flex-wrap: wrap; gap: 20px; }
 .checkRow label { display: flex; align-items: center; gap: 8px; color: rgb(255 255 255 / 82%); font-weight: 700; }
 .checkRow input { width: 18px; height: 18px; accent-color: var(--gold); }
@@ -468,7 +479,16 @@
 
 .dangerForm { display: flex; align-items: end; gap: 12px; margin-top: 22px; padding-top: 18px; border-top: 1px solid rgb(255 138 128 / 24%); }
 .dangerForm .field { flex: 1; }
+.dangerField > span { display: block; white-space: nowrap; }
 .dangerButton { padding: 0 18px; border: 1px solid rgb(255 138 128 / 52%); background: rgb(255 138 128 / 8%); color: var(--danger); }
+
+.blogSubmit {
+  width: auto;
+  min-width: 190px;
+  justify-self: end;
+  margin-top: 14px;
+  padding: 0 24px;
+}
 
 .notice,
 .alertPanel {
@@ -673,12 +693,26 @@
 .editorHiddenInput, .editorVisualHidden { display: none; }
 .editorHint { padding: 8px 12px; border-top: 1px solid #d8e0e2; color: #53676b; background: #f7f9f9; font-size: .68rem; font-weight: 600; }
 .coverWorkflow { display: grid; gap: 16px; }
+.uploadPicker { min-height: 76px; display: flex; align-items: center; gap: 13px; padding: 11px 12px; border: 1px dashed #b8c6c8; border-radius: 10px; cursor: pointer; background: #fff; color: #17272a; box-shadow: 0 8px 22px rgb(0 0 0 / 9%); transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.uploadPicker:hover { border-color: #d4a843; box-shadow: 0 11px 28px rgb(0 0 0 / 14%), 0 0 0 3px rgb(240 201 106 / 10%); transform: translateY(-1px); }
+.uploadPicker:has(input:focus-visible) { border-color: #d4a843; box-shadow: 0 0 0 3px rgb(240 201 106 / 24%); }
+.uploadIcon { width: 44px; height: 44px; flex: 0 0 44px; display: grid; place-items: center; border-radius: 10px; background: linear-gradient(135deg, #f0c96a, #ef6f32); color: #102d31; box-shadow: 0 7px 16px rgb(217 78 31 / 18%); }
+.uploadIcon svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.uploadCopy { min-width: 0; flex: 1; display: grid; gap: 3px; }
+.uploadCopy strong { overflow: hidden; color: #17272a; font-size: .83rem; text-overflow: ellipsis; white-space: nowrap; }
+.uploadCopy small { color: #627477; font-size: .69rem; font-weight: 650; }
+.uploadButton { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0 15px; border-radius: 8px; background: #173b40; color: #fff; font-size: .73rem; font-weight: 850; white-space: nowrap; }
 .thumbnailPreview { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 360px); align-items: center; gap: 18px; padding: 16px; border: 1px solid rgb(240 201 106 / 30%); border-radius: 9px; background: rgb(240 201 106 / 7%); }
 .thumbnailPreview > div { display: grid; gap: 6px; }
 .thumbnailPreview strong { color: #fff; }
 .thumbnailPreview small, .thumbnailPreview > span { color: var(--muted); font-size: .76rem; }
 .thumbnailPreview img { width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; object-fit: cover; box-shadow: 0 10px 24px rgb(0 0 0 / 25%); }
-.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.thumbnailPreview .thumbnailPlaceholder { min-height: 170px; display: grid; place-items: center; align-content: center; gap: 7px; padding: 20px; border: 1px dashed rgb(240 201 106 / 30%); border-radius: 8px; background: rgb(5 24 27 / 58%); text-align: center; }
+.thumbnailPreview .thumbnailPlaceholder strong { color: rgb(255 255 255 / 88%); font-size: .8rem; }
+.thumbnailPreview .thumbnailPlaceholder small { max-width: 230px; color: var(--muted); font-size: .69rem; line-height: 1.5; }
+.thumbnailPlaceholderIcon { width: 45px; height: 45px; display: grid; place-items: center; margin-bottom: 2px; border: 1px solid rgb(240 201 106 / 25%); border-radius: 50%; background: rgb(240 201 106 / 10%); color: var(--gold-soft); }
+.thumbnailPlaceholderIcon svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+.srOnly { position: absolute; width: 1px; min-width: 0; height: 1px; min-height: 0; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0,0,0); white-space: nowrap; border: 0; }
 
 @media (max-width: 760px) {
   .card,
@@ -691,10 +725,12 @@
   .adminNav,
   .formGrid,
   .bookingMeta { grid-template-columns: 1fr; }
+  .slugHint { min-height: 0; }
   .searchForm { display: grid; }
   .operationSettingHeader { display: grid; }
   .operationSetting form button { width: 100%; }
   .pageHeader .secondaryLink { width: 100%; }
+  .blogSubmit { width: 100%; justify-self: stretch; }
   .sectionManager { grid-template-columns: 1fr; }
   .sectionIndex { position: static; height: auto; }
   .sectionIndex nav { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 260px; }
@@ -731,6 +767,8 @@
   .editorToolbar { gap: 2px; }
   .editorCanvas, .editorSource { min-height: 280px; max-height: 440px; padding: 14px; }
   .richEditorCompact .editorCanvas, .richEditorCompact .editorSource { min-height: 140px; max-height: 240px; }
+  .uploadPicker { display: grid; grid-template-columns: 44px minmax(0, 1fr); }
+  .uploadButton { grid-column: 1 / -1; width: 100%; }
   .thumbnailPreview { grid-template-columns: 1fr; }
   .adminToast { right: 16px; bottom: 16px; }
 }

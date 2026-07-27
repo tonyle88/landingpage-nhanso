@@ -158,7 +158,10 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: Pr
                     <CategoryForm item={category} />
                     <form className={styles.dangerForm} action={deleteBlogCategoryAction}>
                       <input type="hidden" name="id" value={category.id} />
-                      <label className={styles.field}>Nhập <strong>XOA</strong> để xác nhận<input name="confirmation" autoComplete="off" required /></label>
+                      <label className={`${styles.field} ${styles.dangerField}`}>
+                        <span>Nhập <strong>XOA</strong> để xác nhận</span>
+                        <input name="confirmation" autoComplete="off" required />
+                      </label>
                       <button className={styles.dangerButton} type="submit">Xóa danh mục</button>
                     </form>
                   </div>
@@ -200,7 +203,10 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: Pr
                     <BlogPostForm item={item} categories={categoryRows} />
                     <form className={styles.dangerForm} action={deleteBlogPostAction}>
                       <input type="hidden" name="id" value={item.id} />
-                      <label className={styles.field}>Nhập <strong>XOA</strong> để xác nhận<input name="confirmation" autoComplete="off" required /></label>
+                      <label className={`${styles.field} ${styles.dangerField}`}>
+                        <span>Nhập <strong>XOA</strong> để xác nhận</span>
+                        <input name="confirmation" autoComplete="off" required />
+                      </label>
                       <button className={styles.dangerButton} type="submit">Xóa bài viết</button>
                     </form>
                   </div>

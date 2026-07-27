@@ -37,11 +37,13 @@ export function BlogPostForm({
       <input type="hidden" name="cover_asset_id" value={item?.cover_asset_id || ""} />
       <input type="hidden" name="thumbnail_asset_id" value={item?.thumbnail_asset_id || ""} />
       <input type="hidden" name="thumbnail_url" value={item?.thumbnail_url || ""} />
-      <div className={styles.formGrid}>
+      <div className={`${styles.formGrid} ${styles.blogMetaGrid}`}>
         <label className={styles.field}>Slug
           <input name="slug" defaultValue={item?.slug || ""}
             placeholder="Để trống để tự tạo từ tiêu đề" />
-          <small>Bài mới sẽ tự sinh slug không dấu từ tiêu đề. Slug của bài đã lưu được giữ ổn định.</small>
+          <small className={styles.slugHint}>
+            Bài mới sẽ tự sinh slug không dấu từ tiêu đề. Slug của bài đã lưu được giữ ổn định.
+          </small>
         </label>
         <label className={styles.field}>Danh mục
           <select name="category_id" defaultValue={item?.category_id || ""}>
@@ -89,7 +91,7 @@ export function BlogPostForm({
         <label><input name="pinned" type="checkbox"
           defaultChecked={item?.pinned ?? false} /> Ghim bài viết</label>
       </div>
-      <button className={styles.submit} type="submit">
+      <button className={`${styles.submit} ${styles.blogSubmit}`} type="submit">
         {item ? "Lưu bài viết" : "Tạo bài viết"}
       </button>
     </form>
