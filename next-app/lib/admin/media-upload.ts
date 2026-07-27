@@ -1,6 +1,7 @@
 import "server-only";
 
 import { randomUUID } from "node:crypto";
+import sharp from "sharp";
 import { createServiceServerClient } from "@/lib/supabase/server";
 
 const BUCKET = "content-images";
@@ -53,21 +54,45 @@ export async function uploadContentImage({
   folder,
   altText,
   uploadedBy,
+  webp,
 }: {
   file: File;
   folder: "blog" | "testimonials";
   altText: string;
   uploadedBy: string;
+  webp?: {
+    width: number;
+    height: number;
+    fit: "cover" | "inside";
+    quality?: number;
+  };
 }): Promise<UploadedMedia | null> {
   if (!file.size) return null;
   if (file.size > MAX_BYTES) throw new Error("image too large");
 
   const mime = file.type as AllowedMime;
-  const extension = MIME_EXTENSIONS[mime];
-  if (!extension) throw new Error("unsupported image type");
+  if (!MIME_EXTENSIONS[mime]) throw new Error("unsupported image type");
 
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (!hasValidMagic(bytes, mime)) throw new Error("invalid image signature");
+
+  let uploadBytes = bytes;
+  let uploadMime: AllowedMime = mime;
+  let extension = MIME_EXTENSIONS[mime];
+  if (webp) {
+    uploadBytes = new Uint8Array(await sharp(bytes, { failOn: "warning" })
+      .rotate()
+      .resize({
+        width: webp.width,
+        height: webp.height,
+        fit: webp.fit,
+        withoutEnlargement: true,
+      })
+      .webp({ quality: webp.quality ?? 70, effort: 5 })
+      .toBuffer());
+    uploadMime = "image/webp";
+    extension = "webp";
+  }
 
   const supabase = createServiceServerClient();
   if (!supabase) throw new Error("storage is not configured");
@@ -75,8 +100,8 @@ export async function uploadContentImage({
   const objectPath = `${folder}/${randomUUID()}.${extension}`;
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
-    .upload(objectPath, bytes, {
-      contentType: mime,
+    .upload(objectPath, uploadBytes, {
+      contentType: uploadMime,
       cacheControl: "31536000",
       upsert: false,
     });
@@ -92,8 +117,8 @@ export async function uploadContentImage({
       bucket: BUCKET,
       object_path: objectPath,
       public_url: publicUrl,
-      mime_type: mime,
-      byte_size: file.size,
+      mime_type: uploadMime,
+      byte_size: uploadBytes.byteLength,
       alt_text: altText.slice(0, 240),
       is_public: true,
       uploaded_by: uploadedBy,

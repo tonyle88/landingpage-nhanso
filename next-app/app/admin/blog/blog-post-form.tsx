@@ -1,6 +1,7 @@
 import type { Tables } from "@/lib/supabase/database.types";
 import { saveBlogPostAction } from "./actions";
 import { RichTextEditor } from "./rich-text-editor";
+import { CoverImageField } from "./cover-image-field";
 import styles from "../admin.module.css";
 
 type BlogPost = Tables<"blog_posts">;
@@ -22,6 +23,7 @@ export function BlogPostForm({
       {item ? <input type="hidden" name="id" value={item.id} /> : null}
       <input type="hidden" name="cover_asset_id" value={item?.cover_asset_id || ""} />
       <input type="hidden" name="thumbnail_asset_id" value={item?.thumbnail_asset_id || ""} />
+      <input type="hidden" name="thumbnail_url" value={item?.thumbnail_url || ""} />
       <div className={styles.formGrid}>
         <label className={styles.field}>Slug
           <input name="slug" defaultValue={item?.slug || ""}
@@ -62,22 +64,7 @@ export function BlogPostForm({
         <span>Nội dung bài viết</span>
         <RichTextEditor initialValue={item?.content_html || ""} />
       </div>
-      <label className={styles.field}>URL ảnh bìa HTTPS
-        <input name="cover_url" type="url" defaultValue={item?.cover_url || ""} />
-      </label>
-      <label className={styles.field}>Hoặc tải ảnh bìa mới lên Supabase Storage
-        <input name="cover_file" type="file" accept="image/jpeg,image/png,image/webp" />
-        <small>JPEG, PNG hoặc WebP; tối đa 5 MB. Ảnh tải lên sẽ thay URL phía trên.</small>
-      </label>
-      <label className={styles.field}>URL ảnh thumbnail HTTPS
-        <input name="thumbnail_url" type="url" defaultValue={item?.thumbnail_url || ""}
-          placeholder="Để trống để dùng ảnh bìa" />
-        <small>Ảnh ngang dùng cho danh sách và bài liên quan. Nếu để trống hệ thống dùng ảnh bìa.</small>
-      </label>
-      <label className={styles.field}>Hoặc tải thumbnail mới lên Supabase Storage
-        <input name="thumbnail_file" type="file" accept="image/jpeg,image/png,image/webp" />
-        <small>JPEG, PNG hoặc WebP; tối đa 5 MB. Khuyến nghị tỷ lệ 16:9.</small>
-      </label>
+      <CoverImageField coverUrl={item?.cover_url} thumbnailUrl={item?.thumbnail_url} />
       <label className={styles.field}>Thời điểm xuất bản
         <input name="published_at" type="datetime-local"
           defaultValue={localDateTime(item?.published_at)} />

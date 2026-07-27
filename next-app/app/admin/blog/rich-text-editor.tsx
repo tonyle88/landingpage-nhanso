@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import styles from "../admin.module.css";
 
 type Command = "bold" | "italic" | "underline" | "insertUnorderedList" | "insertOrderedList";
@@ -33,10 +33,19 @@ export function RichTextEditor({
   const id = useId();
   const editorRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const htmlRef = useRef(initialValue);
   const [sourceMode, setSourceMode] = useState(false);
 
+  useEffect(() => {
+    htmlRef.current = initialValue;
+    if (inputRef.current) inputRef.current.value = initialValue;
+    if (editorRef.current) editorRef.current.innerHTML = initialValue;
+  }, [initialValue]);
+
   function syncFromVisual() {
-    if (inputRef.current && editorRef.current) inputRef.current.value = editorRef.current.innerHTML;
+    if (!inputRef.current || !editorRef.current) return;
+    htmlRef.current = editorRef.current.innerHTML;
+    inputRef.current.value = htmlRef.current;
   }
 
   function run(command: Command) {
@@ -85,7 +94,8 @@ export function RichTextEditor({
 
   function toggleSource() {
     if (sourceMode && editorRef.current && inputRef.current) {
-      editorRef.current.innerHTML = inputRef.current.value;
+      htmlRef.current = inputRef.current.value;
+      editorRef.current.innerHTML = htmlRef.current;
     } else {
       normalizeAlignmentMarkup();
       syncFromVisual();
@@ -128,7 +138,7 @@ export function RichTextEditor({
         defaultValue={initialValue}
         maxLength={maxLength}
         onInput={(event) => {
-          if (sourceMode && editorRef.current) editorRef.current.innerHTML = event.currentTarget.value;
+          htmlRef.current = event.currentTarget.value;
         }}
       />
       <div
@@ -136,7 +146,6 @@ export function RichTextEditor({
         className={sourceMode ? styles.editorVisualHidden : styles.editorCanvas}
         contentEditable
         suppressContentEditableWarning
-        dangerouslySetInnerHTML={{ __html: initialValue }}
         onInput={syncFromVisual}
         data-placeholder={placeholder}
       />

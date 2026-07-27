@@ -4,11 +4,11 @@ import { can } from "@/lib/auth/roles";
 import {
   bookingReportSelect,
   bookingStatusLabels,
-  escapeXml,
   formatBookingDateTime,
   parseBookingStatus,
   reportFileStamp,
 } from "@/lib/admin/booking-report";
+import { createXlsxWorkbook } from "@/lib/admin/xlsx-workbook";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
 
 export const dynamic = "force-dynamic";
@@ -32,14 +32,6 @@ const columns = [
   "Nhu cầu",
   "Ngày tạo",
 ] as const;
-
-function stringCell(value: unknown, style = "Cell") {
-  return `<Cell ss:StyleID="${style}"><Data ss:Type="String">${escapeXml(value)}</Data></Cell>`;
-}
-
-function numberCell(value: number) {
-  return `<Cell ss:StyleID="Money"><Data ss:Type="Number">${Number.isFinite(value) ? value : 0}</Data></Cell>`;
-}
 
 export async function GET(request: NextRequest) {
   const principal = await getAdminPrincipal();
@@ -74,8 +66,7 @@ export async function GET(request: NextRequest) {
     dateStyle: "full",
     timeStyle: "medium",
   }).format(new Date());
-  const rows = (bookings || []).map((booking) => {
-    const values = [
+  const rows = (bookings || []).map((booking) => [
       booking.public_id,
       bookingStatusLabels[booking.status],
       formatBookingDateTime(booking.slot_start),
@@ -85,8 +76,7 @@ export async function GET(request: NextRequest) {
       booking.phone,
       booking.email,
       booking.consultation_type,
-    ];
-    return `<Row>${values.map((value) => stringCell(value)).join("")}${numberCell(booking.amount)}${[
+      booking.amount,
       booking.currency,
       booking.payment_order_id || "—",
       formatBookingDateTime(booking.manual_payment_claimed_at),
@@ -94,39 +84,19 @@ export async function GET(request: NextRequest) {
       formatBookingDateTime(booking.confirmed_at),
       booking.concern || "—",
       formatBookingDateTime(booking.created_at),
-    ].map((value) => stringCell(value)).join("")}</Row>`;
+    ]);
+  const workbook = createXlsxWorkbook({
+    sheetName: "Lịch hẹn",
+    title,
+    metadata: `Xuất lúc: ${generatedAt} · Người xuất: ${principal.email || principal.userId} · Tổng số: ${bookings?.length || 0}`,
+    columns,
+    rows,
   });
-
-  const workbook = `<?xml version="1.0" encoding="UTF-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
- <Styles>
-  <Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10"/></Style>
-  <Style ss:ID="Title"><Font ss:FontName="Arial" ss:Size="16" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#12343A" ss:Pattern="Solid"/></Style>
-  <Style ss:ID="Meta"><Font ss:FontName="Arial" ss:Size="10" ss:Color="#4B5F63"/></Style>
-  <Style ss:ID="Header"><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/><Font ss:FontName="Arial" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#D94E1F" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#A73B16"/></Borders></Style>
-  <Style ss:ID="Cell"><Alignment ss:Vertical="Top" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9E2E3"/></Borders></Style>
-  <Style ss:ID="Money"><NumberFormat ss:Format="#,##0"/><Alignment ss:Horizontal="Right" ss:Vertical="Top"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9E2E3"/></Borders></Style>
- </Styles>
- <Worksheet ss:Name="Lịch hẹn">
-  <Table>
-   ${columns.map((_, index) => `<Column ss:Width="${index === 15 ? 240 : index === 5 || index === 7 ? 145 : 105}"/>`).join("")}
-   <Row ss:Height="30"><Cell ss:MergeAcross="16" ss:StyleID="Title"><Data ss:Type="String">${escapeXml(title)}</Data></Cell></Row>
-   <Row><Cell ss:MergeAcross="16" ss:StyleID="Meta"><Data ss:Type="String">Xuất lúc: ${escapeXml(generatedAt)} · Người xuất: ${escapeXml(principal.email || principal.userId)} · Tổng số: ${bookings?.length || 0}</Data></Cell></Row>
-   <Row ss:Height="32">${columns.map((column) => stringCell(column, "Header")).join("")}</Row>
-   ${rows.join("\n   ")}
-  </Table>
-  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>3</SplitHorizontal><TopRowBottomPane>3</TopRowBottomPane><ProtectObjects>False</ProtectObjects><ProtectScenarios>False</ProtectScenarios></WorksheetOptions>
- </Worksheet>
-</Workbook>`;
 
   return new NextResponse(workbook, {
     headers: {
-      "Content-Type": "application/vnd.ms-excel; charset=utf-8",
-      "Content-Disposition": `attachment; filename="lich-hen-${reportFileStamp()}.xls"`,
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename="lich-hen-${reportFileStamp()}.xlsx"`,
       "Cache-Control": "private, no-store",
       "X-Content-Type-Options": "nosniff",
     },

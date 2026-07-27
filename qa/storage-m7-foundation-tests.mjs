@@ -43,7 +43,7 @@ test("admin actions authorize before upload and clean failed writes", async () =
 test("admin forms only offer the approved image formats", async () => {
   for (const path of [
     "next-app/app/admin/testimonials/testimonial-form.tsx",
-    "next-app/app/admin/blog/blog-post-form.tsx",
+    "next-app/app/admin/blog/cover-image-field.tsx",
   ]) {
     const source = await read(path);
     assert.match(source, /accept="image\/jpeg,image\/png,image\/webp"/);
