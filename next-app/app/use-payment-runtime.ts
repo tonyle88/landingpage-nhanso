@@ -378,6 +378,7 @@ export function usePaymentRuntime() {
       updateCountdown();
       countdownTimer = window.setInterval(updateCountdown, 1000);
       pollTimer = window.setInterval(() => void checkStatus(), 5000);
+      window.setTimeout(() => void checkStatus(), 0);
     };
 
     const open = (snapshot: PackageSnapshot) => {
@@ -473,7 +474,26 @@ export function usePaymentRuntime() {
     const confirmButton = document.querySelector<HTMLButtonElement>(
       "#btn-confirm-payment",
     );
+    const checkSepayButton = document.querySelector<HTMLButtonElement>(
+      "#btn-check-sepay-status",
+    );
+    const checkSepayNow = async () => {
+      if (!checkSepayButton || checkSepayButton.disabled) return;
+      const originalText = checkSepayButton.textContent;
+      checkSepayButton.disabled = true;
+      checkSepayButton.textContent = "Đang kiểm tra...";
+      try {
+        await checkStatus();
+      } finally {
+        if (document.body.contains(checkSepayButton)) {
+          checkSepayButton.disabled = false;
+          checkSepayButton.textContent =
+            originalText || "Kiểm tra lại thanh toán";
+        }
+      }
+    };
     confirmButton?.addEventListener("click", confirmManualPayment);
+    checkSepayButton?.addEventListener("click", checkSepayNow);
 
     const runtime = {
       getSettings: () => settings,
@@ -487,6 +507,7 @@ export function usePaymentRuntime() {
     return () => {
       stop();
       confirmButton?.removeEventListener("click", confirmManualPayment);
+      checkSepayButton?.removeEventListener("click", checkSepayNow);
       if (window.ClowPaymentRuntime === runtime) {
         delete window.ClowPaymentRuntime;
       }

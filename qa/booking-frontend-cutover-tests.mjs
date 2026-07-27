@@ -19,6 +19,10 @@ const payment = await readFile(
   new URL("next-app/app/use-payment-runtime.ts", root),
   "utf8",
 );
+const bookingFlow = await readFile(
+  new URL("next-app/components/landing/booking-flow.tsx", root),
+  "utf8",
+);
 
 test("native booking cutover is reversible by an explicit public flag", () => {
   assert.match(client, /NEXT_PUBLIC_BOOKING_API_V2_ENABLED/);
@@ -88,4 +92,12 @@ test("payment polling stops with guidance instead of hanging on an inactive book
   assert.match(payment, /Lịch giữ chỗ này đã bị hủy/);
   assert.match(payment, /Mã thanh toán đã hết hạn/);
   assert.match(payment, /countdown\.textContent = "Đã dừng"/);
+});
+
+test("SePay checks immediately and provides a manual status retry", () => {
+  assert.match(payment, /window\.setTimeout\(\(\) => void checkStatus\(\), 0\)/);
+  assert.match(payment, /const checkSepayNow = async \(\) =>/);
+  assert.match(payment, /checkSepayButton\?\.addEventListener\("click", checkSepayNow\)/);
+  assert.match(bookingFlow, /id="btn-check-sepay-status"/);
+  assert.match(bookingFlow, /Kiểm tra lại thanh toán/);
 });
