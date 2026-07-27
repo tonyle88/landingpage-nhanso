@@ -23,12 +23,33 @@ const bookingFlow = await readFile(
   new URL("next-app/components/landing/booking-flow.tsx", root),
   "utf8",
 );
+const supabaseConfig = await readFile(
+  new URL("next-app/lib/supabase/config.ts", root),
+  "utf8",
+);
+const supabaseServer = await readFile(
+  new URL("next-app/lib/supabase/server.ts", root),
+  "utf8",
+);
 
-test("native booking cutover is reversible by an explicit public flag", () => {
-  assert.match(client, /NEXT_PUBLIC_BOOKING_API_V2_ENABLED/);
-  assert.match(client, /NATIVE_BOOKING_API_ENABLED/);
-  assert.match(client, /nativeEnabled: NATIVE_BOOKING_API_ENABLED/);
-  assert.match(client, /BOOKING_URL/);
+test("booking is locked to the native Supabase API", () => {
+  assert.doesNotMatch(client, /NEXT_PUBLIC_BOOKING_API_V2_ENABLED/);
+  assert.doesNotMatch(client, /NATIVE_BOOKING_API_ENABLED/);
+  assert.doesNotMatch(client, /BOOKING_URL/);
+  assert.match(client, /nativeEnabled: true/);
+  assert.match(client, /const native = nativeRequest\(action, data\)/);
+});
+
+test("all native clients are locked to nhanso-production Supabase", () => {
+  assert.match(
+    supabaseConfig,
+    /https:\/\/nuexmwyyibhkfcisaavw\.supabase\.co/,
+  );
+  assert.match(supabaseServer, /PRODUCTION_SUPABASE_URL/);
+  assert.doesNotMatch(
+    supabaseServer,
+    /process\.env\.NEXT_PUBLIC_SUPABASE_URL/,
+  );
 });
 
 test("native reservation sends canonical fields, selected provider and no client price", () => {
@@ -55,17 +76,15 @@ test("one idempotency UUID follows reserve, status, manual review and cancel", (
   assert.match(client, /\/api\/bookings\/manual-payment/);
 });
 
-test("calendar uses minimal slots API and native mode keeps SePay polling", () => {
+test("calendar uses minimal slots API and SePay polls the native status route", () => {
   assert.match(calendar, /\/api\/bookings\/slots/);
   assert.match(calendar, /slot\.slot_start/);
   assert.match(calendar, /slot\.slot_end/);
-  assert.doesNotMatch(payment, /!NATIVE_BOOKING_API_ENABLED/);
+  assert.doesNotMatch(payment, /NATIVE_BOOKING_API_ENABLED/);
   assert.match(payment, /"checkBookingStatus"/);
   assert.match(payment, /fetch\("\/api\/payment-settings"/);
-  assert.match(
-    payment,
-    /if \(NATIVE_BOOKING_API_ENABLED\) \{\s+announceConfirmed\(\)/,
-  );
+  assert.match(payment, /if \(result\.status !== "paid"\) return/);
+  assert.match(payment, /announceConfirmed\(\)/);
 });
 
 test("calendar clears stale time slots until the customer selects a date", () => {

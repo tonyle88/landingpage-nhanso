@@ -27,13 +27,18 @@ export async function GET() {
   }
 
   const value = data.value;
-  const sepayEnabled = Boolean(
+  const configuredEnabled = Boolean(
     value &&
       typeof value === "object" &&
       !Array.isArray(value) &&
       "enabled" in value &&
       value.enabled === true,
   );
+  const productionEnvironment = process.env.VERCEL_ENV === "production";
+  const allowNonProduction =
+    process.env.SEPAY_ALLOW_NON_PRODUCTION === "true";
+  const sepayEnabled =
+    configuredEnabled && (productionEnvironment || allowNonProduction);
 
   return NextResponse.json(
     { ok: true, sepayEnabled },

@@ -55,44 +55,6 @@ export function verifySepaySignature({
   return safeEqual(signature, expected);
 }
 
-async function forwardToBookingScript(
-  payload: Record<string, unknown>,
-  env = process.env,
-) {
-  const bookingUrl = env.BOOKING_SCRIPT_WEBHOOK_URL;
-  const proxySecret = env.BOOKING_WEBHOOK_FORWARD_SECRET;
-  if (!bookingUrl || !proxySecret) {
-    throw new Error("Webhook forwarding is not configured.");
-  }
-
-  const response = await fetch(bookingUrl, {
-    method: "POST",
-    redirect: "follow",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      ...payload,
-      action: "sepayWebhook",
-      proxySecret,
-    }),
-    signal: AbortSignal.timeout(20_000),
-  });
-
-  const responseText = await response.text();
-  let result: { ok?: boolean; success?: boolean; duplicate?: boolean; message?: string };
-  try {
-    result = JSON.parse(responseText);
-  } catch {
-    throw new Error(`Booking backend returned HTTP ${response.status}.`);
-  }
-
-  if (!response.ok || result.ok !== true || result.success !== true) {
-    throw new Error(
-      result.message || `Booking backend rejected the webhook (${response.status}).`,
-    );
-  }
-  return result;
-}
-
 async function processInSupabase(
   payload: Record<string, unknown>,
   rawBody: string,
@@ -161,22 +123,12 @@ export async function handleSepayWebhook(request: Request) {
   }
 
   try {
-    if (process.env.SEPAY_SUPABASE_WEBHOOK_ENABLED === "true") {
-      await processInSupabase(
-        payload as Record<string, unknown>,
-        rawBody,
-        timestamp,
-      );
-      return json({ success: true });
-    }
-    const result = await forwardToBookingScript(
+    await processInSupabase(
       payload as Record<string, unknown>,
+      rawBody,
+      timestamp,
     );
-    return json({
-      ok: true,
-      success: true,
-      duplicate: result.duplicate === true,
-    });
+    return json({ success: true });
   } catch (error) {
     console.error(
       "SePay webhook forwarding failed:",
