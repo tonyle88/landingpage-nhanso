@@ -124,3 +124,10 @@ test("SePay checks immediately and provides a manual status retry", () => {
   assert.match(bookingFlow, /id="btn-check-sepay-status"/);
   assert.match(bookingFlow, /Kiểm tra lại thanh toán/);
 });
+
+test("verified payment stops the countdown while confirmation polling continues", () => {
+  assert.match(payment, /const stopCountdown = \(\)/);
+  assert.match(payment, /if \(result\.status === "paid"\)/);
+  assert.match(payment, /stopCountdown\(\)/);
+  assert.match(payment, /countdown\.textContent = "Đã thanh toán"/);
+});
