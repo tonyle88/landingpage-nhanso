@@ -18,6 +18,14 @@ const actions = await readFile(
   new URL("next-app/app/admin/bookings/actions.ts", root),
   "utf8",
 );
+const exportRoute = await readFile(
+  new URL("next-app/app/admin/bookings/export/route.ts", root),
+  "utf8",
+);
+const reportPage = await readFile(
+  new URL("next-app/app/admin/bookings/report/page.tsx", root),
+  "utf8",
+);
 
 test("booking transition is owner/admin only and rejects stale writes", () => {
   assert.match(migration, /v_role not in \('owner', 'admin'\)/);
@@ -47,3 +55,12 @@ test("auditor can read the page but cannot see transition controls", () => {
   assert.match(page, /\.limit\(100\)/);
 });
 
+test("booking reports require operations access and preserve status filters", () => {
+  assert.match(exportRoute, /can\(principal\.role, "read_operations"\)/);
+  assert.match(exportRoute, /parseBookingStatus/);
+  assert.match(exportRoute, /application\/vnd\.ms-excel/);
+  assert.match(exportRoute, /Cache-Control": "private, no-store"/);
+  assert.match(reportPage, /can\(principal\.role, "read_operations"\)/);
+  assert.match(page, /Xuất Excel/);
+  assert.match(page, /Xuất PDF/);
+});

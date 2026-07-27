@@ -488,6 +488,8 @@
 .searchForm { display: flex; gap: 10px; margin-bottom: 20px; }
 .searchForm input { min-width: 0; flex: 1; }
 .searchForm .submit { padding: 0 18px; }
+.reportActions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: -6px 0 24px; }
+.reportActions > span { color: var(--muted); font-size: .78rem; }
 .paymentMeta { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px; color: var(--muted); font-size: .88rem; }
 .paymentMeta a { color: var(--gold-soft); font-weight: 800; }
 

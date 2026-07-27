@@ -3,9 +3,15 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
-import type { Database } from "@/lib/supabase/database.types";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
 import { transitionBookingAction } from "./actions";
+import {
+  bookingStatusLabels as statusLabels,
+  formatBookingDateTime as formatDateTime,
+  formatBookingMoney as formatMoney,
+  parseBookingStatus,
+  type BookingStatus,
+} from "@/lib/admin/booking-report";
 import styles from "../admin.module.css";
 
 export const dynamic = "force-dynamic";
@@ -14,20 +20,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type BookingStatus = Database["public"]["Enums"]["booking_status"];
 const notices: Record<string, string> = {
   updated: "Đã cập nhật trạng thái lịch hẹn và ghi audit log.",
   invalid: "Yêu cầu cập nhật trạng thái chưa hợp lệ.",
   stale: "Lịch hẹn đã thay đổi. Trang đã được tải lại để tránh ghi đè.",
   error: "Không thể cập nhật lịch hẹn. Không có thay đổi nào được xác nhận.",
-};
-const statusLabels: Record<BookingStatus, string> = {
-  pending: "Chờ giữ chỗ",
-  held: "Đang giữ chỗ",
-  paid: "Đã xác nhận tiền",
-  confirmed: "Đã xác nhận lịch",
-  cancelled: "Đã hủy",
-  expired: "Đã hết hạn",
 };
 const nextStatuses: Partial<Record<BookingStatus, BookingStatus[]>> = {
   pending: ["held", "cancelled", "expired"],
@@ -35,23 +32,6 @@ const nextStatuses: Partial<Record<BookingStatus, BookingStatus[]>> = {
   paid: ["confirmed"],
   confirmed: ["cancelled"],
 };
-
-function formatDateTime(value: string | null) {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat("vi-VN", {
-    timeZone: "Asia/Ho_Chi_Minh",
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
-function formatMoney(amount: number, currency: string) {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
 
 export default async function AdminBookingsPage({
   searchParams,
@@ -62,9 +42,7 @@ export default async function AdminBookingsPage({
   if (!principal) redirect("/admin/login?reason=unauthorized");
   if (!can(principal.role, "read_operations")) redirect("/admin");
   const { status, filter } = await searchParams;
-  const selectedFilter = Object.hasOwn(statusLabels, filter || "")
-    ? (filter as BookingStatus)
-    : null;
+  const selectedFilter = parseBookingStatus(filter);
 
   const supabase = await createAuthServerClient();
   let request = supabase
@@ -110,6 +88,23 @@ export default async function AdminBookingsPage({
           </label>
           <button className={styles.submit} type="submit">Lọc</button>
         </form>
+        <div className={styles.reportActions} aria-label="Xuất báo cáo lịch hẹn">
+          <Link
+            className={styles.secondaryLink}
+            href={`/admin/bookings/export${selectedFilter ? `?filter=${selectedFilter}` : ""}`}
+          >
+            ↓ Xuất Excel
+          </Link>
+          <Link
+            className={styles.secondaryLink}
+            href={`/admin/bookings/report${selectedFilter ? `?filter=${selectedFilter}` : ""}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            ↗ Xuất PDF
+          </Link>
+          <span>Áp dụng bộ lọc trạng thái hiện tại.</span>
+        </div>
         <div className={styles.sectionHeading}>
           <h2>Danh sách gần nhất</h2>
           <span>{bookings?.length || 0} lịch</span>
