@@ -22,6 +22,8 @@ function createContentSecurityPolicy(nonce: string, isLoopback: boolean) {
     [
       "img-src 'self' data: blob:",
       "https://*.supabase.co",
+      "https://drive.google.com",
+      "https://i.ibb.co",
       "https://img.vietqr.io",
       "https://qr.sepay.vn",
     ].join(" "),

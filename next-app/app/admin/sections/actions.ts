@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { landingContentPayloadFromForm } from "@/lib/admin/landing-content-item-input";
 import { landingSectionPayloadFromForm } from "@/lib/admin/landing-section-input";
 import { optionalUuid } from "@/lib/admin/package-input";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
@@ -43,4 +44,29 @@ export async function saveLandingSectionAction(form: FormData) {
   revalidatePath("/admin/sections");
   revalidatePath("/");
   redirect("/admin/sections?status=saved");
+}
+
+export async function saveLandingContentItemAction(form: FormData) {
+  await requireContentManager();
+  let parsed;
+  try {
+    parsed = landingContentPayloadFromForm(form);
+  } catch {
+    redirect("/admin/sections?content_status=invalid#homepage-content");
+  }
+  const supabase = await createAuthServerClient();
+  const { error } = await supabase.rpc("admin_save_site_setting", {
+    p_key: parsed.key,
+    p_payload: parsed.payload,
+  });
+  if (error) {
+    console.error("admin_save_site_setting landing content failed", {
+      code: error.code,
+      message: error.message,
+    });
+    redirect("/admin/sections?content_status=error#homepage-content");
+  }
+  revalidatePath("/admin/sections");
+  revalidatePath("/");
+  redirect("/admin/sections?content_status=saved#homepage-content");
 }
