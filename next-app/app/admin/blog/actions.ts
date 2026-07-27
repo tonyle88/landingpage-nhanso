@@ -29,16 +29,18 @@ export async function saveBlogPostAction(form: FormData) {
   let payload;
   let upload: UploadedMedia | null = null;
   let previousMediaAssetId: string | null = null;
+  let previousSlug: string | null = null;
   try {
     id = optionalUuid(form.get("id"));
     if (id) {
       const authClient = await createAuthServerClient();
       const { data: previous } = await authClient
         .from("blog_posts")
-        .select("cover_asset_id")
+        .select("cover_asset_id,slug")
         .eq("id", id)
         .maybeSingle();
       previousMediaAssetId = previous?.cover_asset_id || null;
+      previousSlug = previous?.slug || null;
     }
     const file = form.get("cover_file");
     if (file instanceof File && file.size > 0) {
@@ -52,6 +54,9 @@ export async function saveBlogPostAction(form: FormData) {
         form.set("cover_url", upload.publicUrl);
         form.set("cover_asset_id", upload.id);
       }
+    }
+    if (id && !String(form.get("slug") || "").trim() && previousSlug) {
+      form.set("slug", previousSlug);
     }
     payload = blogPostPayloadFromForm(form);
   } catch {

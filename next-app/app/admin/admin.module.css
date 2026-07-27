@@ -623,7 +623,12 @@
 .editorCanvas h2, .editorCanvas h3 { font-family: Georgia, "Times New Roman", serif; }
 .editorCanvas a { color: var(--gold-soft); }
 .editorCanvas blockquote { margin-left: 0; padding-left: 14px; border-left: 2px solid var(--gold); color: var(--muted); }
+.editorCanvas :global(.editor-align-left) { text-align: left; }
+.editorCanvas :global(.editor-align-center) { text-align: center; }
+.editorCanvas :global(.editor-align-right) { text-align: right; }
+.editorCanvas :global(.editor-align-justify) { text-align: justify; }
 .editorSource { display: block; min-height: 360px; resize: vertical; border: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.richEditorCompact .editorCanvas, .richEditorCompact .editorSource { min-height: 150px; }
 .editorHiddenInput, .editorVisualHidden { display: none; }
 .editorHint { padding: 8px 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: .68rem; font-weight: 500; }
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
