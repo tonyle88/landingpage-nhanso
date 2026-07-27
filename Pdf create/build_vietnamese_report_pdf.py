@@ -369,24 +369,24 @@ class BirthGrid(Flowable):
     def draw(self):
         c = self.canv
         cell = self.width / 3
-        blue = colors.HexColor("#BFE7F2")
-        red_ink = SUNBURST
+        blue = colors.HexColor("#79CBE2")
+        red_ink = colors.HexColor("#FF7658")
         highlight_yellow = colors.Color(1, 0.86, 0.08, 0.22)
         rows = [
             [
-                {"segments": [("3", blue)], "highlight": False},
-                {"segments": [("6", blue)], "highlight": False},
-                {"segments": [("9", red_ink), ("9", red_ink), ("9", blue)], "highlight": True},
+                {"segments": [("3", red_ink), ("3", red_ink), ("3", blue)], "highlight": False},
+                {"segments": [("X", red_ink)], "highlight": True},
+                {"segments": [("9", red_ink), ("9", blue), ("9", blue)], "highlight": False},
             ],
             [
-                {"segments": [("2", red_ink), ("2", blue), ("2", blue)], "highlight": False},
-                {"segments": [("5", blue), ("5", blue), ("5", blue), ("5", blue), ("5", blue)], "highlight": True},
+                {"segments": [("2", blue), ("2", blue)], "highlight": False},
+                {"segments": [("5", blue), ("5", blue)], "highlight": False},
                 {"segments": [("8", red_ink), ("8", blue)], "highlight": False},
             ],
             [
-                {"segments": [("1", red_ink), ("1", red_ink), ("1", red_ink), ("1", blue)], "highlight": True},
+                {"segments": [("1", red_ink), ("1", blue)], "highlight": False},
+                {"segments": [("4", red_ink), ("4", blue)], "highlight": False},
                 {"segments": [("X", red_ink)], "highlight": True},
-                {"segments": [("7", red_ink), ("7", red_ink), ("7", blue), ("7", blue)], "highlight": True},
             ],
         ]
 
@@ -554,8 +554,8 @@ def cover_bg(canvas, doc):
     canvas.setLineWidth(0.6)
     canvas.line(54 * mm, h - 124 * mm, 156 * mm, h - 124 * mm)
 
-    customer_name = "Trần Nguyễn Hoàng Trí"
-    customer_date = " · 17/08/2001"
+    customer_name = "Trần Minh Tú"
+    customer_date = " · 03/03/1984"
     customer_font = 15.6
     customer_y = h - 135 * mm
     canvas.setFont("Arial-Bold", customer_font)
@@ -701,13 +701,13 @@ class PythagorasPyramid(Flowable):
         top_y = 58 * mm
         cx = self.width / 2
         nodes = {
-            "base_month": ("8", "Tháng", "", cx - 48 * mm, base_y, False),
-            "base_day": ("8", "Ngày", "", cx, base_y, False),
-            "base_year": ("3", "Năm", "", cx + 48 * mm, base_y, False),
-            "peak_1": ("7", "35T", "2036", cx - 24 * mm, mid_y, True),
-            "peak_2": ("11/2", "44T", "2045", cx + 24 * mm, mid_y, True),
-            "peak_3": ("9", "53T", "2054", cx, upper_y, True),
-            "peak_4": ("11/2", "62T", "2063", cx, top_y, True),
+            "base_month": ("3", "Tháng", "", cx - 48 * mm, base_y, False),
+            "base_day": ("3", "Ngày", "", cx, base_y, False),
+            "base_year": ("22/4", "Năm", "", cx + 48 * mm, base_y, False),
+            "peak_1": ("6", "35T", "2019", cx - 24 * mm, mid_y, True),
+            "peak_2": ("7", "44T", "2028", cx + 24 * mm, mid_y, True),
+            "peak_3": ("4", "53T", "2037", cx, upper_y, True),
+            "peak_4": ("7", "62T", "2046", cx, top_y, True),
         }
 
         def draw_arrow(x1, y1, x2, y2, color, width=0.9):
@@ -765,10 +765,10 @@ class PythagorasPyramid(Flowable):
 
         challenge_items = [
             ("0", nodes["peak_1"][3] - 13 * mm, nodes["peak_1"][4] + 5 * mm),
-            ("5", nodes["peak_2"][3] + 13 * mm, nodes["peak_2"][4] + 4 * mm),
+            ("1", nodes["peak_2"][3] + 13 * mm, nodes["peak_2"][4] + 4 * mm),
             # Challenge 3 follows this template's rule: |Peak 1 energy - Peak 2 energy|.
-            ("5", nodes["peak_3"][3] - 14 * mm, nodes["peak_3"][4] + 4 * mm),
-            ("5", nodes["peak_4"][3] - 14 * mm, nodes["peak_4"][4] + 2 * mm),
+            ("1", nodes["peak_3"][3] - 14 * mm, nodes["peak_3"][4] + 4 * mm),
+            ("1", nodes["peak_4"][3] - 14 * mm, nodes["peak_4"][4] + 2 * mm),
         ]
         for value, x, y in challenge_items:
             c.setFillColor(colors.Color(217 / 255, 78 / 255, 31 / 255, 0.20))

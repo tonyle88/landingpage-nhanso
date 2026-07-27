@@ -25,13 +25,17 @@ export function blogPostPayloadFromForm(form: FormData) {
   const contentHtml = String(form.get("content_html") || "").trim();
   const coverUrl = String(form.get("cover_url") || "").trim();
   const coverAssetId = optionalUuid(form.get("cover_asset_id"));
+  const thumbnailUrl = String(form.get("thumbnail_url") || "").trim();
+  const thumbnailAssetId = optionalUuid(form.get("thumbnail_asset_id"));
   const status = String(form.get("status") || "draft");
   const categoryId = optionalUuid(form.get("category_id"));
   const publishedInput = String(form.get("published_at") || "").trim();
 
   if (!/^[a-z0-9][a-z0-9-]{1,159}$/.test(slug)) throw new Error("invalid slug");
   if (title.length < 2 || title.length > 200) throw new Error("invalid title");
-  if (summary.length > 600) throw new Error("invalid summary");
+  if (summary.length > 600 || unsafeHtml.test(summary)) {
+    throw new Error("invalid summary");
+  }
   if (!contentHtml || contentHtml.length > 100_000 || unsafeHtml.test(contentHtml)) {
     throw new Error("invalid content");
   }
@@ -45,6 +49,17 @@ export function blogPostPayloadFromForm(form: FormData) {
     }
     if (parsed.protocol !== "https:" || coverUrl.length > 2048) {
       throw new Error("invalid cover URL");
+    }
+  }
+  if (thumbnailUrl) {
+    let parsed: URL;
+    try {
+      parsed = new URL(thumbnailUrl);
+    } catch {
+      throw new Error("invalid thumbnail URL");
+    }
+    if (parsed.protocol !== "https:" || thumbnailUrl.length > 2048) {
+      throw new Error("invalid thumbnail URL");
     }
   }
   let publishedAt = "";
@@ -61,6 +76,8 @@ export function blogPostPayloadFromForm(form: FormData) {
     content_html: contentHtml,
     cover_asset_id: coverAssetId,
     cover_url: coverUrl,
+    thumbnail_asset_id: thumbnailAssetId,
+    thumbnail_url: thumbnailUrl,
     pinned: form.get("pinned") === "on",
     status,
     published_at: publishedAt,

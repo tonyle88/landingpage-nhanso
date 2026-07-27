@@ -23,7 +23,7 @@ async function queryPublicBlogPosts(): Promise<PublicBlogPostsResult> {
     const { data, error } = await client
       .from("blog_posts")
       .select(
-        "id,category_id,slug,title,summary,content_html,cover_url,pinned,status,published_at,created_at,updated_at,author_id,cover_asset_id,media_assets(public_url)",
+        "id,category_id,slug,title,summary,content_html,cover_url,thumbnail_url,pinned,status,published_at,created_at,updated_at,author_id,cover_asset_id,thumbnail_asset_id,cover_asset:media_assets!blog_posts_cover_asset_id_fkey(public_url),thumbnail_asset:media_assets!blog_posts_thumbnail_asset_id_fkey(public_url)",
       )
       .eq("status", "published")
       .lte("published_at", now.toISOString())
