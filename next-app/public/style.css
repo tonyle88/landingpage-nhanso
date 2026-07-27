@@ -3776,6 +3776,28 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   line-height: 1.55;
 }
 
+.sepay-check-button {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(240, 201, 106, 0.4);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-gold-light);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sepay-check-button:hover:not(:disabled) {
+  background: rgba(240, 201, 106, 0.12);
+}
+
+.sepay-check-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .btn-back-text {
   background: none;
   border: none;

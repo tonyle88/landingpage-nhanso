@@ -207,6 +207,13 @@ export default function BookingFlow() {
               Hệ thống sẽ tự chuyển sang trang cảm ơn khi thanh toán được xác
               nhận.
             </p>
+            <button
+              className="sepay-check-button"
+              id="btn-check-sepay-status"
+              type="button"
+            >
+              Kiểm tra lại thanh toán
+            </button>
           </div>
 
           <button

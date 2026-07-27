@@ -28,6 +28,13 @@ const virtualAccountMigration = await readFile(
   ),
   "utf8",
 );
+const accountAllowlistMigration = await readFile(
+  new URL(
+    "next-app/supabase/migrations/202607270004_sepay_private_account_allowlist.sql",
+    root,
+  ),
+  "utf8",
+);
 const settingsPage = await readFile(
   new URL("next-app/app/admin/settings/page.tsx", root),
   "utf8",
@@ -63,6 +70,20 @@ test("SePay accepts the configured account as either the bank account or VA", ()
   assert.match(
     virtualAccountMigration,
     /expected SePay account validation was not updated/,
+  );
+});
+
+test("SePay can use a private account allowlist without exposing it publicly", () => {
+  assert.match(accountAllowlistMigration, /payments\.sepay_expected_accounts/);
+  assert.match(accountAllowlistMigration, /false\s*\)/);
+  assert.match(accountAllowlistMigration, /jsonb_typeof\(value\) = ''array''/);
+  assert.match(
+    accountAllowlistMigration,
+    /not \(v_expected_accounts \? v_account_number\)/,
+  );
+  assert.match(
+    accountAllowlistMigration,
+    /not \(v_expected_accounts \? v_sub_account\)/,
   );
 });
 
