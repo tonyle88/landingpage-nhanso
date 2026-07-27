@@ -21,6 +21,13 @@ const autoConfirmationMigration = await readFile(
   ),
   "utf8",
 );
+const virtualAccountMigration = await readFile(
+  new URL(
+    "next-app/supabase/migrations/202607270003_accept_sepay_virtual_account.sql",
+    root,
+  ),
+  "utf8",
+);
 const settingsPage = await readFile(
   new URL("next-app/app/admin/settings/page.tsx", root),
   "utf8",
@@ -45,6 +52,18 @@ test("SePay processing validates account, amount, direction and payment code", (
   assert.match(migration, /v_booking\.amount <> v_amount/);
   assert.match(migration, /payment_order_id = v_order_id/);
   assert.match(migration, /position\(upper\(payment_order_id\) in v_content\)/);
+});
+
+test("SePay accepts the configured account as either the bank account or VA", () => {
+  assert.match(virtualAccountMigration, /p_payload->>''subAccount''/);
+  assert.match(
+    virtualAccountMigration,
+    /v_account_number <> v_expected_account[\s\S]*and v_sub_account <> v_expected_account/,
+  );
+  assert.match(
+    virtualAccountMigration,
+    /expected SePay account validation was not updated/,
+  );
 });
 
 test("SePay booking and payment updates are atomic and audit contains no PII", () => {
