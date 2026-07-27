@@ -554,7 +554,7 @@ def cover_bg(canvas, doc):
     canvas.setLineWidth(0.6)
     canvas.line(54 * mm, h - 124 * mm, 156 * mm, h - 124 * mm)
 
-    customer_name = "Trần Minh Tú"
+    customer_name = "Trần Minh Tư"
     customer_date = " · 03/03/1984"
     customer_font = 15.6
     customer_y = h - 135 * mm
@@ -956,16 +956,16 @@ def build():
     story.append(PageBreak())
 
     # SECTION 1
-    story.append(SectionBand("01", "Bức Tranh Tính Cách (7 Chỉ Số Cốt Lõi)", "Trần Nguyễn Hoàng Trí · 17/08/2001 · Chuyên gia đồng hành: Lê Chí Cường"))
+    story.append(SectionBand("01", "Bức Tranh Tính Cách (7 Chỉ Số Cốt Lõi)", "Trần Minh Tư · 03/03/1984 · Chuyên gia đồng hành: Lê Chí Cường"))
     story.append(Spacer(1, 7 * mm))
     indicators = [
-        ("Đường đời (Life Path)", "1", "Bạn mang năng lượng tiên phong: độc lập, tự chủ, thích dẫn đầu và cần được thử sức trong vai trò người mở đường."),
-        ("Sứ mệnh (Destiny)", "6", "Sứ mệnh của bạn là học cách gánh vác, chăm sóc, tạo sự ổn định và chịu trách nhiệm với những điều mình xây dựng."),
-        ("Linh hồn (Soul Urge)", "7", "Bên trong bạn khao khát tri thức, chân lý và chiều sâu nội tâm. Bạn không dễ thỏa mãn với câu trả lời hời hợt."),
-        ("Nhân cách (Personality)", "8", "Bạn tạo cảm giác thực tế, có uy tín điều hành, có bản lĩnh vật chất và khả năng nhìn vấn đề bằng tư duy quản trị."),
-        ("Thái độ (Attitude)", "7", "Bạn quan sát kỹ, phân tích mạnh và thường cần đủ dữ liệu trước khi tin hoặc hành động."),
-        ("Ngày sinh", "8", "Ngày sinh 8 cho bạn khí chất quyết đoán, thực dụng, có duyên với quản trị nguồn lực, tài chính và thành tựu cụ thể."),
-        ("Trưởng thành (Maturity)", "7", "Giai đoạn trưởng thành đưa bạn về sự thông thái qua trải nghiệm thực chứng, càng sống sâu càng cần chính trực với sự thật."),
+        ("Đường đời (Life Path)", "1", "Bạn mang năng lượng tiên phong, độc lập và quyết đoán. Bài học là dẫn dắt bằng bản lĩnh mà không để cái tôi cô lập mình khỏi tập thể."),
+        ("Sứ mệnh (Destiny)", "3", "Sứ mệnh của bạn là truyền cảm hứng, sáng tạo và kết nối qua ngôn từ. Khả năng biểu đạt là chiếc van giúp giải tỏa áp lực lãnh đạo."),
+        ("Linh hồn (Soul Urge)", "13/4", "Bên trong bạn khao khát sự ổn định, trật tự và kết quả thực tế. Năng lượng 13/4 yêu cầu chính trực, kiên trì và không chọn đường tắt."),
+        ("Nhân cách (Personality)", "8", "Bạn tạo cảm giác chuyên nghiệp, quyền uy và có năng lực quản trị. Năng lượng này phát huy tốt nhất khi đi cùng thái độ giàu có và công bằng."),
+        ("Thái độ (Attitude)", "6", "Bạn phản ứng với cuộc sống bằng sự quan tâm, trách nhiệm và xu hướng bao bọc. Cần cân bằng trách nhiệm với ranh giới cá nhân."),
+        ("Ngày sinh", "3", "Ngày sinh 3 cho bạn tư duy linh hoạt, khả năng giao tiếp và sự hài hước bẩm sinh. Hãy dùng ngôn từ để nâng đỡ thay vì gây áp lực."),
+        ("Trưởng thành (Maturity)", "4", "Thành tựu dài hạn đến từ kỷ luật, quy trình và nền tảng vững chắc. Càng trưởng thành, bạn càng cần biến tầm nhìn thành hệ thống."),
     ]
     for row in indicators:
         story.append(indicator(*row))
@@ -981,7 +981,7 @@ def build():
     ]
     right = [
         P("<b>Luận giải biểu đồ</b>", "H2"),
-        P("Lưới bên trái được bê theo map viết tay của Trần Nguyễn Hoàng Trí. Map cho thấy cụm 5 và 7 rất mạnh, đi cùng năng lượng 1, 8 và 9 nổi bật. Bài học chính là biến trực giác, tham vọng và khả năng phân tích thành kỷ luật thực thi, thay vì để sự nghi ngờ hoặc tự do thiếu cấu trúc làm phân tán năng lượng.", "BodySmall"),
+        P("Lưới bên trái được bê nguyên số và màu từ map viết tay của Trần Minh Tư. Cụm 3 hỗ trợ giao tiếp và sáng tạo; năng lượng 8 tăng khả năng hiện thực hóa. Các số thiếu 2, 5, 6 và 7 nhắc bạn chủ động rèn cảm xúc, cân bằng và chiều sâu trải nghiệm.", "BodySmall"),
     ]
     two_col = Table(
         [[card(left, width=82 * mm), Spacer(4 * mm, 1), card(right, width=84 * mm)]],
@@ -994,10 +994,10 @@ def build():
     story.append(
         checklist(
             [
-                (True, "Mũi tên 3-5-7", "Cụm 7 mạnh khiến Trí học rất nhiều qua trải nghiệm, va chạm và các lần thực tế phản hồi. Đừng xem mất mát là xui xẻo; hãy xem đó là dữ liệu để lọc bỏ điều không đúng."),
-                (True, "Mũi tên Cân bằng cảm xúc 2-5-8", "Trí có cảm hứng mạnh nhưng cũng dễ bùng nổ khi năng lượng tụt. Khi cảm xúc lên cao, cần quay về trạng thái can đảm, nói thẳng và xử lý trong cấu trúc rõ ràng."),
-                (False, "Thiếu số 4", "Gót chân Achilles nằm ở kỷ luật, quy trình và sức bền thực thi. Ý tưởng lớn cần hệ thống nhỏ hằng ngày, nếu không sẽ mãi chỉ là bản vẽ trên giấy."),
-                (True, "Dư năng lượng 5 và 7", "Nhiều 5 tạo nhu cầu tự do, nhiều 7 tạo khuynh hướng phân tích sâu. Nếu không neo bằng hành động cụ thể, Trí dễ phân tán hoặc rơi vào phân tích quá mức."),
+                (False, "Mũi tên Trí tuệ 3-6-9", "Thiếu số 6 khiến tư duy logic đôi khi khô trong quản trị con người. Trước quyết định lớn, hãy kiểm tra cả mục tiêu lẫn nhu cầu cảm xúc của người liên quan."),
+                (False, "Mũi tên Cân bằng cảm xúc 2-5-8", "Map có năng lượng 8 mạnh nhưng thiếu 2 và 5. Hãy luyện lắng nghe, gọi tên cảm xúc và duy trì tần số can đảm, trung thực trước khi hành động."),
+                (True, "Cụm số 3 nổi bật", "Ba số 3 tạo lợi thế giao tiếp, sáng tạo và hoạt náo. Khi áp lực tăng, biểu đạt tích cực giúp làm mềm khí chất mạnh của Đường đời 1 và Nhân cách 8."),
+                (False, "Thiếu 2, 5, 6, 7", "Bài học là phát triển sự tinh tế, cân bằng nội tâm, trách nhiệm cảm xúc và chiều sâu chiêm nghiệm thay vì chỉ tập trung vào hiệu suất."),
             ]
         )
     )
@@ -1016,9 +1016,9 @@ def build():
     story.append(
         card(
             [
-                P("<b>Nợ nghiệp / bài học cải thiện: 19/1 & 16/7</b>", "H2"),
-                P("Trí mang hai bài học lớn: 19/1 về cái tôi, quyền lực cá nhân và khả năng hợp tác; 16/7 về sự sụp đổ của những nền tảng thiếu chính trực hoặc quá hào nhoáng.", "Body"),
-                P("Cách hóa giải là chịu trách nhiệm 100%, dùng năng lượng lãnh đạo của số 1 để dẫn dắt thay vì áp đặt, và dùng trí tuệ số 7 để tìm sự thật thay vì bao biện cho cái tôi.", "Body"),
+                P("<b>Nợ nghiệp / bài học cải thiện: 13/4</b>", "H2"),
+                P("Chỉ số Linh hồn 13/4 đặt trọng tâm vào kỷ luật, chính trực và khả năng đối diện trực tiếp với khó khăn. Thành quả chỉ bền khi được xây từ công việc tỉ mỉ, lặp lại và có trách nhiệm.", "Body"),
+                P("Cách chuyển hóa là không dùng giải pháp tạm thời hay đường tắt, dám nhận phần trách nhiệm của mình và hoàn tất cam kết ngay cả khi công việc không còn tạo hứng thú.", "Body"),
             ]
         )
     )
@@ -1026,14 +1026,14 @@ def build():
     story.append(PageBreak())
 
     # SECTION 5 - LIFE CYCLES
-    story.append(SectionBand("05", "Ba Chu Kỳ Cuộc Đời Lớn", "Nền hành trình lớn của Trần Nguyễn Hoàng Trí"))
+    story.append(SectionBand("05", "Ba Chu Kỳ Cuộc Đời Lớn", "Nền hành trình lớn của Trần Minh Tư"))
     story.append(Spacer(1, 8 * mm))
     story.append(
         step_blocks(
             [
-                ("Chu kỳ 1", "8", "Tuổi trẻ: Giai đoạn học về quyền lực cá nhân, vật chất, tiền bạc và cách đứng vững trước áp lực thành tựu."),
-                ("Chu kỳ 2", "8", "Trưởng thành: Tiếp tục bài học làm chủ nguồn lực, quản trị, kỷ luật tài chính và tư duy chịu trách nhiệm với kết quả."),
-                ("Chu kỳ 3", "3", "Thông tuệ: Giai đoạn mở ra khả năng biểu đạt, hoạt náo, chia sẻ tri thức và chuyển trải nghiệm nặng thành thông điệp dễ lan tỏa."),
+                ("Chu kỳ 1", "3", "Tuổi trẻ: Giai đoạn phát triển khả năng biểu đạt, sáng tạo, hoạt náo và truyền động lực bằng ngôn từ tích cực."),
+                ("Chu kỳ 2", "3", "Trưởng thành: Tiếp tục mở rộng tầm ảnh hưởng; việc thể hiện bản thân qua lời nói, ý tưởng và sáng tạo là chìa khóa tạo hạnh phúc."),
+                ("Chu kỳ 3", "22/4", "Thông tuệ: Tầm nhìn lớn kết hợp năng lực ứng dụng thực tiễn. Đây là giai đoạn xây công trình có giá trị bền vững và ảnh hưởng rộng."),
             ]
         )
     )
@@ -1042,8 +1042,8 @@ def build():
         card(
             [
                 P("Lưu ý hiện tại", "Kicker"),
-                P("Năm Cá Nhân Số 8 (2026)", "H1"),
-                P("Theo map viết tay, năm 2026 mang năng lượng cá nhân số 8. Đây là năm thu hoạch, thiết lập trật tự và kiểm tra năng lực quản trị. Trí cần dùng sự quyết đoán của Đường đời 1 để đóng khung dự án, bù phần thiếu số 4 bằng quy trình rõ ràng.", "Body"),
+                P("Năm Cá Nhân Số 7 (2026)", "H1"),
+                P("Đây là năm dừng lại, chiêm nghiệm và nâng cấp chuyên môn. Tư nên ưu tiên hệ thống vận hành nội bộ, nghiên cứu và sàng lọc chiến lược thay vì mở rộng quy mô bằng cảm hứng nhất thời.", "Body"),
             ],
             fill=colors.Color(217 / 255, 78 / 255, 31 / 255, 0.18),
         )
@@ -1057,10 +1057,10 @@ def build():
     story.append(
         step_blocks(
             [
-                ("Đỉnh cao 1", "7", "Năm 2036, tuổi 35: Giai đoạn đào sâu tri thức, nghiên cứu và tìm chân lý. Thách thức 0 cho thấy bài học mở rộng, cần tự chọn tiêu chuẩn sống rõ ràng."),
-                ("Đỉnh cao 2", "11/2", "Năm 2045, tuổi 44: Trực giác, khả năng truyền cảm hứng và phụng sự cộng đồng được nâng lên. Thách thức 5 nhắc kiểm soát tự do vô kỷ luật."),
-                ("Đỉnh cao 3", "9", "Năm 2054, tuổi 53: Hướng đến giá trị nhân văn, chia sẻ và đóng góp lớn hơn cho cộng đồng. Thách thức 5 vẫn yêu cầu tập trung thay vì phân tán."),
-                ("Đỉnh cao 4", "11/2", "Năm 2063, tuổi 62: Trở lại năng lượng trực giác bậc cao, dẫn dắt bằng sự tinh tế và chiều sâu. Thách thức 5 tiếp tục nhắc sự tự do phải đi cùng kỷ luật."),
+                ("Đỉnh cao 1", "6", "Năm 2019, tuổi 35: Bài học trách nhiệm, gia đình và sự hài hòa. Thách thức 0 yêu cầu tự chọn tiêu chuẩn sống và phát triển toàn diện."),
+                ("Đỉnh cao 2", "7", "Năm 2028, tuổi 44: Đào sâu tri thức và nội tâm. Thách thức 1 yêu cầu độc lập, tự chủ và không lệ thuộc vào sự công nhận bên ngoài."),
+                ("Đỉnh cao 3", "4", "Năm 2037, tuổi 53: Xây nền tảng vật chất và hệ thống bền vững. Thách thức 1 tiếp tục rèn bản lĩnh tự quyết và chịu trách nhiệm."),
+                ("Đỉnh cao 4", "7", "Năm 2046, tuổi 62: Trở thành người chia sẻ tri thức và kinh nghiệm. Thách thức 1 nhắc dẫn dắt bằng chính trực thay vì cái tôi."),
             ]
         )
     )
@@ -1069,14 +1069,14 @@ def build():
     story.append(PageBreak())
 
     # SECTION 7 - HEALING MESSAGE
-    story.append(SectionBand("07", "Thông Điệp Chữa Lành", "Lộ trình cá nhân hóa dành cho Trần Nguyễn Hoàng Trí"))
+    story.append(SectionBand("07", "Thông Điệp Chữa Lành", "Lộ trình cá nhân hóa dành cho Trần Minh Tư"))
     story.append(Spacer(1, 8 * mm))
     story.append(P("Thông điệp chính", "H2"))
     story.append(
         card(
             [
-                P("Trí thân mến, bản đồ của bạn là cuộc đối thoại giữa tham vọng, trách nhiệm và chiều sâu nội tâm. Đường đời 1 muốn dẫn đầu, Sứ mệnh 6 muốn gánh vác, còn cụm số 7 liên tục yêu cầu bạn sống thật với chân lý.", "Body"),
-                P("Nợ nghiệp 19/1 và 16/7 nhắc rằng sức mạnh chỉ bền khi đi cùng chính trực. Khi Trí ngừng đổ lỗi, ngừng dùng trí tuệ để bao biện cho cái tôi, năng lượng số 8 mới có đất để tạo thịnh vượng vững chắc.", "Body"),
+                P("Tư thân mến, bản đồ của bạn kết hợp khí chất dẫn đầu của số 1, năng lực quản trị của số 8 và khả năng truyền cảm hứng của số 3. Sức mạnh thật sự xuất hiện khi ba năng lượng này cùng phục vụ một mục tiêu chính trực.", "Body"),
+                P("Nợ nghiệp 13/4 nhắc rằng thịnh vượng không đến từ đường tắt. Hệ thống, sự chăm chỉ và tinh thần chịu trách nhiệm 100% sẽ giúp bạn biến tầm nhìn lớn thành thành tựu bền vững.", "Body"),
             ],
             fill=colors.Color(245 / 255, 193 / 255, 150 / 255, 0.10),
         )
@@ -1086,15 +1086,15 @@ def build():
     story.append(
         step_blocks(
             [
-                ("01", "Thiết lập kỷ luật số 4", "Mỗi mục tiêu lớn cần lịch trình, quy trình và tiêu chuẩn đo lường. Đây là cách bù điểm thiếu trong lưới ngày sinh."),
-                ("02", "Chịu trách nhiệm 100%", "Khi có biến cố, hãy hỏi: phần quyết định nào của mình đã tạo ra kết quả này. Câu hỏi đó giúp Trí thoát khỏi tâm lý nạn nhân."),
-                ("03", "Dẫn dắt không áp đặt", "Đường đời 1 và Nhân cách 8 rất mạnh; hãy dùng quyền lực để xây hệ thống, không dùng nó để cô lập bản thân khỏi người có thể hỗ trợ."),
-                ("04", "Tập trung cao độ", "Thách thức 5 lặp lại yêu cầu Trí chọn một mục tiêu lõi, tránh phân tán vào quá nhiều dự án khi nền kỷ luật chưa đủ chắc."),
+                ("01", "Tự chịu trách nhiệm 100%", "Làm chủ bản thân trước khi làm chủ nguồn lực. Khi kết quả chưa đúng, hãy tìm phần quyết định mình có thể sửa ngay."),
+                ("02", "Xây hệ thống số 4", "Chia mục tiêu thành quy trình, tiêu chuẩn và lịch kiểm tra. Không dùng đường tắt dù áp lực thời gian hay lợi ích trước mắt rất hấp dẫn."),
+                ("03", "Vá khoảng trống cảm xúc", "Thực hành ghi nhận công sức của người khác, lắng nghe trước khi kết luận và đưa nhu cầu con người vào bài toán quản trị."),
+                ("04", "Dùng số 3 để kết nối", "Sự hài hước, sáng tạo và ngôn từ tích cực giúp làm mềm khí chất mạnh của số 1 và 8, đồng thời tăng sức ảnh hưởng."),
             ]
         )
     )
     story.append(Spacer(1, 12 * mm))
-    story.append(card([P("“Tôi chịu trách nhiệm 100% cho cuộc đời mình. Tôi dùng trí tuệ, kỷ luật và sự chính trực để tạo nên thành tựu bền vững.”", "Quote")], fill=colors.Color(217 / 255, 78 / 255, 31 / 255, 0.20)))
+    story.append(card([P("“Tôi dẫn dắt bằng bản lĩnh và sự chính trực. Tôi biến tầm nhìn thành thành tựu bằng kỷ luật, sáng tạo và trách nhiệm.”", "Quote")], fill=colors.Color(217 / 255, 78 / 255, 31 / 255, 0.20)))
     story.append(Spacer(1, 11 * mm))
     story.append(
         kv_table(

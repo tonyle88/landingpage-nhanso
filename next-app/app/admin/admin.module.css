@@ -153,11 +153,11 @@
   width: 100%;
   min-height: 46px;
   padding: 0 14px;
-  border: 1px solid var(--line);
+  border: 1px solid rgb(7 24 27 / 20%);
   border-radius: 8px;
   outline: none;
-  background: rgb(255 255 255 / 7%);
-  color: #fff;
+  background: #fff;
+  color: #132d31;
   font: inherit;
   transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
 }
@@ -169,6 +169,13 @@
   resize: vertical;
 }
 
+.field input::placeholder,
+.field textarea::placeholder,
+.searchForm input::placeholder {
+  color: #718084;
+  opacity: 1;
+}
+
 .field select option { color: #17272a; background: #fff; }
 
 .field input:focus,
@@ -177,7 +184,7 @@
 .searchForm input:focus {
   border-color: rgb(240 201 106 / 72%);
   box-shadow: 0 0 0 3px rgb(240 201 106 / 13%);
-  background: rgb(255 255 255 / 10%);
+  background: #fff;
 }
 
 .submit,
@@ -522,7 +529,8 @@
 .sectionIndex nav a:hover { color: #fff; border-color: rgb(240 201 106 / 28%); background: rgb(240 201 106 / 10%); }
 .sectionIndex nav small { min-width: 27px; padding: 2px 7px; border: 1px solid rgb(240 201 106 / 25%); border-radius: 999px; color: var(--gold-soft); text-align: center; }
 .sectionSearch { display: grid; grid-template-columns: 1fr auto; gap: 7px; }
-.sectionSearch input { min-width: 0; min-height: 40px; padding: 0 11px; border: 1px solid var(--line); border-radius: 8px; background: rgb(255 255 255 / 7%); color: #fff; }
+.sectionSearch input { min-width: 0; min-height: 40px; padding: 0 11px; border: 1px solid rgb(7 24 27 / 20%); border-radius: 8px; background: #fff; color: #132d31; }
+.sectionSearch input::placeholder { color: #718084; opacity: 1; }
 .sectionSearch button { border: 0; border-radius: 8px; padding: 0 11px; color: #111; background: var(--gold-soft); font-weight: 800; cursor: pointer; }
 .viewSiteLink { margin-top: auto; min-height: 42px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 8px; color: #fff; text-decoration: none; font-weight: 800; }
 .sectionWorkspace { min-width: 0; }
@@ -584,7 +592,8 @@
 .blogToolbar:has(.createPopover[open]) { display: grid; }
 .blogFilters { display: grid; grid-template-columns: minmax(220px, 1fr) 210px 180px auto auto; align-items: end; gap: 10px; margin-bottom: 16px; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: rgb(255 255 255 / 3%); }
 .blogFilters label { display: grid; gap: 6px; color: var(--muted); font-size: .7rem; font-weight: 800; }
-.blogFilters input, .blogFilters select { min-width: 0; min-height: 42px; padding: 0 11px; border: 1px solid var(--line); border-radius: 7px; outline: none; background: rgb(255 255 255 / 7%); color: #fff; font: inherit; }
+.blogFilters input, .blogFilters select { min-width: 0; min-height: 42px; padding: 0 11px; border: 1px solid rgb(7 24 27 / 20%); border-radius: 7px; outline: none; background: #fff; color: #132d31; font: inherit; }
+.blogFilters input::placeholder { color: #718084; opacity: 1; }
 .blogFilters select option { color: #17272a; background: #fff; }
 .clearFilters { min-height: 42px; display: grid; place-items: center; padding: 0 8px; color: var(--gold-soft); font-size: .78rem; font-weight: 800; }
 .blogTable { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; }
@@ -613,16 +622,16 @@
 .pagination span { color: var(--muted); font-size: .78rem; }
 .paginationDisabled { pointer-events: none; opacity: .35; }
 
-.richEditor { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: rgb(255 255 255 / 5%); }
-.editorToolbar { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; border-bottom: 1px solid var(--line); background: rgb(0 0 0 / 16%); }
-.editorToolbar button { min-width: 34px; min-height: 32px; padding: 0 9px; border: 1px solid transparent; border-radius: 6px; cursor: pointer; background: transparent; color: rgb(255 255 255 / 78%); font: inherit; font-size: .74rem; }
-.editorToolbar button:hover, .editorToolbar .toolbarActive { border-color: rgb(240 201 106 / 28%); background: rgb(240 201 106 / 10%); color: var(--gold-soft); }
-.editorToolbar > span { width: 1px; margin: 3px 4px; background: var(--line); }
-.editorCanvas, .editorSource { width: 100%; min-height: 360px; padding: 18px; outline: none; color: #fff; background: transparent; font-size: .9rem; font-weight: 400; line-height: 1.7; }
-.editorCanvas:empty::before { content: attr(data-placeholder); color: rgb(255 255 255 / 32%); }
+.richEditor { overflow: hidden; border: 1px solid rgb(7 24 27 / 20%); border-radius: 8px; background: #fff; box-shadow: 0 8px 24px rgb(0 0 0 / 10%); }
+.editorToolbar { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; border-bottom: 1px solid #d8e0e2; background: #f3f6f6; }
+.editorToolbar button { min-width: 34px; min-height: 32px; padding: 0 9px; border: 1px solid transparent; border-radius: 6px; cursor: pointer; background: transparent; color: #213b3f; font: inherit; font-size: .74rem; }
+.editorToolbar button:hover, .editorToolbar .toolbarActive { border-color: rgb(217 78 31 / 30%); background: rgb(240 201 106 / 30%); color: #8d421f; }
+.editorToolbar > span { width: 1px; margin: 3px 4px; background: #ccd6d8; }
+.editorCanvas, .editorSource { width: 100%; min-height: 360px; padding: 18px; outline: none; color: #17272a; background: #fff; font-size: .9rem; font-weight: 400; line-height: 1.7; caret-color: #d94e1f; }
+.editorCanvas:empty::before { content: attr(data-placeholder); color: #7c898c; }
 .editorCanvas h2, .editorCanvas h3 { font-family: Georgia, "Times New Roman", serif; }
-.editorCanvas a { color: var(--gold-soft); }
-.editorCanvas blockquote { margin-left: 0; padding-left: 14px; border-left: 2px solid var(--gold); color: var(--muted); }
+.editorCanvas a { color: #a54420; }
+.editorCanvas blockquote { margin-left: 0; padding-left: 14px; border-left: 2px solid var(--gold); color: #53676b; }
 .editorCanvas :global(.editor-align-left) { text-align: left; }
 .editorCanvas :global(.editor-align-center) { text-align: center; }
 .editorCanvas :global(.editor-align-right) { text-align: right; }
@@ -630,7 +639,7 @@
 .editorSource { display: block; min-height: 360px; resize: vertical; border: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .richEditorCompact .editorCanvas, .richEditorCompact .editorSource { min-height: 150px; }
 .editorHiddenInput, .editorVisualHidden { display: none; }
-.editorHint { padding: 8px 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: .68rem; font-weight: 500; }
+.editorHint { padding: 8px 12px; border-top: 1px solid #d8e0e2; color: #53676b; background: #f7f9f9; font-size: .68rem; font-weight: 600; }
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 
 @media (max-width: 760px) {
