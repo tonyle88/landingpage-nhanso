@@ -119,7 +119,7 @@ export async function saveBlogCategoryAction(form: FormData) {
     id = optionalUuid(form.get("id"));
     payload = blogCategoryPayloadFromForm(form);
   } catch {
-    redirect("/admin/blog?category_status=invalid");
+    redirect("/admin/blog?view=categories&category_status=invalid");
   }
   const supabase = await createAuthServerClient();
   const { error } = await supabase.rpc("admin_save_blog_category", {
@@ -131,11 +131,11 @@ export async function saveBlogCategoryAction(form: FormData) {
       code: error.code,
       message: error.message,
     });
-    redirect("/admin/blog?category_status=error");
+    redirect("/admin/blog?view=categories&category_status=error");
   }
   revalidatePath("/admin/blog");
   revalidatePath("/blog");
-  redirect("/admin/blog?category_status=saved");
+  redirect("/admin/blog?view=categories&category_status=saved");
 }
 
 export async function deleteBlogCategoryAction(form: FormData) {
@@ -145,10 +145,10 @@ export async function deleteBlogCategoryAction(form: FormData) {
     id = optionalUuid(form.get("id"));
     if (!id) throw new Error("missing id");
   } catch {
-    redirect("/admin/blog?category_status=invalid");
+    redirect("/admin/blog?view=categories&category_status=invalid");
   }
   if (String(form.get("confirmation") || "").trim() !== "XOA") {
-    redirect("/admin/blog?category_status=confirm");
+    redirect("/admin/blog?view=categories&category_status=confirm");
   }
   const supabase = await createAuthServerClient();
   const { error } = await supabase.rpc("admin_delete_blog_category", { p_id: id });
@@ -159,11 +159,11 @@ export async function deleteBlogCategoryAction(form: FormData) {
     });
     redirect(
       error.code === "23503"
-        ? "/admin/blog?category_status=in_use"
-        : "/admin/blog?category_status=error",
+        ? "/admin/blog?view=categories&category_status=in_use"
+        : "/admin/blog?view=categories&category_status=error",
     );
   }
   revalidatePath("/admin/blog");
   revalidatePath("/blog");
-  redirect("/admin/blog?category_status=deleted");
+  redirect("/admin/blog?view=categories&category_status=deleted");
 }

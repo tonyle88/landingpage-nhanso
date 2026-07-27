@@ -1,5 +1,6 @@
 import type { Tables } from "@/lib/supabase/database.types";
 import { saveBlogPostAction } from "./actions";
+import { RichTextEditor } from "./rich-text-editor";
 import styles from "../admin.module.css";
 
 type BlogPost = Tables<"blog_posts">;
@@ -47,10 +48,10 @@ export function BlogPostForm({
         <textarea name="summary" rows={3} maxLength={600}
           defaultValue={item?.summary || ""} />
       </label>
-      <label className={styles.field}>Nội dung HTML an toàn
-        <textarea name="content_html" rows={10} maxLength={100000}
-          defaultValue={item?.content_html || ""} required />
-      </label>
+      <div className={styles.field}>
+        <span>Nội dung bài viết</span>
+        <RichTextEditor initialValue={item?.content_html || ""} />
+      </div>
       <label className={styles.field}>URL ảnh bìa HTTPS
         <input name="cover_url" type="url" defaultValue={item?.cover_url || ""} />
       </label>
