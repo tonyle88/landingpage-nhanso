@@ -33,7 +33,13 @@ export async function setSepayAutoConfirmationAction(form: FormData) {
       code: error.code,
       message: error.message,
     });
-    redirect("/admin/settings?status=sepay_error");
+    const migrationMissing =
+      error.code === "42883" ||
+      error.code === "PGRST202" ||
+      error.message.includes("admin_set_sepay_auto_confirmation");
+    redirect(
+      `/admin/settings?status=${migrationMissing ? "sepay_migration_required" : "sepay_error"}`,
+    );
   }
   revalidatePath("/admin/settings");
   revalidatePath("/admin/bookings");

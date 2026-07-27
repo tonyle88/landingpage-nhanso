@@ -23,10 +23,32 @@ async function requireContentManager() {
   return principal;
 }
 
+async function ensureUniqueGeneratedSlug(
+  supabase: Awaited<ReturnType<typeof createAuthServerClient>>,
+  baseSlug: string,
+) {
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .select("slug")
+    .like("slug", `${baseSlug}%`)
+    .limit(500);
+  if (error) throw new Error("slug lookup failed");
+
+  const occupied = new Set((data || []).map((post) => post.slug));
+  if (!occupied.has(baseSlug)) return baseSlug;
+  for (let suffix = 2; suffix <= 500; suffix += 1) {
+    const candidate = `${baseSlug.slice(0, 155 - String(suffix).length)}-${suffix}`;
+    if (!occupied.has(candidate)) return candidate;
+  }
+  throw new Error("slug namespace exhausted");
+}
+
 export async function saveBlogPostAction(form: FormData) {
   const principal = await requireContentManager();
+  const supabase = await createAuthServerClient();
   let id;
   let payload;
+  let phase: "input" | "upload" | "slug" = "input";
   let upload: UploadedMedia | null = null;
   let thumbnailUpload: UploadedMedia | null = null;
   let previousMediaAssetId: string | null = null;
@@ -35,8 +57,7 @@ export async function saveBlogPostAction(form: FormData) {
   try {
     id = optionalUuid(form.get("id"));
     if (id) {
-      const authClient = await createAuthServerClient();
-      const { data: previous } = await authClient
+      const { data: previous } = await supabase
         .from("blog_posts")
         .select("cover_asset_id,thumbnail_asset_id,slug")
         .eq("id", id)
@@ -47,6 +68,7 @@ export async function saveBlogPostAction(form: FormData) {
     }
     const file = form.get("cover_file");
     if (file instanceof File && file.size > 0) {
+      phase = "upload";
       upload = await uploadContentImage({
         file,
         folder: "blog",
@@ -72,12 +94,19 @@ export async function saveBlogPostAction(form: FormData) {
       form.set("slug", previousSlug);
     }
     payload = blogPostPayloadFromForm(form);
-  } catch {
+    if (!id && !String(form.get("slug") || "").trim()) {
+      phase = "slug";
+      payload.slug = await ensureUniqueGeneratedSlug(supabase, payload.slug);
+    }
+  } catch (error) {
     await removeUploadedMedia(upload);
     await removeUploadedMedia(thumbnailUpload);
-    redirect("/admin/blog?status=invalid");
+    console.error("blog post preparation failed", {
+      phase,
+      message: error instanceof Error ? error.message : "unknown error",
+    });
+    redirect(`/admin/blog?status=${phase === "upload" ? "image_error" : "invalid"}`);
   }
-  const supabase = await createAuthServerClient();
   const { error } = await supabase.rpc("admin_save_blog_post", {
     p_id: id,
     p_payload: payload,
@@ -89,7 +118,7 @@ export async function saveBlogPostAction(form: FormData) {
       code: error.code,
       message: error.message,
     });
-    redirect("/admin/blog?status=error");
+    redirect(`/admin/blog?status=${error.code === "23505" ? "duplicate" : "error"}`);
   }
   if (upload && previousMediaAssetId && previousMediaAssetId !== upload.id) {
     await removeStoredMediaById(previousMediaAssetId);

@@ -21,6 +21,8 @@ const notices: Record<string, string> = {
   saved: "Đã lưu bài viết và ghi audit log.",
   deleted: "Đã xóa bài viết và ghi audit log.",
   invalid: "Dữ liệu bài viết chưa hợp lệ hoặc chứa HTML nguy hiểm.",
+  duplicate: "Slug đã được một bài viết khác sử dụng. Hãy để trống slug để hệ thống tự tạo duy nhất.",
+  image_error: "Không thể xử lý hoặc tải ảnh bìa. Hãy dùng JPEG, PNG hoặc WebP tối đa 5 MB rồi thử lại.",
   confirm: "Hãy nhập XOA để xác nhận.",
   error: "Không thể thực hiện thay đổi.",
 };
@@ -82,7 +84,7 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: Pr
   const toastMessage = params.category_status
     ? categoryNotices[params.category_status]
     : params.status ? notices[params.status] : undefined;
-  const toastTone = ["invalid", "confirm", "error", "in_use"].includes(toastCode || "") ? "error" : "success";
+  const toastTone = ["invalid", "duplicate", "image_error", "confirm", "error", "in_use"].includes(toastCode || "") ? "error" : "success";
 
   return (
     <main className={styles.adminShell}>
