@@ -83,8 +83,12 @@ test("calendar uses minimal slots API and SePay polls the native status route", 
   assert.doesNotMatch(payment, /NATIVE_BOOKING_API_ENABLED/);
   assert.match(payment, /"checkBookingStatus"/);
   assert.match(payment, /fetch\("\/api\/payment-settings"/);
-  assert.match(payment, /if \(result\.status !== "paid"\) return/);
-  assert.match(payment, /announceConfirmed\(\)/);
+  assert.match(payment, /if \(result\.status === "confirmed"\)/);
+  assert.match(payment, /result\.emailDelivery\?\.customer === "already_sent"/);
+  assert.match(
+    payment,
+    /Đã nhận thanh toán\. Đang hoàn tất lịch hẹn/,
+  );
 });
 
 test("calendar clears stale time slots until the customer selects a date", () => {

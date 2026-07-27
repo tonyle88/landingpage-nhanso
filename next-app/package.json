@@ -60,6 +60,7 @@
     "test:booking-foundation": "node --test ../qa/booking-m5-foundation-tests.mjs",
     "test:booking-api": "node --test ../qa/booking-api-route-tests.mjs",
     "test:booking-frontend": "node --test ../qa/booking-frontend-cutover-tests.mjs",
+    "test:booking-email": "node --test ../qa/booking-email-tests.mjs",
     "test:admin-bookings": "node --test ../qa/admin-booking-workflow-tests.mjs",
     "test:rls": "node ../qa/run-supabase-rls-isolated.mjs",
     "test:schema": "node --test ../qa/supabase-schema-tests.mjs",

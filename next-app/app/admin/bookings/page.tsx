@@ -3,8 +3,16 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
+import { isBookingEmailConfigured } from "@/lib/booking-email";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
-import { transitionBookingAction } from "./actions";
+import {
+  recoverBookingEmailsAction,
+  transitionBookingAction,
+} from "./actions";
+import {
+  BookingEmailRecoveryButton,
+  BookingTransitionButton,
+} from "./booking-transition-button";
 import {
   bookingStatusLabels as statusLabels,
   formatBookingDateTime as formatDateTime,
@@ -23,6 +31,10 @@ export const metadata: Metadata = {
 
 const notices: Record<string, string> = {
   updated: "Đã cập nhật trạng thái lịch hẹn và ghi audit log.",
+  email_warning:
+    "Đã xác nhận lịch nhưng chưa gửi đủ email. Hãy kiểm tra cấu hình email rồi thử gửi lại.",
+  email_resent:
+    "Đã kiểm tra và gửi đủ email còn thiếu cho lịch hẹn.",
   invalid: "Yêu cầu cập nhật trạng thái chưa hợp lệ.",
   stale: "Lịch hẹn đã thay đổi. Trang đã được tải lại để tránh ghi đè.",
   error: "Không thể cập nhật lịch hẹn. Không có thay đổi nào được xác nhận.",
@@ -56,6 +68,7 @@ export default async function AdminBookingsPage({
   if (selectedFilter) request = request.eq("status", selectedFilter);
   const { data: bookings, error } = await request;
   const canManage = can(principal.role, "manage_operations");
+  const emailConfigured = isBookingEmailConfigured();
 
   return (
     <main className={styles.adminShell}>
@@ -73,10 +86,20 @@ export default async function AdminBookingsPage({
 
       <AdminToast
         message={status ? notices[status] : undefined}
-        tone={["invalid", "stale", "error"].includes(status || "") ? "error" : "success"}
+        tone={["invalid", "stale", "error", "email_warning"].includes(status || "") ? "error" : "success"}
         cleanHref={selectedFilter ? `/admin/bookings?filter=${selectedFilter}` : "/admin/bookings"}
       />
       {error ? <AdminToast message="Không thể tải lịch hẹn." tone="error" cleanHref="/admin/bookings" /> : null}
+      {!emailConfigured ? (
+        <section className={styles.alertPanel} role="alert">
+          <strong>Email xác nhận chưa được cấu hình</strong>
+          <span>
+            Lịch vẫn có thể được xác nhận, nhưng hệ thống chưa thể gửi thư cho
+            khách và chủ trang. Hãy cấu hình dịch vụ email trên môi trường
+            production rồi dùng nút gửi lại email còn thiếu.
+          </span>
+        </section>
+      ) : null}
 
       <section className={styles.adminPanel}>
         <form className={styles.searchForm} method="get">
@@ -161,23 +184,23 @@ export default async function AdminBookingsPage({
                 {canManage && transitions.length ? (
                   <div className={styles.actionRow}>
                     {transitions.map((nextStatus) => (
-                      <form action={transitionBookingAction} key={nextStatus}>
-                        <input type="hidden" name="id" value={booking.id} />
-                        <input
-                          type="hidden"
-                          name="expected_status"
-                          value={currentStatus}
-                        />
-                        <input
-                          type="hidden"
-                          name="next_status"
-                          value={nextStatus}
-                        />
-                        <button className={styles.secondaryLink} type="submit">
-                          → {statusLabels[nextStatus]}
-                        </button>
-                      </form>
+                      <BookingTransitionButton
+                        action={transitionBookingAction}
+                        expectedStatus={currentStatus}
+                        id={booking.id}
+                        key={nextStatus}
+                        label={statusLabels[nextStatus]}
+                        nextStatus={nextStatus}
+                      />
                     ))}
+                  </div>
+                ) : null}
+                {canManage && currentStatus === "confirmed" ? (
+                  <div className={styles.actionRow}>
+                    <BookingEmailRecoveryButton
+                      action={recoverBookingEmailsAction}
+                      id={booking.id}
+                    />
                   </div>
                 ) : null}
               </article>
