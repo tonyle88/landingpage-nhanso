@@ -16,6 +16,8 @@ const coverField = await read("next-app/app/admin/blog/cover-image-field.tsx");
 const actions = await read("next-app/app/admin/blog/actions.ts");
 const editor = await read("next-app/app/admin/blog/rich-text-editor.tsx");
 const mediaUpload = await read("next-app/lib/admin/media-upload.ts");
+const adminPage = await read("next-app/app/admin/blog/page.tsx");
+const publicPosts = await read("next-app/lib/supabase/public-blog-posts.ts");
 
 test("blog RPCs enforce roles, transactional audit and grants", () => {
   assert.match(migration, /admin_save_blog_post/);
@@ -68,6 +70,20 @@ test("new posts receive a unique generated slug and actionable failures", () => 
   assert.match(actions, /payload\.slug = await ensureUniqueGeneratedSlug/);
   assert.match(actions, /error\.code === "23505" \? "duplicate" : "error"/);
   assert.match(actions, /const status = phase === "upload"/);
+});
+
+test("new posts default to local current time while edits preserve stored date", () => {
+  assert.match(form, /fallbackToNow \? new Date\(\) : null/);
+  assert.match(form, /defaultValue=\{localDateTime\(item\?\.published_at, !item\)\}/);
+  assert.doesNotMatch(form, /toISOString\(\)\.slice\(0, 16\)/);
+});
+
+test("newest blog posts appear first in admin and public lists", () => {
+  for (const source of [adminPage, publicPosts]) {
+    assert.match(source, /order\("published_at", \{ ascending: false, nullsFirst: false \}\)/);
+    assert.match(source, /order\("created_at", \{ ascending: false \}\)/);
+  }
+  assert.doesNotMatch(adminPage, /order\("updated_at", \{ ascending: false \}\)/);
 });
 
 test("blog validation reports the exact invalid field and paste removes unsafe markup", () => {

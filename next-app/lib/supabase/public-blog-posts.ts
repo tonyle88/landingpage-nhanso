@@ -28,7 +28,8 @@ async function queryPublicBlogPosts(): Promise<PublicBlogPostsResult> {
       .eq("status", "published")
       .lte("published_at", now.toISOString())
       .order("pinned", { ascending: false })
-      .order("published_at", { ascending: false })
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
       .abortSignal(controller.signal);
 
     if (error || !data?.length) {
