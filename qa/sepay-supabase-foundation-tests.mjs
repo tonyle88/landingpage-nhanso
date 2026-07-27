@@ -35,6 +35,13 @@ const accountAllowlistMigration = await readFile(
   ),
   "utf8",
 );
+const atomicConfirmationMigration = await readFile(
+  new URL(
+    "next-app/supabase/migrations/202607280001_confirm_sepay_booking_atomically.sql",
+    root,
+  ),
+  "utf8",
+);
 const settingsPage = await readFile(
   new URL("next-app/app/admin/settings/page.tsx", root),
   "utf8",
@@ -96,6 +103,12 @@ test("SePay booking and payment updates are atomic and audit contains no PII", (
     /jsonb_build_object\([^)]*(email|phone|customer_name)/i,
   );
   assert.match(migration, /status = 'ignored'/);
+  assert.match(atomicConfirmationMigration, /status = ''confirmed''/);
+  assert.match(
+    atomicConfirmationMigration,
+    /booking\.sepay_auto_confirmed/,
+  );
+  assert.match(atomicConfirmationMigration, /notify pgrst, 'reload schema'/);
 });
 
 test("SePay webhook is locked to Supabase processing", () => {

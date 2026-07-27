@@ -354,7 +354,12 @@ export async function getBookingStatus(request: Request) {
             await supabase.rpc("finalize_paid_sepay_booking", {
               p_id: booking.id,
             });
-          if (!finalizeError && finalized) {
+          if (finalizeError) {
+            console.error(
+              "Paid SePay booking finalization failed:",
+              finalizeError.code || "unknown_database_error",
+            );
+          } else if (finalized) {
             result.status = "confirmed";
             result.confirmedAt = finalized.confirmed_at;
           }

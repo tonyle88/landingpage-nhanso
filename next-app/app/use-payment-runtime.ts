@@ -89,6 +89,10 @@ export function usePaymentRuntime() {
       countdownTimer = 0;
       pollTimer = 0;
     };
+    const stopCountdown = () => {
+      window.clearInterval(countdownTimer);
+      countdownTimer = 0;
+    };
     const applySettings = (value: unknown) => {
       settings = normalize(value);
       loadedAt = Date.now();
@@ -286,10 +290,17 @@ export function usePaymentRuntime() {
           return;
         }
         if (result.status === "paid") {
+          stopCountdown();
           const statusText =
             document.querySelector<HTMLElement>("#sepay-status-text");
+          const countdown =
+            document.querySelector<HTMLElement>("#sepay-countdown");
           if (statusText) {
             statusText.textContent = "Đã nhận thanh toán. Đang hoàn tất lịch hẹn...";
+          }
+          if (countdown) {
+            countdown.style.display = "";
+            countdown.textContent = "Đã thanh toán";
           }
         }
       } catch (error) {
