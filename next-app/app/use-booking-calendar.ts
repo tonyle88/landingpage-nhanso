@@ -116,6 +116,14 @@ export function useBookingCalendar() {
       ),
     });
 
+    const renderTimePrompt = () => {
+      const prompt = document.createElement("div");
+      prompt.className = "cal-time-prompt";
+      prompt.setAttribute("role", "status");
+      prompt.textContent = "Vui lòng chọn ngày trước để xem khung giờ còn trống.";
+      timeGrid.replaceChildren(prompt);
+    };
+
     const renderTimeSlots = (date: Date) => {
       timeGrid.replaceChildren();
       const parts = getVnDateParts(date);
@@ -230,6 +238,7 @@ export function useBookingCalendar() {
       fullSlotLabel = "";
       continueButton.disabled = true;
       selectedInfo.style.display = "none";
+      renderTimePrompt();
       try {
         const today = getVnDateParts();
         const rangeStart = makeVnDateTime(

@@ -45,7 +45,6 @@ function normalize(value: unknown): PaymentSettings {
       : {};
   return {
     sepayEnabled:
-      !NATIVE_BOOKING_API_ENABLED &&
       (item.sepayEnabled === true ||
         String(item.sepayEnabled).toLowerCase() === "true"),
     bankName: String(item.bankName || DEFAULTS.bankName).trim(),
@@ -117,7 +116,28 @@ export function usePaymentRuntime() {
             "Không tải được cấu hình thanh toán mới nhất. Vui lòng thử lại sau ít phút.",
           );
         }
-        applySettings(payload.paymentSettings);
+        let nextSettings = payload.paymentSettings;
+        if (NATIVE_BOOKING_API_ENABLED) {
+          const nativeResponse = await fetch("/api/payment-settings", {
+            method: "GET",
+            cache: "no-store",
+            signal: controller.signal,
+          });
+          const nativePayload = (await nativeResponse.json()) as {
+            ok?: boolean;
+            sepayEnabled?: boolean;
+          };
+          if (!nativeResponse.ok || !nativePayload.ok) {
+            throw new Error(
+              "Không tải được trạng thái SePay. Vui lòng thử lại sau ít phút.",
+            );
+          }
+          nextSettings = {
+            ...(payload.paymentSettings as Record<string, unknown>),
+            sepayEnabled: nativePayload.sepayEnabled === true,
+          };
+        }
+        applySettings(nextSettings);
       } finally {
         window.clearTimeout(timeout);
       }
@@ -268,6 +288,10 @@ export function usePaymentRuntime() {
         const countdown =
           document.querySelector<HTMLElement>("#sepay-countdown");
         if (countdown) countdown.style.display = "none";
+        if (NATIVE_BOOKING_API_ENABLED) {
+          announceConfirmed();
+          return;
+        }
         const confirmation = await window.ClowBookingApi?.postAction(
           "confirmBooking",
           {

@@ -1146,6 +1146,9 @@ export function ContactSection() {
                   id="name"
                   name="name"
                   placeholder="Nhập họ và tên của bạn"
+                  autoComplete="name"
+                  minLength={2}
+                  maxLength={100}
                   required
                 />
               </div>
@@ -1169,8 +1172,12 @@ export function ContactSection() {
                   id="phone"
                   name="phone"
                   placeholder="Số điện thoại liên lạc"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  maxLength={18}
                   required
                 />
+                <small>Nhập số Việt Nam gồm 10 số, ví dụ 0907072639.</small>
               </div>
               <div className="form-group">
                 <label htmlFor="consultation-type">Hình Thức *</label>
@@ -1211,6 +1218,9 @@ export function ContactSection() {
                   id="email"
                   name="email"
                   placeholder="Email để nhận xác nhận đặt lịch"
+                  inputMode="email"
+                  autoComplete="email"
+                  maxLength={254}
                   required
                 />
               </div>
@@ -1220,6 +1230,7 @@ export function ContactSection() {
                   id="concern"
                   name="concern"
                   rows={4}
+                  maxLength={2000}
                   placeholder="Chia sẻ những điều bạn muốn tìm hiểu hoặc vấn đề bạn đang gặp phải..."
                 />
               </div>

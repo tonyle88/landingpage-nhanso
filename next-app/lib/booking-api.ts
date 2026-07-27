@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHmac } from "node:crypto";
 import { isIP } from "node:net";
+import { validateBookingReservationPayload } from "@/lib/booking-validation";
 import type { Json } from "@/lib/supabase/database.types";
 import { createServiceServerClient } from "@/lib/supabase/server";
 
@@ -206,11 +207,19 @@ export async function reserveBooking(request: Request) {
       request,
       MAX_RESERVATION_BODY_BYTES,
     );
-    const supabase = await enforceRateLimit(request, payload);
+    const validation = validateBookingReservationPayload(payload);
+    if (!validation.ok) {
+      throw new BookingRequestError(400, validation.message);
+    }
+    const normalizedPayload = validation.value as Record<
+      string,
+      Json | undefined
+    >;
+    const supabase = await enforceRateLimit(request, normalizedPayload);
 
     const { data, error } = await supabase.rpc("create_booking_reservation", {
       p_idempotency_key: idempotencyKey,
-      p_payload: payload,
+      p_payload: normalizedPayload,
     });
     if (error) throw mapDatabaseError(error.code);
     if (!data || typeof data !== "object" || Array.isArray(data)) {

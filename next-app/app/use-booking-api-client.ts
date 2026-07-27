@@ -77,7 +77,8 @@ function nativeRequest(action: string, data: BookingData) {
           concern: data.concern,
           slot_start: data.slotStart,
           slot_end: data.slotEnd,
-          payment_provider: "manual_qr",
+          payment_provider:
+            data.paymentProvider === "sepay" ? "sepay" : "manual_qr",
         }),
       },
     };
