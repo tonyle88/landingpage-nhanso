@@ -32,6 +32,8 @@ const [bridge, delivery, migration, actions, page, controls] = await Promise.all
 
 test("Apps Script bridge authenticates requests and prevents replay", () => {
   assert.match(bridge, /computeHmacSha256Signature/);
+  assert.match(bridge, /Utilities\.Charset\.UTF_8/);
+  assert.match(bridge, /BOOKING_CALENDAR_SECRET[\s\S]*\.trim\(\)/);
   assert.match(bridge, /MAX_CLOCK_SKEW_SECONDS/);
   assert.match(bridge, /calendar-nonce:/);
   assert.match(bridge, /BOOKING_CALENDAR_SECRET/);

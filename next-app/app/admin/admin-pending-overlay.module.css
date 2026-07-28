@@ -1,0 +1,62 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(2, 20, 24, 0.68);
+  backdrop-filter: blur(5px);
+  cursor: wait;
+}
+
+.card {
+  display: flex;
+  width: min(520px, 100%);
+  align-items: center;
+  gap: 20px;
+  padding: 24px 26px;
+  color: #f7f4ea;
+  border: 1px solid rgba(246, 193, 83, 0.55);
+  border-radius: 20px;
+  background: #102f33;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.44);
+}
+
+.card strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #ffd067;
+  font-size: 1.08rem;
+}
+
+.card p {
+  margin: 0 0 5px;
+  line-height: 1.45;
+}
+
+.card small {
+  color: rgba(247, 244, 234, 0.7);
+}
+
+.spinner {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border: 4px solid rgba(255, 208, 103, 0.22);
+  border-top-color: #ffd067;
+  border-radius: 50%;
+  animation: adminPendingSpin 0.8s linear infinite;
+}
+
+@keyframes adminPendingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 1.8s;
+  }
+}

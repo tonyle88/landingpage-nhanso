@@ -14,7 +14,7 @@
  * secret in this file or expose it to browser code.
  */
 
-const CALENDAR_BRIDGE_VERSION = '2026-07-28-v1';
+const CALENDAR_BRIDGE_VERSION = '2026-07-28-v2';
 const MAX_CLOCK_SKEW_SECONDS = 5 * 60;
 const NONCE_TTL_SECONDS = 10 * 60;
 
@@ -88,7 +88,7 @@ function parseCalendarRequest(e) {
 function verifyCalendarRequest(request) {
   const secret = String(
     PropertiesService.getScriptProperties().getProperty('BOOKING_CALENDAR_SECRET') || ''
-  );
+  ).trim();
   if (secret.length < 32) throw new Error('Calendar secret is not configured.');
   if (!/^\d+$/.test(request.timestamp)) throw new Error('Invalid timestamp.');
   if (!/^[0-9a-f-]{36}$/i.test(request.nonce)) throw new Error('Invalid nonce.');
@@ -110,7 +110,11 @@ function verifyCalendarRequest(request) {
     request.payloadJson,
   ].join('.');
   const expected = bytesToHex(
-    Utilities.computeHmacSha256Signature(canonical, secret)
+    Utilities.computeHmacSha256Signature(
+      canonical,
+      secret,
+      Utilities.Charset.UTF_8
+    )
   );
   if (!constantTimeEquals(request.signature, expected)) {
     throw new Error('Invalid signature.');
