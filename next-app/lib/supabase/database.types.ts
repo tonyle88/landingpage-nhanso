@@ -769,6 +769,28 @@ export type Database = {
         }
         Returns: Database["public"]["Tables"]["bookings"]["Row"]
       }
+      admin_list_booking_customers: {
+        Args: {
+          p_search?: string | null
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          customer_key: string
+          customer_name: string
+          date_of_birth: string | null
+          email: string
+          phone: string
+          latest_confirmed_at: string
+          first_confirmed_at: string
+          successful_bookings: number
+          latest_booking_public_id: string
+          latest_package_name: string
+          total_customers: number
+          total_successful_bookings: number
+          returning_customers: number
+        }[]
+      }
       finalize_paid_sepay_booking: {
         Args: {
           p_id: string

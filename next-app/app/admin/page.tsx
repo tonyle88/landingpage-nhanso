@@ -22,6 +22,7 @@ const contentNavigation = [
 
 const operationNavigation = [
   { href: "/admin/bookings", icon: "bookings" as const, title: "Lịch hẹn", description: "Theo dõi, xác nhận và cập nhật trạng thái tư vấn." },
+  { href: "/admin/customers", icon: "customers" as const, title: "Khách hàng", description: "Tổng hợp khách đã đặt lịch thành công và tần suất quay lại." },
   { href: "/admin/payments", icon: "payments" as const, title: "Đối soát thanh toán", description: "Kiểm tra webhook và xác minh giao dịch SePay." },
 ];
 
