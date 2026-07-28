@@ -12,9 +12,18 @@ const thumbnailMigration = await read(
   "next-app/supabase/migrations/202607270001_blog_post_thumbnail.sql",
 );
 const form = await read("next-app/app/admin/blog/blog-post-form.tsx");
+const categoryForm = await read(
+  "next-app/app/admin/blog/category-form.tsx",
+);
+const pendingOverlay = await read(
+  "next-app/app/admin/admin-pending-overlay.tsx",
+);
 const coverField = await read("next-app/app/admin/blog/cover-image-field.tsx");
 const actions = await read("next-app/app/admin/blog/actions.ts");
 const editor = await read("next-app/app/admin/blog/rich-text-editor.tsx");
+const adminStyles = await read("next-app/app/admin/admin.module.css");
+const publicStyles = await read("next-app/public/style.css");
+const blogRuntime = await read("next-app/public/blog.js");
 const mediaUpload = await read("next-app/lib/admin/media-upload.ts");
 const adminPage = await read("next-app/app/admin/blog/page.tsx");
 const publicPosts = await read("next-app/lib/supabase/public-blog-posts.ts");
@@ -65,6 +74,21 @@ test("editor and HTML modes share a canonical value without render overwrite", (
   assert.doesNotMatch(editor, /dangerouslySetInnerHTML/);
 });
 
+test("editor supports safe semantic font sizes and readable article defaults", () => {
+  assert.match(editor, /aria-label="Cỡ chữ"/);
+  assert.match(editor, /Nhỏ/);
+  assert.match(editor, /Chuẩn/);
+  assert.match(editor, /Lớn/);
+  assert.match(editor, /Rất lớn/);
+  assert.match(editor, /normalizeFontSizeMarkup/);
+  assert.match(editor, /editor-font-xlarge/);
+  assert.doesNotMatch(editor, /style\.fontSize\s*=/);
+  assert.match(adminStyles, /editor-font-large/);
+  assert.match(publicStyles, /\.article-content \.editor-font-large/);
+  assert.match(publicStyles, /\.article-content[\s\S]*font-size: 1\.2rem/);
+  assert.match(blogRuntime, /font-size:1\.2rem/);
+});
+
 test("new posts receive a unique generated slug and actionable failures", () => {
   assert.match(actions, /ensureUniqueGeneratedSlug/);
   assert.match(actions, /payload\.slug = await ensureUniqueGeneratedSlug/);
@@ -84,6 +108,20 @@ test("newest blog posts appear first in admin and public lists", () => {
     assert.match(source, /order\("created_at", \{ ascending: false \}\)/);
   }
   assert.doesNotMatch(adminPage, /order\("updated_at", \{ ascending: false \}\)/);
+});
+
+test("blog saves show a blocking pending state and prevent repeated submits", () => {
+  assert.match(form, /data-pending-label=/);
+  assert.match(form, /Đang lưu bài viết…/);
+  assert.match(categoryForm, /data-pending-label=/);
+  assert.match(categoryForm, /Đang lưu danh mục…/);
+  assert.match(pendingOverlay, /pendingRef\.current/);
+  assert.match(pendingOverlay, /control\.disabled = true/);
+  assert.match(pendingOverlay, /setPending\(true\)/);
+  assert.doesNotMatch(
+    pendingOverlay,
+    /event\.defaultPrevented \|\| pendingRef\.current/,
+  );
 });
 
 test("blog validation reports the exact invalid field and paste removes unsafe markup", () => {

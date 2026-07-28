@@ -57,7 +57,7 @@ export default async function LandingPage() {
         rel="stylesheet"
         href="/assets/vendor/fontawesome/css/all.min.css"
       />
-      <link rel="stylesheet" href="/style.css" />
+      <link rel="stylesheet" href="/style.css?v=20260728-mobile-cta" />
 
       <LandingRuntime
         initialPackages={publicPackages.packages}

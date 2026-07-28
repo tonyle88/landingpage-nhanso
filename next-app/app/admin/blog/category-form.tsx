@@ -28,7 +28,13 @@ export function CategoryForm({ item }: { item?: BlogCategory }) {
         <label><input name="enabled" type="checkbox"
           defaultChecked={item?.enabled ?? true} /> Hiển thị</label>
       </div>
-      <button className={styles.submit} type="submit">
+      <button
+        className={styles.submit}
+        data-pending-label={
+          item ? "Đang lưu danh mục…" : "Đang tạo danh mục…"
+        }
+        type="submit"
+      >
         {item ? "Lưu danh mục" : "Tạo danh mục"}
       </button>
     </form>

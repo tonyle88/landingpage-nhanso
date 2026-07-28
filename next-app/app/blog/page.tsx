@@ -353,7 +353,11 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
         defer
       />
       <script src="/assets/js/sanitize-html.js" nonce={nonce} defer />
-      <script src="/blog.js" nonce={nonce} defer />
+      <script
+        src="/blog.js?v=20260728-font-editor"
+        nonce={nonce}
+        defer
+      />
     </>
   );
 }

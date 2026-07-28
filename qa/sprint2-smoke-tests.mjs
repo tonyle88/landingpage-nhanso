@@ -71,6 +71,7 @@ const blogSource = fs.readFileSync(new URL('../blog.js', import.meta.url), 'utf8
 const indexSource = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const blogHtmlSource = fs.readFileSync(new URL('../blog.html', import.meta.url), 'utf8');
 const styleSource = fs.readFileSync(new URL('../style.css', import.meta.url), 'utf8');
+const nextStyleSource = fs.readFileSync(new URL('../next-app/public/style.css', import.meta.url), 'utf8');
 const bookingSource = fs.readFileSync(new URL('../google-apps-script-booking.gs', import.meta.url), 'utf8');
 const contentScriptSource = fs.readFileSync(new URL('../google-apps-script-landing-content.gs', import.meta.url), 'utf8');
 const adminHtmlSource = fs.readFileSync(new URL('../admin/index.html', import.meta.url), 'utf8');
@@ -536,6 +537,18 @@ assert.match(
   styleSource,
   /\.generic-content table[\s\S]*overflow-x: auto;/,
   'Generic section tables should scroll instead of overflowing'
+);
+
+assert.match(
+  nextStyleSource,
+  /#mini-report-submit\s*\{[^}]*white-space:\s*nowrap;/,
+  'Mini report CTA should prevent wrapping at mobile widths'
+);
+
+assert.match(
+  nextStyleSource,
+  /#mini-report-submit span\s*\{[^}]*font-size:\s*clamp\(0\.78rem,\s*3\.65vw,\s*0\.95rem\);/,
+  'Mini report CTA should stay on one line at mobile widths'
 );
 
 assert.match(
