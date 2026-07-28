@@ -3741,6 +3741,12 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   border-radius: 14px;
   border: 1px solid rgba(240, 201, 106, 0.28);
   background: rgba(240, 201, 106, 0.08);
+  transition: border-color 180ms ease, background 180ms ease;
+}
+
+.sepay-waiting[data-verifying="true"] {
+  border-color: rgba(240, 201, 106, 0.62);
+  background: rgba(240, 201, 106, 0.13);
 }
 
 .sepay-waiting[hidden] {
@@ -3795,7 +3801,23 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
 .sepay-check-button:disabled {
   cursor: wait;
-  opacity: 0.65;
+  opacity: 0.82;
+}
+
+.sepay-check-button[aria-busy="true"]::before {
+  content: "";
+  display: inline-block;
+  width: 0.72em;
+  height: 0.72em;
+  margin-right: 8px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  animation: sepay-verification-spin 700ms linear infinite;
+}
+
+@keyframes sepay-verification-spin {
+  to { transform: rotate(360deg); }
 }
 
 .btn-back-text {
