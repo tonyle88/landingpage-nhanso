@@ -98,30 +98,46 @@ export function usePaymentRuntime() {
       loadedAt = Date.now();
     };
     const refreshSettings = async () => {
-      if (loadedAt && Date.now() - loadedAt < 60000) return;
       const controller = new AbortController();
       const timeout = window.setTimeout(() => controller.abort(), 4500);
       try {
-        const response = await fetch(
-          `${CONTENT_URL}?action=getLandingContent&_=${Date.now()}&paymentRefresh=1`,
-          { method: "GET", mode: "cors", cache: "no-store", signal: controller.signal },
-        );
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const payload = (await response.json()) as {
-          ok?: boolean;
-          paymentSettings?: unknown;
-        };
-        if (payload.ok === false || !payload.paymentSettings) {
-          throw new Error(
-            "Không tải được cấu hình thanh toán mới nhất. Vui lòng thử lại sau ít phút.",
+        let nextSettings: unknown = settings;
+        const landingSettingsAreStale =
+          !loadedAt || Date.now() - loadedAt >= 60000;
+        if (landingSettingsAreStale) {
+          const response = await fetch(
+            `${CONTENT_URL}?action=getLandingContent&_=${Date.now()}&paymentRefresh=1`,
+            {
+              method: "GET",
+              mode: "cors",
+              cache: "no-store",
+              signal: controller.signal,
+            },
           );
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const payload = (await response.json()) as {
+            ok?: boolean;
+            paymentSettings?: unknown;
+          };
+          if (payload.ok === false || !payload.paymentSettings) {
+            throw new Error(
+              "Không tải được cấu hình thanh toán mới nhất. Vui lòng thử lại sau ít phút.",
+            );
+          }
+          nextSettings = payload.paymentSettings;
         }
-        let nextSettings = payload.paymentSettings;
-        const nativeResponse = await fetch("/api/payment-settings", {
-          method: "GET",
-          cache: "no-store",
-          signal: controller.signal,
-        });
+        // The admin toggle lives in Supabase, so this endpoint must always be
+        // revalidated before reserving a slot. Do not reuse the landing-content
+        // cache for the SePay/manual decision.
+        const nativeResponse = await fetch(
+          `/api/payment-settings?_=${Date.now()}`,
+          {
+            method: "GET",
+            cache: "no-store",
+            headers: { "Cache-Control": "no-cache" },
+            signal: controller.signal,
+          },
+        );
         const nativePayload = (await nativeResponse.json()) as {
           ok?: boolean;
           sepayEnabled?: boolean;
@@ -132,7 +148,7 @@ export function usePaymentRuntime() {
           );
         }
         nextSettings = {
-          ...(payload.paymentSettings as Record<string, unknown>),
+          ...(nextSettings as Record<string, unknown>),
           sepayEnabled: nativePayload.sepayEnabled === true,
         };
         applySettings(nextSettings);

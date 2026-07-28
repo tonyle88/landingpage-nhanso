@@ -23,6 +23,14 @@ const bookingFlow = await readFile(
   new URL("next-app/components/landing/booking-flow.tsx", root),
   "utf8",
 );
+const legacyRuntime = await readFile(
+  new URL("next-app/public/script.js", root),
+  "utf8",
+);
+const bookingApi = await readFile(
+  new URL("next-app/lib/booking-api.ts", root),
+  "utf8",
+);
 const supabaseConfig = await readFile(
   new URL("next-app/lib/supabase/config.ts", root),
   "utf8",
@@ -82,7 +90,7 @@ test("calendar uses minimal slots API and SePay polls the native status route", 
   assert.match(calendar, /slot\.slot_end/);
   assert.doesNotMatch(payment, /NATIVE_BOOKING_API_ENABLED/);
   assert.match(payment, /"checkBookingStatus"/);
-  assert.match(payment, /fetch\("\/api\/payment-settings"/);
+  assert.match(payment, /\/api\/payment-settings/);
   assert.match(payment, /if \(result\.status === "confirmed"\)/);
   assert.match(payment, /result\.emailDelivery\?\.customer === "already_sent"/);
   assert.match(
@@ -123,6 +131,31 @@ test("SePay checks immediately and provides a manual status retry", () => {
   assert.match(payment, /checkSepayButton\?\.addEventListener\("click", checkSepayNow\)/);
   assert.match(bookingFlow, /id="btn-check-sepay-status"/);
   assert.match(bookingFlow, /Kiểm tra lại thanh toán/);
+});
+
+test("SePay toggle is revalidated and the server overrides stale browser state", () => {
+  assert.doesNotMatch(
+    payment,
+    /if \(loadedAt && Date\.now\(\) - loadedAt < 60000\) return/,
+  );
+  assert.match(payment, /landingSettingsAreStale/);
+  assert.match(
+    payment,
+    /`\/api\/payment-settings\?_\=\$\{Date\.now\(\)\}`/,
+  );
+  assert.match(payment, /"Cache-Control": "no-cache"/);
+  assert.match(
+    bookingApi,
+    /normalizedPayload\.payment_provider = sepayEnabled \? "sepay" : "manual_qr"/,
+  );
+  assert.match(
+    bookingApi,
+    /paymentProvider: normalizedPayload\.payment_provider/,
+  );
+  assert.match(
+    legacyRuntime,
+    /sepayEnabled: reservation\.paymentProvider === 'sepay'/,
+  );
 });
 
 test("verified payment stops the countdown while confirmation polling continues", () => {
