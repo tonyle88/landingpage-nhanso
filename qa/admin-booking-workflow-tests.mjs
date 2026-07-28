@@ -102,6 +102,18 @@ test("booking cards stay compact and expose per-recipient email evidence", () =>
   assert.match(page, /Email chủ/);
 });
 
+test("booking status filter is compact and responsive", () => {
+  assert.match(page, /bookingFilterForm/);
+  assert.match(page, /filterSubmit/);
+  assert.match(page, /Áp dụng/);
+  assert.match(adminStyles, /\.bookingFilterForm[\s\S]*align-items: end/);
+  assert.match(adminStyles, /\.filterSubmit[\s\S]*min-height: 46px/);
+  assert.match(
+    adminStyles,
+    /@media \(max-width: 600px\)[\s\S]*\.filterSubmit \{ width: 100%; \}/,
+  );
+});
+
 test("booking reports require operations access and preserve status filters", () => {
   assert.match(exportRoute, /can\(principal\.role, "read_operations"\)/);
   assert.match(exportRoute, /parseBookingStatus/);

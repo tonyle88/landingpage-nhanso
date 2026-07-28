@@ -186,7 +186,10 @@ export default async function AdminBookingsPage({
       ) : null}
 
       <section className={styles.adminPanel}>
-        <form className={styles.searchForm} method="get">
+        <form
+          className={`${styles.searchForm} ${styles.bookingFilterForm}`}
+          method="get"
+        >
           <label className={styles.field}>
             Lọc trạng thái
             <select name="filter" defaultValue={selectedFilter || ""}>
@@ -196,7 +199,19 @@ export default async function AdminBookingsPage({
               ))}
             </select>
           </label>
-          <button className={styles.submit} type="submit">Lọc</button>
+          <button
+            className={`${styles.submit} ${styles.filterSubmit}`}
+            type="submit"
+          >
+            <svg
+              className={styles.filterSubmitIcon}
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="M4 6h16M7 12h10M10 18h4" />
+            </svg>
+            <span>Áp dụng</span>
+          </button>
         </form>
         <div className={styles.reportActions} aria-label="Xuất báo cáo lịch hẹn">
           <Link
