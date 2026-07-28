@@ -56,6 +56,13 @@ const duplicateTransitionRepairMigration = await readFile(
   ),
   "utf8",
 );
+const serviceRoleRuntimeGrantsMigration = await readFile(
+  new URL(
+    "next-app/supabase/migrations/202607280005_restore_service_role_runtime_grants.sql",
+    root,
+  ),
+  "utf8",
+);
 const settingsPage = await readFile(
   new URL("next-app/app/admin/settings/page.tsx", root),
   "utf8",
@@ -152,6 +159,29 @@ test("SePay webhook is locked to Supabase processing", () => {
   assert.doesNotMatch(handler, /SEPAY_SUPABASE_WEBHOOK_ENABLED/);
   assert.match(handler, /SEPAY_BANK_ACCOUNT_NUMBER/);
   assert.match(handler, /createHash\("sha256"\)/);
+});
+
+test("payment runtime restores only the service-role table grants it uses", () => {
+  assert.match(
+    serviceRoleRuntimeGrantsMigration,
+    /grant select on table public\.site_settings to service_role/,
+  );
+  assert.match(
+    serviceRoleRuntimeGrantsMigration,
+    /grant select, update on table public\.bookings to service_role/,
+  );
+  assert.match(
+    serviceRoleRuntimeGrantsMigration,
+    /grant select on table public\.payment_transactions to service_role/,
+  );
+  assert.match(
+    serviceRoleRuntimeGrantsMigration,
+    /grant select, insert on table public\.audit_logs to service_role/,
+  );
+  assert.doesNotMatch(
+    serviceRoleRuntimeGrantsMigration,
+    /grant all|all tables/i,
+  );
 });
 
 test("SePay automatic confirmation is private, off by default and keeps manual events", () => {
