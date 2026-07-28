@@ -133,6 +133,18 @@ test("SePay checks immediately and provides a manual status retry", () => {
   assert.match(bookingFlow, /Kiểm tra lại thanh toán/);
 });
 
+test("manual SePay retry verifies repeatedly for ten seconds with clear feedback", () => {
+  assert.match(payment, /const VERIFICATION_WINDOW_MS = 10_000/);
+  assert.match(payment, /const VERIFICATION_RETRY_MS = 2_000/);
+  assert.match(payment, /Đang xác thực giao dịch\. Vui lòng chờ 5–10 giây/);
+  assert.match(payment, /outcome !== "confirmed"/);
+  assert.match(payment, /outcome !== "stopped"/);
+  assert.match(payment, /Hệ thống vẫn đang tự động kiểm tra; bạn không cần bấm lại/);
+  assert.match(payment, /checkSepayButton\.setAttribute\("aria-busy", "true"\)/);
+  assert.match(bookingFlow, /id="sepay-status-label"/);
+  assert.match(bookingFlow, /Thời gian giữ mã/);
+});
+
 test("SePay toggle is revalidated and the server overrides stale browser state", () => {
   assert.doesNotMatch(
     payment,

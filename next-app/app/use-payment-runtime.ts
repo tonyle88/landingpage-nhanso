@@ -23,6 +23,16 @@ type PackageSnapshot = {
   typeLabel?: string;
 };
 
+type PaymentCheckOutcome =
+  | "waiting"
+  | "paid"
+  | "confirmed"
+  | "stopped"
+  | "error";
+
+const VERIFICATION_WINDOW_MS = 10_000;
+const VERIFICATION_RETRY_MS = 2_000;
+
 const DEFAULTS: PaymentSettings = {
   sepayEnabled: false,
   bankName: "BIDV",
@@ -81,9 +91,12 @@ export function usePaymentRuntime() {
     let loadedAt = 0;
     let countdownTimer = 0;
     let pollTimer = 0;
+    let verificationGeneration = 0;
+    let statusCheckPromise: Promise<PaymentCheckOutcome> | null = null;
     let currentSnapshot: PackageSnapshot = {};
 
     const stop = () => {
+      verificationGeneration += 1;
       window.clearInterval(countdownTimer);
       window.clearInterval(pollTimer);
       countdownTimer = 0;
@@ -261,66 +274,81 @@ export function usePaymentRuntime() {
       stop();
       showSuccess("confirmed", customerEmailSent);
     };
-    const checkStatus = async () => {
-      if (!settings.sepayEnabled) return;
+    const checkStatus = async (): Promise<PaymentCheckOutcome> => {
+      if (statusCheckPromise) return statusCheckPromise;
+      if (!settings.sepayEnabled) return "stopped";
       const state = window.ClowBookingState?.getState();
-      if (!state?.paymentOrderId || !state.bookingId) return;
-      try {
-        const result = await window.ClowBookingApi?.postAction(
-          "checkBookingStatus",
-          {
-            bookingId: state.bookingId,
-            idempotencyKey: state.idempotencyKey,
-          },
-        ) as {
-          ok?: boolean;
-          status?: string;
-          emailDelivery?: {
-            customer?: string;
+      if (!state?.paymentOrderId || !state.bookingId) return "stopped";
+
+      const request = (async (): Promise<PaymentCheckOutcome> => {
+        try {
+          const result = await window.ClowBookingApi?.postAction(
+            "checkBookingStatus",
+            {
+              bookingId: state.bookingId,
+              idempotencyKey: state.idempotencyKey,
+            },
+          ) as {
+            ok?: boolean;
+            status?: string;
+            emailDelivery?: {
+              customer?: string;
+            };
           };
-        };
-        if (!result?.ok) return;
-        if (result.status === "cancelled" || result.status === "expired") {
-          stop();
-          const statusText =
-            document.querySelector<HTMLElement>("#sepay-status-text");
-          const countdown =
-            document.querySelector<HTMLElement>("#sepay-countdown");
-          if (statusText) {
-            statusText.textContent =
-              result.status === "cancelled"
-                ? "Lịch giữ chỗ này đã bị hủy. Vui lòng quay lại chọn lịch để tạo mã thanh toán mới."
-                : "Mã thanh toán đã hết hạn. Vui lòng quay lại chọn lịch để tạo mã thanh toán mới.";
+          if (!result?.ok) return "waiting";
+          if (result.status === "cancelled" || result.status === "expired") {
+            stop();
+            const statusText =
+              document.querySelector<HTMLElement>("#sepay-status-text");
+            const countdown =
+              document.querySelector<HTMLElement>("#sepay-countdown");
+            if (statusText) {
+              statusText.textContent =
+                result.status === "cancelled"
+                  ? "Lịch giữ chỗ này đã bị hủy. Vui lòng quay lại chọn lịch để tạo mã thanh toán mới."
+                  : "Mã thanh toán đã hết hạn. Vui lòng quay lại chọn lịch để tạo mã thanh toán mới.";
+            }
+            if (countdown) {
+              countdown.style.display = "";
+              countdown.textContent = "Đã dừng";
+            }
+            return "stopped";
           }
-          if (countdown) {
-            countdown.style.display = "";
-            countdown.textContent = "Đã dừng";
+          if (result.status === "confirmed") {
+            announceConfirmed(
+              result.emailDelivery?.customer === "sent" ||
+                result.emailDelivery?.customer === "already_sent",
+            );
+            return "confirmed";
           }
-          return;
+          if (result.status === "paid") {
+            stopCountdown();
+            const statusText =
+              document.querySelector<HTMLElement>("#sepay-status-text");
+            const countdown =
+              document.querySelector<HTMLElement>("#sepay-countdown");
+            if (statusText) {
+              statusText.textContent =
+                "Đã nhận thanh toán. Đang hoàn tất lịch hẹn...";
+            }
+            if (countdown) {
+              countdown.style.display = "";
+              countdown.textContent = "Đã thanh toán";
+            }
+            return "paid";
+          }
+          return "waiting";
+        } catch (error) {
+          console.warn("SePay status check failed:", error);
+          return "error";
         }
-        if (result.status === "confirmed") {
-          announceConfirmed(
-            result.emailDelivery?.customer === "sent" ||
-              result.emailDelivery?.customer === "already_sent",
-          );
-          return;
-        }
-        if (result.status === "paid") {
-          stopCountdown();
-          const statusText =
-            document.querySelector<HTMLElement>("#sepay-status-text");
-          const countdown =
-            document.querySelector<HTMLElement>("#sepay-countdown");
-          if (statusText) {
-            statusText.textContent = "Đã nhận thanh toán. Đang hoàn tất lịch hẹn...";
-          }
-          if (countdown) {
-            countdown.style.display = "";
-            countdown.textContent = "Đã thanh toán";
-          }
-        }
-      } catch (error) {
-        console.warn("SePay status check failed:", error);
+      })();
+
+      statusCheckPromise = request;
+      try {
+        return await request;
+      } finally {
+        if (statusCheckPromise === request) statusCheckPromise = null;
       }
     };
 
@@ -357,6 +385,22 @@ export function usePaymentRuntime() {
         document.querySelector<HTMLElement>("#sepay-countdown");
       const statusText =
         document.querySelector<HTMLElement>("#sepay-status-text");
+      const statusLabel =
+        document.querySelector<HTMLElement>("#sepay-status-label");
+      const checkButton = document.querySelector<HTMLButtonElement>(
+        "#btn-check-sepay-status",
+      );
+      if (statusLabel) statusLabel.textContent = "Thời gian giữ mã";
+      if (statusText) {
+        statusText.textContent =
+          "Sau khi chuyển khoản, bấm kiểm tra một lần. Hệ thống sẽ xác thực giao dịch trong 5–10 giây.";
+      }
+      if (checkButton) {
+        checkButton.disabled = false;
+        checkButton.textContent = "Kiểm tra lại thanh toán";
+        checkButton.setAttribute("aria-busy", "false");
+      }
+      waiting.dataset.verifying = "false";
       const expiresAt =
         Date.now() + Math.max(60, settings.paymentTimeoutMinutes * 60) * 1000;
       const updateCountdown = () => {
@@ -480,17 +524,81 @@ export function usePaymentRuntime() {
     );
     const checkSepayNow = async () => {
       if (!checkSepayButton || checkSepayButton.disabled) return;
-      const originalText = checkSepayButton.textContent;
+      const waiting = document.querySelector<HTMLElement>("#sepay-waiting");
+      const statusText =
+        document.querySelector<HTMLElement>("#sepay-status-text");
+      const paymentModal =
+        document.querySelector<HTMLElement>("#modal-payment");
+      const runGeneration = verificationGeneration;
+      let outcome: PaymentCheckOutcome = "waiting";
+
+      window.clearInterval(pollTimer);
+      pollTimer = 0;
       checkSepayButton.disabled = true;
-      checkSepayButton.textContent = "Đang kiểm tra...";
+      checkSepayButton.textContent = "Đang xác thực...";
+      checkSepayButton.setAttribute("aria-busy", "true");
+      if (waiting) waiting.dataset.verifying = "true";
+      if (statusText) {
+        statusText.textContent =
+          "Đang xác thực giao dịch. Vui lòng chờ 5–10 giây...";
+      }
       try {
-        await checkStatus();
-      } finally {
-        if (document.body.contains(checkSepayButton)) {
-          checkSepayButton.disabled = false;
-          checkSepayButton.textContent =
-            originalText || "Kiểm tra lại thanh toán";
+        const deadline = Date.now() + VERIFICATION_WINDOW_MS;
+        outcome = await checkStatus();
+        while (
+          verificationGeneration === runGeneration &&
+          settings.sepayEnabled &&
+          paymentModal?.classList.contains("active") &&
+          outcome !== "confirmed" &&
+          outcome !== "stopped" &&
+          Date.now() < deadline
+        ) {
+          await new Promise<void>((resolve) => {
+            window.setTimeout(
+              resolve,
+              Math.min(VERIFICATION_RETRY_MS, deadline - Date.now()),
+            );
+          });
+          if (
+            verificationGeneration !== runGeneration ||
+            !paymentModal.classList.contains("active")
+          ) {
+            break;
+          }
+          outcome = await checkStatus();
         }
+
+        if (
+          verificationGeneration === runGeneration &&
+          paymentModal?.classList.contains("active") &&
+          statusText
+        ) {
+          statusText.textContent =
+            outcome === "paid"
+              ? "Đã nhận thanh toán. Hệ thống đang hoàn tất lịch hẹn, vui lòng giữ màn hình này."
+              : outcome === "error"
+                ? "Ngân hàng đang phản hồi chậm. Hệ thống vẫn tiếp tục kiểm tra tự động."
+                : "Chưa thấy giao dịch mới. Hệ thống vẫn đang tự động kiểm tra; bạn không cần bấm lại.";
+        }
+      } finally {
+        const shouldContinuePolling =
+          verificationGeneration === runGeneration &&
+          settings.sepayEnabled &&
+          paymentModal?.classList.contains("active") &&
+          outcome !== "confirmed" &&
+          outcome !== "stopped";
+        if (shouldContinuePolling && !pollTimer) {
+          pollTimer = window.setInterval(() => void checkStatus(), 5000);
+        }
+        if (
+          document.body.contains(checkSepayButton) &&
+          paymentModal?.classList.contains("active")
+        ) {
+          checkSepayButton.disabled = false;
+          checkSepayButton.textContent = "Kiểm tra lại thanh toán";
+          checkSepayButton.setAttribute("aria-busy", "false");
+        }
+        if (waiting) waiting.dataset.verifying = "false";
       }
     };
     confirmButton?.addEventListener("click", confirmManualPayment);

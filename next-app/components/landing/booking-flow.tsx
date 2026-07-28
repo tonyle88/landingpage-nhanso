@@ -198,14 +198,21 @@ export default function BookingFlow() {
             </span>
           </div>
 
-          <div className="sepay-waiting" id="sepay-waiting" hidden>
+          <div
+            className="sepay-waiting"
+            id="sepay-waiting"
+            aria-live="polite"
+            hidden
+          >
             <div>
-              <span className="sepay-status-label">Đang chờ thanh toán</span>
+              <span className="sepay-status-label" id="sepay-status-label">
+                Thời gian giữ mã
+              </span>
               <strong id="sepay-countdown">15:00</strong>
             </div>
             <p id="sepay-status-text">
-              Hệ thống sẽ tự chuyển sang trang cảm ơn khi thanh toán được xác
-              nhận.
+              Sau khi chuyển khoản, bấm kiểm tra một lần. Hệ thống sẽ xác thực
+              giao dịch trong 5–10 giây.
             </p>
             <button
               className="sepay-check-button"
