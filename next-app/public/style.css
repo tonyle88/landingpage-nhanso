@@ -4526,6 +4526,26 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     box-sizing: border-box;
   }
 
+  #mini-report-submit {
+    min-height: 56px;
+    gap: 8px;
+    padding: 15px clamp(14px, 5vw, 24px);
+    white-space: nowrap;
+  }
+
+  #mini-report-submit span {
+    min-width: 0;
+    font-size: clamp(0.78rem, 3.65vw, 0.95rem);
+    line-height: 1.2;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+  }
+
+  #mini-report-submit i {
+    flex: 0 0 auto;
+    font-size: 0.9rem;
+  }
+
   .mini-report-result {
     gap: 14px;
     margin-top: 18px;
