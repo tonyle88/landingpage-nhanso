@@ -4,8 +4,10 @@ import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
 import {
   CUSTOMER_EXPORT_LIMIT,
+  customerPeriodLabel,
   formatCustomerBirthDate,
   normalizeCustomerSearch,
+  parseCustomerPeriod,
 } from "@/lib/admin/customer-report";
 import { formatBookingDateTime } from "@/lib/admin/booking-report";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
@@ -20,7 +22,7 @@ export const metadata: Metadata = {
 export default async function CustomerReportPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; year?: string; month?: string }>;
 }) {
   const principal = await getAdminPrincipal();
   if (!principal) redirect("/admin/login?reason=unauthorized");
@@ -28,11 +30,15 @@ export default async function CustomerReportPage({
 
   const params = await searchParams;
   const search = normalizeCustomerSearch(params.q);
+  const { year, month } = parseCustomerPeriod(params.year, params.month);
+  const periodLabel = customerPeriodLabel(year, month);
   const supabase = await createAuthServerClient();
   const { data: customers, error } = await supabase.rpc(
     "admin_list_booking_customers",
     {
       p_search: search || null,
+      p_year: year,
+      p_month: month,
       p_limit: CUSTOMER_EXPORT_LIMIT,
       p_offset: 0,
     },
@@ -56,7 +62,10 @@ export default async function CustomerReportPage({
         <div>
           <h1>Danh sách khách hàng</h1>
           <p>Clow Cat Patronus · Khách đã đặt lịch thành công</p>
-          <p>Bộ lọc: {search || "Tất cả khách hàng"}</p>
+          <p>
+            Thời gian xác nhận: {periodLabel}
+            {search ? ` · Tìm kiếm: ${search}` : ""}
+          </p>
         </div>
         <PrintReport />
       </header>
