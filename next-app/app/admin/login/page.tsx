@@ -29,7 +29,7 @@ export default async function AdminLoginPage({
           />
           <div>
             <strong>Clow Cat Patronus</strong>
-            <span>Admin Console · Supabase staging</span>
+            <span>Admin Console · Supabase production</span>
           </div>
         </div>
         <p className={styles.eyebrow}>Quản trị bảo mật</p>

@@ -40,12 +40,12 @@ test("Apps Script bridge authenticates requests and prevents replay", () => {
 
 test("Calendar integration is server-only and does not expose its secret", () => {
   assert.match(delivery, /import "server-only"/);
-  assert.match(delivery, /GOOGLE_APPS_SCRIPT_SECRET/);
+  assert.match(delivery, /BOOKING_CALENDAR_SECRET/);
   assert.match(delivery, /createHmac\("sha256"/);
   assert.match(delivery, /booking\.calendar\.sync/);
   assert.match(delivery, /booking\.calendar\.delete/);
-  assert.doesNotMatch(page, /process\.env\.GOOGLE_APPS_SCRIPT_SECRET/);
-  assert.doesNotMatch(controls, /GOOGLE_APPS_SCRIPT_SECRET/);
+  assert.doesNotMatch(page, /process\.env\.BOOKING_CALENDAR_SECRET/);
+  assert.doesNotMatch(controls, /BOOKING_CALENDAR_SECRET/);
 });
 
 test("reschedule and cancellation enforce a 72-hour boundary in database", () => {
