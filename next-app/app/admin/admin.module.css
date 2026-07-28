@@ -935,8 +935,10 @@
 .editorToolbar { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; border-bottom: 1px solid #d8e0e2; background: #f3f6f6; }
 .editorToolbar button { min-width: 34px; min-height: 32px; padding: 0 9px; border: 1px solid transparent; border-radius: 6px; cursor: pointer; background: transparent; color: #213b3f; font: inherit; font-size: .74rem; }
 .editorToolbar button:hover, .editorToolbar .toolbarActive { border-color: rgb(217 78 31 / 30%); background: rgb(240 201 106 / 30%); color: #8d421f; }
+.editorFontControl select { min-height: 32px; padding: 0 28px 0 10px; border: 1px solid #c9d4d6; border-radius: 6px; cursor: pointer; background: #fff; color: #213b3f; font: inherit; font-size: .74rem; font-weight: 750; }
+.editorFontControl select:hover, .editorFontControl select:focus-visible { border-color: rgb(217 78 31 / 48%); outline: none; box-shadow: 0 0 0 2px rgb(240 201 106 / 22%); }
 .editorToolbar > span { width: 1px; margin: 3px 4px; background: #ccd6d8; }
-.editorCanvas, .editorSource { width: 100%; min-height: 360px; max-height: 560px; overflow-y: auto; overscroll-behavior: contain; padding: 18px; outline: none; color: #17272a; background: #fff; font-size: .9rem; font-weight: 400; line-height: 1.7; caret-color: #d94e1f; scrollbar-color: #d4a843 #edf2f2; scrollbar-width: thin; }
+.editorCanvas, .editorSource { width: 100%; min-height: 360px; max-height: 560px; overflow-y: auto; overscroll-behavior: contain; padding: 18px; outline: none; color: #17272a; background: #fff; font-size: 1rem; font-weight: 400; line-height: 1.75; caret-color: #d94e1f; scrollbar-color: #d4a843 #edf2f2; scrollbar-width: thin; }
 .editorCanvas::-webkit-scrollbar, .editorSource::-webkit-scrollbar { width: 10px; }
 .editorCanvas::-webkit-scrollbar-track, .editorSource::-webkit-scrollbar-track { background: #edf2f2; }
 .editorCanvas::-webkit-scrollbar-thumb, .editorSource::-webkit-scrollbar-thumb { border: 2px solid #edf2f2; border-radius: 999px; background: #d4a843; }
@@ -948,6 +950,10 @@
 .editorCanvas :global(.editor-align-center) { text-align: center; }
 .editorCanvas :global(.editor-align-right) { text-align: right; }
 .editorCanvas :global(.editor-align-justify) { text-align: justify; }
+.editorCanvas :global(.editor-font-small) { font-size: .88em; }
+.editorCanvas :global(.editor-font-normal) { font-size: 1em; }
+.editorCanvas :global(.editor-font-large) { font-size: 1.2em; }
+.editorCanvas :global(.editor-font-xlarge) { font-size: 1.45em; }
 .editorSource { display: block; min-height: 360px; resize: vertical; border: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .richEditorCompact .editorCanvas, .richEditorCompact .editorSource { min-height: 150px; max-height: 280px; }
 .editorHiddenInput, .editorVisualHidden { display: none; }

@@ -760,7 +760,7 @@ async function renderArticleDetail(id) {
       </div>
 
       <!-- Article Content -->
-      <div class="article-content" style="background: linear-gradient(160deg, rgba(26,16,6,0.6) 0%, rgba(15,10,3,0.7) 100%); border: 1px solid rgba(212,168,67,0.2); border-radius:20px; padding:40px 48px; font-size:1.1rem; line-height:1.9; color:#f0e8d8; box-shadow:0 0 40px rgba(0,0,0,0.4), inset 0 0 60px rgba(212,168,67,0.03); position:relative;">
+      <div class="article-content" style="background: linear-gradient(160deg, rgba(26,16,6,0.6) 0%, rgba(15,10,3,0.7) 100%); border: 1px solid rgba(212,168,67,0.2); border-radius:20px; padding:40px 48px; font-size:1.2rem; line-height:1.9; color:#f0e8d8; box-shadow:0 0 40px rgba(0,0,0,0.4), inset 0 0 60px rgba(212,168,67,0.03); position:relative;">
         <div style="position:absolute; top:0; left:0; width:24px; height:24px; border-top:2px solid rgba(212,168,67,0.5); border-left:2px solid rgba(212,168,67,0.5); border-radius:20px 0 0 0;"></div>
         <div style="position:absolute; top:0; right:0; width:24px; height:24px; border-top:2px solid rgba(212,168,67,0.5); border-right:2px solid rgba(212,168,67,0.5); border-radius:0 20px 0 0;"></div>
         <div style="position:absolute; bottom:0; left:0; width:24px; height:24px; border-bottom:2px solid rgba(212,168,67,0.5); border-left:2px solid rgba(212,168,67,0.5); border-radius:0 0 0 20px;"></div>

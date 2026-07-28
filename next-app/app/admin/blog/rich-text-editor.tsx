@@ -5,6 +5,7 @@ import styles from "../admin.module.css";
 
 type Command = "bold" | "italic" | "underline" | "insertUnorderedList" | "insertOrderedList";
 type Alignment = "left" | "center" | "right" | "justify";
+type FontSize = "small" | "normal" | "large" | "xlarge";
 
 type RichTextEditorProps = {
   compact?: boolean;
@@ -21,6 +22,18 @@ const alignmentClasses = [
   "editor-align-right",
   "editor-align-justify",
 ];
+const fontSizeClasses = [
+  "editor-font-small",
+  "editor-font-normal",
+  "editor-font-large",
+  "editor-font-xlarge",
+];
+const fontSizeCommands: Record<FontSize, string> = {
+  small: "2",
+  normal: "3",
+  large: "4",
+  xlarge: "5",
+};
 
 function sanitizePastedHtml(value: string) {
   const documentNode = new DOMParser().parseFromString(value, "text/html");
@@ -51,6 +64,7 @@ export function RichTextEditor({
   const editorRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const htmlRef = useRef(initialValue);
+  const selectionRef = useRef<Range | null>(null);
   const [sourceMode, setSourceMode] = useState(false);
 
   useEffect(() => {
@@ -65,14 +79,35 @@ export function RichTextEditor({
     inputRef.current.value = htmlRef.current;
   }
 
-  function run(command: Command) {
+  function rememberSelection() {
+    const selection = window.getSelection();
+    if (
+      !selection ||
+      selection.rangeCount === 0 ||
+      !editorRef.current?.contains(selection.anchorNode)
+    ) {
+      return;
+    }
+    selectionRef.current = selection.getRangeAt(0).cloneRange();
+  }
+
+  function restoreSelection() {
     editorRef.current?.focus();
+    const range = selectionRef.current;
+    const selection = window.getSelection();
+    if (!range || !selection) return;
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  function run(command: Command) {
+    restoreSelection();
     document.execCommand(command);
     syncFromVisual();
   }
 
   function block(tag: "p" | "h2" | "h3" | "blockquote") {
-    editorRef.current?.focus();
+    restoreSelection();
     document.execCommand("formatBlock", false, tag);
     syncFromVisual();
   }
@@ -90,10 +125,34 @@ export function RichTextEditor({
   }
 
   function align(value: Alignment) {
-    editorRef.current?.focus();
+    restoreSelection();
     const command = value === "justify" ? "justifyFull" : `justify${value[0].toUpperCase()}${value.slice(1)}`;
     document.execCommand(command);
     normalizeAlignmentMarkup();
+    syncFromVisual();
+  }
+
+  function normalizeFontSizeMarkup() {
+    editorRef.current?.querySelectorAll<HTMLElement>("font[size]").forEach((font) => {
+      const size = Number(font.getAttribute("size") || "3");
+      const className = size <= 2
+        ? "editor-font-small"
+        : size === 3
+          ? "editor-font-normal"
+          : size === 4
+            ? "editor-font-large"
+            : "editor-font-xlarge";
+      const span = document.createElement("span");
+      span.classList.add(className);
+      while (font.firstChild) span.append(font.firstChild);
+      font.replaceWith(span);
+    });
+  }
+
+  function setFontSize(value: FontSize) {
+    restoreSelection();
+    document.execCommand("fontSize", false, fontSizeCommands[value]);
+    normalizeFontSizeMarkup();
     syncFromVisual();
   }
 
@@ -136,6 +195,29 @@ export function RichTextEditor({
         <button type="button" onClick={() => block("p")} title="Đoạn văn">P</button>
         {!compact ? <button type="button" onClick={() => block("h2")} title="Tiêu đề lớn">H2</button> : null}
         {!compact ? <button type="button" onClick={() => block("h3")} title="Tiêu đề nhỏ">H3</button> : null}
+        {!compact ? (
+          <label className={styles.editorFontControl}>
+            <span className={styles.srOnly}>Cỡ chữ</span>
+            <select
+              aria-label="Cỡ chữ"
+              defaultValue=""
+              onMouseDown={rememberSelection}
+              onChange={(event) => {
+                const value = event.currentTarget.value as FontSize;
+                if (fontSizeClasses.includes(`editor-font-${value}`)) {
+                  setFontSize(value);
+                }
+                event.currentTarget.value = "";
+              }}
+            >
+              <option value="" disabled>Cỡ chữ</option>
+              <option value="small">Nhỏ</option>
+              <option value="normal">Chuẩn</option>
+              <option value="large">Lớn</option>
+              <option value="xlarge">Rất lớn</option>
+            </select>
+          </label>
+        ) : null}
         <span />
         <button type="button" onClick={() => run("bold")} title="In đậm"><strong>B</strong></button>
         <button type="button" onClick={() => run("italic")} title="In nghiêng"><em>I</em></button>
@@ -172,6 +254,8 @@ export function RichTextEditor({
         contentEditable
         suppressContentEditableWarning
         onInput={syncFromVisual}
+        onKeyUp={rememberSelection}
+        onMouseUp={rememberSelection}
         onPaste={pasteSafeHtml}
         data-placeholder={placeholder}
       />

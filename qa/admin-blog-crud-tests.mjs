@@ -21,6 +21,9 @@ const pendingOverlay = await read(
 const coverField = await read("next-app/app/admin/blog/cover-image-field.tsx");
 const actions = await read("next-app/app/admin/blog/actions.ts");
 const editor = await read("next-app/app/admin/blog/rich-text-editor.tsx");
+const adminStyles = await read("next-app/app/admin/admin.module.css");
+const publicStyles = await read("next-app/public/style.css");
+const blogRuntime = await read("next-app/public/blog.js");
 const mediaUpload = await read("next-app/lib/admin/media-upload.ts");
 const adminPage = await read("next-app/app/admin/blog/page.tsx");
 const publicPosts = await read("next-app/lib/supabase/public-blog-posts.ts");
@@ -69,6 +72,21 @@ test("editor and HTML modes share a canonical value without render overwrite", (
   assert.match(editor, /htmlRef\.current = editorRef\.current\.innerHTML/);
   assert.match(editor, /editorRef\.current\.innerHTML = htmlRef\.current/);
   assert.doesNotMatch(editor, /dangerouslySetInnerHTML/);
+});
+
+test("editor supports safe semantic font sizes and readable article defaults", () => {
+  assert.match(editor, /aria-label="Cỡ chữ"/);
+  assert.match(editor, /Nhỏ/);
+  assert.match(editor, /Chuẩn/);
+  assert.match(editor, /Lớn/);
+  assert.match(editor, /Rất lớn/);
+  assert.match(editor, /normalizeFontSizeMarkup/);
+  assert.match(editor, /editor-font-xlarge/);
+  assert.doesNotMatch(editor, /style\.fontSize\s*=/);
+  assert.match(adminStyles, /editor-font-large/);
+  assert.match(publicStyles, /\.article-content \.editor-font-large/);
+  assert.match(publicStyles, /\.article-content[\s\S]*font-size: 1\.2rem/);
+  assert.match(blogRuntime, /font-size:1\.2rem/);
 });
 
 test("new posts receive a unique generated slug and actionable failures", () => {
