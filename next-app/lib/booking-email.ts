@@ -1,9 +1,15 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { syncBookingCalendarEvent } from "@/lib/booking-calendar";
 import {
+  buildCustomerBookingCancelledEmail,
   buildCustomerBookingEmail,
+  buildCustomerBookingRescheduledEmail,
+  buildOwnerBookingCancelledEmail,
   buildOwnerBookingEmail,
+  buildOwnerBookingRescheduledEmail,
   type BookingEmail,
   type BookingEmailDetails,
 } from "@/lib/booking-email-templates";
@@ -226,6 +232,8 @@ export async function sendBookingEmailsForBookingId(
     };
   }
 
+  await syncBookingCalendarEvent(supabase, data.id);
+
   const configuration = getEmailConfiguration();
   if (!configuration.configured) {
     const message =
@@ -308,4 +316,73 @@ export async function finalizeAndEmailSepayBooking(
     supabase,
     transaction.booking_id,
   );
+}
+
+export async function sendBookingChangeEmailsForBookingId(
+  supabase: SupabaseClient<Database>,
+  bookingId: string,
+  change: "rescheduled" | "cancelled",
+): Promise<BookingEmailDelivery> {
+  const { data, error } = await supabase
+    .from("bookings")
+    .select(
+      "id,public_id,customer_name,email,phone,date_of_birth,concern,consultation_type,package_code,package_name,payment_order_id,amount,currency,slot_start,slot_end,status",
+    )
+    .eq("id", bookingId)
+    .maybeSingle();
+  if (error || !data) throw new Error("Unable to load changed booking for email.");
+  if (
+    (change === "rescheduled" && data.status !== "confirmed") ||
+    (change === "cancelled" && data.status !== "cancelled")
+  ) {
+    return {
+      configured: true,
+      customer: "not_applicable",
+      owner: "not_applicable",
+    };
+  }
+  const configuration = getEmailConfiguration();
+  if (!configuration.configured) {
+    return {
+      configured: false,
+      customer: "not_configured",
+      owner: "not_configured",
+    };
+  }
+  const booking = data as BookingEmailDetails & { id: string };
+  const version = createHash("sha256")
+    .update(`${change}|${booking.slot_start}|${booking.slot_end}`, "utf8")
+    .digest("hex")
+    .slice(0, 16);
+  const customerAction = `booking.email.${change}.customer.${version}`;
+  const ownerAction = `booking.email.${change}.owner.${version}`;
+  const customerEmail =
+    change === "rescheduled"
+      ? buildCustomerBookingRescheduledEmail(booking)
+      : buildCustomerBookingCancelledEmail(booking);
+  const ownerEmail =
+    change === "rescheduled"
+      ? buildOwnerBookingRescheduledEmail(booking)
+      : buildOwnerBookingCancelledEmail(booking);
+  const [customer, owner] = await Promise.all([
+    deliverOne({
+      supabase,
+      booking,
+      action: customerAction,
+      recipient: booking.email,
+      email: customerEmail,
+      idempotencyKey: `${change}/customer/${booking.id}/${version}`,
+      configuration,
+    }),
+    deliverOne({
+      supabase,
+      booking,
+      action: ownerAction,
+      recipient: configuration.owner,
+      email: ownerEmail,
+      idempotencyKey: `${change}/owner/${booking.id}/${version}`,
+      configuration,
+    }),
+  ]);
+  return { configured: true, customer, owner };
 }

@@ -753,6 +753,22 @@ export type Database = {
         }
         Returns: Database["public"]["Tables"]["bookings"]["Row"]
       }
+      admin_reschedule_confirmed_booking: {
+        Args: {
+          p_id: string
+          p_expected_slot_start: string
+          p_slot_start: string
+          p_slot_end: string
+        }
+        Returns: Database["public"]["Tables"]["bookings"]["Row"]
+      }
+      admin_cancel_confirmed_booking: {
+        Args: {
+          p_id: string
+          p_expected_slot_start: string
+        }
+        Returns: Database["public"]["Tables"]["bookings"]["Row"]
+      }
       finalize_paid_sepay_booking: {
         Args: {
           p_id: string

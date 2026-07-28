@@ -216,4 +216,114 @@ export function buildOwnerBookingEmail(
   };
 }
 
+export function buildCustomerBookingRescheduledEmail(
+  booking: BookingEmailDetails,
+): BookingEmail {
+  const slot = formatSlot(booking.slot_start, booking.slot_end);
+  const content = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;">
+      ${detailRow("Lịch hẹn mới", slot, true)}
+      ${detailRow("Gói tư vấn", booking.package_name)}
+      ${detailRow("Hình thức", consultationLabel(booking.consultation_type))}
+      ${detailRow("Mã đặt lịch", booking.public_id)}
+    </table>`;
+  return {
+    subject: "[Cập nhật] Lịch tư vấn Nhân Số Học đã được thay đổi",
+    html: emailShell({
+      eyebrow: "Cập Nhật Lịch Hẹn",
+      title: "Lịch Tư Vấn Đã Được Đổi",
+      intro: `Chào <strong style="color:#f0c96a;">${escapeHtml(booking.customer_name)}</strong>, lịch tư vấn của bạn đã được cập nhật theo yêu cầu.`,
+      content,
+      footer: "Hẹn gặp bạn theo lịch mới 🌙",
+    }),
+    text: [
+      `Chào ${booking.customer_name},`,
+      "Lịch tư vấn của bạn đã được cập nhật.",
+      `Lịch mới: ${slot}`,
+      `Gói: ${booking.package_name}`,
+      `Mã đặt lịch: ${booking.public_id}`,
+    ].join("\n"),
+  };
+}
+
+export function buildOwnerBookingRescheduledEmail(
+  booking: BookingEmailDetails,
+): BookingEmail {
+  const slot = formatSlot(booking.slot_start, booking.slot_end);
+  return {
+    subject: `[Đổi lịch] ${booking.customer_name} – ${booking.package_name}`,
+    html: emailShell({
+      eyebrow: "Quản Lý Lịch Hẹn",
+      title: "Lịch Tư Vấn Đã Được Đổi",
+      intro: `Lịch của <strong style="color:#f0c96a;">${escapeHtml(booking.customer_name)}</strong> đã được cập nhật.`,
+      content: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;">
+        ${detailRow("Lịch mới", slot, true)}
+        ${detailRow("Điện thoại / Zalo", booking.phone)}
+        ${detailRow("Mã đặt lịch", booking.public_id)}
+      </table>`,
+      footer: "Thông báo tự động từ hệ thống đặt lịch",
+    }),
+    text: [
+      "Một lịch tư vấn đã được đổi.",
+      `Khách: ${booking.customer_name}`,
+      `Lịch mới: ${slot}`,
+      `SĐT/Zalo: ${booking.phone}`,
+      `Mã đặt lịch: ${booking.public_id}`,
+    ].join("\n"),
+  };
+}
+
+export function buildCustomerBookingCancelledEmail(
+  booking: BookingEmailDetails,
+): BookingEmail {
+  const slot = formatSlot(booking.slot_start, booking.slot_end);
+  return {
+    subject: "[Đã hủy] Lịch tư vấn Nhân Số Học",
+    html: emailShell({
+      eyebrow: "Thông Báo Hủy Lịch",
+      title: "Lịch Tư Vấn Đã Được Hủy",
+      intro: `Chào <strong style="color:#f0c96a;">${escapeHtml(booking.customer_name)}</strong>, lịch tư vấn dưới đây đã được hủy theo yêu cầu.`,
+      content: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;">
+        ${detailRow("Lịch đã hủy", slot)}
+        ${detailRow("Gói tư vấn", booking.package_name)}
+        ${detailRow("Mã đặt lịch", booking.public_id)}
+      </table>`,
+      footer: "Cảm ơn bạn đã thông báo sớm",
+    }),
+    text: [
+      `Chào ${booking.customer_name},`,
+      "Lịch tư vấn của bạn đã được hủy theo yêu cầu.",
+      `Lịch đã hủy: ${slot}`,
+      `Mã đặt lịch: ${booking.public_id}`,
+    ].join("\n"),
+  };
+}
+
+export function buildOwnerBookingCancelledEmail(
+  booking: BookingEmailDetails,
+): BookingEmail {
+  const slot = formatSlot(booking.slot_start, booking.slot_end);
+  return {
+    subject: `[Hủy lịch] ${booking.customer_name} – ${booking.package_name}`,
+    html: emailShell({
+      eyebrow: "Quản Lý Lịch Hẹn",
+      title: "Một Lịch Tư Vấn Đã Được Hủy",
+      intro: `Lịch của <strong style="color:#f0c96a;">${escapeHtml(booking.customer_name)}</strong> đã được hủy và khung giờ được giải phóng.`,
+      content: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;">
+        ${detailRow("Lịch đã hủy", slot)}
+        ${detailRow("Điện thoại / Zalo", booking.phone)}
+        ${detailRow("Mã đặt lịch", booking.public_id)}
+      </table>`,
+      footer: "Thông báo tự động từ hệ thống đặt lịch",
+    }),
+    text: [
+      "Một lịch tư vấn đã được hủy.",
+      `Khách: ${booking.customer_name}`,
+      `Lịch đã hủy: ${slot}`,
+      `SĐT/Zalo: ${booking.phone}`,
+      `Mã đặt lịch: ${booking.public_id}`,
+    ].join("\n"),
+  };
+}
+
 export type { BookingEmailDetails };

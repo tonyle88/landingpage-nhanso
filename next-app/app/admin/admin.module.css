@@ -488,6 +488,8 @@
 .bookingMeta p { margin: 0; }
 .actionRow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--line); }
 .actionRow button { border: 0; cursor: pointer; font: inherit; }
+.actionRow button:disabled { cursor: not-allowed; opacity: .42; }
+.actionRow > .description { width: 100%; margin: 2px 0 0; font-size: .76rem; }
 
 .dangerForm { display: flex; align-items: end; gap: 12px; margin-top: 22px; padding-top: 18px; border-top: 1px solid rgb(255 138 128 / 24%); }
 .dangerForm .field { flex: 1; }
@@ -544,6 +546,8 @@
 .confirmDialog p { margin: 0; color: var(--muted); line-height: 1.6; }
 .confirmActions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
 .confirmActions button { min-height: 44px; border-radius: 8px; cursor: pointer; }
+.calendarChangeForm { margin-top: 18px; }
+.calendarChangeFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 
 .sectionManager {
   width: min(1280px, 100%);

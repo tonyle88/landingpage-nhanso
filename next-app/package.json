@@ -62,6 +62,7 @@
     "test:booking-frontend": "node --test ../qa/booking-frontend-cutover-tests.mjs",
     "test:booking-email": "node --test ../qa/booking-email-tests.mjs",
     "test:admin-bookings": "node --test ../qa/admin-booking-workflow-tests.mjs",
+    "test:booking-calendar": "node --test ../qa/booking-calendar-integration-tests.mjs",
     "test:rls": "node ../qa/run-supabase-rls-isolated.mjs",
     "test:schema": "node --test ../qa/supabase-schema-tests.mjs",
     "test:security": "node --test ../qa/csp-report-tests.mjs ../qa/sepay-webhook-security-tests.mjs ../qa/sprint2-smoke-tests.mjs",

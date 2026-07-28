@@ -3,12 +3,17 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
+import { isBookingCalendarConfigured } from "@/lib/booking-calendar";
 import { isBookingEmailConfigured } from "@/lib/booking-email";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
 import {
+  cancelConfirmedBookingAction,
+  recoverBookingCalendarAction,
   recoverBookingEmailsAction,
+  rescheduleConfirmedBookingAction,
   transitionBookingAction,
 } from "./actions";
+import { BookingCalendarActions } from "./booking-calendar-actions";
 import {
   BookingEmailRecoveryButton,
   BookingTransitionButton,
@@ -38,6 +43,19 @@ const notices: Record<string, string> = {
   invalid: "Yêu cầu cập nhật trạng thái chưa hợp lệ.",
   stale: "Lịch hẹn đã thay đổi. Trang đã được tải lại để tránh ghi đè.",
   error: "Không thể cập nhật lịch hẹn. Không có thay đổi nào được xác nhận.",
+  rescheduled:
+    "Đã đổi lịch, cập nhật Google Calendar và gửi email cho hai bên.",
+  cancelled:
+    "Đã hủy lịch, giải phóng khung giờ và gửi email cho hai bên.",
+  calendar_synced: "Đã đồng bộ lại sự kiện Google Calendar.",
+  calendar_warning:
+    "Trạng thái đã được lưu nhưng Google Calendar chưa đồng bộ. Kiểm tra cấu hình Apps Script rồi bấm đồng bộ lại.",
+  change_email_warning:
+    "Calendar đã được cập nhật nhưng chưa gửi đủ email đổi/hủy lịch.",
+  calendar_invalid: "Thông tin đổi hoặc hủy lịch không hợp lệ.",
+  slot_unavailable: "Khung giờ mới đã có lịch. Vui lòng chọn giờ khác.",
+  inside_72_hours:
+    "Không thể đổi hoặc hủy tự động vì lịch còn dưới 72 giờ.",
 };
 const PAGE_SIZE = 6;
 const EMAIL_ACTIONS = {
@@ -48,7 +66,6 @@ const nextStatuses: Partial<Record<BookingStatus, BookingStatus[]>> = {
   pending: ["held", "cancelled", "expired"],
   held: ["paid", "cancelled", "expired"],
   paid: ["confirmed"],
-  confirmed: ["cancelled"],
 };
 
 function parsePage(value: string | undefined) {
@@ -81,7 +98,7 @@ export default async function AdminBookingsPage({
   let request = supabase
     .from("bookings")
     .select(
-      "id,public_id,customer_name,phone,email,consultation_type,package_name,amount,currency,slot_start,slot_end,concern,payment_provider,payment_order_id,status,hold_expires_at,manual_payment_claimed_at,confirmed_at,created_at",
+      "id,public_id,calendar_event_id,customer_name,phone,email,consultation_type,package_name,amount,currency,slot_start,slot_end,concern,payment_provider,payment_order_id,status,hold_expires_at,manual_payment_claimed_at,confirmed_at,created_at",
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
@@ -114,6 +131,7 @@ export default async function AdminBookingsPage({
 
   const canManage = can(principal.role, "manage_operations");
   const emailConfigured = isBookingEmailConfigured();
+  const calendarConfigured = isBookingCalendarConfigured();
   const cleanHref = bookingsHref(selectedFilter, selectedPage);
 
   return (
@@ -132,7 +150,17 @@ export default async function AdminBookingsPage({
 
       <AdminToast
         message={status ? notices[status] : undefined}
-        tone={["invalid", "stale", "error", "email_warning"].includes(status || "") ? "error" : "success"}
+        tone={[
+          "invalid",
+          "stale",
+          "error",
+          "email_warning",
+          "calendar_warning",
+          "change_email_warning",
+          "calendar_invalid",
+          "slot_unavailable",
+          "inside_72_hours",
+        ].includes(status || "") ? "error" : "success"}
         cleanHref={cleanHref}
       />
       {error ? <AdminToast message="Không thể tải lịch hẹn." tone="error" cleanHref="/admin/bookings" /> : null}
@@ -143,6 +171,16 @@ export default async function AdminBookingsPage({
             Lịch vẫn có thể được xác nhận, nhưng hệ thống chưa thể gửi thư cho
             khách và chủ trang. Hãy cấu hình dịch vụ email trên môi trường
             production rồi dùng nút gửi lại email còn thiếu.
+          </span>
+        </section>
+      ) : null}
+      {!calendarConfigured ? (
+        <section className={styles.alertPanel} role="alert">
+          <strong>Google Calendar chưa được cấu hình</strong>
+          <span>
+            Hãy triển khai file Apps Script Calendar và thêm
+            GOOGLE_APPS_SCRIPT_URL cùng GOOGLE_APPS_SCRIPT_SECRET trên Vercel.
+            Lịch hẹn trong Supabase vẫn được giữ nguyên.
           </span>
         </section>
       ) : null}
@@ -188,6 +226,9 @@ export default async function AdminBookingsPage({
             const delivery = emailDelivery.get(booking.id);
             const customerEmailSent = delivery?.has(EMAIL_ACTIONS.customer);
             const ownerEmailSent = delivery?.has(EMAIL_ACTIONS.owner);
+            const canChangeCalendar =
+              new Date(booking.slot_start).getTime() >=
+              Date.now() + 72 * 60 * 60 * 1000;
             return (
               <article className={styles.recordCard} key={booking.id}>
                 <div className={styles.recordSummary}>
@@ -227,13 +268,28 @@ export default async function AdminBookingsPage({
                   </p>
                 </div>
                 {currentStatus === "confirmed" ? (
-                  <div className={styles.emailDeliveryRow} aria-label="Trạng thái email xác nhận">
-                    <span className={customerEmailSent ? styles.deliverySent : styles.deliveryMissing}>
-                      {customerEmailSent ? "✓" : "!"} Email khách
-                    </span>
-                    <span className={ownerEmailSent ? styles.deliverySent : styles.deliveryMissing}>
-                      {ownerEmailSent ? "✓" : "!"} Email chủ
-                    </span>
+                  <div>
+                    <div className={styles.emailDeliveryRow} aria-label="Trạng thái email xác nhận">
+                      <span className={customerEmailSent ? styles.deliverySent : styles.deliveryMissing}>
+                        {customerEmailSent ? "✓" : "!"} Email khách
+                      </span>
+                      <span className={ownerEmailSent ? styles.deliverySent : styles.deliveryMissing}>
+                        {ownerEmailSent ? "✓" : "!"} Email chủ
+                      </span>
+                      <span className={booking.calendar_event_id ? styles.deliverySent : styles.deliveryMissing}>
+                        {booking.calendar_event_id ? "✓" : "!"} Google Calendar
+                      </span>
+                    </div>
+                    {canManage ? (
+                      <BookingCalendarActions
+                        id={booking.id}
+                        slotStart={booking.slot_start}
+                        canChange={canChangeCalendar}
+                        rescheduleAction={rescheduleConfirmedBookingAction}
+                        cancelAction={cancelConfirmedBookingAction}
+                        recoverAction={recoverBookingCalendarAction}
+                      />
+                    ) : null}
                   </div>
                 ) : null}
                 <details className={styles.bookingDetails}>
