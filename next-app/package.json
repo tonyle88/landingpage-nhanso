@@ -48,6 +48,7 @@
     "staging:provision-owner-password": "node --env-file=.env.staging.local ../qa/local-owner-provision.mjs",
     "staging:configure-auth": "node --env-file=.env.staging.local ../qa/configure-m4-auth-staging.mjs",
     "test:parity": "node --test ../qa/nextjs-m1-parity-tests.mjs",
+    "test:music": "node --test ../qa/background-music-tests.mjs",
     "test:public-read": "node --test ../qa/nextjs-m3-public-read-tests.mjs",
     "test:public-import": "node --test ../qa/public-content-import-tests.mjs",
     "test:auth": "node --test ../qa/nextjs-m4-auth-tests.mjs",
