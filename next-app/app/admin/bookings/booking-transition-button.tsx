@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 import type { Database } from "@/lib/supabase/database.types";
+import { AdminModalPortal } from "../admin-modal-portal";
 import styles from "../admin.module.css";
 
 type BookingStatus = Database["public"]["Enums"]["booking_status"];
@@ -93,52 +94,54 @@ export function BookingTransitionButton({
       </form>
 
       {confirming ? (
-        <div
-          className={styles.confirmBackdrop}
-          role="presentation"
-          onMouseDown={() => setConfirming(false)}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") setConfirming(false);
-          }}
-        >
-          <section
-            className={styles.confirmDialog}
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            aria-describedby={messageId}
-            onMouseDown={(event) => event.stopPropagation()}
+        <AdminModalPortal>
+          <div
+            className={styles.confirmBackdrop}
+            role="presentation"
+            onMouseDown={() => setConfirming(false)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setConfirming(false);
+            }}
           >
-            <span className={styles.confirmIcon} aria-hidden="true">
-              {copy.dangerous ? "!" : "✓"}
-            </span>
-            <div>
-              <p className={styles.eyebrow}>Xác nhận lịch hẹn</p>
-              <h3 id={titleId}>{copy.title}</h3>
-              <p id={messageId}>{copy.message}</p>
-            </div>
-            <div className={styles.confirmActions}>
-              <button
-                className={styles.secondaryLink}
-                type="button"
-                disabled={submitting}
-                onClick={() => setConfirming(false)}
-              >
-                Quay lại
-              </button>
-              <button
-                className={
-                  copy.dangerous ? styles.dangerButton : styles.submit
-                }
-                type="button"
-                disabled={submitting}
-                onClick={() => formRef.current?.requestSubmit()}
-              >
-                {submitting ? "Đang xử lý..." : copy.confirmLabel}
-              </button>
-            </div>
-          </section>
-        </div>
+            <section
+              className={styles.confirmDialog}
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              aria-describedby={messageId}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <span className={styles.confirmIcon} aria-hidden="true">
+                {copy.dangerous ? "!" : "✓"}
+              </span>
+              <div>
+                <p className={styles.eyebrow}>Xác nhận lịch hẹn</p>
+                <h3 id={titleId}>{copy.title}</h3>
+                <p id={messageId}>{copy.message}</p>
+              </div>
+              <div className={styles.confirmActions}>
+                <button
+                  className={styles.secondaryLink}
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => setConfirming(false)}
+                >
+                  Quay lại
+                </button>
+                <button
+                  className={
+                    copy.dangerous ? styles.dangerButton : styles.submit
+                  }
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => formRef.current?.requestSubmit()}
+                >
+                  {submitting ? "Đang xử lý..." : copy.confirmLabel}
+                </button>
+              </div>
+            </section>
+          </div>
+        </AdminModalPortal>
       ) : null}
     </>
   );
@@ -174,51 +177,53 @@ export function BookingEmailRecoveryButton({
         </button>
       </form>
       {confirming ? (
-        <div
-          className={styles.confirmBackdrop}
-          role="presentation"
-          onMouseDown={() => setConfirming(false)}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") setConfirming(false);
-          }}
-        >
-          <section
-            className={styles.confirmDialog}
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            aria-describedby={messageId}
-            onMouseDown={(event) => event.stopPropagation()}
+        <AdminModalPortal>
+          <div
+            className={styles.confirmBackdrop}
+            role="presentation"
+            onMouseDown={() => setConfirming(false)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setConfirming(false);
+            }}
           >
-            <span className={styles.confirmIcon} aria-hidden="true">✉</span>
-            <div>
-              <p className={styles.eyebrow}>Email xác nhận</p>
-              <h3 id={titleId}>Kiểm tra và gửi email còn thiếu?</h3>
-              <p id={messageId}>
-                Hệ thống kiểm tra lịch sử gửi thư, chỉ gửi phần còn thiếu cho
-                khách hoặc chủ hệ thống và không gửi trùng thư đã thành công.
-              </p>
-            </div>
-            <div className={styles.confirmActions}>
-              <button
-                className={styles.secondaryLink}
-                type="button"
-                disabled={submitting}
-                onClick={() => setConfirming(false)}
-              >
-                Quay lại
-              </button>
-              <button
-                className={styles.submit}
-                type="button"
-                disabled={submitting}
-                onClick={() => formRef.current?.requestSubmit()}
-              >
-                {submitting ? "Đang gửi..." : "Kiểm tra & gửi"}
-              </button>
-            </div>
-          </section>
-        </div>
+            <section
+              className={styles.confirmDialog}
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              aria-describedby={messageId}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <span className={styles.confirmIcon} aria-hidden="true">✉</span>
+              <div>
+                <p className={styles.eyebrow}>Email xác nhận</p>
+                <h3 id={titleId}>Kiểm tra và gửi email còn thiếu?</h3>
+                <p id={messageId}>
+                  Hệ thống kiểm tra lịch sử gửi thư, chỉ gửi phần còn thiếu cho
+                  khách hoặc chủ hệ thống và không gửi trùng thư đã thành công.
+                </p>
+              </div>
+              <div className={styles.confirmActions}>
+                <button
+                  className={styles.secondaryLink}
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => setConfirming(false)}
+                >
+                  Quay lại
+                </button>
+                <button
+                  className={styles.submit}
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => formRef.current?.requestSubmit()}
+                >
+                  {submitting ? "Đang gửi..." : "Kiểm tra & gửi"}
+                </button>
+              </div>
+            </section>
+          </div>
+        </AdminModalPortal>
       ) : null}
     </>
   );
