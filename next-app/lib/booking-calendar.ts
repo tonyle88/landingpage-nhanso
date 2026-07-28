@@ -33,7 +33,7 @@ export type BookingCalendarResult = {
 
 function configuration() {
   const url = process.env.GOOGLE_APPS_SCRIPT_URL?.trim() || "";
-  const secret = process.env.GOOGLE_APPS_SCRIPT_SECRET?.trim() || "";
+  const secret = process.env.BOOKING_CALENDAR_SECRET?.trim() || "";
   return {
     url,
     secret,

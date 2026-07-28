@@ -50,7 +50,7 @@ trường Production:
 
 ```text
 GOOGLE_APPS_SCRIPT_URL=https://script.google.com/macros/s/.../exec
-GOOGLE_APPS_SCRIPT_SECRET=<cùng chuỗi bí mật ở Apps Script>
+BOOKING_CALENDAR_SECRET=<cùng chuỗi bí mật ở Apps Script>
 ```
 
 Sau khi lưu, redeploy phiên bản website mới.

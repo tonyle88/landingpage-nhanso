@@ -179,7 +179,7 @@ export default async function AdminBookingsPage({
           <strong>Google Calendar chưa được cấu hình</strong>
           <span>
             Hãy triển khai file Apps Script Calendar và thêm
-            GOOGLE_APPS_SCRIPT_URL cùng GOOGLE_APPS_SCRIPT_SECRET trên Vercel.
+            GOOGLE_APPS_SCRIPT_URL cùng BOOKING_CALENDAR_SECRET trên Vercel.
             Lịch hẹn trong Supabase vẫn được giữ nguyên.
           </span>
         </section>
