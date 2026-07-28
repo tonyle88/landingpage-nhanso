@@ -12,6 +12,9 @@ const password = process.env.SUPABASE_DB_PASSWORD;
 const orderId = process.env.PAYMENT_ORDER_ID?.trim();
 const finalizeProbeApproved =
   process.env.SEPAY_FINALIZE_PROBE_APPROVED?.trim() === orderId;
+const processProbeApproved =
+  process.env.SEPAY_PROCESS_PROBE_APPROVED?.trim() === orderId;
+const writeProbeApproved = finalizeProbeApproved || processProbeApproved;
 
 if (
   projectRef !== "nuexmwyyibhkfcisaavw" ||
@@ -56,7 +59,7 @@ try {
   await client.connect();
   await sample();
   await client.query(
-    finalizeProbeApproved
+    writeProbeApproved
       ? "begin transaction isolation level repeatable read"
       : "begin transaction isolation level repeatable read read only",
   );
@@ -151,8 +154,34 @@ try {
           [bookingId],
         )
       : { rows: [] };
+  const processProbe =
+    processProbeApproved && booking.rows[0]
+      ? await client.query(
+          `
+            select public.process_sepay_webhook(
+              $1::jsonb,
+              repeat('a', 64),
+              extract(epoch from now())::bigint,
+              $2
+            ) as result
+          `,
+          [
+            JSON.stringify({
+              id: "999999999999999999",
+              transferType: "in",
+              accountNumber: "962470907072634TONY",
+              subAccount: "962470907072634TONY",
+              transferAmount: String(booking.rows[0].amount),
+              code: orderId,
+              content: orderId,
+              transactionDate: "2026-07-28 07:00:00",
+            }),
+            "962470907072634TONY",
+          ],
+        )
+      : { rows: [] };
 
-  await client.query(finalizeProbeApproved ? "rollback" : "commit");
+  await client.query(writeProbeApproved ? "rollback" : "commit");
   await sample();
   console.log(
     JSON.stringify(
@@ -164,6 +193,7 @@ try {
         audits: audits.rows,
         functionState: functionState.rows[0],
         finalizeProbeRolledBack: finalizeProbe.rows[0] || null,
+        processProbeRolledBack: processProbe.rows[0] || null,
         networkEvidence: [...evidence].sort(),
         networkEvidenceCaptured: evidence.size > 0,
       },
