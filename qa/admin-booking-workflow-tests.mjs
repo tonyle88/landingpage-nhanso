@@ -30,6 +30,14 @@ const xlsxWorkbook = await readFile(
   new URL("next-app/lib/admin/xlsx-workbook.ts", root),
   "utf8",
 );
+const adminLayout = await readFile(
+  new URL("next-app/app/admin/layout.tsx", root),
+  "utf8",
+);
+const pendingOverlay = await readFile(
+  new URL("next-app/app/admin/admin-pending-overlay.tsx", root),
+  "utf8",
+);
 
 test("booking transition is owner/admin only and rejects stale writes", () => {
   assert.match(migration, /v_role not in \('owner', 'admin'\)/);
@@ -88,4 +96,14 @@ test("booking reports require operations access and preserve status filters", ()
   assert.match(reportPage, /can\(principal\.role, "read_operations"\)/);
   assert.match(page, /Xuất Excel/);
   assert.match(page, /Xuất PDF/);
+});
+
+test("admin forms show one shared pending state and prevent repeat submits", () => {
+  assert.match(adminLayout, /AdminPendingOverlay/);
+  assert.match(pendingOverlay, /document\.addEventListener\("submit"/);
+  assert.match(pendingOverlay, /event\.defaultPrevented/);
+  assert.match(pendingOverlay, /control\.disabled = true/);
+  assert.match(pendingOverlay, /Đang xử lý/);
+  assert.match(pendingOverlay, /Không đóng trang hoặc bấm lại/);
+  assert.match(pendingOverlay, /SAFETY_TIMEOUT_MS = 45_000/);
 });
