@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import styles from "./admin.module.css";
 
 export function AdminModalPortal({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -13,5 +14,8 @@ export function AdminModalPortal({ children }: { children: ReactNode }) {
 
   if (!mounted) return null;
 
-  return createPortal(children, document.body);
+  return createPortal(
+    <div className={styles.adminPortalTheme}>{children}</div>,
+    document.body,
+  );
 }
