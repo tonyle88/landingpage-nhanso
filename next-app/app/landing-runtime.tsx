@@ -6,6 +6,7 @@ import { useBookingCalendar } from "./use-booking-calendar";
 import { useBookingFormState } from "./use-booking-form-state";
 import { useLandingContent } from "./use-landing-content";
 import { useLandingEffects } from "./use-landing-effects";
+import { useBackgroundMusic } from "./use-background-music";
 import { useMiniReportContent } from "./use-mini-report-content";
 import { usePackages } from "./use-packages";
 import { usePaymentRuntime } from "./use-payment-runtime";
@@ -44,6 +45,7 @@ export default function LandingRuntime({
     preferSupabaseLandingSections,
   );
   useLandingEffects();
+  useBackgroundMusic();
 
   useEffect(() => {
     const navbar = document.querySelector<HTMLElement>("#navbar");
@@ -95,92 +97,6 @@ export default function LandingRuntime({
       window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    const backgroundMusic =
-      document.querySelector<HTMLAudioElement>("#bg-music");
-    const musicToggleButton =
-      document.querySelector<HTMLButtonElement>("#musicToggleBtn");
-    const interactionEvents = [
-      "pointerdown",
-      "touchstart",
-      "keydown",
-      "scroll",
-    ] as const;
-    let shouldPlayMusic = true;
-    let isWaitingForInteraction = false;
-
-    const setMusicButtonState = (isPlaying: boolean) => {
-      const icon = musicToggleButton?.querySelector<HTMLElement>("i");
-      if (icon) {
-        icon.className = isPlaying
-          ? "fa-solid fa-volume-high"
-          : "fa-solid fa-volume-xmark";
-      }
-      musicToggleButton?.classList.toggle("playing", isPlaying);
-      musicToggleButton?.setAttribute(
-        "aria-label",
-        isPlaying ? "Tắt nhạc" : "Bật nhạc",
-      );
-      musicToggleButton?.setAttribute(
-        "aria-pressed",
-        isPlaying ? "true" : "false",
-      );
-    };
-    const removeAutoplayListeners = () => {
-      interactionEvents.forEach((eventName) => {
-        document.removeEventListener(eventName, handleFirstInteraction);
-      });
-      isWaitingForInteraction = false;
-    };
-    const addAutoplayListeners = () => {
-      if (isWaitingForInteraction) return;
-      isWaitingForInteraction = true;
-      interactionEvents.forEach((eventName) => {
-        document.addEventListener(eventName, handleFirstInteraction, {
-          passive: true,
-        });
-      });
-    };
-    const tryPlayMusic = async () => {
-      if (!backgroundMusic || !shouldPlayMusic) return;
-      try {
-        await backgroundMusic.play();
-        setMusicButtonState(true);
-        removeAutoplayListeners();
-      } catch {
-        setMusicButtonState(false);
-        addAutoplayListeners();
-      }
-    };
-    function handleFirstInteraction(event: Event) {
-      if (
-        event.target instanceof Node &&
-        musicToggleButton?.contains(event.target)
-      ) {
-        return;
-      }
-      removeAutoplayListeners();
-      void tryPlayMusic();
-    }
-    const handleMusicPlay = () => {
-      setMusicButtonState(true);
-      removeAutoplayListeners();
-    };
-    const handleMusicPause = () => {
-      setMusicButtonState(false);
-    };
-    const toggleMusic = () => {
-      if (!backgroundMusic) return;
-      if (backgroundMusic.paused) {
-        shouldPlayMusic = true;
-        void tryPlayMusic();
-      } else {
-        shouldPlayMusic = false;
-        backgroundMusic.pause();
-        removeAutoplayListeners();
-        setMusicButtonState(false);
-      }
-    };
-
     updateNavbar();
     updateScrollTopButton();
     window.addEventListener("scroll", updateNavbar, { passive: true });
@@ -193,15 +109,6 @@ export default function LandingRuntime({
     });
     methodsBookingButton?.addEventListener("click", scrollToBooking);
     scrollTopButton?.addEventListener("click", scrollToTop);
-
-    if (backgroundMusic && musicToggleButton) {
-      backgroundMusic.volume = 0.35;
-      setMusicButtonState(true);
-      backgroundMusic.addEventListener("play", handleMusicPlay);
-      backgroundMusic.addEventListener("pause", handleMusicPause);
-      musicToggleButton.addEventListener("click", toggleMusic);
-      void tryPlayMusic();
-    }
 
     return () => {
       window.removeEventListener("scroll", updateNavbar);
@@ -216,10 +123,6 @@ export default function LandingRuntime({
       });
       methodsBookingButton?.removeEventListener("click", scrollToBooking);
       scrollTopButton?.removeEventListener("click", scrollToTop);
-      backgroundMusic?.removeEventListener("play", handleMusicPlay);
-      backgroundMusic?.removeEventListener("pause", handleMusicPause);
-      musicToggleButton?.removeEventListener("click", toggleMusic);
-      removeAutoplayListeners();
     };
   }, []);
 

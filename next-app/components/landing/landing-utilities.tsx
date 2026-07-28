@@ -44,15 +44,15 @@ export default function LandingUtilities() {
         <span>Đặt lịch tư vấn</span>
       </a>
 
-      <audio id="bg-music" src="/nhac.mp3" loop autoPlay preload="none" />
+      <audio id="bg-music" src="/nhac.mp3" loop preload="none" />
       <button
         id="musicToggleBtn"
-        className="music-toggle-btn playing"
-        aria-label="Tắt nhạc"
-        aria-pressed="true"
+        className="music-toggle-btn"
+        aria-label="Bật nhạc"
+        aria-pressed="false"
         type="button"
       >
-        <i className="fa-solid fa-volume-high" aria-hidden="true" />
+        <i className="fa-solid fa-volume-xmark" aria-hidden="true" />
       </button>
     </>
   );
