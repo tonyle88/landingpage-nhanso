@@ -118,6 +118,9 @@ test("blog saves show a blocking pending state and prevent repeated submits", ()
   assert.match(pendingOverlay, /pendingRef\.current/);
   assert.match(pendingOverlay, /control\.disabled = true/);
   assert.match(pendingOverlay, /setPending\(true\)/);
+  assert.match(pendingOverlay, /usePathname/);
+  assert.match(pendingOverlay, /useSearchParams/);
+  assert.match(pendingOverlay, /\[pathname, search, reset\]/);
   assert.doesNotMatch(
     pendingOverlay,
     /event\.defaultPrevented \|\| pendingRef\.current/,

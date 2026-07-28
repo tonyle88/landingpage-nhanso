@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { AdminModalPortal } from "./admin-modal-portal";
 import styles from "./admin-pending-overlay.module.css";
 
@@ -8,6 +9,9 @@ const FALLBACK_LABEL = "Đang xử lý yêu cầu…";
 const SAFETY_TIMEOUT_MS = 45_000;
 
 export function AdminPendingOverlay() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
   const [message, setMessage] = useState(FALLBACK_LABEL);
   const [pending, setPending] = useState(false);
   const pendingRef = useRef(false);
@@ -112,6 +116,13 @@ export function AdminPendingOverlay() {
       if (timerRef.current) window.clearTimeout(timerRef.current);
     };
   }, [reset]);
+
+  useEffect(() => {
+    // Server-action redirects use Next.js client navigation. The admin layout
+    // stays mounted, so neither unmount nor `pageshow` is guaranteed to run.
+    // Reset as soon as the destination path or its status query is committed.
+    reset();
+  }, [pathname, search, reset]);
 
   if (!pending) return null;
 
