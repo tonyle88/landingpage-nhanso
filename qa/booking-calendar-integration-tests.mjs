@@ -46,6 +46,7 @@ test("Calendar integration is server-only and does not expose its secret", () =>
   assert.match(delivery, /booking\.calendar\.delete/);
   assert.doesNotMatch(page, /process\.env\.BOOKING_CALENDAR_SECRET/);
   assert.doesNotMatch(controls, /BOOKING_CALENDAR_SECRET/);
+  assert.match(delivery, /const CALENDAR_TIMEOUT_MS = 20_000/);
 });
 
 test("reschedule and cancellation enforce a 72-hour boundary in database", () => {
