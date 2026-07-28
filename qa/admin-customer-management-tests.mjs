@@ -10,6 +10,13 @@ const migration = await readFile(
   ),
   "utf8",
 );
+const periodMigration = await readFile(
+  new URL(
+    "next-app/supabase/migrations/202607280007_filter_customer_directory_by_period.sql",
+    root,
+  ),
+  "utf8",
+);
 const page = await readFile(
   new URL("next-app/app/admin/customers/page.tsx", root),
   "utf8",
@@ -69,10 +76,33 @@ test("customer page supports search, pagination and requested summary fields", (
   assert.match(adminPage, /href: "\/admin\/customers"/);
 });
 
+test("month and year filters use the Vietnam confirmation date throughout", () => {
+  assert.match(
+    periodMigration,
+    /coalesce\(b\.confirmed_at, b\.created_at\)[\s\S]*at time zone 'Asia\/Ho_Chi_Minh'/,
+  );
+  assert.match(periodMigration, /extract\([\s\S]*year[\s\S]*= v_year/);
+  assert.match(periodMigration, /extract\([\s\S]*month[\s\S]*= v_month/);
+  assert.match(page, /name="month"/);
+  assert.match(page, /name="year"/);
+  assert.match(page, /p_year: selectedYear/);
+  assert.match(page, /p_month: selectedMonth/);
+  assert.match(customerReport, /parseCustomerPeriod/);
+  assert.match(customerReport, /customerPeriodLabel/);
+});
+
 test("customer exports preserve the active search and protect PII responses", () => {
-  assert.match(page, /customerExportHref\("\/admin\/customers\/export", search\)/);
-  assert.match(page, /customerExportHref\("\/admin\/customers\/report", search\)/);
+  assert.match(
+    page,
+    /customerExportHref\("\/admin\/customers\/export", \{[\s\S]*year: selectedYear,[\s\S]*month: selectedMonth/,
+  );
+  assert.match(
+    page,
+    /customerExportHref\("\/admin\/customers\/report", \{[\s\S]*year: selectedYear,[\s\S]*month: selectedMonth/,
+  );
   assert.match(exportRoute, /can\(principal\.role, "read_operations"\)/);
+  assert.match(exportRoute, /p_year: year/);
+  assert.match(exportRoute, /p_month: month/);
   assert.match(exportRoute, /createXlsxWorkbook/);
   assert.match(
     exportRoute,
@@ -80,6 +110,8 @@ test("customer exports preserve the active search and protect PII responses", ()
   );
   assert.match(exportRoute, /Cache-Control": "private, no-store"/);
   assert.match(reportPage, /can\(principal\.role, "read_operations"\)/);
+  assert.match(reportPage, /p_year: year/);
+  assert.match(reportPage, /p_month: month/);
   assert.match(reportPage, /PrintReport/);
   assert.match(customerReport, /slice\(0, 100\)/);
 });

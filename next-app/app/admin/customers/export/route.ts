@@ -3,8 +3,10 @@ import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
 import {
   CUSTOMER_EXPORT_LIMIT,
+  customerPeriodLabel,
   formatCustomerBirthDate,
   normalizeCustomerSearch,
+  parseCustomerPeriod,
 } from "@/lib/admin/customer-report";
 import {
   formatBookingDateTime,
@@ -37,11 +39,18 @@ export async function GET(request: NextRequest) {
   }
 
   const search = normalizeCustomerSearch(request.nextUrl.searchParams.get("q"));
+  const { year, month } = parseCustomerPeriod(
+    request.nextUrl.searchParams.get("year"),
+    request.nextUrl.searchParams.get("month"),
+  );
+  const periodLabel = customerPeriodLabel(year, month);
   const supabase = await createAuthServerClient();
   const { data: customers, error } = await supabase.rpc(
     "admin_list_booking_customers",
     {
       p_search: search || null,
+      p_year: year,
+      p_month: month,
       p_limit: CUSTOMER_EXPORT_LIMIT,
       p_offset: 0,
     },
@@ -72,7 +81,7 @@ export async function GET(request: NextRequest) {
   const workbook = createXlsxWorkbook({
     sheetName: "Khách hàng",
     title: "Danh sách khách hàng đã đặt lịch thành công",
-    metadata: `Xuất lúc: ${generatedAt} · Người xuất: ${principal.email || principal.userId} · Bộ lọc: ${search || "Tất cả"} · Tổng số: ${customers?.length || 0}`,
+    metadata: `Xuất lúc: ${generatedAt} · Người xuất: ${principal.email || principal.userId} · Thời gian: ${periodLabel} · Tìm kiếm: ${search || "Tất cả"} · Tổng số: ${customers?.length || 0}`,
     columns,
     rows,
   });
@@ -81,7 +90,7 @@ export async function GET(request: NextRequest) {
     headers: {
       "Content-Type":
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="khach-hang-${reportFileStamp()}.xlsx"`,
+      "Content-Disposition": `attachment; filename="khach-hang-${year || "tat-ca"}${month ? `-${String(month).padStart(2, "0")}` : ""}-${reportFileStamp()}.xlsx"`,
       "Cache-Control": "private, no-store",
       "X-Content-Type-Options": "nosniff",
     },

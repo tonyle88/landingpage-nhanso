@@ -4,12 +4,16 @@ import { redirect } from "next/navigation";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
 import {
+  CUSTOMER_MONTHS,
   CUSTOMER_PAGE_SIZE,
   customerDirectoryHref,
   customerExportHref,
+  customerPeriodLabel,
+  customerYearOptions,
   formatCustomerBirthDate,
   normalizeCustomerSearch,
   parseCustomerPage,
+  parseCustomerPeriod,
 } from "@/lib/admin/customer-report";
 import { formatBookingDateTime } from "@/lib/admin/booking-report";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
@@ -24,7 +28,12 @@ export const metadata: Metadata = {
 export default async function AdminCustomersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    year?: string;
+    month?: string;
+    page?: string;
+  }>;
 }) {
   const principal = await getAdminPrincipal();
   if (!principal) redirect("/admin/login?reason=unauthorized");
@@ -32,13 +41,24 @@ export default async function AdminCustomersPage({
 
   const params = await searchParams;
   const search = normalizeCustomerSearch(params.q);
+  const { year: selectedYear, month: selectedMonth } = parseCustomerPeriod(
+    params.year,
+    params.month,
+  );
   const selectedPage = parseCustomerPage(params.page);
+  const yearOptions = customerYearOptions();
+  const periodLabel = customerPeriodLabel(selectedYear, selectedMonth);
+  const hasActiveFilters = Boolean(
+    search || selectedYear || selectedMonth,
+  );
   const offset = (selectedPage - 1) * CUSTOMER_PAGE_SIZE;
   const supabase = await createAuthServerClient();
   const { data: customers, error } = await supabase.rpc(
     "admin_list_booking_customers",
     {
       p_search: search || null,
+      p_year: selectedYear,
+      p_month: selectedMonth,
       p_limit: CUSTOMER_PAGE_SIZE,
       p_offset: offset,
     },
@@ -55,7 +75,14 @@ export default async function AdminCustomersPage({
     Math.ceil(totalCustomers / CUSTOMER_PAGE_SIZE),
   );
   if (!error && totalCustomers > 0 && selectedPage > totalPages) {
-    redirect(customerDirectoryHref(search, totalPages));
+    redirect(
+      customerDirectoryHref({
+        search,
+        year: selectedYear,
+        month: selectedMonth,
+        page: totalPages,
+      }),
+    );
   }
 
   return (
@@ -77,15 +104,15 @@ export default async function AdminCustomersPage({
       <section className={styles.customerStats} aria-label="Tổng quan khách hàng">
         <div>
           <strong>{totalCustomers}</strong>
-          <span>Khách đã xác nhận</span>
+          <span>Khách đã xác nhận · {periodLabel}</span>
         </div>
         <div>
           <strong>{totalSuccessfulBookings}</strong>
-          <span>Lượt đặt thành công</span>
+          <span>Lượt đặt thành công · {periodLabel}</span>
         </div>
         <div>
           <strong>{returningCustomers}</strong>
-          <span>Khách quay lại</span>
+          <span>Khách quay lại · {periodLabel}</span>
         </div>
       </section>
 
@@ -100,10 +127,38 @@ export default async function AdminCustomersPage({
               type="search"
             />
           </label>
+          <label className={styles.field}>
+            Tháng xác nhận
+            <select
+              defaultValue={selectedMonth ? String(selectedMonth) : ""}
+              name="month"
+            >
+              <option value="">Tất cả tháng</option>
+              {CUSTOMER_MONTHS.map((label, index) => (
+                <option key={label} value={index + 1}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.field}>
+            Năm xác nhận
+            <select
+              defaultValue={selectedYear ? String(selectedYear) : ""}
+              name="year"
+            >
+              <option value="">Tất cả năm</option>
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className={styles.submit} type="submit">
-            Tìm kiếm
+            Áp dụng
           </button>
-          {search ? (
+          {hasActiveFilters ? (
             <Link className={styles.secondaryLink} href="/admin/customers">
               Xóa lọc
             </Link>
@@ -113,22 +168,29 @@ export default async function AdminCustomersPage({
         <div className={styles.reportActions} aria-label="Xuất danh sách khách hàng">
           <Link
             className={styles.secondaryLink}
-            href={customerExportHref("/admin/customers/export", search)}
+            href={customerExportHref("/admin/customers/export", {
+              search,
+              year: selectedYear,
+              month: selectedMonth,
+            })}
           >
             ↓ Xuất Excel
           </Link>
           <Link
             className={styles.secondaryLink}
-            href={customerExportHref("/admin/customers/report", search)}
+            href={customerExportHref("/admin/customers/report", {
+              search,
+              year: selectedYear,
+              month: selectedMonth,
+            })}
             target="_blank"
             rel="noopener noreferrer"
           >
             ↗ Xuất PDF
           </Link>
           <span>
-            {search
-              ? `Đang áp dụng tìm kiếm “${search}”.`
-              : "Xuất toàn bộ danh sách đã xác nhận."}
+            Xuất dữ liệu: {periodLabel}
+            {search ? ` · tìm “${search}”` : ""}.
           </span>
         </div>
 
@@ -180,8 +242,8 @@ export default async function AdminCustomersPage({
                   <strong>{customer.successful_bookings}</strong>
                   <span>
                     {customer.successful_bookings > 1
-                      ? "lần · khách quay lại"
-                      : "lần"}
+                      ? "lần trong kỳ · khách quay lại"
+                      : "lần trong kỳ"}
                   </span>
                 </div>
               </article>
@@ -190,7 +252,7 @@ export default async function AdminCustomersPage({
         ) : null}
         {!error && !customers?.length ? (
           <p className={styles.customerEmpty}>
-            {search
+            {hasActiveFilters
               ? "Không tìm thấy khách hàng phù hợp."
               : "Chưa có khách hàng đặt lịch thành công."}
           </p>
@@ -203,10 +265,12 @@ export default async function AdminCustomersPage({
               className={
                 selectedPage <= 1 ? styles.paginationDisabled : ""
               }
-              href={customerDirectoryHref(
+              href={customerDirectoryHref({
                 search,
-                Math.max(1, selectedPage - 1),
-              )}
+                year: selectedYear,
+                month: selectedMonth,
+                page: Math.max(1, selectedPage - 1),
+              })}
             >
               ← Trang trước
             </Link>
@@ -218,10 +282,12 @@ export default async function AdminCustomersPage({
               className={
                 selectedPage >= totalPages ? styles.paginationDisabled : ""
               }
-              href={customerDirectoryHref(
+              href={customerDirectoryHref({
                 search,
-                Math.min(totalPages, selectedPage + 1),
-              )}
+                year: selectedYear,
+                month: selectedMonth,
+                page: Math.min(totalPages, selectedPage + 1),
+              })}
             >
               Trang sau →
             </Link>

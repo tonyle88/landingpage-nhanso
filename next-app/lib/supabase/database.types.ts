@@ -771,9 +771,11 @@ export type Database = {
       }
       admin_list_booking_customers: {
         Args: {
-          p_search?: string | null
-          p_limit?: number
-          p_offset?: number
+          p_search: string | null
+          p_year: number | null
+          p_month: number | null
+          p_limit: number
+          p_offset: number
         }
         Returns: {
           customer_key: string
