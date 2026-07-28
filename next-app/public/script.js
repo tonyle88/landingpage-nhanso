@@ -372,6 +372,15 @@ function createBookingOnServer(data) {
 
 function applyBookingReservation(reservation) {
   const state = getBookingState();
+  if (
+    reservation.paymentProvider === 'sepay'
+    || reservation.paymentProvider === 'manual_qr'
+  ) {
+    window.ClowPaymentRuntime?.applySettings({
+      ...window.ClowPaymentRuntime.getSettings(),
+      sepayEnabled: reservation.paymentProvider === 'sepay',
+    });
+  }
   window.ClowBookingState?.patch({
     bookingId: reservation.bookingId || state.bookingId,
     paymentOrderId: reservation.paymentOrderId || '',

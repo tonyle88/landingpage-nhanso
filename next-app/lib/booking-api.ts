@@ -217,6 +217,32 @@ export async function reserveBooking(request: Request) {
       Json | undefined
     >;
     const supabase = await enforceRateLimit(request, normalizedPayload);
+    const { data: paymentMode, error: paymentModeError } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "payments.sepay_auto_confirmation")
+      .maybeSingle();
+    if (paymentModeError || !paymentMode) {
+      throw new BookingRequestError(
+        503,
+        "Hệ thống đặt lịch tạm thời không khả dụng.",
+      );
+    }
+    const paymentModeValue = paymentMode.value;
+    const sepayConfigured = Boolean(
+      paymentModeValue &&
+        typeof paymentModeValue === "object" &&
+        !Array.isArray(paymentModeValue) &&
+        "enabled" in paymentModeValue &&
+        paymentModeValue.enabled === true,
+    );
+    const sepayEnabled =
+      sepayConfigured &&
+      (process.env.VERCEL_ENV === "production" ||
+        process.env.SEPAY_ALLOW_NON_PRODUCTION === "true");
+    // The server is authoritative. A browser tab opened before an admin toggle
+    // must not be able to reserve a booking using the stale payment provider.
+    normalizedPayload.payment_provider = sepayEnabled ? "sepay" : "manual_qr";
 
     const { data, error } = await supabase.rpc("create_booking_reservation", {
       p_idempotency_key: idempotencyKey,
@@ -229,7 +255,14 @@ export async function reserveBooking(request: Request) {
         "Hệ thống đặt lịch tạm thời không khả dụng.",
       );
     }
-    return jsonResponse({ ok: true, ...data }, 201);
+    return jsonResponse(
+      {
+        ok: true,
+        ...data,
+        paymentProvider: normalizedPayload.payment_provider,
+      },
+      201,
+    );
   } catch (error) {
     return handleError(error);
   }
