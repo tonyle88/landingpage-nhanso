@@ -4,7 +4,10 @@ import { createHmac, randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/lib/supabase/database.types";
 
-const CALENDAR_TIMEOUT_MS = 8_000;
+// Apps Script cold starts plus CalendarApp writes regularly exceed eight
+// seconds. Keep this below SePay's 30-second webhook deadline while allowing
+// enough time for the bridge to finish and return its event ID.
+const CALENDAR_TIMEOUT_MS = 20_000;
 
 type CalendarBooking = Pick<
   Database["public"]["Tables"]["bookings"]["Row"],
