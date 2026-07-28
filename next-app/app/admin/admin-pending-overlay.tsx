@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AdminModalPortal } from "./admin-modal-portal";
 import styles from "./admin-pending-overlay.module.css";
 
 const FALLBACK_LABEL = "Đang xử lý yêu cầu…";
@@ -114,15 +115,17 @@ export function AdminPendingOverlay() {
   if (!pending) return null;
 
   return (
-    <div className={styles.backdrop} role="status" aria-live="assertive">
-      <section className={styles.card} aria-label="Hệ thống đang xử lý">
-        <span className={styles.spinner} aria-hidden="true" />
-        <div>
-          <strong>Vui lòng chờ</strong>
-          <p>{message}</p>
-          <small>Không đóng trang hoặc bấm lại trong lúc xử lý.</small>
-        </div>
-      </section>
-    </div>
+    <AdminModalPortal>
+      <div className={styles.backdrop} role="status" aria-live="assertive">
+        <section className={styles.card} aria-label="Hệ thống đang xử lý">
+          <span className={styles.spinner} aria-hidden="true" />
+          <div>
+            <strong>Vui lòng chờ</strong>
+            <p>{message}</p>
+            <small>Không đóng trang hoặc bấm lại trong lúc xử lý.</small>
+          </div>
+        </section>
+      </div>
+    </AdminModalPortal>
   );
 }

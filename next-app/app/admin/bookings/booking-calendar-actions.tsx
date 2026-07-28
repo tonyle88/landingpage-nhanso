@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo, useRef, useState } from "react";
+import { AdminModalPortal } from "../admin-modal-portal";
 import styles from "../admin.module.css";
 
 type ServerAction = (formData: FormData) => void | Promise<void>;
@@ -93,105 +94,107 @@ export function BookingCalendarActions({
       </div>
 
       {mode ? (
-        <div
-          className={styles.confirmBackdrop}
-          role="presentation"
-          onMouseDown={() => setMode(null)}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") setMode(null);
-          }}
-        >
-          <section
-            className={styles.confirmDialog}
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            aria-describedby={messageId}
-            onMouseDown={(event) => event.stopPropagation()}
+        <AdminModalPortal>
+          <div
+            className={styles.confirmBackdrop}
+            role="presentation"
+            onMouseDown={() => setMode(null)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setMode(null);
+            }}
           >
-            <span className={styles.confirmIcon} aria-hidden="true">
-              {mode === "cancel" ? "!" : "↻"}
-            </span>
-            <div>
-              <p className={styles.eyebrow}>Google Calendar</p>
-              <h3 id={titleId}>
-                {mode === "cancel" ? "Xác nhận hủy lịch?" : "Chọn lịch mới"}
-              </h3>
-              <p id={messageId}>
-                {mode === "cancel"
-                  ? "Lịch sẽ chuyển sang đã hủy, sự kiện Calendar bị xóa và hai bên nhận email thông báo."
-                  : "Chọn ngày trước, sau đó chọn một khung giờ còn trống. Calendar và email hai bên sẽ được cập nhật."}
-              </p>
-              <form
-                ref={formRef}
-                action={
-                  mode === "cancel" ? cancelAction : rescheduleAction
-                }
-                className={styles.calendarChangeForm}
-                onSubmit={() => setSubmitting(true)}
-              >
-                <input type="hidden" name="id" value={id} />
-                <input
-                  type="hidden"
-                  name="expected_slot_start"
-                  value={slotStart}
-                />
-                {mode === "reschedule" ? (
-                  <div className={styles.calendarChangeFields}>
-                    <label className={styles.field}>
-                      Ngày mới
-                      <input
-                        name="new_date"
-                        type="date"
-                        min={minimumDate}
-                        required
-                        value={date}
-                        onChange={(event) => setDate(event.target.value)}
-                      />
-                    </label>
-                    {date ? (
-                      <label className={styles.field}>
-                        Giờ mới
-                        <select name="new_time" required defaultValue="">
-                          <option value="" disabled>Chọn giờ</option>
-                          {times.map((time) => (
-                            <option key={time} value={time}>
-                              {time} – {String(Number(time.slice(0, 2)) + 2).padStart(2, "0")}:00
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    ) : null}
-                  </div>
-                ) : null}
-              </form>
-              <div className={styles.confirmActions}>
-                <button
-                  className={styles.secondaryLink}
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => setMode(null)}
-                >
-                  Quay lại
-                </button>
-                <button
-                  className={
-                    mode === "cancel" ? styles.dangerButton : styles.submit
+            <section
+              className={styles.confirmDialog}
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              aria-describedby={messageId}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <span className={styles.confirmIcon} aria-hidden="true">
+                {mode === "cancel" ? "!" : "↻"}
+              </span>
+              <div>
+                <p className={styles.eyebrow}>Google Calendar</p>
+                <h3 id={titleId}>
+                  {mode === "cancel" ? "Xác nhận hủy lịch?" : "Chọn lịch mới"}
+                </h3>
+                <p id={messageId}>
+                  {mode === "cancel"
+                    ? "Lịch sẽ chuyển sang đã hủy, sự kiện Calendar bị xóa và hai bên nhận email thông báo."
+                    : "Chọn ngày trước, sau đó chọn một khung giờ còn trống. Calendar và email hai bên sẽ được cập nhật."}
+                </p>
+                <form
+                  ref={formRef}
+                  action={
+                    mode === "cancel" ? cancelAction : rescheduleAction
                   }
-                  type="button"
-                  disabled={submitting || (mode === "reschedule" && !date)}
-                  onClick={() => formRef.current?.requestSubmit()}
+                  className={styles.calendarChangeForm}
+                  onSubmit={() => setSubmitting(true)}
                 >
-                  {submitting
-                    ? "Đang xử lý..."
-                    : mode === "cancel"
-                      ? "Xác nhận hủy lịch"
-                      : "Đổi lịch & gửi email"}
-                </button>
+                  <input type="hidden" name="id" value={id} />
+                  <input
+                    type="hidden"
+                    name="expected_slot_start"
+                    value={slotStart}
+                  />
+                  {mode === "reschedule" ? (
+                    <div className={styles.calendarChangeFields}>
+                      <label className={styles.field}>
+                        Ngày mới
+                        <input
+                          name="new_date"
+                          type="date"
+                          min={minimumDate}
+                          required
+                          value={date}
+                          onChange={(event) => setDate(event.target.value)}
+                        />
+                      </label>
+                      {date ? (
+                        <label className={styles.field}>
+                          Giờ mới
+                          <select name="new_time" required defaultValue="">
+                            <option value="" disabled>Chọn giờ</option>
+                            {times.map((time) => (
+                              <option key={time} value={time}>
+                                {time} – {String(Number(time.slice(0, 2)) + 2).padStart(2, "0")}:00
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </form>
+                <div className={styles.confirmActions}>
+                  <button
+                    className={styles.secondaryLink}
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => setMode(null)}
+                  >
+                    Quay lại
+                  </button>
+                  <button
+                    className={
+                      mode === "cancel" ? styles.dangerButton : styles.submit
+                    }
+                    type="button"
+                    disabled={submitting || (mode === "reschedule" && !date)}
+                    onClick={() => formRef.current?.requestSubmit()}
+                  >
+                    {submitting
+                      ? "Đang xử lý..."
+                      : mode === "cancel"
+                        ? "Xác nhận hủy lịch"
+                        : "Đổi lịch & gửi email"}
+                  </button>
+                </div>
               </div>
-            </div>
-          </section>
-        </div>
+            </section>
+          </div>
+        </AdminModalPortal>
       ) : null}
     </>
   );

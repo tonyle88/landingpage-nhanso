@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { AdminModalPortal } from "./admin-modal-portal";
 import styles from "./admin.module.css";
 
 export function ConfirmToggle({
@@ -39,35 +40,37 @@ export function ConfirmToggle({
       </form>
 
       {confirming ? (
-        <div className={styles.confirmBackdrop} role="presentation" onMouseDown={() => setConfirming(false)}>
-          <section
-            className={styles.confirmDialog}
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="sepay-confirm-title"
-            aria-describedby="sepay-confirm-message"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <span className={styles.confirmIcon} aria-hidden="true">{checked ? "!" : "✓"}</span>
-            <div>
-              <p className={styles.eyebrow}>Xác nhận thay đổi</p>
-              <h3 id="sepay-confirm-title">{confirmTitle}</h3>
-              <p id="sepay-confirm-message">{confirmMessage}</p>
-            </div>
-            <div className={styles.confirmActions}>
-              <button className={styles.secondaryLink} type="button" onClick={() => setConfirming(false)}>
-                Giữ nguyên
-              </button>
-              <button
-                className={checked ? styles.dangerButton : styles.submit}
-                type="button"
-                onClick={() => formRef.current?.requestSubmit()}
-              >
-                Xác nhận thay đổi
-              </button>
-            </div>
-          </section>
-        </div>
+        <AdminModalPortal>
+          <div className={styles.confirmBackdrop} role="presentation" onMouseDown={() => setConfirming(false)}>
+            <section
+              className={styles.confirmDialog}
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="sepay-confirm-title"
+              aria-describedby="sepay-confirm-message"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <span className={styles.confirmIcon} aria-hidden="true">{checked ? "!" : "✓"}</span>
+              <div>
+                <p className={styles.eyebrow}>Xác nhận thay đổi</p>
+                <h3 id="sepay-confirm-title">{confirmTitle}</h3>
+                <p id="sepay-confirm-message">{confirmMessage}</p>
+              </div>
+              <div className={styles.confirmActions}>
+                <button className={styles.secondaryLink} type="button" onClick={() => setConfirming(false)}>
+                  Giữ nguyên
+                </button>
+                <button
+                  className={checked ? styles.dangerButton : styles.submit}
+                  type="button"
+                  onClick={() => formRef.current?.requestSubmit()}
+                >
+                  Xác nhận thay đổi
+                </button>
+              </div>
+            </section>
+          </div>
+        </AdminModalPortal>
       ) : null}
     </>
   );

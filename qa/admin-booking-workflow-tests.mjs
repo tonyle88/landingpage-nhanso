@@ -38,6 +38,28 @@ const pendingOverlay = await readFile(
   new URL("next-app/app/admin/admin-pending-overlay.tsx", root),
   "utf8",
 );
+const modalPortal = await readFile(
+  new URL("next-app/app/admin/admin-modal-portal.tsx", root),
+  "utf8",
+);
+const adminStyles = await readFile(
+  new URL("next-app/app/admin/admin.module.css", root),
+  "utf8",
+);
+const transitionButton = await readFile(
+  new URL(
+    "next-app/app/admin/bookings/booking-transition-button.tsx",
+    root,
+  ),
+  "utf8",
+);
+const calendarActions = await readFile(
+  new URL(
+    "next-app/app/admin/bookings/booking-calendar-actions.tsx",
+    root,
+  ),
+  "utf8",
+);
 
 test("booking transition is owner/admin only and rejects stale writes", () => {
   assert.match(migration, /v_role not in \('owner', 'admin'\)/);
@@ -106,4 +128,14 @@ test("admin forms show one shared pending state and prevent repeat submits", () 
   assert.match(pendingOverlay, /Đang xử lý/);
   assert.match(pendingOverlay, /Không đóng trang hoặc bấm lại/);
   assert.match(pendingOverlay, /SAFETY_TIMEOUT_MS = 45_000/);
+});
+
+test("admin dialogs stay centered in the current viewport", () => {
+  assert.match(modalPortal, /createPortal\(children, document\.body\)/);
+  assert.match(transitionButton, /AdminModalPortal/);
+  assert.match(calendarActions, /AdminModalPortal/);
+  assert.match(pendingOverlay, /AdminModalPortal/);
+  assert.match(adminStyles, /\.confirmBackdrop[\s\S]*height: 100dvh/);
+  assert.match(adminStyles, /\.confirmDialog[\s\S]*max-height: calc\(100dvh - 40px\)/);
+  assert.match(adminStyles, /\.confirmDialog[\s\S]*overflow-y: auto/);
 });
