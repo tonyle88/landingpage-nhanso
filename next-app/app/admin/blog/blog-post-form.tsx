@@ -91,7 +91,13 @@ export function BlogPostForm({
         <label><input name="pinned" type="checkbox"
           defaultChecked={item?.pinned ?? false} /> Ghim bài viết</label>
       </div>
-      <button className={`${styles.submit} ${styles.blogSubmit}`} type="submit">
+      <button
+        className={`${styles.submit} ${styles.blogSubmit}`}
+        data-pending-label={
+          item ? "Đang lưu bài viết…" : "Đang tạo bài viết…"
+        }
+        type="submit"
+      >
         {item ? "Lưu bài viết" : "Tạo bài viết"}
       </button>
     </form>

@@ -12,6 +12,12 @@ const thumbnailMigration = await read(
   "next-app/supabase/migrations/202607270001_blog_post_thumbnail.sql",
 );
 const form = await read("next-app/app/admin/blog/blog-post-form.tsx");
+const categoryForm = await read(
+  "next-app/app/admin/blog/category-form.tsx",
+);
+const pendingOverlay = await read(
+  "next-app/app/admin/admin-pending-overlay.tsx",
+);
 const coverField = await read("next-app/app/admin/blog/cover-image-field.tsx");
 const actions = await read("next-app/app/admin/blog/actions.ts");
 const editor = await read("next-app/app/admin/blog/rich-text-editor.tsx");
@@ -84,6 +90,20 @@ test("newest blog posts appear first in admin and public lists", () => {
     assert.match(source, /order\("created_at", \{ ascending: false \}\)/);
   }
   assert.doesNotMatch(adminPage, /order\("updated_at", \{ ascending: false \}\)/);
+});
+
+test("blog saves show a blocking pending state and prevent repeated submits", () => {
+  assert.match(form, /data-pending-label=/);
+  assert.match(form, /Đang lưu bài viết…/);
+  assert.match(categoryForm, /data-pending-label=/);
+  assert.match(categoryForm, /Đang lưu danh mục…/);
+  assert.match(pendingOverlay, /pendingRef\.current/);
+  assert.match(pendingOverlay, /control\.disabled = true/);
+  assert.match(pendingOverlay, /setPending\(true\)/);
+  assert.doesNotMatch(
+    pendingOverlay,
+    /event\.defaultPrevented \|\| pendingRef\.current/,
+  );
 });
 
 test("blog validation reports the exact invalid field and paste removes unsafe markup", () => {

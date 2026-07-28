@@ -51,11 +51,12 @@ export function AdminPendingOverlay() {
       const form = event.target;
       if (!(form instanceof HTMLFormElement)) return;
 
-      // Confirmation handlers and client-side validation may cancel submission
-      // after this event reaches the document. Wait one microtask before
-      // locking the interface so cancelled actions stay interactive.
+      // Wait until the submit event finishes so React can capture the form
+      // payload before controls are disabled. React server actions call
+      // preventDefault() as part of their normal submission flow, so that flag
+      // must not suppress the pending overlay.
       queueMicrotask(() => {
-        if (event.defaultPrevented || pendingRef.current) return;
+        if (pendingRef.current) return;
 
         const submitter =
           event.submitter instanceof HTMLButtonElement ||
