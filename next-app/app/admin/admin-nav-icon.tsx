@@ -7,6 +7,7 @@ type AdminNavIconName =
   | "blog"
   | "settings"
   | "bookings"
+  | "customers"
   | "payments";
 
 export function AdminNavIcon({ name }: { name: AdminNavIconName }) {
@@ -47,6 +48,13 @@ export function AdminNavIcon({ name }: { name: AdminNavIconName }) {
         <rect x="4" y="5.5" width="16" height="15" rx="2" />
         <path d="M8 3v5M16 3v5M4 10h16" />
         <path d="m9 15 2 2 4-4" />
+      </>
+    ),
+    customers: (
+      <>
+        <circle cx="9" cy="8" r="3" />
+        <path d="M3.5 19c.6-3.6 2.4-5.4 5.5-5.4s4.9 1.8 5.5 5.4" />
+        <path d="M15 6.4a2.8 2.8 0 0 1 0 5.2M16.2 14.2c2.5.5 3.8 2.1 4.3 4.8" />
       </>
     ),
     payments: (
