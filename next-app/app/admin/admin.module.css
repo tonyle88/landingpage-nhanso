@@ -1,5 +1,6 @@
 .shell,
-.adminShell {
+.adminShell,
+.adminPortalTheme {
   --teal-950: #07181b;
   --teal-900: #0b252a;
   --teal-800: #12343a;
@@ -16,9 +17,22 @@
   --danger: #ff8a80;
   --success: #73d9b2;
   color: var(--text);
+}
+
+.shell,
+.adminShell {
   background:
     linear-gradient(110deg, rgb(7 24 27 / 94%), rgb(13 43 48 / 84%)),
     url("/assets/images/hero_bg.png") center / cover fixed;
+}
+
+.adminPortalTheme {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.adminPortalTheme ::selection {
+  color: var(--teal-950);
+  background: var(--gold-soft);
 }
 
 .homepageContent {
@@ -204,7 +218,11 @@
   border: 0;
   padding: 0 18px;
   color: #101010;
-  background: linear-gradient(135deg, var(--gold-soft), var(--orange-soft));
+  background: linear-gradient(
+    135deg,
+    var(--gold-soft, #f0c96a),
+    var(--orange-soft, #e86a30)
+  );
   box-shadow: 0 10px 26px rgb(217 78 31 / 28%);
 }
 
@@ -250,7 +268,7 @@
   align-items: center;
   justify-content: center;
   padding: 0 14px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line, rgb(255 255 255 / 12%));
   background: rgb(255 255 255 / 6%);
   color: #fff;
   text-decoration: none;
@@ -583,9 +601,9 @@
 .toggleControl[aria-checked="true"] .toggleThumb { transform: translateX(22px); }
 .confirmBackdrop { position: fixed; inset: 0; z-index: 1200; width: 100dvw; height: 100dvh; display: grid; place-items: center; overflow-y: auto; padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); background: rgb(0 0 0 / 68%); backdrop-filter: blur(8px); }
 .confirmDialog { width: min(520px, 100%); max-height: calc(100dvh - 40px); display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 16px; margin: auto; overflow-y: auto; padding: 24px; border: 1px solid rgb(240 201 106 / 42%); border-radius: 12px; background: rgb(7 24 27 / 98%); box-shadow: 0 28px 90px rgb(0 0 0 / 58%); animation: toastIn .2s ease both; }
-.confirmIcon { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 50%; color: #111; background: linear-gradient(135deg, var(--gold-soft), var(--orange-soft)); font-weight: 950; }
+.confirmIcon { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 50%; color: #111; background: linear-gradient(135deg, var(--gold-soft, #f0c96a), var(--orange-soft, #e86a30)); font-weight: 950; }
 .confirmDialog h3 { margin: 4px 0 8px; color: #fff; font-family: Georgia, "Times New Roman", serif; font-size: 1.45rem; }
-.confirmDialog p { margin: 0; color: var(--muted); line-height: 1.6; }
+.confirmDialog p { margin: 0; color: var(--muted, rgb(255 255 255 / 68%)); line-height: 1.6; }
 .confirmActions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
 .confirmActions button { min-height: 44px; border-radius: 8px; cursor: pointer; }
 .calendarChangeForm { margin-top: 18px; }

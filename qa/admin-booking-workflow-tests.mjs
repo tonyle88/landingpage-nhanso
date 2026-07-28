@@ -143,10 +143,20 @@ test("admin forms show one shared pending state and prevent repeat submits", () 
 });
 
 test("admin dialogs stay centered in the current viewport", () => {
-  assert.match(modalPortal, /createPortal\(children, document\.body\)/);
+  assert.match(modalPortal, /createPortal\(/);
+  assert.match(modalPortal, /className=\{styles\.adminPortalTheme\}/);
+  assert.match(modalPortal, /document\.body/);
   assert.match(transitionButton, /AdminModalPortal/);
   assert.match(calendarActions, /AdminModalPortal/);
   assert.match(pendingOverlay, /AdminModalPortal/);
+  assert.match(
+    adminStyles,
+    /\.adminPortalTheme[\s\S]*--gold-soft: #f0c96a/,
+  );
+  assert.match(
+    adminStyles,
+    /\.adminPortalTheme[\s\S]*--muted: rgb\(255 255 255 \/ 68%\)/,
+  );
   assert.match(adminStyles, /\.confirmBackdrop[\s\S]*height: 100dvh/);
   assert.match(adminStyles, /\.confirmDialog[\s\S]*max-height: calc\(100dvh - 40px\)/);
   assert.match(adminStyles, /\.confirmDialog[\s\S]*overflow-y: auto/);
