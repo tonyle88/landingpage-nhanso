@@ -195,29 +195,27 @@ export function RichTextEditor({
         <button type="button" onClick={() => block("p")} title="Đoạn văn">P</button>
         {!compact ? <button type="button" onClick={() => block("h2")} title="Tiêu đề lớn">H2</button> : null}
         {!compact ? <button type="button" onClick={() => block("h3")} title="Tiêu đề nhỏ">H3</button> : null}
-        {!compact ? (
-          <label className={styles.editorFontControl}>
-            <span className={styles.srOnly}>Cỡ chữ</span>
-            <select
-              aria-label="Cỡ chữ"
-              defaultValue=""
-              onMouseDown={rememberSelection}
-              onChange={(event) => {
-                const value = event.currentTarget.value as FontSize;
-                if (fontSizeClasses.includes(`editor-font-${value}`)) {
-                  setFontSize(value);
-                }
-                event.currentTarget.value = "";
-              }}
-            >
-              <option value="" disabled>Cỡ chữ</option>
-              <option value="small">Nhỏ</option>
-              <option value="normal">Chuẩn</option>
-              <option value="large">Lớn</option>
-              <option value="xlarge">Rất lớn</option>
-            </select>
-          </label>
-        ) : null}
+        <label className={styles.editorFontControl}>
+          <span className={styles.srOnly}>Cỡ chữ</span>
+          <select
+            aria-label={`Cỡ chữ ${label.toLowerCase()}`}
+            defaultValue=""
+            onMouseDown={rememberSelection}
+            onChange={(event) => {
+              const value = event.currentTarget.value as FontSize;
+              if (fontSizeClasses.includes(`editor-font-${value}`)) {
+                setFontSize(value);
+              }
+              event.currentTarget.value = "";
+            }}
+          >
+            <option value="" disabled>Cỡ chữ</option>
+            <option value="small">Nhỏ</option>
+            <option value="normal">Chuẩn</option>
+            <option value="large">Lớn</option>
+            <option value="xlarge">Rất lớn</option>
+          </select>
+        </label>
         <span />
         <button type="button" onClick={() => run("bold")} title="In đậm"><strong>B</strong></button>
         <button type="button" onClick={() => run("italic")} title="In nghiêng"><em>I</em></button>

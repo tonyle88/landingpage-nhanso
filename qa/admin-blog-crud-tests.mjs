@@ -75,7 +75,7 @@ test("editor and HTML modes share a canonical value without render overwrite", (
 });
 
 test("editor supports safe semantic font sizes and readable article defaults", () => {
-  assert.match(editor, /aria-label="Cỡ chữ"/);
+  assert.match(editor, /aria-label=\{`Cỡ chữ \$\{label\.toLowerCase\(\)\}`\}/);
   assert.match(editor, /Nhỏ/);
   assert.match(editor, /Chuẩn/);
   assert.match(editor, /Lớn/);
@@ -85,8 +85,10 @@ test("editor supports safe semantic font sizes and readable article defaults", (
   assert.doesNotMatch(editor, /style\.fontSize\s*=/);
   assert.match(adminStyles, /editor-font-large/);
   assert.match(publicStyles, /\.article-content \.editor-font-large/);
+  assert.match(publicStyles, /\.blog-card-summary \.editor-font-large/);
   assert.match(publicStyles, /\.article-content[\s\S]*font-size: 1\.2rem/);
   assert.match(blogRuntime, /font-size:1\.2rem/);
+  assert.doesNotMatch(editor, /!compact \? \(\s*<label className=\{styles\.editorFontControl\}/);
 });
 
 test("new posts receive a unique generated slug and actionable failures", () => {

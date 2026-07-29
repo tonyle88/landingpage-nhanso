@@ -4172,6 +4172,10 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
 .blog-card-summary > :first-child { margin-top: 0; }
 .blog-card-summary > :last-child { margin-bottom: 0; }
+.blog-card-summary .editor-font-small { font-size: 0.88em; }
+.blog-card-summary .editor-font-normal { font-size: 1em; }
+.blog-card-summary .editor-font-large { font-size: 1.2em; }
+.blog-card-summary .editor-font-xlarge { font-size: 1.45em; }
 .editor-align-left { text-align: left; }
 .editor-align-center { text-align: center; }
 .editor-align-right { text-align: right; }
