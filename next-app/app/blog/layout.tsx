@@ -18,7 +18,7 @@ export default function BlogLayout({
         rel="stylesheet"
         href="/assets/vendor/fontawesome/css/all.min.css"
       />
-      <link rel="stylesheet" href="/style.css?v=20260728-mobile-cta" />
+      <link rel="stylesheet" href="/style.css?v=20260729-summary-font" />
       {children}
     </>
   );
