@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   calculateNumerology,
+  formatVietnameseName,
   normalizeVietnameseName,
   reduceNumerologyNumber,
 } from "../next-app/lib/numerology.ts";
@@ -107,6 +108,16 @@ test("supports master numbers, Vietnamese names and date validation", () => {
   assert.throws(
     () => calculateNumerology("Khách tương lai", "2999-01-01"),
     /tương lai/,
+  );
+});
+
+test("formats customer names consistently for screen and exports", () => {
+  assert.equal(formatVietnameseName("LÊ THỊ KIM HIỀN"), "Lê Thị Kim Hiền");
+  assert.equal(formatVietnameseName("  lê   thị kim hiền  "), "Lê Thị Kim Hiền");
+  assert.equal(formatVietnameseName("LÊ-thỊ  KIM hiỀN"), "Lê-Thị Kim Hiền");
+  assert.equal(
+    calculateNumerology("lÊ tHị kIM hIỀn", "1990-06-28").fullName,
+    "Lê Thị Kim Hiền",
   );
 });
 
@@ -219,9 +230,10 @@ test("is integrated only into the Next.js admin", async () => {
   assert.match(calculator, /printPdf\("summary"\)/);
   assert.match(calculator, /JPG khách · khổ A4/);
   assert.match(calculator, /exportCustomerJpg/);
-  assert.match(calculator, /renderElementAsJpeg/);
+  assert.match(calculator, /renderCustomerSummaryAsJpeg/);
   assert.match(calculator, /image\/jpeg/);
-  assert.match(calculator, /removeAttribute\("srcset"\)/);
+  assert.doesNotMatch(calculator, /foreignObject/);
+  assert.doesNotMatch(calculator, /drawImage/);
   assert.match(calculator, /numerologyCustomerSummary/);
   assert.match(calculator, /Hồ sơ nhân số học tóm tắt/);
   assert.match(calculator, /9 nhóm chỉ số/);

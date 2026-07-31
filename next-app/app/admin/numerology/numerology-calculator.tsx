@@ -36,101 +36,558 @@ function createSmoothCyclePath(points: Array<{ x: number; y: number }>) {
   }, "");
 }
 
-function blobToDataUrl(blob: Blob) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.addEventListener("load", () => resolve(String(reader.result)));
-    reader.addEventListener("error", () => reject(reader.error));
-    reader.readAsDataURL(blob);
-  });
-}
-
-function loadImage(source: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new window.Image();
-    image.addEventListener("load", () => resolve(image));
-    image.addEventListener("error", () => reject(new Error("Không thể dựng ảnh JPG.")));
-    image.src = source;
-  });
-}
-
-async function renderElementAsJpeg(element: HTMLElement) {
-  await document.fonts.ready;
-
-  const width = Math.ceil(element.getBoundingClientRect().width);
-  const height = Math.ceil(element.getBoundingClientRect().height);
-  const clone = element.cloneNode(true) as HTMLElement;
-  const sourceNodes: Array<HTMLElement | SVGElement> = [
-    element,
-    ...Array.from(element.querySelectorAll<HTMLElement | SVGElement>("*")),
-  ];
-  const clonedNodes: Array<HTMLElement | SVGElement> = [
-    clone,
-    ...Array.from(clone.querySelectorAll<HTMLElement | SVGElement>("*")),
-  ];
-
-  sourceNodes.forEach((sourceNode, index) => {
-    const targetNode = clonedNodes[index];
-    const computedStyle = window.getComputedStyle(sourceNode);
-    for (const property of computedStyle) {
-      targetNode.style.setProperty(
-        property,
-        computedStyle.getPropertyValue(property),
-        computedStyle.getPropertyPriority(property),
-      );
-    }
-  });
-
-  const sourceImages = Array.from(element.querySelectorAll("img"));
-  const clonedImages = Array.from(clone.querySelectorAll("img"));
-  await Promise.all(sourceImages.map(async (sourceImage, index) => {
-    const response = await fetch(sourceImage.currentSrc || sourceImage.src);
-    if (!response.ok) throw new Error("Không thể tải hình ảnh trong bản tóm tắt.");
-    const clonedImage = clonedImages[index];
-    clonedImage.removeAttribute("srcset");
-    clonedImage.removeAttribute("sizes");
-    clonedImage.srcset = "";
-    clonedImage.src = await blobToDataUrl(await response.blob());
-  }));
-
-  clone.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-  clone.style.position = "static";
-  clone.style.inset = "auto";
-  clone.style.zIndex = "auto";
-  clone.style.width = `${width}px`;
-  clone.style.height = `${height}px`;
-
-  const serialized = new XMLSerializer().serializeToString(clone);
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-      <foreignObject width="100%" height="100%">${serialized}</foreignObject>
-    </svg>
-  `;
-  const svgUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
-
-  try {
-    const image = await loadImage(svgUrl);
-    const pixelRatio = 2;
-    const canvas = document.createElement("canvas");
-    canvas.width = width * pixelRatio;
-    canvas.height = height * pixelRatio;
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("Trình duyệt không hỗ trợ xuất JPG.");
-    context.fillStyle = "#fffdf8";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    return await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => blob
-          ? resolve(blob)
-          : reject(new Error("Không thể tạo file JPG.")),
-        "image/jpeg",
-        0.94,
-      );
-    });
-  } finally {
-    URL.revokeObjectURL(svgUrl);
+function drawRoundRect(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+  fill: string,
+  stroke = "transparent",
+) {
+  context.beginPath();
+  context.roundRect(x, y, width, height, radius);
+  context.fillStyle = fill;
+  context.fill();
+  if (stroke !== "transparent") {
+    context.strokeStyle = stroke;
+    context.lineWidth = 1;
+    context.stroke();
   }
+}
+
+function drawCanvasText(
+  context: CanvasRenderingContext2D,
+  value: string | number,
+  x: number,
+  y: number,
+  options: {
+    align?: CanvasTextAlign;
+    color?: string;
+    font?: string;
+    maxWidth?: number;
+  } = {},
+) {
+  context.save();
+  context.textAlign = options.align || "left";
+  context.textBaseline = "alphabetic";
+  context.fillStyle = options.color || "#183034";
+  context.font = options.font || "12px Arial, sans-serif";
+  context.fillText(String(value), x, y, options.maxWidth);
+  context.restore();
+}
+
+function drawCanvasSectionTitle(
+  context: CanvasRenderingContext2D,
+  number: string,
+  title: string,
+  subtitle: string,
+  x: number,
+  y: number,
+) {
+  context.beginPath();
+  context.arc(x + 15, y + 15, 15, 0, Math.PI * 2);
+  context.fillStyle = "#173f46";
+  context.fill();
+  drawCanvasText(context, number, x + 15, y + 19, {
+    align: "center",
+    color: "#ffffff",
+    font: "800 8px Arial, sans-serif",
+  });
+  drawCanvasText(context, title, x + 36, y + 14, {
+    font: "700 15px Georgia, serif",
+  });
+  drawCanvasText(context, subtitle, x + 36, y + 27, {
+    color: "#68777b",
+    font: "7px Arial, sans-serif",
+  });
+}
+
+function drawCanvasPanel(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  drawRoundRect(context, x, y, width, height, 8, "#ffffff", "#d7dfdc");
+}
+
+async function renderCustomerSummaryAsJpeg(
+  result: NumerologyResult,
+  generatedAt: string,
+) {
+  await document.fonts.ready;
+  const logicalWidth = 794;
+  const logicalHeight = 1123;
+  const pixelRatio = 2;
+  const canvas = document.createElement("canvas");
+  canvas.width = logicalWidth * pixelRatio;
+  canvas.height = logicalHeight * pixelRatio;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Trình duyệt không hỗ trợ xuất JPG.");
+  context.scale(pixelRatio, pixelRatio);
+  context.fillStyle = "#fffdf8";
+  context.fillRect(0, 0, logicalWidth, logicalHeight);
+
+  context.fillStyle = "#102f34";
+  context.fillRect(0, 0, logicalWidth, 58);
+  drawCanvasText(context, "Clow Cat Patronus", 28, 31, {
+    color: "#ffffff",
+    font: "700 18px Georgia, serif",
+  });
+  drawCanvasText(context, "HỒ SƠ NHÂN SỐ HỌC TÓM TẮT", 28, 44, {
+    color: "#b8c6c7",
+    font: "700 7px Arial, sans-serif",
+  });
+  drawCanvasText(context, "NGÀY LẬP", 766, 22, {
+    align: "right",
+    color: "#b8c6c7",
+    font: "700 7px Arial, sans-serif",
+  });
+  drawCanvasText(context, generatedAt, 766, 39, {
+    align: "right",
+    color: "#ffffff",
+    font: "700 14px Georgia, serif",
+  });
+
+  context.fillStyle = "#fffaf0";
+  context.fillRect(0, 58, logicalWidth, 76);
+  drawCanvasText(context, "HỒ SƠ KHÁCH HÀNG", 24, 81, {
+    color: "#b4522f",
+    font: "800 7px Arial, sans-serif",
+  });
+  const nameFontSize = result.fullName.length > 28 ? 21 : 26;
+  drawCanvasText(context, result.fullName, 24, 111, {
+    font: `700 ${nameFontSize}px Georgia, serif`,
+    maxWidth: 490,
+  });
+  drawCanvasText(context, `Ngày sinh ${result.formattedDate}`, 24, 126, {
+    color: "#607176",
+    font: "700 8px Arial, sans-serif",
+  });
+  drawCanvasText(
+    context,
+    "Bản tổng hợp kết quả cuối theo hệ thống nhân số học Pythagoras.",
+    770,
+    104,
+    { align: "right", color: "#6b777a", font: "7px Arial, sans-serif" },
+  );
+
+  const topY = 142;
+  drawCanvasPanel(context, 12, topY, 310, 242);
+  drawCanvasSectionTitle(
+    context,
+    "01",
+    "Biểu đồ ngày sinh & họ tên",
+    "Xanh: ngày sinh · Cam: họ tên",
+    24,
+    topY + 10,
+  );
+  const chartX = 24;
+  const chartY = topY + 50;
+  const cellWidth = 95;
+  const cellHeight = 58;
+  CHART_ORDER.forEach((number, index) => {
+    const column = index % 3;
+    const row = Math.floor(index / 3);
+    const x = chartX + column * cellWidth;
+    const y = chartY + row * cellHeight;
+    const birthCount = result.digitCounts[String(number)] || 0;
+    const nameCount = result.nameDigitCounts[String(number)] || 0;
+    context.fillStyle = birthCount ? "#eef5f3" : "#fff5ef";
+    context.fillRect(x, y, cellWidth, cellHeight);
+    context.strokeStyle = "#91aaa7";
+    context.strokeRect(x, y, cellWidth, cellHeight);
+    drawCanvasText(context, `Số ${number}`, x + 7, y + 12, {
+      color: "#657378",
+      font: "700 7px Arial, sans-serif",
+    });
+    drawCanvasText(context, "NS", x + 7, y + 31, {
+      color: "#768286",
+      font: "700 6px Arial, sans-serif",
+    });
+    drawCanvasText(
+      context,
+      birthCount ? String(number).repeat(birthCount) : "—",
+      x + cellWidth - 8,
+      y + 31,
+      {
+        align: "right",
+        color: birthCount ? "#173f46" : "#b9aaa3",
+        font: `800 ${birthCount > 5 ? 9 : 12}px Arial, sans-serif`,
+        maxWidth: 62,
+      },
+    );
+    drawCanvasText(context, "HT", x + 7, y + 49, {
+      color: "#768286",
+      font: "700 6px Arial, sans-serif",
+    });
+    drawCanvasText(
+      context,
+      nameCount ? String(number).repeat(nameCount) : "—",
+      x + cellWidth - 8,
+      y + 49,
+      {
+        align: "right",
+        color: nameCount ? "#d94e1f" : "#b9aaa3",
+        font: `800 ${nameCount > 5 ? 9 : 12}px Arial, sans-serif`,
+        maxWidth: 62,
+      },
+    );
+  });
+
+  drawCanvasPanel(context, 330, topY, 452, 242);
+  drawCanvasSectionTitle(
+    context,
+    "02",
+    "9 nhóm chỉ số",
+    "Chỉ hiển thị kết quả cuối",
+    342,
+    topY + 10,
+  );
+  const missingDisplay = result.missing.length
+    ? result.missing.join(" · ")
+    : "Không có";
+  const debtDisplay = result.karmicDebts.length
+    ? result.karmicDebts.map((item) => item.display).join(" · ")
+    : "Không có";
+  const summaryMetrics = [
+    ...METRICS.map(([key, label]) => ({ label, value: result.metrics[key].display })),
+    { label: "Chỉ số thiếu", value: missingDisplay },
+    { label: "Nợ nghiệp", value: debtDisplay },
+  ];
+  summaryMetrics.forEach((metric, index) => {
+    const column = index % 3;
+    const row = Math.floor(index / 3);
+    const x = 342 + column * 144;
+    const y = topY + 52 + row * 58;
+    const isDebt = index === 8;
+    const isMissing = index === 7;
+    drawRoundRect(
+      context,
+      x,
+      y,
+      138,
+      52,
+      6,
+      isDebt ? "#fff1e8" : isMissing ? "#eef8f4" : "#f2f7f6",
+    );
+    context.fillStyle = isDebt ? "#d94e1f" : isMissing ? "#2e8674" : "#2a5f6b";
+    context.fillRect(x, y, 2, 52);
+    drawCanvasText(context, metric.label.toUpperCase(), x + 8, y + 20, {
+      color: "#68777b",
+      font: "800 6px Arial, sans-serif",
+      maxWidth: 78,
+    });
+    drawCanvasText(context, metric.value, x + 130, y + 33, {
+      align: "right",
+      color: "#b34a24",
+      font: "700 16px Georgia, serif",
+      maxWidth: 74,
+    });
+  });
+
+  const middleY = 392;
+  drawCanvasPanel(context, 12, middleY, 340, 302);
+  drawCanvasSectionTitle(
+    context,
+    "03",
+    "Kim tự tháp Pitago",
+    "Đỉnh · thử thách · mốc tuổi",
+    24,
+    middleY + 10,
+  );
+  const pyramidCenterX = 182;
+  const pyramidNodes = [
+    { peak: result.pyramid.peaks[3], x: pyramidCenterX, y: middleY + 74, label: "ĐỈNH 4" },
+    { peak: result.pyramid.peaks[2], x: pyramidCenterX, y: middleY + 147, label: "ĐỈNH 3" },
+    { peak: result.pyramid.peaks[0], x: 92, y: middleY + 222, label: "ĐỈNH 1" },
+    { peak: result.pyramid.peaks[1], x: 272, y: middleY + 222, label: "ĐỈNH 2" },
+  ];
+  context.strokeStyle = "#d3a337";
+  context.lineWidth = 1.5;
+  context.beginPath();
+  context.moveTo(92, middleY + 196);
+  context.lineTo(pyramidCenterX, middleY + 172);
+  context.lineTo(272, middleY + 196);
+  context.moveTo(pyramidCenterX, middleY + 121);
+  context.lineTo(pyramidCenterX, middleY + 100);
+  context.stroke();
+  pyramidNodes.forEach(({ peak, x, y, label }, index) => {
+    context.beginPath();
+    context.arc(x, y, 25, 0, Math.PI * 2);
+    context.fillStyle = index === 0 ? "#fff0e7" : "#ffffff";
+    context.fill();
+    context.strokeStyle = index === 0 ? "#d2693f" : "#8aa9a4";
+    context.stroke();
+    drawCanvasText(context, label, x, y - 9, {
+      align: "center",
+      color: "#657378",
+      font: "700 6px Arial, sans-serif",
+    });
+    drawCanvasText(context, peak.display, x, y + 9, {
+      align: "center",
+      color: "#b34a24",
+      font: "700 18px Georgia, serif",
+    });
+    drawCanvasText(context, `TT ${peak.challenge}`, x, y + 19, {
+      align: "center",
+      color: "#657378",
+      font: "700 6px Arial, sans-serif",
+    });
+    drawCanvasText(context, `${peak.milestoneAge} tuổi · ${peak.milestoneYear}`, x, y + 40, {
+      align: "center",
+      color: "#3e5f64",
+      font: "700 7px Arial, sans-serif",
+    });
+  });
+  [
+    ["THÁNG", result.pyramid.base.month],
+    ["NGÀY", result.pyramid.base.day],
+    ["NĂM", result.pyramid.base.year],
+  ].forEach(([label, value], index) => {
+    const x = 42 + index * 101;
+    drawRoundRect(context, x, middleY + 271, 91, 23, 5, "#eaf4f1", "#b8cbc7");
+    drawCanvasText(context, label, x + 10, middleY + 286, {
+      color: "#657378",
+      font: "700 6px Arial, sans-serif",
+    });
+    drawCanvasText(context, value, x + 74, middleY + 287, {
+      align: "right",
+      color: "#b34a24",
+      font: "700 12px Georgia, serif",
+    });
+  });
+
+  drawCanvasPanel(context, 360, middleY, 422, 302);
+  drawCanvasSectionTitle(
+    context,
+    "04",
+    "Năm cá nhân",
+    "Hiện tại và chu kỳ kế tiếp",
+    372,
+    middleY + 10,
+  );
+  const annualCards = [
+    {
+      title: `Năm thế giới ${result.annualCycle.worldYear.year}`,
+      value: String(result.annualCycle.worldYear.value),
+      note: "",
+      width: 91,
+    },
+    {
+      title: "Năm cá nhân hiện tại",
+      value: `PY (${result.annualCycle.currentPersonalYear.year}) = ${result.annualCycle.currentPersonalYear.value}`,
+      note: `${result.annualCycle.currentPersonalYear.operatingFrom} – ${result.annualCycle.currentPersonalYear.operatingTo}`,
+      width: 150,
+    },
+    {
+      title: "Năm cá nhân kế tiếp",
+      value: `PY (${result.annualCycle.nextPersonalYear.year}) = ${result.annualCycle.nextPersonalYear.value}`,
+      note: `${result.annualCycle.nextPersonalYear.operatingFrom} – ${result.annualCycle.nextPersonalYear.operatingTo}`,
+      width: 150,
+    },
+  ];
+  let annualX = 372;
+  annualCards.forEach((card, index) => {
+    drawRoundRect(
+      context,
+      annualX,
+      middleY + 50,
+      card.width,
+      65,
+      6,
+      index === 1 ? "#fff7df" : "#f3f8f6",
+      index === 1 ? "#d4a843" : "#d7dfdc",
+    );
+    drawCanvasText(context, card.title.toUpperCase(), annualX + 7, middleY + 70, {
+      color: "#657378",
+      font: "700 5.5px Arial, sans-serif",
+      maxWidth: card.width - 14,
+    });
+    drawCanvasText(context, card.value, annualX + 7, middleY + 92, {
+      color: index === 1 ? "#b34a24" : "#173f46",
+      font: index === 0 ? "700 19px Georgia, serif" : "700 13px Georgia, serif",
+      maxWidth: card.width - 14,
+    });
+    if (card.note) {
+      drawCanvasText(context, card.note, annualX + 7, middleY + 106, {
+        color: "#52686c",
+        font: "5px Arial, sans-serif",
+        maxWidth: card.width - 14,
+      });
+    }
+    annualX += card.width + 5;
+  });
+  result.annualCycle.cycle.forEach((item, index) => {
+    const x = 372 + index * 44.4;
+    drawRoundRect(
+      context,
+      x,
+      middleY + 123,
+      39,
+      31,
+      4,
+      item.isCurrent ? "#173f46" : "#edf4f2",
+      item.isCurrent ? "#d4a843" : "transparent",
+    );
+    drawCanvasText(context, item.year, x + 19.5, middleY + 136, {
+      align: "center",
+      color: item.isCurrent ? "#ffffff" : "#52686c",
+      font: "5px Arial, sans-serif",
+    });
+    drawCanvasText(context, item.value, x + 19.5, middleY + 149, {
+      align: "center",
+      color: item.isCurrent ? "#ffffff" : "#52686c",
+      font: "700 9px Arial, sans-serif",
+    });
+  });
+  drawCanvasText(context, "4 ĐỈNH CAO & THỬ THÁCH", 372, middleY + 174, {
+    color: "#173f46",
+    font: "700 9px Georgia, serif",
+  });
+  result.pyramid.peaks.forEach((peak, index) => {
+    const column = index % 2;
+    const row = Math.floor(index / 2);
+    const x = 372 + column * 202;
+    const y = middleY + 184 + row * 52;
+    drawRoundRect(context, x, y, 197, 46, 5, "#f6f8f5", "#d7dfdc");
+    context.fillStyle = "#d4a843";
+    context.fillRect(x, y, 2, 46);
+    drawCanvasText(context, `CHU KỲ ${index + 1}`, x + 8, y + 12, {
+      color: "#b34a24",
+      font: "800 6px Arial, sans-serif",
+    });
+    drawCanvasText(context, `Đỉnh ${peak.display}`, x + 8, y + 26, {
+      color: "#173f46",
+      font: "700 8px Arial, sans-serif",
+    });
+    drawCanvasText(context, `Thử thách ${peak.challenge}`, x + 98, y + 26, {
+      color: "#173f46",
+      font: "700 8px Arial, sans-serif",
+    });
+    drawCanvasText(context, `${peak.milestoneAge} tuổi · ${peak.milestoneYear}`, x + 8, y + 39, {
+      color: "#52686c",
+      font: "700 6px Arial, sans-serif",
+    });
+  });
+
+  const sineY = 702;
+  drawCanvasPanel(context, 12, sineY, 770, 386);
+  drawCanvasSectionTitle(
+    context,
+    "05",
+    "Biểu đồ chu kỳ hình SIN",
+    `Chu kỳ ${result.annualCycle.cycle[0].year}–${result.annualCycle.cycle[8].year}`,
+    24,
+    sineY + 10,
+  );
+  const sinePoints = result.annualCycle.cycle.map((item, index) => ({
+    ...item,
+    x: 78 + index * 80,
+    y: sineY + 105 + (CYCLE_POINT_Y[index] - 48) * 1.45,
+  }));
+  context.save();
+  context.setLineDash([5, 7]);
+  context.strokeStyle = "#c4d2cf";
+  context.beginPath();
+  context.moveTo(58, sineY + 194);
+  context.lineTo(736, sineY + 194);
+  context.stroke();
+  context.restore();
+  context.strokeStyle = "#d9612b";
+  context.lineWidth = 4;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.beginPath();
+  sinePoints.forEach((point, index) => {
+    if (index === 0) {
+      context.moveTo(point.x, point.y);
+      return;
+    }
+    const previous = sinePoints[index - 1];
+    const beforePrevious = sinePoints[index - 2] || previous;
+    const next = sinePoints[index + 1] || point;
+    context.bezierCurveTo(
+      previous.x + (point.x - beforePrevious.x) / 6,
+      previous.y + (point.y - beforePrevious.y) / 6,
+      point.x - (next.x - previous.x) / 6,
+      point.y - (next.y - previous.y) / 6,
+      point.x,
+      point.y,
+    );
+  });
+  context.stroke();
+  sinePoints.forEach((point) => {
+    if (point.isCurrent) {
+      context.save();
+      context.setLineDash([4, 5]);
+      context.strokeStyle = "#d4a843";
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.moveTo(point.x, sineY + 65);
+      context.lineTo(point.x, sineY + 300);
+      context.stroke();
+      context.restore();
+    }
+    context.beginPath();
+    context.arc(point.x, point.y, point.isCurrent ? 11 : 8, 0, Math.PI * 2);
+    context.fillStyle = point.isCurrent ? "#d7a52f" : "#ffffff";
+    context.fill();
+    context.strokeStyle = point.isCurrent ? "#ffffff" : "#28585f";
+    context.lineWidth = point.isCurrent ? 3 : 2;
+    context.stroke();
+    drawCanvasText(context, point.value, point.x, point.y + 3, {
+      align: "center",
+      color: point.isCurrent ? "#ffffff" : "#173f46",
+      font: "800 8px Arial, sans-serif",
+    });
+    drawCanvasText(context, point.year, point.x, sineY + 324, {
+      align: "center",
+      color: "#52686c",
+      font: "700 7px Arial, sans-serif",
+    });
+  });
+  const currentPoint = sinePoints.find((point) => point.isCurrent);
+  if (currentPoint) {
+    drawRoundRect(context, currentPoint.x - 36, sineY + 56, 72, 22, 11, "#173f46");
+    drawCanvasText(context, "HIỆN TẠI", currentPoint.x, sineY + 71, {
+      align: "center",
+      color: "#ffffff",
+      font: "800 7px Arial, sans-serif",
+    });
+  }
+  drawCanvasText(
+    context,
+    "Thời gian vận hành được xác định riêng theo khúc giao thời của từng năm cá nhân.",
+    397,
+    sineY + 365,
+    { align: "center", color: "#68777b", font: "7px Arial, sans-serif" },
+  );
+
+  context.fillStyle = "#102f34";
+  context.fillRect(0, 1095, logicalWidth, 28);
+  drawCanvasText(context, "Clow Cat Patronus · Nhân số học Pythagoras", 20, 1113, {
+    color: "#b8c6c7",
+    font: "6px Arial, sans-serif",
+  });
+  drawCanvasText(context, `${result.normalizedName} · ${result.formattedDate}`, 774, 1113, {
+    align: "right",
+    color: "#b8c6c7",
+    font: "6px Arial, sans-serif",
+  });
+
+  return await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => blob
+        ? resolve(blob)
+        : reject(new Error("Không thể tạo file JPG.")),
+      "image/jpeg",
+      0.94,
+    );
+  });
 }
 
 function WordPart({ part }: { part: NamePart }) {
@@ -159,6 +616,7 @@ export function NumerologyCalculator() {
     try {
       const nextResult = calculateNumerology(fullName, birthDate);
       setResult(nextResult);
+      setFullName(nextResult.fullName);
       setGeneratedAt(new Intl.DateTimeFormat("vi-VN", {
         day: "2-digit",
         month: "2-digit",
@@ -208,17 +666,9 @@ export function NumerologyCalculator() {
     if (!result || isExportingJpg) return;
     setIsExportingJpg(true);
     setMessage("");
-    document.body.dataset.numerologyImage = "summary";
 
     try {
-      await new Promise<void>((resolve) => {
-        window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()));
-      });
-      const summary = document.querySelector<HTMLElement>(
-        `.${styles.numerologyCustomerSummary}`,
-      );
-      if (!summary) throw new Error("Không tìm thấy bản tóm tắt để xuất JPG.");
-      const jpeg = await renderElementAsJpeg(summary);
+      const jpeg = await renderCustomerSummaryAsJpeg(result, generatedAt);
       const safeName = result.normalizedName
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
@@ -232,7 +682,6 @@ export function NumerologyCalculator() {
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Không thể xuất JPG.");
     } finally {
-      delete document.body.dataset.numerologyImage;
       setIsExportingJpg(false);
     }
   }
