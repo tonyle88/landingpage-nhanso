@@ -9,6 +9,7 @@ const actions = await read("next-app/app/admin/members/actions.ts");
 const page = await read("next-app/app/admin/members/page.tsx");
 const input = await read("next-app/lib/admin/member-input.ts");
 const dashboard = await read("next-app/app/admin/page.tsx");
+const serviceClient = await read("next-app/lib/supabase/server.ts");
 
 test("member management is owner-gated on page and server action", () => {
   assert.match(actions, /can\(principal\.role, "manage_roles"\)/);
@@ -48,4 +49,12 @@ test("member UI explains password ownership and exposes role choices", () => {
   assert.match(page, /value="editor"/);
   assert.match(page, /value="auditor"/);
   assert.doesNotMatch(page, /type="password"/);
+});
+
+test("member list falls back to owner RLS when Auth Admin is unavailable", () => {
+  assert.match(page, /createAuthServerClient/);
+  assert.match(page, /\.from\("admin_roles"\)/);
+  assert.match(page, /authDirectoryAvailable/);
+  assert.match(page, /Danh sách tên và vai trò vẫn được tải/);
+  assert.match(serviceClient, /SUPABASE_SERVICE_ROLE_KEY/);
 });

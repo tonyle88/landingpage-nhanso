@@ -20,7 +20,9 @@ export function createPublicServerClient(): SupabaseClient<Database> | null {
 }
 
 export function createServiceServerClient(): SupabaseClient<Database> | null {
-  const secretKey = process.env.SUPABASE_SECRET_KEY?.trim();
+  const secretKey =
+    process.env.SUPABASE_SECRET_KEY?.trim() ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
   if (!secretKey) return null;
 
