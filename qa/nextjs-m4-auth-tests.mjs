@@ -17,6 +17,7 @@ const [
   authorizationMigration,
   authConfig,
   adminLogin,
+  adminLoginSession,
   adminPage,
   adminLogout,
   setPasswordPage,
@@ -31,6 +32,7 @@ const [
   read("next-app/supabase/migrations/202607240003_admin_authorization.sql"),
   read("next-app/supabase/config.toml"),
   read("next-app/app/admin/login/login-form.tsx"),
+  read("next-app/app/admin/login/session/route.ts"),
   read("next-app/app/admin/page.tsx"),
   read("next-app/app/admin/logout/route.ts"),
   read("next-app/app/admin/set-password/page.tsx"),
@@ -89,14 +91,22 @@ test("local Auth policy is invite-only with bounded sessions", () => {
 });
 
 test("admin routes are invite-only and authorize on the server", () => {
-  assert.match(adminLogin, /signInWithPassword/);
+  assert.match(adminLogin, /fetch\("\/admin\/login\/session"/);
+  assert.match(adminLoginSession, /signInWithPassword/);
+  assert.match(adminLoginSession, /response\.cookies\.set/);
+  assert.match(adminLoginSession, /Cache-Control/);
+  assert.doesNotMatch(adminLogin, /createAuthBrowserClient/);
   assert.doesNotMatch(adminLogin, /signUp|localStorage|sessionStorage/);
   assert.doesNotMatch(adminLogin, /error\.message/);
   assert.match(adminPage, /getAdminPrincipal\(\)/);
   assert.match(adminPage, /redirect\("\/admin\/login\?reason=unauthorized"\)/);
   assert.match(adminLogout, /auth\.signOut/);
+  assert.match(adminLogout, /authCookiePrefix/);
+  assert.match(adminLogout, /maxAge:\s*0/);
   assert.match(adminLogout, /Location:\s*"\/admin\/login"/);
-  assert.match(adminLogout, /Cache-Control", "private, no-store"/);
+  assert.match(adminLogout, /Cache-Control[\s\S]+no-store/);
+  assert.match(proxy, /isAdminAuthRoute/);
+  assert.match(proxy, /!isAdminAuthRoute/);
 });
 
 test("invite completion sets a password without exposing tokens", () => {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { createAuthBrowserClient } from "@/lib/supabase/auth-browser";
 import styles from "../admin.module.css";
 
 export function LoginForm() {
@@ -22,16 +21,18 @@ export function LoginForm() {
     setSubmitting(true);
     setMessage("");
     try {
-      const supabase = createAuthBrowserClient();
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch("/admin/login/session", {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
-      if (error) {
+      if (!response.ok) {
         setMessage("Không thể đăng nhập. Vui lòng kiểm tra lại thông tin.");
         return;
       }
-      window.location.assign("/admin");
+      window.location.replace("/admin");
     } catch {
       setMessage("Hệ thống đăng nhập tạm thời không khả dụng.");
     } finally {

@@ -58,9 +58,14 @@ export async function proxy(request: NextRequest) {
   });
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const isAdminAuthRoute =
+    request.nextUrl.pathname.startsWith("/admin/login")
+    || request.nextUrl.pathname.startsWith("/admin/logout")
+    || request.nextUrl.pathname.startsWith("/admin/set-password");
 
   if (
     request.nextUrl.pathname.startsWith("/admin") &&
+    !isAdminAuthRoute &&
     supabaseUrl &&
     publishableKey
   ) {
