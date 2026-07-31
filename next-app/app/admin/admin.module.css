@@ -1288,6 +1288,175 @@
 .numerologyNameTable td strong { margin-top: 3px; font-size: .75rem; }
 .numerologyEmpty { color: #a8a09a; }
 
+.numerologyPyramidSection { margin: 0 24px 11px; }
+.numerologyPyramidLayout {
+  display: grid;
+  grid-template-columns: minmax(300px, .78fr) minmax(440px, 1.22fr);
+  gap: 18px;
+  align-items: stretch;
+}
+.numerologyPyramid {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  padding: 18px;
+  border: 1px solid #cbd9d6;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 50% 35%, rgb(240 201 106 / 18%), transparent 42%),
+    #f2f8f6;
+}
+.numerologyPyramidTop,
+.numerologyPyramidMiddle,
+.numerologyPyramidPair > div,
+.numerologyPyramidBase > div {
+  min-width: 82px;
+  min-height: 72px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 3px;
+  padding: 9px;
+  border: 1px solid #89a9a4;
+  border-radius: 50%;
+  color: #173f46;
+  background: #fff;
+  box-shadow: 0 8px 20px rgb(23 63 70 / 10%);
+}
+.numerologyPyramidTop {
+  border-color: #d2693f;
+  background: #fff0e7;
+  box-shadow: 0 0 0 6px rgb(217 78 31 / 8%);
+}
+.numerologyPyramidMiddle {
+  border-color: #c69f3b;
+  background: #fff8df;
+}
+.numerologyPyramidPair,
+.numerologyPyramidBase {
+  width: 100%;
+  display: grid;
+  align-items: center;
+}
+.numerologyPyramidPair {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-items: center;
+  gap: 50px;
+}
+.numerologyPyramidBase {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-items: center;
+  gap: 8px;
+}
+.numerologyPyramidBase > div {
+  min-width: 68px;
+  min-height: 68px;
+  border-radius: 9px;
+  background: #e9f3f0;
+  box-shadow: none;
+}
+.numerologyPyramidTop span,
+.numerologyPyramidMiddle span,
+.numerologyPyramidPair span,
+.numerologyPyramidBase span {
+  color: var(--report-muted);
+  font-size: .55rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.numerologyPyramidTop strong,
+.numerologyPyramidMiddle strong,
+.numerologyPyramidPair strong,
+.numerologyPyramidBase strong {
+  color: #b34a24;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+.numerologyPyramidTop small,
+.numerologyPyramidMiddle small,
+.numerologyPyramidPair small {
+  color: var(--report-muted);
+  font-size: .52rem;
+  text-align: center;
+}
+.numerologyPyramidArrow {
+  min-height: 23px;
+  display: grid;
+  place-items: center;
+  color: #b8862e;
+  font-size: .8rem;
+  font-weight: 900;
+  letter-spacing: .28em;
+}
+
+.numerologyPyramidDetails { min-width: 0; display: grid; gap: 10px; }
+.numerologyPyramidRule {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  align-items: center;
+  padding: 12px 14px;
+  border-left: 3px solid #d4a843;
+  border-radius: 7px;
+  background: #fff8e8;
+}
+.numerologyPyramidRule > span {
+  color: var(--report-muted);
+  font-size: .68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.numerologyPyramidRule > strong { text-align: right; font-size: .82rem; }
+.numerologyPyramidRule > small {
+  grid-column: 1 / -1;
+  color: var(--report-muted);
+  font-size: .64rem;
+}
+.numerologyPyramidCycles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.numerologyPyramidCycles article {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--report-line);
+  border-radius: 8px;
+  background: #fff;
+}
+.numerologyPyramidCycles article > span {
+  color: #b34a24;
+  font-size: .62rem;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.numerologyPyramidCycles article > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.numerologyPyramidCycles article strong { font-size: .75rem; }
+.numerologyPyramidCycles article small {
+  color: var(--report-muted);
+  font-size: .61rem;
+  text-align: right;
+}
+.numerologyPyramidCycles article p {
+  margin: 0;
+  padding-top: 7px;
+  border-top: 1px dashed var(--report-line);
+  color: #28585f;
+  font-size: .66rem;
+  font-weight: 800;
+}
+
 .numerologyCalculations { margin: 0 24px 24px; }
 .numerologyCalculationList {
   display: grid;
@@ -1410,7 +1579,8 @@
   .thumbnailPreview { grid-template-columns: 1fr; }
   .adminToast { right: 16px; bottom: 16px; }
   .numerologyFormPanel,
-  .numerologyColumns { grid-template-columns: 1fr; }
+  .numerologyColumns,
+  .numerologyPyramidLayout { grid-template-columns: 1fr; }
   .numerologyForm { grid-template-columns: 1fr; }
   .numerologyFormActions,
   .numerologyMessage { grid-column: auto; }
@@ -1436,6 +1606,10 @@
   .numerologyClient,
   .numerologyReportHeader { padding-inline: 16px; }
   .numerologyColumns { padding-inline: 16px; }
+  .numerologyPyramidSection { margin-inline: 16px; }
+  .numerologyPyramid { padding-inline: 10px; }
+  .numerologyPyramidPair { gap: 18px; }
+  .numerologyPyramidCycles { grid-template-columns: 1fr; }
   .numerologyCalculations { margin-inline: 16px; }
   .numerologySpecials { grid-template-columns: 1fr; }
 }
@@ -1480,6 +1654,23 @@
   }
   .numerologyReportCard { padding: 13px; break-inside: avoid; }
   .numerologyCardHeading { margin-bottom: 11px; }
+  .numerologyPyramidSection { margin: 0 17px 7px; break-inside: avoid; }
+  .numerologyPyramidLayout {
+    grid-template-columns: minmax(250px, .78fr) minmax(350px, 1.22fr);
+    gap: 10px;
+  }
+  .numerologyPyramid { padding: 10px; }
+  .numerologyPyramidTop,
+  .numerologyPyramidMiddle,
+  .numerologyPyramidPair > div,
+  .numerologyPyramidBase > div {
+    min-width: 62px;
+    min-height: 58px;
+    padding: 6px;
+  }
+  .numerologyPyramidArrow { min-height: 15px; }
+  .numerologyPyramidCycles { gap: 5px; }
+  .numerologyPyramidCycles article { gap: 5px; padding: 8px; }
   .numerologyCalculations { margin: 0 17px 16px; }
   .numerologyCalculation { padding: 5px 0; }
   .numerologyFooter { padding: 10px 17px; }
