@@ -35,10 +35,20 @@ const toolNavigation = [
   },
 ];
 
+const systemNavigation = [
+  {
+    href: "/admin/members",
+    icon: "members" as const,
+    title: "Quản lý thành viên",
+    description: "Tạo tài khoản nội bộ, theo dõi trạng thái và phân quyền truy cập.",
+  },
+];
+
 type AdminNavigationItem =
   | (typeof contentNavigation)[number]
   | (typeof operationNavigation)[number]
-  | (typeof toolNavigation)[number];
+  | (typeof toolNavigation)[number]
+  | (typeof systemNavigation)[number];
 
 function AdminNavigationCard({ item }: { item: AdminNavigationItem }) {
   return (
@@ -116,6 +126,19 @@ export default async function AdminPage() {
             ))}
           </nav>
         </div>
+        {principal.role === "owner" ? (
+          <div className={styles.dashboardSection}>
+            <div className={styles.dashboardSectionHeading}>
+              <div><span>04</span><h2>Hệ thống</h2></div>
+              <p>Quản lý người có quyền truy cập trang admin.</p>
+            </div>
+            <nav className={styles.adminNav} aria-label="Quản trị hệ thống">
+              {systemNavigation.map((item) => (
+                <AdminNavigationCard item={item} key={item.href} />
+              ))}
+            </nav>
+          </div>
+        ) : null}
       </section>
     </main>
   );
