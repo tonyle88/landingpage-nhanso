@@ -20,7 +20,7 @@ const METRICS: Array<[NumerologyMetricKey, string, string]> = [
   ["maturity", "Trưởng thành", "Đường đời + sứ mệnh"],
 ];
 const CHART_ORDER = [3, 6, 9, 2, 5, 8, 1, 4, 7];
-const CYCLE_POINT_Y = [48, 79, 143, 166, 107, 48, 79, 143, 166];
+const CYCLE_POINT_Y = [48, 79, 143, 166, 107, 48, 178, 130, 82];
 
 function createSmoothCyclePath(points: Array<{ x: number; y: number }>) {
   return points.reduce((path, point, index) => {
@@ -286,7 +286,7 @@ export function NumerologyCalculator() {
                         <small>Số {number}</small>
                         <div className={styles.numerologyCellValues}>
                           <span>
-                            <em>Ngày sinh</em>
+                            <abbr title="Ngày sinh">NS</abbr>
                             <strong className={birthCount
                               ? styles.numerologyBirthDigits
                               : styles.numerologyBirthDigitsMissing}
@@ -297,7 +297,7 @@ export function NumerologyCalculator() {
                             </strong>
                           </span>
                           <span>
-                            <em>Họ tên</em>
+                            <abbr title="Họ tên">HT</abbr>
                             <strong className={nameCount
                               ? styles.numerologyNameDigits
                               : styles.numerologyNameDigitsMissing}
@@ -368,18 +368,22 @@ export function NumerologyCalculator() {
                   className={styles.numerologyPyramid}
                 >
                   <div className={styles.numerologyPyramidTop}>
-                    <span>Đỉnh 4</span>
-                    <strong>{result.pyramid.peaks[3].display}</strong>
-                    <small>
+                    <div className={styles.numerologyPyramidCircle}>
+                      <span>Đỉnh 4</span>
+                      <strong>{result.pyramid.peaks[3].display}</strong>
+                    </div>
+                    <small className={styles.numerologyPyramidMilestone}>
                       {result.pyramid.peaks[3].milestoneAge} tuổi ·{" "}
                       {result.pyramid.peaks[3].milestoneYear}
                     </small>
                   </div>
                   <div className={styles.numerologyPyramidArrow}>↑</div>
                   <div className={styles.numerologyPyramidMiddle}>
-                    <span>Đỉnh 3</span>
-                    <strong>{result.pyramid.peaks[2].display}</strong>
-                    <small>
+                    <div className={styles.numerologyPyramidCircle}>
+                      <span>Đỉnh 3</span>
+                      <strong>{result.pyramid.peaks[2].display}</strong>
+                    </div>
+                    <small className={styles.numerologyPyramidMilestone}>
                       {result.pyramid.peaks[2].milestoneAge} tuổi ·{" "}
                       {result.pyramid.peaks[2].milestoneYear}
                     </small>
@@ -388,9 +392,11 @@ export function NumerologyCalculator() {
                   <div className={styles.numerologyPyramidPair}>
                     {[0, 1].map((index) => (
                       <div key={index}>
-                        <span>Đỉnh {index + 1}</span>
-                        <strong>{result.pyramid.peaks[index].display}</strong>
-                        <small>
+                        <div className={styles.numerologyPyramidCircle}>
+                          <span>Đỉnh {index + 1}</span>
+                          <strong>{result.pyramid.peaks[index].display}</strong>
+                        </div>
+                        <small className={styles.numerologyPyramidMilestone}>
                           {result.pyramid.peaks[index].milestoneAge} tuổi ·{" "}
                           {result.pyramid.peaks[index].milestoneYear}
                         </small>

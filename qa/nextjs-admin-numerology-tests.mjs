@@ -202,10 +202,17 @@ test("is integrated only into the Next.js admin", async () => {
   assert.match(dashboard, /href: "\/admin\/numerology"/);
   assert.match(calculator, /calculateNumerology/);
   assert.match(calculator, /Kim tự tháp Pitago/);
+  assert.match(calculator, /numerologyPyramidMilestone/);
   assert.match(calculator, /result\.nameDigitCounts/);
   assert.match(calculator, /Chỉ số thiếu vẫn chỉ xét ngày sinh/);
+  assert.match(calculator, /<abbr title="Ngày sinh">NS<\/abbr>/);
+  assert.match(calculator, /<abbr title="Họ tên">HT<\/abbr>/);
   assert.match(calculator, /Năm thế giới &amp; năm cá nhân/);
   assert.match(calculator, /Biểu đồ chu kỳ hình sin/);
+  assert.match(
+    calculator,
+    /CYCLE_POINT_Y = \[48, 79, 143, 166, 107, 48, 178, 130, 82\]/,
+  );
   assert.match(calculator, /numerologySineCurrentPoint/);
   assert.match(calculator, /window\.print\(\)/);
   assert.match(styles, /@media print/);
