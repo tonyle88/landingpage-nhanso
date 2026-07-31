@@ -25,6 +25,25 @@ test("matches the handwritten Trần Minh Tú example", () => {
   assert.deepEqual(result.karmicDebts, [
     { display: "13/4", sources: ["Chỉ số linh hồn"] },
   ]);
+  assert.deepEqual(result.pyramid.base, { month: 3, day: 3, year: 4 });
+  assert.deepEqual(
+    result.pyramid.peaks.map((peak) => peak.value),
+    [6, 7, 4, 7],
+  );
+  assert.deepEqual(
+    result.pyramid.peaks.map((peak) => peak.challenge),
+    [0, 1, 1, 1],
+  );
+  assert.equal(result.pyramid.peaks[2].challengeFormula, "|3 - 4| = 1");
+  assert.deepEqual(
+    result.pyramid.peaks.map((peak) => peak.milestoneAge),
+    [35, 44, 53, 62],
+  );
+  assert.deepEqual(
+    result.pyramid.peaks.map((peak) => peak.milestoneYear),
+    [2019, 2028, 2037, 2046],
+  );
+  assert.equal(result.pyramid.firstMilestoneFormula, "36 - 1 = 35 tuổi");
 });
 
 test("supports master numbers, Vietnamese names and date validation", () => {
@@ -55,6 +74,7 @@ test("is integrated only into the Next.js admin", async () => {
 
   assert.match(dashboard, /href: "\/admin\/numerology"/);
   assert.match(calculator, /calculateNumerology/);
+  assert.match(calculator, /Kim tự tháp Pitago/);
   assert.match(calculator, /window\.print\(\)/);
   assert.match(styles, /@media print/);
 });

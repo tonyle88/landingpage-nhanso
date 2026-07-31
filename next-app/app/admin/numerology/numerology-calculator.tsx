@@ -279,10 +279,105 @@ export function NumerologyCalculator() {
             </section>
 
             <section
-              className={`${styles.numerologyReportCard} ${styles.numerologyCalculations}`}
+              className={`${styles.numerologyReportCard} ${styles.numerologyPyramidSection}`}
             >
               <div className={styles.numerologyCardHeading}>
                 <span>03</span>
+                <div>
+                  <h3>Kim tự tháp Pitago</h3>
+                  <p>
+                    Bốn đỉnh cao, bốn thử thách và các mốc 9 năm được tính từ
+                    tháng–ngày–năm sinh. Thử thách đỉnh 3 dùng quy tắc riêng:
+                    |tháng sinh − năm sinh|.
+                  </p>
+                </div>
+              </div>
+              <div className={styles.numerologyPyramidLayout}>
+                <div
+                  aria-label="Biểu đồ kim tự tháp Pitago"
+                  className={styles.numerologyPyramid}
+                >
+                  <div className={styles.numerologyPyramidTop}>
+                    <span>Đỉnh 4</span>
+                    <strong>{result.pyramid.peaks[3].value}</strong>
+                    <small>
+                      {result.pyramid.peaks[3].milestoneAge} tuổi ·{" "}
+                      {result.pyramid.peaks[3].milestoneYear}
+                    </small>
+                  </div>
+                  <div className={styles.numerologyPyramidArrow}>↑</div>
+                  <div className={styles.numerologyPyramidMiddle}>
+                    <span>Đỉnh 3</span>
+                    <strong>{result.pyramid.peaks[2].value}</strong>
+                    <small>
+                      {result.pyramid.peaks[2].milestoneAge} tuổi ·{" "}
+                      {result.pyramid.peaks[2].milestoneYear}
+                    </small>
+                  </div>
+                  <div className={styles.numerologyPyramidArrow}>↗ ↑ ↖</div>
+                  <div className={styles.numerologyPyramidPair}>
+                    {[0, 1].map((index) => (
+                      <div key={index}>
+                        <span>Đỉnh {index + 1}</span>
+                        <strong>{result.pyramid.peaks[index].value}</strong>
+                        <small>
+                          {result.pyramid.peaks[index].milestoneAge} tuổi ·{" "}
+                          {result.pyramid.peaks[index].milestoneYear}
+                        </small>
+                      </div>
+                    ))}
+                  </div>
+                  <div className={styles.numerologyPyramidArrow}>↗ ↑ ↖</div>
+                  <div className={styles.numerologyPyramidBase}>
+                    <div>
+                      <span>Tháng sinh</span>
+                      <strong>{result.pyramid.base.month}</strong>
+                    </div>
+                    <div>
+                      <span>Ngày sinh</span>
+                      <strong>{result.pyramid.base.day}</strong>
+                    </div>
+                    <div>
+                      <span>Năm sinh</span>
+                      <strong>{result.pyramid.base.year}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.numerologyPyramidDetails}>
+                  <div className={styles.numerologyPyramidRule}>
+                    <span>Mốc đỉnh đầu tiên</span>
+                    <strong>{result.pyramid.firstMilestoneFormula}</strong>
+                    <small>Các đỉnh tiếp theo cách nhau 9 năm.</small>
+                  </div>
+                  <div className={styles.numerologyPyramidCycles}>
+                    {result.pyramid.peaks.map((peak, index) => (
+                      <article key={index}>
+                        <span>Chu kỳ {index + 1}</span>
+                        <div>
+                          <strong>Đỉnh {peak.value}</strong>
+                          <small>{peak.formula}</small>
+                        </div>
+                        <div>
+                          <strong>Thử thách {peak.challenge}</strong>
+                          <small>{peak.challengeFormula}</small>
+                        </div>
+                        <p>
+                          Mốc {peak.milestoneAge} tuổi · năm{" "}
+                          {peak.milestoneYear}
+                        </p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section
+              className={`${styles.numerologyReportCard} ${styles.numerologyCalculations}`}
+            >
+              <div className={styles.numerologyCardHeading}>
+                <span>04</span>
                 <div>
                   <h3>Chi tiết phép tính</h3>
                   <p>

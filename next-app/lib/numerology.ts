@@ -37,6 +37,22 @@ export type NumerologyResult = {
   digitCounts: Record<string, number>;
   missing: number[];
   karmicDebts: Array<{ display: string; sources: string[] }>;
+  pyramid: {
+    base: {
+      month: number;
+      day: number;
+      year: number;
+    };
+    peaks: Array<{
+      value: number;
+      formula: string;
+      challenge: number;
+      challengeFormula: string;
+      milestoneAge: number;
+      milestoneYear: number;
+    }>;
+    firstMilestoneFormula: string;
+  };
 };
 
 const PYTHAGOREAN_VALUES: Record<string, number> = {
@@ -189,6 +205,25 @@ function completeMetric(
   };
 }
 
+function pyramidFormula(left: number, right: number) {
+  const raw = left + right;
+  const value = reduceNumerologyNumber(raw, false);
+  return {
+    value,
+    formula: raw === value
+      ? `${left} + ${right} = ${value}`
+      : `${left} + ${right} = ${raw} → ${value}`,
+  };
+}
+
+function challengeFormula(left: number, right: number) {
+  const value = Math.abs(left - right);
+  return {
+    value,
+    formula: `|${left} - ${right}| = ${value}`,
+  };
+}
+
 export function calculateNumerology(
   fullName: string,
   isoDate: string,
@@ -264,6 +299,29 @@ export function calculateNumerology(
     maturity,
   };
 
+  const pyramidBase = {
+    month: reduceNumerologyNumber(month, false),
+    day: reduceNumerologyNumber(day, false),
+    year: reduceNumerologyNumber(year, false),
+  };
+  const peak1 = pyramidFormula(pyramidBase.month, pyramidBase.day);
+  const peak2 = pyramidFormula(pyramidBase.day, pyramidBase.year);
+  const peak3 = pyramidFormula(peak1.value, peak2.value);
+  const peak4 = pyramidFormula(pyramidBase.month, pyramidBase.year);
+  const challenge1 = challengeFormula(pyramidBase.day, pyramidBase.month);
+  const challenge2 = challengeFormula(pyramidBase.year, pyramidBase.day);
+  const challenge3 = challengeFormula(pyramidBase.month, pyramidBase.year);
+  const challenge4 = challengeFormula(pyramidBase.year, pyramidBase.month);
+  const lifePathBase = reduceNumerologyNumber(lifePath.value, false);
+  const firstMilestoneAge = 36 - lifePathBase;
+  const pyramidPeaks = [peak1, peak2, peak3, peak4];
+  const pyramidChallenges = [
+    challenge1,
+    challenge2,
+    challenge3,
+    challenge4,
+  ];
+
   const dateDigits =
     `${String(day).padStart(2, "0")}${String(month).padStart(2, "0")}${year}`;
   const digitCounts = Object.fromEntries(
@@ -299,5 +357,17 @@ export function calculateNumerology(
       display,
       sources,
     })),
+    pyramid: {
+      base: pyramidBase,
+      peaks: pyramidPeaks.map((peak, index) => ({
+        ...peak,
+        challenge: pyramidChallenges[index].value,
+        challengeFormula: pyramidChallenges[index].formula,
+        milestoneAge: firstMilestoneAge + index * 9,
+        milestoneYear: year + firstMilestoneAge + index * 9,
+      })),
+      firstMilestoneFormula:
+        `36 - ${lifePathBase} = ${firstMilestoneAge} tuổi`,
+    },
   };
 }
