@@ -1934,6 +1934,24 @@
   background: rgb(255 138 128 / 9%);
 }
 
+.memberLinkButton {
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  color: var(--gold-soft);
+  background: transparent;
+  font: inherit;
+  font-size: .65rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.memberLinkButton:hover {
+  color: #fff;
+}
+
 .memberEmpty {
   margin: 0;
   padding: 32px 18px;

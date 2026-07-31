@@ -15,10 +15,18 @@ export function SetPasswordForm() {
     let active = true;
     async function acceptInvite() {
       try {
-        const fragment = new URLSearchParams(window.location.hash.slice(1));
+        const currentUrl = new URL(window.location.href);
+        const fragment = new URLSearchParams(currentUrl.hash.slice(1));
         const accessToken = fragment.get("access_token");
         const refreshToken = fragment.get("refresh_token");
-        const linkError = fragment.get("error_description");
+        const code = currentUrl.searchParams.get("code");
+        const tokenHash = currentUrl.searchParams.get("token_hash");
+        const linkType =
+          currentUrl.searchParams.get("type") || fragment.get("type");
+        const linkError =
+          currentUrl.searchParams.get("error_description") ||
+          currentUrl.searchParams.get("error") ||
+          fragment.get("error_description");
         const supabase = createAuthBrowserClient();
         const { data: existing } = await supabase.auth.getSession();
 
@@ -35,6 +43,22 @@ export function SetPasswordForm() {
             const { data: recovered } = await supabase.auth.getSession();
             if (!recovered.session) throw error;
           }
+          window.history.replaceState({}, "", window.location.pathname);
+        } else if (!linkError && code) {
+          const { error } =
+            await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+          window.history.replaceState({}, "", window.location.pathname);
+        } else if (
+          !linkError &&
+          tokenHash &&
+          (linkType === "invite" || linkType === "recovery")
+        ) {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: linkType,
+          });
+          if (error) throw error;
           window.history.replaceState({}, "", window.location.pathname);
         } else {
           throw new Error("invalid invite");

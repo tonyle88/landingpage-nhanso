@@ -101,8 +101,10 @@ test("admin routes are invite-only and authorize on the server", () => {
 
 test("invite completion sets a password without exposing tokens", () => {
   assert.match(setPasswordPage, /robots:\s*\{\s*index:\s*false/);
-  assert.match(setPasswordForm, /window\.location\.hash/);
+  assert.match(setPasswordForm, /currentUrl\.hash/);
   assert.match(setPasswordForm, /supabase\.auth\.setSession/);
+  assert.match(setPasswordForm, /exchangeCodeForSession/);
+  assert.match(setPasswordForm, /supabase\.auth\.verifyOtp/);
   assert.match(setPasswordForm, /supabase\.auth\.updateUser\(\{\s*password\s*\}\)/);
   assert.match(setPasswordForm, /window\.history\.replaceState/);
   assert.doesNotMatch(setPasswordForm, /localStorage|sessionStorage|console\./);
@@ -113,6 +115,8 @@ test("landing page forwards misplaced invite and recovery fragments", () => {
   assert.match(inviteRedirect, /type === "recovery"/);
   assert.match(inviteRedirect, /access_token/);
   assert.match(inviteRedirect, /refresh_token/);
+  assert.match(inviteRedirect, /searchParams\.has\("code"\)/);
+  assert.match(inviteRedirect, /searchParams\.has\("token_hash"\)/);
   assert.match(inviteRedirect, /\/admin\/set-password/);
   assert.match(inviteRedirect, /window\.location\.replace/);
 });
