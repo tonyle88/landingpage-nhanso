@@ -22,8 +22,6 @@ const state = {
   search: '',
   selectedSection: 'all',
   miniReportFilter: { type: 'life_path', number: '1' },
-  numerologyDraft: { fullName: '', birthDate: '' },
-  numerologyResult: null,
   feedbackPage: 1,
   savingKeys: new Set(),
   toastTimeout: null,
@@ -74,8 +72,6 @@ const els = {
   adminHamburger: document.getElementById('admin-hamburger'),
   sidebar: document.querySelector('.sidebar'),
   globalLoader: document.getElementById('global-loader'),
-  toolbar: document.querySelector('.toolbar'),
-  statusStrip: document.querySelector('.status-strip'),
 };
 
 document.addEventListener('DOMContentLoaded', boot);
@@ -456,18 +452,12 @@ function expireSession() {
   state.backupStatus = null;
   state.restoreCandidate = null;
   state.backupSchedule = null;
-  state.numerologyDraft = { fullName: '', birthDate: '' };
-  state.numerologyResult = null;
-  state.selectedSection = 'all';
   els.latestBackupLink?.removeAttribute('href');
   sessionStorage.removeItem(SESSION_KEY);
   showLogin();
 }
 
 function render() {
-  const isNumerologyCalculator = state.selectedSection === 'numerology-calculator';
-  if (els.toolbar) els.toolbar.hidden = isNumerologyCalculator;
-  if (els.statusStrip) els.statusStrip.hidden = isNumerologyCalculator;
   renderSections();
   renderHeading();
   renderCards();
@@ -478,7 +468,6 @@ function renderSections() {
   const groups = buildSectionGroups();
   const buttons = [
     { name: 'all', label: 'Tất cả', count: getVisibleContentItems().length },
-    { name: 'numerology-calculator', label: 'Công cụ tính số', count: 'PDF' },
     ...groups.map((group) => ({ name: group.name, label: group.name, count: group.count })),
     { name: 'packages-manager', label: 'Gói Tư Vấn', count: state.packages ? state.packages.length : 0 },
     { name: 'payment-settings', label: 'Thanh toán', count: state.paymentSettings?.sepayEnabled ? 'SePay' : 'QR' },
@@ -509,12 +498,7 @@ function renderSections() {
 
 function renderHeading() {
   let label, count, title, desc;
-  if (state.selectedSection === 'numerology-calculator') {
-    label = 'Công cụ chuyên sâu';
-    title = 'Lập bản đồ nhân số học';
-    count = '9 chỉ số';
-    desc = 'Nhập họ tên và ngày sinh để tính đầy đủ chỉ số, xem bản đồ ngày sinh và xuất PDF gửi khách.';
-  } else if (state.selectedSection === 'feedback-images') {
+  if (state.selectedSection === 'feedback-images') {
     label = 'Ảnh khách hàng';
     title = 'Quản lý ảnh Feedback';
     count = state.feedbackImages ? state.feedbackImages.length : 0;
@@ -556,10 +540,6 @@ function renderHeading() {
 }
 
 function renderCards() {
-  if (state.selectedSection === 'numerology-calculator') {
-    renderNumerologyCalculator();
-    return;
-  }
   if (state.selectedSection === 'feedback-images') {
     renderFeedbackImages();
     return;
@@ -712,308 +692,6 @@ function parseMiniReportMeaningKey(key) {
 function formatMiniReportNumberLabel(number) {
   const masterLabels = { 11: '11/2', 22: '22/4', 33: '33/6' };
   return masterLabels[Number(number)] || number;
-}
-
-function renderNumerologyCalculator() {
-  els.editorGrid.innerHTML = '';
-  els.emptyState.classList.add('is-hidden');
-
-  const container = document.createElement('section');
-  container.className = 'numerology-tool';
-  container.innerHTML = `
-    <section class="numerology-input-panel" aria-labelledby="numerology-form-title">
-      <div class="numerology-input-copy">
-        <p class="eyebrow">Hồ sơ khách hàng</p>
-        <h3 id="numerology-form-title">Thông tin lập bản đồ</h3>
-        <p>Áp dụng cùng công thức Pythagoras như trang chủ. Dữ liệu chỉ được tính trên trình duyệt và không tự lưu lên hệ thống.</p>
-      </div>
-      <form class="numerology-form" id="numerology-form">
-        <div>
-          <label for="numerology-full-name">Họ và tên khai sinh</label>
-          <input
-            id="numerology-full-name"
-            name="fullName"
-            type="text"
-            autocomplete="off"
-            placeholder="Ví dụ: Trần Minh Tú"
-            value="${escapeHtml(state.numerologyDraft.fullName)}"
-            required
-          />
-        </div>
-        <div>
-          <label for="numerology-birth-date">Ngày sinh</label>
-          <input
-            id="numerology-birth-date"
-            name="birthDate"
-            type="date"
-            min="1900-01-01"
-            max="${getAdminTodayDateValue()}"
-            value="${escapeHtml(state.numerologyDraft.birthDate)}"
-            required
-          />
-        </div>
-        <div class="numerology-form-actions">
-          <button class="primary-button" type="submit">
-            <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
-            <span>Lập bản đồ</span>
-          </button>
-          <button class="ghost-button" id="numerology-reset" type="button">
-            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
-            <span>Làm mới</span>
-          </button>
-        </div>
-        <p class="form-message" id="numerology-message" role="status"></p>
-      </form>
-    </section>
-    <div id="numerology-result-host"></div>
-  `;
-
-  els.editorGrid.appendChild(container);
-
-  const form = container.querySelector('#numerology-form');
-  const message = container.querySelector('#numerology-message');
-  const nameInput = container.querySelector('#numerology-full-name');
-  const dateInput = container.querySelector('#numerology-birth-date');
-
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    if (!form.reportValidity()) return;
-    try {
-      if (!window.ClowNumerology) throw new Error('Công cụ tính chưa tải xong. Vui lòng tải lại trang.');
-      state.numerologyDraft = {
-        fullName: nameInput.value.trim(),
-        birthDate: dateInput.value,
-      };
-      state.numerologyResult = window.ClowNumerology.calculate(
-        state.numerologyDraft.fullName,
-        state.numerologyDraft.birthDate
-      );
-      renderNumerologyCalculator();
-      requestAnimationFrame(() => {
-        document.getElementById('numerology-report')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    } catch (error) {
-      setMessage(message, error.message, 'error');
-    }
-  });
-
-  container.querySelector('#numerology-reset').addEventListener('click', () => {
-    state.numerologyDraft = { fullName: '', birthDate: '' };
-    state.numerologyResult = null;
-    renderNumerologyCalculator();
-  });
-
-  if (state.numerologyResult) {
-    const resultHost = container.querySelector('#numerology-result-host');
-    resultHost.innerHTML = createNumerologyReportHtml(state.numerologyResult);
-    resultHost.querySelector('#numerology-export-pdf')?.addEventListener('click', exportNumerologyPdf);
-  }
-}
-
-function createNumerologyReportHtml(result) {
-  const metricDefinitions = [
-    ['lifePath', 'Đường đời', 'Ngày + tháng + năm sinh'],
-    ['birthday', 'Ngày sinh', 'Năng lượng ngày chào đời'],
-    ['mission', 'Sứ mệnh', 'Toàn bộ chữ cái trong họ tên'],
-    ['soul', 'Linh hồn', 'Nguyên âm trong họ tên'],
-    ['personality', 'Nhân cách', 'Phụ âm trong họ tên'],
-    ['attitude', 'Thái độ', 'Ngày sinh + tháng sinh'],
-    ['maturity', 'Trưởng thành', 'Đường đời + sứ mệnh'],
-  ];
-  const missingDisplay = result.missing.length ? result.missing.join(' · ') : 'Không có';
-  const debtDisplay = result.karmicDebts.length
-    ? result.karmicDebts.map((item) => item.display).join(' · ')
-    : 'Không có';
-  const metricCards = metricDefinitions.map(([key, label, note]) => {
-    const metric = result.metrics[key];
-    return `
-      <article class="numerology-metric-card${metric.karmicDebt ? ' has-karmic-debt' : ''}">
-        <span>${escapeHtml(label)}</span>
-        <strong>${escapeHtml(metric.display)}</strong>
-        <small>${escapeHtml(note)}</small>
-      </article>
-    `;
-  }).join('');
-
-  const debtSources = result.karmicDebts.length
-    ? result.karmicDebts.map((item) => `${item.display}: ${item.sources.join(', ')}`).join(' · ')
-    : 'Không phát hiện 13/4, 14/5, 16/7 hoặc 19/1 trong các chỉ số trên.';
-
-  const chartOrder = [3, 6, 9, 2, 5, 8, 1, 4, 7];
-  const birthChart = chartOrder.map((number) => {
-    const count = result.digitCounts[String(number)] || 0;
-    return `
-      <div class="birth-chart-cell${count ? '' : ' is-missing'}">
-        <small>Số ${number}</small>
-        <strong>${count ? String(number).repeat(count) : '—'}</strong>
-      </div>
-    `;
-  }).join('');
-
-  const nameRows = result.nameBreakdown.map((word) => `
-    <tr>
-      <th scope="row">${escapeHtml(word.word)}</th>
-      <td>${formatNumerologyWordPart(word.all)}</td>
-      <td>${formatNumerologyWordPart(word.vowels)}</td>
-      <td>${formatNumerologyWordPart(word.consonants)}</td>
-    </tr>
-  `).join('');
-
-  const calculationRows = metricDefinitions.map(([key, label]) => {
-    const metric = result.metrics[key];
-    return `
-      <div class="numerology-calculation-row">
-        <span>Chỉ số ${escapeHtml(label.toLowerCase())}</span>
-        <strong>${escapeHtml(metric.formula)}</strong>
-      </div>
-    `;
-  }).join('');
-
-  return `
-    <section class="numerology-result-wrap">
-      <div class="numerology-result-actions">
-        <div>
-          <strong>Đã lập đủ 9 nhóm chỉ số</strong>
-          <span>Kiểm tra lại họ tên và ngày sinh trước khi xuất.</span>
-        </div>
-        <button class="primary-button" id="numerology-export-pdf" type="button">
-          <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
-          <span>Xuất PDF</span>
-        </button>
-      </div>
-
-      <article class="numerology-report" id="numerology-report">
-        <header class="numerology-report-header">
-          <div class="numerology-report-brand">
-            <img src="/assets/images/logo2.png" width="54" height="54" alt="" />
-            <div>
-              <strong>Clow Cat Patronus</strong>
-              <span>Bản đồ nhân số học cá nhân</span>
-            </div>
-          </div>
-          <div class="numerology-report-date">
-            <span>Ngày lập bản đồ</span>
-            <strong>${escapeHtml(result.generatedAt)}</strong>
-          </div>
-        </header>
-
-        <section class="numerology-client-hero">
-          <p>Hồ sơ nhân số học</p>
-          <h2>${escapeHtml(result.fullName)}</h2>
-          <span>Ngày sinh ${escapeHtml(result.formattedDate)}</span>
-        </section>
-
-        <section class="numerology-metrics-grid" aria-label="Các chỉ số nhân số học">
-          ${metricCards}
-          <article class="numerology-metric-card is-missing-number">
-            <span>Chỉ số thiếu</span>
-            <strong>${escapeHtml(missingDisplay)}</strong>
-            <small>Các số 1–9 không có trong ngày sinh</small>
-          </article>
-          <article class="numerology-metric-card is-karmic-summary">
-            <span>Nợ nghiệp</span>
-            <strong>${escapeHtml(debtDisplay)}</strong>
-            <small>${escapeHtml(debtSources)}</small>
-          </article>
-        </section>
-
-        <section class="numerology-report-columns">
-          <article class="numerology-report-card">
-            <div class="numerology-report-card-heading">
-              <span>01</span>
-              <div>
-                <h3>Biểu đồ ngày sinh</h3>
-                <p>Số lặp được hiển thị theo số lần xuất hiện; ô “—” là số thiếu.</p>
-              </div>
-            </div>
-            <div class="birth-chart-grid">${birthChart}</div>
-          </article>
-
-          <article class="numerology-report-card">
-            <div class="numerology-report-card-heading">
-              <span>02</span>
-              <div>
-                <h3>Giải mã họ tên</h3>
-                <p>Giá trị Pythagoras được tính theo từng từ rồi rút gọn như công thức trang chủ.</p>
-              </div>
-            </div>
-            <div class="numerology-table-wrap">
-              <table class="numerology-name-table">
-                <thead>
-                  <tr>
-                    <th>Từ</th>
-                    <th>Sứ mệnh</th>
-                    <th>Linh hồn</th>
-                    <th>Nhân cách</th>
-                  </tr>
-                </thead>
-                <tbody>${nameRows}</tbody>
-              </table>
-            </div>
-          </article>
-        </section>
-
-        <section class="numerology-report-card numerology-calculations">
-          <div class="numerology-report-card-heading">
-            <span>03</span>
-            <div>
-              <h3>Chi tiết phép tính</h3>
-              <p>Các số 11, 22, 33 được giữ dưới dạng số chủ; nợ nghiệp được giữ dưới dạng số kép.</p>
-            </div>
-          </div>
-          <div class="numerology-calculation-list">${calculationRows}</div>
-          <div class="numerology-special-row">
-            <div>
-              <span>Chỉ số thiếu</span>
-              <strong>${escapeHtml(missingDisplay)}</strong>
-            </div>
-            <div>
-              <span>Chỉ số nợ nghiệp</span>
-              <strong>${escapeHtml(debtDisplay)}</strong>
-            </div>
-          </div>
-        </section>
-
-        <footer class="numerology-report-footer">
-          <span>Clow Cat Patronus · Bản đồ tham khảo theo hệ thống nhân số học Pythagoras</span>
-          <span>${escapeHtml(result.normalizedName)} · ${escapeHtml(result.formattedDate)}</span>
-        </footer>
-      </article>
-    </section>
-  `;
-}
-
-function formatNumerologyWordPart(part) {
-  if (!part.raw) return '<span class="numerology-empty-part">—</span>';
-  const calculation = part.raw === part.reduced ? String(part.raw) : `${part.raw} → ${part.reduced}`;
-  return `
-    <span class="numerology-letter-group">${escapeHtml(part.letters)}</span>
-    <strong>${escapeHtml(calculation)}</strong>
-  `;
-}
-
-function exportNumerologyPdf() {
-  if (!state.numerologyResult) return;
-  const previousTitle = document.title;
-  const safeName = state.numerologyResult.normalizedName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-  document.title = `Ban-do-nhan-so-${safeName || 'khach-hang'}`;
-  document.body.classList.add('is-printing-numerology');
-
-  const restorePrintState = () => {
-    document.body.classList.remove('is-printing-numerology');
-    document.title = previousTitle;
-  };
-  window.addEventListener('afterprint', restorePrintState, { once: true });
-  requestAnimationFrame(() => window.print());
-}
-
-function getAdminTodayDateValue() {
-  const now = new Date();
-  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-  return localDate.toISOString().slice(0, 10);
 }
 
 function createContentCard(item) {
