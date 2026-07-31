@@ -1,0 +1,60 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+import {
+  calculateNumerology,
+  normalizeVietnameseName,
+  reduceNumerologyNumber,
+} from "../next-app/lib/numerology.ts";
+
+test("matches the handwritten Trần Minh Tú example", () => {
+  const result = calculateNumerology("Trần Minh Tú", "1984-03-03");
+
+  assert.equal(result.metrics.lifePath.display, "1");
+  assert.equal(result.metrics.birthday.display, "3");
+  assert.equal(result.metrics.mission.display, "3");
+  assert.equal(result.metrics.soul.display, "13/4");
+  assert.equal(result.metrics.personality.display, "8");
+  assert.equal(result.metrics.attitude.display, "6");
+  assert.equal(result.metrics.maturity.display, "4");
+  assert.equal(result.metrics.lifePath.formula, "3 + 3 + 22 = 28 → 1");
+  assert.equal(result.metrics.mission.formula, "8 + 8 + 5 = 21 → 3");
+  assert.equal(result.metrics.soul.formula, "1 + 9 + 3 = 13 → 13/4");
+  assert.equal(result.metrics.personality.formula, "7 + 8 + 2 = 17 → 8");
+  assert.deepEqual(result.missing, [2, 5, 6, 7]);
+  assert.deepEqual(result.karmicDebts, [
+    { display: "13/4", sources: ["Chỉ số linh hồn"] },
+  ]);
+});
+
+test("supports master numbers, Vietnamese names and date validation", () => {
+  assert.equal(reduceNumerologyNumber(22, true), 22);
+  assert.equal(reduceNumerologyNumber(22, false), 4);
+  assert.equal(normalizeVietnameseName("Đặng Mỹ Ý"), "dang my y");
+  assert.throws(
+    () => calculateNumerology("Khách tương lai", "2999-01-01"),
+    /tương lai/,
+  );
+});
+
+test("is integrated only into the Next.js admin", async () => {
+  const [dashboard, calculator, styles] = await Promise.all([
+    readFile(new URL("../next-app/app/admin/page.tsx", import.meta.url), "utf8"),
+    readFile(
+      new URL(
+        "../next-app/app/admin/numerology/numerology-calculator.tsx",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL("../next-app/app/admin/admin.module.css", import.meta.url),
+      "utf8",
+    ),
+  ]);
+
+  assert.match(dashboard, /href: "\/admin\/numerology"/);
+  assert.match(calculator, /calculateNumerology/);
+  assert.match(calculator, /window\.print\(\)/);
+  assert.match(styles, /@media print/);
+});
