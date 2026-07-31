@@ -9,7 +9,8 @@ type AdminNavIconName =
   | "bookings"
   | "customers"
   | "payments"
-  | "numerology";
+  | "numerology"
+  | "members";
 
 export function AdminNavIcon({ name }: { name: AdminNavIconName }) {
   const paths: Record<AdminNavIconName, ReactNode> = {
@@ -69,6 +70,13 @@ export function AdminNavIcon({ name }: { name: AdminNavIconName }) {
       <>
         <rect x="4" y="3.5" width="16" height="17" rx="2" />
         <path d="M8 8h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h4" />
+      </>
+    ),
+    members: (
+      <>
+        <circle cx="9" cy="8" r="3" />
+        <path d="M3.5 19c.6-3.6 2.4-5.4 5.5-5.4s4.9 1.8 5.5 5.4" />
+        <path d="M17 8v6M14 11h6" />
       </>
     ),
   };
