@@ -36,6 +36,99 @@ function createSmoothCyclePath(points: Array<{ x: number; y: number }>) {
   }, "");
 }
 
+function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(String(reader.result)));
+    reader.addEventListener("error", () => reject(reader.error));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function loadImage(source: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new window.Image();
+    image.addEventListener("load", () => resolve(image));
+    image.addEventListener("error", () => reject(new Error("Không thể dựng ảnh JPG.")));
+    image.src = source;
+  });
+}
+
+async function renderElementAsJpeg(element: HTMLElement) {
+  await document.fonts.ready;
+
+  const width = Math.ceil(element.getBoundingClientRect().width);
+  const height = Math.ceil(element.getBoundingClientRect().height);
+  const clone = element.cloneNode(true) as HTMLElement;
+  const sourceNodes: Array<HTMLElement | SVGElement> = [
+    element,
+    ...Array.from(element.querySelectorAll<HTMLElement | SVGElement>("*")),
+  ];
+  const clonedNodes: Array<HTMLElement | SVGElement> = [
+    clone,
+    ...Array.from(clone.querySelectorAll<HTMLElement | SVGElement>("*")),
+  ];
+
+  sourceNodes.forEach((sourceNode, index) => {
+    const targetNode = clonedNodes[index];
+    const computedStyle = window.getComputedStyle(sourceNode);
+    for (const property of computedStyle) {
+      targetNode.style.setProperty(
+        property,
+        computedStyle.getPropertyValue(property),
+        computedStyle.getPropertyPriority(property),
+      );
+    }
+  });
+
+  const sourceImages = Array.from(element.querySelectorAll("img"));
+  const clonedImages = Array.from(clone.querySelectorAll("img"));
+  await Promise.all(sourceImages.map(async (sourceImage, index) => {
+    const response = await fetch(sourceImage.currentSrc || sourceImage.src);
+    if (!response.ok) throw new Error("Không thể tải hình ảnh trong bản tóm tắt.");
+    clonedImages[index].src = await blobToDataUrl(await response.blob());
+  }));
+
+  clone.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+  clone.style.position = "static";
+  clone.style.inset = "auto";
+  clone.style.zIndex = "auto";
+  clone.style.width = `${width}px`;
+  clone.style.height = `${height}px`;
+
+  const serialized = new XMLSerializer().serializeToString(clone);
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+      <foreignObject width="100%" height="100%">${serialized}</foreignObject>
+    </svg>
+  `;
+  const svgUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+
+  try {
+    const image = await loadImage(svgUrl);
+    const pixelRatio = 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = width * pixelRatio;
+    canvas.height = height * pixelRatio;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Trình duyệt không hỗ trợ xuất JPG.");
+    context.fillStyle = "#fffdf8";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => blob
+          ? resolve(blob)
+          : reject(new Error("Không thể tạo file JPG.")),
+        "image/jpeg",
+        0.94,
+      );
+    });
+  } finally {
+    URL.revokeObjectURL(svgUrl);
+  }
+}
+
 function WordPart({ part }: { part: NamePart }) {
   if (!part.raw) return <span className={styles.numerologyEmpty}>—</span>;
   const calculation = part.raw === part.reduced
@@ -55,6 +148,7 @@ export function NumerologyCalculator() {
   const [result, setResult] = useState<NumerologyResult | null>(null);
   const [generatedAt, setGeneratedAt] = useState("");
   const [message, setMessage] = useState("");
+  const [isExportingJpg, setIsExportingJpg] = useState(false);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -104,6 +198,39 @@ export function NumerologyCalculator() {
     window.addEventListener("afterprint", restorePrintState, { once: true });
     window.print();
     window.setTimeout(restorePrintState, 800);
+  }
+
+  async function exportCustomerJpg() {
+    if (!result || isExportingJpg) return;
+    setIsExportingJpg(true);
+    setMessage("");
+    document.body.dataset.numerologyImage = "summary";
+
+    try {
+      await new Promise<void>((resolve) => {
+        window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()));
+      });
+      const summary = document.querySelector<HTMLElement>(
+        `.${styles.numerologyCustomerSummary}`,
+      );
+      if (!summary) throw new Error("Không tìm thấy bản tóm tắt để xuất JPG.");
+      const jpeg = await renderElementAsJpeg(summary);
+      const safeName = result.normalizedName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      const url = URL.createObjectURL(jpeg);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Tom-tat-nhan-so-${safeName || "khach-hang"}.jpg`;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Không thể xuất JPG.");
+    } finally {
+      delete document.body.dataset.numerologyImage;
+      setIsExportingJpg(false);
+    }
   }
 
   const missingDisplay = result?.missing.length
@@ -186,6 +313,14 @@ export function NumerologyCalculator() {
                 type="button"
               >
                 ↓ PDF khách · 1 trang A4
+              </button>
+              <button
+                className={styles.secondaryLink}
+                disabled={isExportingJpg}
+                onClick={exportCustomerJpg}
+                type="button"
+              >
+                {isExportingJpg ? "Đang tạo JPG…" : "↓ JPG khách · khổ A4"}
               </button>
             </div>
           </div>
@@ -875,6 +1010,30 @@ export function NumerologyCalculator() {
                       <strong>{item.value}</strong>
                     </span>
                   ))}
+                </div>
+                <div className={styles.numerologySummaryPeakCycles}>
+                  <div className={styles.numerologySummaryPeakCyclesHeading}>
+                    <strong>4 đỉnh cao &amp; thử thách</strong>
+                    <small>Mốc chuyển tiếp theo từng chu kỳ</small>
+                  </div>
+                  <div className={styles.numerologySummaryPeakCycleGrid}>
+                    {result.pyramid.peaks.map((peak, index) => (
+                      <article key={`summary-cycle-${index + 1}`}>
+                        <span>Chu kỳ {index + 1}</span>
+                        <div>
+                          <p>
+                            Đỉnh <strong>{peak.display}</strong>
+                          </p>
+                          <p>
+                            Thử thách <strong>{peak.challenge}</strong>
+                          </p>
+                        </div>
+                        <small>
+                          {peak.milestoneAge} tuổi · {peak.milestoneYear}
+                        </small>
+                      </article>
+                    ))}
+                  </div>
                 </div>
               </article>
             </section>
