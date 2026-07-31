@@ -8,7 +8,7 @@ import {
 } from "../next-app/lib/numerology.ts";
 
 test("matches the handwritten Trần Minh Tú example", () => {
-  const result = calculateNumerology("Trần Minh Tú", "1984-03-03");
+  const result = calculateNumerology("Trần Minh Tú", "1984-03-03", 2026);
 
   assert.equal(result.metrics.lifePath.display, "1");
   assert.equal(result.metrics.birthday.display, "3");
@@ -59,6 +59,45 @@ test("matches the handwritten Trần Minh Tú example", () => {
     [2019, 2028, 2037, 2046],
   );
   assert.equal(result.pyramid.firstMilestoneFormula, "36 - 1 = 35 tuổi");
+  assert.deepEqual(result.annualCycle.worldYear, {
+    year: 2026,
+    value: 1,
+    formula: "2 + 0 + 2 + 6 = 10 → 1",
+  });
+  assert.deepEqual(result.annualCycle.currentPersonalYear, {
+    year: 2026,
+    value: 7,
+    formula: "3 + 3 + 1 = 7",
+    operatingFrom: "01/10/2025",
+    operatingTo: "31/07/2026",
+    durationMonths: 10,
+  });
+  assert.deepEqual(result.annualCycle.nextPersonalYear, {
+    year: 2027,
+    value: 8,
+    formula: "3 + 3 + 2 = 8",
+    operatingFrom: "01/08/2026",
+    operatingTo: "31/08/2027",
+    durationMonths: 13,
+  });
+  assert.deepEqual(
+    result.annualCycle.cycle.map(({ year, value, isCurrent }) => ({
+      year,
+      value,
+      isCurrent,
+    })),
+    [
+      { year: 2020, value: 1, isCurrent: false },
+      { year: 2021, value: 2, isCurrent: false },
+      { year: 2022, value: 3, isCurrent: false },
+      { year: 2023, value: 4, isCurrent: false },
+      { year: 2024, value: 5, isCurrent: false },
+      { year: 2025, value: 6, isCurrent: false },
+      { year: 2026, value: 7, isCurrent: true },
+      { year: 2027, value: 8, isCurrent: false },
+      { year: 2028, value: 9, isCurrent: false },
+    ],
+  );
 });
 
 test("supports master numbers, Vietnamese names and date validation", () => {
@@ -79,6 +118,69 @@ test("keeps master peak labels but uses their single-digit value downstream", ()
   assert.equal(result.pyramid.peaks[0].formula, "2 + 9 = 11 → 11/2");
   assert.equal(result.pyramid.peaks[2].formula, "2 + 1 = 3");
   assert.equal(result.pyramid.peaks[2].challengeFormula, "|2 - 1| = 1");
+});
+
+test("labels PY (2026) = 1 and applies the custom operating period", () => {
+  const result = calculateNumerology("Khách năm một", "1990-01-08", 2026);
+
+  assert.equal(result.annualCycle.currentPersonalYear.value, 1);
+  assert.equal(result.annualCycle.currentPersonalYear.formula, "8 + 1 + 1 = 10 → 1");
+  assert.equal(
+    result.annualCycle.currentPersonalYear.operatingFrom,
+    "01/10/2025",
+  );
+  assert.equal(
+    result.annualCycle.currentPersonalYear.operatingTo,
+    "31/10/2026",
+  );
+  assert.equal(result.annualCycle.currentPersonalYear.durationMonths, 13);
+});
+
+test("applies the researched transition period for every personal year", () => {
+  const expected = {
+    1: ["01/10/2025", "31/10/2026", 13],
+    2: ["01/11/2025", "31/08/2026", 10],
+    3: ["01/09/2025", "30/09/2026", 13],
+    4: ["01/10/2025", "31/10/2026", 13],
+    5: ["01/11/2025", "31/08/2026", 10],
+    6: ["01/09/2025", "30/09/2026", 13],
+    7: ["01/10/2025", "31/07/2026", 10],
+    8: ["01/08/2025", "31/08/2026", 13],
+    9: ["01/09/2025", "30/09/2026", 13],
+  };
+  const birthDaysByPersonalYear = {
+    1: 8,
+    2: 9,
+    3: 1,
+    4: 2,
+    5: 3,
+    6: 4,
+    7: 5,
+    8: 6,
+    9: 7,
+  };
+
+  for (const [personalYear, birthDay] of Object.entries(
+    birthDaysByPersonalYear,
+  )) {
+    const result = calculateNumerology(
+      "Khách kiểm thử",
+      `1990-01-${String(birthDay).padStart(2, "0")}`,
+      2026,
+    );
+    assert.equal(
+      result.annualCycle.currentPersonalYear.value,
+      Number(personalYear),
+    );
+    assert.deepEqual(
+      [
+        result.annualCycle.currentPersonalYear.operatingFrom,
+        result.annualCycle.currentPersonalYear.operatingTo,
+        result.annualCycle.currentPersonalYear.durationMonths,
+      ],
+      expected[personalYear],
+    );
+  }
 });
 
 test("is integrated only into the Next.js admin", async () => {
@@ -102,6 +204,9 @@ test("is integrated only into the Next.js admin", async () => {
   assert.match(calculator, /Kim tự tháp Pitago/);
   assert.match(calculator, /result\.nameDigitCounts/);
   assert.match(calculator, /Chỉ số thiếu vẫn chỉ xét ngày sinh/);
+  assert.match(calculator, /Năm thế giới &amp; năm cá nhân/);
+  assert.match(calculator, /Biểu đồ chu kỳ hình sin/);
+  assert.match(calculator, /numerologySineCurrentPoint/);
   assert.match(calculator, /window\.print\(\)/);
   assert.match(styles, /@media print/);
 });

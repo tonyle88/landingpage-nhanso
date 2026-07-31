@@ -55,6 +55,34 @@ export type NumerologyResult = {
     }>;
     firstMilestoneFormula: string;
   };
+  annualCycle: {
+    worldYear: {
+      year: number;
+      value: number;
+      formula: string;
+    };
+    currentPersonalYear: {
+      year: number;
+      value: number;
+      formula: string;
+      operatingFrom: string;
+      operatingTo: string;
+      durationMonths: number;
+    };
+    nextPersonalYear: {
+      year: number;
+      value: number;
+      formula: string;
+      operatingFrom: string;
+      operatingTo: string;
+      durationMonths: number;
+    };
+    cycle: Array<{
+      year: number;
+      value: number;
+      isCurrent: boolean;
+    }>;
+  };
 };
 
 const PYTHAGOREAN_VALUES: Record<string, number> = {
@@ -79,6 +107,25 @@ const KARMIC_LABELS: Record<number, string> = {
   14: "14/5",
   16: "16/7",
   19: "19/1",
+};
+const PERSONAL_YEAR_OPERATING_PERIODS: Record<
+  number,
+  {
+    startMonth: number;
+    endMonth: number;
+    endDay: number;
+    durationMonths: number;
+  }
+> = {
+  1: { startMonth: 10, endMonth: 10, endDay: 31, durationMonths: 13 },
+  2: { startMonth: 11, endMonth: 8, endDay: 31, durationMonths: 10 },
+  3: { startMonth: 9, endMonth: 9, endDay: 30, durationMonths: 13 },
+  4: { startMonth: 10, endMonth: 10, endDay: 31, durationMonths: 13 },
+  5: { startMonth: 11, endMonth: 8, endDay: 31, durationMonths: 10 },
+  6: { startMonth: 9, endMonth: 9, endDay: 30, durationMonths: 13 },
+  7: { startMonth: 10, endMonth: 7, endDay: 31, durationMonths: 10 },
+  8: { startMonth: 8, endMonth: 8, endDay: 31, durationMonths: 13 },
+  9: { startMonth: 9, endMonth: 9, endDay: 30, durationMonths: 13 },
 };
 
 export const NUMEROLOGY_METRIC_LABELS: Record<NumerologyMetricKey, string> = {
@@ -228,9 +275,56 @@ function challengeFormula(left: number, right: number) {
   };
 }
 
+function calculateWorldYear(year: number) {
+  const parts = String(year).split("").map(Number);
+  const raw = parts.reduce((sum, value) => sum + value, 0);
+  const value = reduceNumerologyNumber(raw, false);
+  return {
+    year,
+    value,
+    formula: raw === value
+      ? `${parts.join(" + ")} = ${value}`
+      : `${parts.join(" + ")} = ${raw} → ${value}`,
+  };
+}
+
+function formatOperatingDate(day: number, month: number, year: number) {
+  return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
+}
+
+function calculatePersonalYear(
+  calendarYear: number,
+  dayValue: number,
+  monthValue: number,
+) {
+  const worldYear = calculateWorldYear(calendarYear);
+  const raw = dayValue + monthValue + worldYear.value;
+  const value = reduceNumerologyNumber(raw, false);
+  const operatingPeriod = PERSONAL_YEAR_OPERATING_PERIODS[value];
+  return {
+    year: calendarYear,
+    value,
+    formula: raw === value
+      ? `${dayValue} + ${monthValue} + ${worldYear.value} = ${value}`
+      : `${dayValue} + ${monthValue} + ${worldYear.value} = ${raw} → ${value}`,
+    operatingFrom: formatOperatingDate(
+      1,
+      operatingPeriod.startMonth,
+      calendarYear - 1,
+    ),
+    operatingTo: formatOperatingDate(
+      operatingPeriod.endDay,
+      operatingPeriod.endMonth,
+      calendarYear,
+    ),
+    durationMonths: operatingPeriod.durationMonths,
+  };
+}
+
 export function calculateNumerology(
   fullName: string,
   isoDate: string,
+  referenceYear = new Date().getFullYear(),
 ): NumerologyResult {
   const cleanName = String(fullName || "").trim().replace(/\s+/g, " ");
   const normalizedName = normalizeVietnameseName(cleanName);
@@ -255,6 +349,9 @@ export function calculateNumerology(
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   if (date > today) throw new Error("Ngày sinh không được ở tương lai.");
+  if (!Number.isInteger(referenceYear) || referenceYear < 1) {
+    throw new Error("Năm tham chiếu không hợp lệ.");
+  }
 
   const dayPart = reduceNumerologyNumber(day, true);
   const monthPart = reduceNumerologyNumber(month, true);
@@ -326,6 +423,31 @@ export function calculateNumerology(
     challenge4,
   ];
 
+  const worldYear = calculateWorldYear(referenceYear);
+  const currentPersonalYear = calculatePersonalYear(
+    referenceYear,
+    pyramidBase.day,
+    pyramidBase.month,
+  );
+  const nextPersonalYear = calculatePersonalYear(
+    referenceYear + 1,
+    pyramidBase.day,
+    pyramidBase.month,
+  );
+  const cycleStartYear = referenceYear - (currentPersonalYear.value - 1);
+  const annualCycle = Array.from({ length: 9 }, (_, index) => {
+    const cycleYear = cycleStartYear + index;
+    return {
+      year: cycleYear,
+      value: calculatePersonalYear(
+        cycleYear,
+        pyramidBase.day,
+        pyramidBase.month,
+      ).value,
+      isCurrent: cycleYear === referenceYear,
+    };
+  });
+
   const dateDigits =
     `${String(day).padStart(2, "0")}${String(month).padStart(2, "0")}${year}`;
   const digitCounts = Object.fromEntries(
@@ -380,6 +502,12 @@ export function calculateNumerology(
       })),
       firstMilestoneFormula:
         `36 - ${lifePathBase} = ${firstMilestoneAge} tuổi`,
+    },
+    annualCycle: {
+      worldYear,
+      currentPersonalYear,
+      nextPersonalYear,
+      cycle: annualCycle,
     },
   };
 }
