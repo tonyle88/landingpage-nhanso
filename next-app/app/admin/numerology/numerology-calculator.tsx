@@ -223,22 +223,70 @@ export function NumerologyCalculator() {
                 <div className={styles.numerologyCardHeading}>
                   <span>01</span>
                   <div>
-                    <h3>Biểu đồ ngày sinh</h3>
-                    <p>Ô “—” là số không xuất hiện trong ngày sinh.</p>
+                    <h3>Biểu đồ ngày sinh &amp; họ tên</h3>
+                    <p>
+                      Số ngày sinh và số quy đổi từ từng chữ trong họ tên được
+                      đặt chung đúng ô 1–9. Ô màu nhạt là số thiếu trong ngày sinh.
+                    </p>
                   </div>
+                </div>
+                <div
+                  aria-label="Chú giải màu biểu đồ"
+                  className={styles.numerologyChartLegend}
+                >
+                  <span>
+                    <i
+                      aria-hidden="true"
+                      className={styles.numerologyLegendBirth}
+                    />
+                    Ngày sinh
+                  </span>
+                  <span>
+                    <i
+                      aria-hidden="true"
+                      className={styles.numerologyLegendName}
+                    />
+                    Họ tên
+                  </span>
+                  <small>Chỉ số thiếu vẫn chỉ xét ngày sinh.</small>
                 </div>
                 <div className={styles.numerologyBirthChart}>
                   {CHART_ORDER.map((number) => {
-                    const count = result.digitCounts[String(number)] || 0;
+                    const birthCount = result.digitCounts[String(number)] || 0;
+                    const nameCount =
+                      result.nameDigitCounts[String(number)] || 0;
                     return (
                       <div
-                        className={count
+                        className={birthCount
                           ? styles.numerologyBirthCell
                           : styles.numerologyBirthCellMissing}
                         key={number}
                       >
                         <small>Số {number}</small>
-                        <strong>{count ? String(number).repeat(count) : "—"}</strong>
+                        <div className={styles.numerologyCellValues}>
+                          <span>
+                            <em>Ngày sinh</em>
+                            <strong className={birthCount
+                              ? styles.numerologyBirthDigits
+                              : styles.numerologyBirthDigitsMissing}
+                            >
+                              {birthCount
+                                ? String(number).repeat(birthCount)
+                                : "—"}
+                            </strong>
+                          </span>
+                          <span>
+                            <em>Họ tên</em>
+                            <strong className={nameCount
+                              ? styles.numerologyNameDigits
+                              : styles.numerologyNameDigitsMissing}
+                            >
+                              {nameCount
+                                ? String(number).repeat(nameCount)
+                                : "—"}
+                            </strong>
+                          </span>
+                        </div>
                       </div>
                     );
                   })}
@@ -288,7 +336,8 @@ export function NumerologyCalculator() {
                   <p>
                     Bốn đỉnh cao, bốn thử thách và các mốc 9 năm được tính từ
                     tháng–ngày–năm sinh. Thử thách đỉnh 3 dùng quy tắc riêng:
-                    |tháng sinh − năm sinh|.
+                    |đỉnh 1 − đỉnh 2|. Đỉnh 11, 22, 33 được hiển thị dạng
+                    11/2, 22/4, 33/6 và dùng số rút gọn để tính tiếp.
                   </p>
                 </div>
               </div>
@@ -299,7 +348,7 @@ export function NumerologyCalculator() {
                 >
                   <div className={styles.numerologyPyramidTop}>
                     <span>Đỉnh 4</span>
-                    <strong>{result.pyramid.peaks[3].value}</strong>
+                    <strong>{result.pyramid.peaks[3].display}</strong>
                     <small>
                       {result.pyramid.peaks[3].milestoneAge} tuổi ·{" "}
                       {result.pyramid.peaks[3].milestoneYear}
@@ -308,7 +357,7 @@ export function NumerologyCalculator() {
                   <div className={styles.numerologyPyramidArrow}>↑</div>
                   <div className={styles.numerologyPyramidMiddle}>
                     <span>Đỉnh 3</span>
-                    <strong>{result.pyramid.peaks[2].value}</strong>
+                    <strong>{result.pyramid.peaks[2].display}</strong>
                     <small>
                       {result.pyramid.peaks[2].milestoneAge} tuổi ·{" "}
                       {result.pyramid.peaks[2].milestoneYear}
@@ -319,7 +368,7 @@ export function NumerologyCalculator() {
                     {[0, 1].map((index) => (
                       <div key={index}>
                         <span>Đỉnh {index + 1}</span>
-                        <strong>{result.pyramid.peaks[index].value}</strong>
+                        <strong>{result.pyramid.peaks[index].display}</strong>
                         <small>
                           {result.pyramid.peaks[index].milestoneAge} tuổi ·{" "}
                           {result.pyramid.peaks[index].milestoneYear}
@@ -355,7 +404,7 @@ export function NumerologyCalculator() {
                       <article key={index}>
                         <span>Chu kỳ {index + 1}</span>
                         <div>
-                          <strong>Đỉnh {peak.value}</strong>
+                          <strong>Đỉnh {peak.display}</strong>
                           <small>{peak.formula}</small>
                         </div>
                         <div>
