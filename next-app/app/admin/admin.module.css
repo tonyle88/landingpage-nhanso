@@ -1281,23 +1281,27 @@
 .numerologyCellValues > span {
   min-width: 0;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
-  align-items: baseline;
-  gap: 5px;
+  grid-template-columns: 23px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
 }
-.numerologyCellValues em {
+.numerologyCellValues abbr {
   color: var(--report-muted);
-  font-size: .48rem;
-  font-style: normal;
+  font-size: .5rem;
   font-weight: 700;
+  text-decoration: none;
 }
 .numerologyCellValues strong {
   max-width: 100%;
-  overflow: hidden;
-  font-size: clamp(.85rem, 2.2vw, 1.28rem);
-  letter-spacing: .04em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  font-size: clamp(.78rem, 1.8vw, 1.12rem);
+  line-height: 1;
+  letter-spacing: .01em;
+  overflow-wrap: anywhere;
+  text-align: center;
+  text-overflow: clip;
+  white-space: normal;
+  word-break: break-all;
 }
 .numerologyBirthDigits { color: #173f46; }
 .numerologyNameDigits { color: #d9612b; }
@@ -1359,10 +1363,15 @@
 }
 .numerologyPyramidTop,
 .numerologyPyramidMiddle,
-.numerologyPyramidPair > div,
-.numerologyPyramidBase > div {
-  min-width: 82px;
-  min-height: 72px;
+.numerologyPyramidPair > div {
+  min-width: 94px;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+}
+.numerologyPyramidCircle {
+  width: 76px;
+  height: 76px;
   display: grid;
   place-items: center;
   align-content: center;
@@ -1374,12 +1383,12 @@
   background: #fff;
   box-shadow: 0 8px 20px rgb(23 63 70 / 10%);
 }
-.numerologyPyramidTop {
+.numerologyPyramidTop .numerologyPyramidCircle {
   border-color: #d2693f;
   background: #fff0e7;
   box-shadow: 0 0 0 6px rgb(217 78 31 / 8%);
 }
-.numerologyPyramidMiddle {
+.numerologyPyramidMiddle .numerologyPyramidCircle {
   border-color: #c69f3b;
   background: #fff8df;
 }
@@ -1402,7 +1411,14 @@
 .numerologyPyramidBase > div {
   min-width: 68px;
   min-height: 68px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 3px;
+  padding: 9px;
+  border: 1px solid #89a9a4;
   border-radius: 9px;
+  color: #173f46;
   background: #e9f3f0;
   box-shadow: none;
 }
@@ -1431,6 +1447,17 @@
   color: var(--report-muted);
   font-size: .52rem;
   text-align: center;
+}
+.numerologyPyramidMilestone {
+  display: block;
+  min-width: max-content;
+  padding: 3px 7px;
+  border: 1px solid #d3dfdc;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 84%);
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
 }
 .numerologyPyramidArrow {
   min-height: 23px;
@@ -1852,19 +1879,41 @@
   }
   .numerologyReportCard { padding: 13px; break-inside: avoid; }
   .numerologyCardHeading { margin-bottom: 11px; }
+  .numerologyBirthCell,
+  .numerologyBirthCellMissing {
+    min-height: 84px;
+    gap: 4px;
+    padding: 6px;
+  }
+  .numerologyCellValues { gap: 3px; }
+  .numerologyCellValues > span {
+    grid-template-columns: 16px minmax(0, 1fr);
+    gap: 2px;
+  }
+  .numerologyCellValues abbr { font-size: .43rem; }
+  .numerologyCellValues strong {
+    font-size: .72rem;
+    letter-spacing: 0;
+  }
   .numerologyPyramidSection { margin: 0 17px 7px; break-inside: avoid; }
   .numerologyPyramidLayout {
     grid-template-columns: minmax(250px, .78fr) minmax(350px, 1.22fr);
     gap: 10px;
   }
   .numerologyPyramid { padding: 10px; }
-  .numerologyPyramidTop,
-  .numerologyPyramidMiddle,
-  .numerologyPyramidPair > div,
+  .numerologyPyramidCircle,
   .numerologyPyramidBase > div {
     min-width: 62px;
     min-height: 58px;
     padding: 6px;
+  }
+  .numerologyPyramidCircle {
+    width: 62px;
+    height: 62px;
+  }
+  .numerologyPyramidMilestone {
+    padding: 2px 5px;
+    font-size: .46rem !important;
   }
   .numerologyPyramidArrow { min-height: 15px; }
   .numerologyPyramidCycles { gap: 5px; }
