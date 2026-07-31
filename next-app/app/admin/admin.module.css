@@ -980,6 +980,358 @@
 .thumbnailPlaceholderIcon svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
 .srOnly { position: absolute; width: 1px; min-width: 0; height: 1px; min-height: 0; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0,0,0); white-space: nowrap; border: 0; }
 
+.numerologyWorkspace {
+  width: min(1280px, 100%);
+  display: grid;
+  gap: 16px;
+  margin: 0 auto;
+}
+
+.numerologyFormPanel {
+  display: grid;
+  grid-template-columns: minmax(260px, .8fr) minmax(480px, 1.2fr);
+  gap: 30px;
+  align-items: end;
+  padding: 24px;
+  border: 1px solid rgb(240 201 106 / 28%);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 8% 0, rgb(240 201 106 / 10%), transparent 30%),
+    rgb(9 28 32 / 90%);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 25%);
+}
+
+.numerologyFormPanel h2 {
+  margin: 7px 0 10px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+}
+
+.numerologyFormPanel > div > p:last-child {
+  max-width: 520px;
+  margin: 0;
+  color: var(--muted);
+  font-size: .88rem;
+  line-height: 1.65;
+}
+
+.numerologyForm {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(180px, .8fr);
+  gap: 13px;
+  align-items: end;
+}
+
+.numerologyFormActions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+}
+
+.numerologyFormActions button { min-height: 46px; }
+.numerologyMessage {
+  grid-column: 1 / -1;
+  min-height: 20px;
+  margin: 0;
+  color: var(--danger);
+  font-size: .78rem;
+}
+
+.numerologyResult { display: grid; gap: 10px; }
+.numerologyResultToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 15px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgb(9 28 32 / 86%);
+}
+.numerologyResultToolbar > span { display: grid; gap: 3px; }
+.numerologyResultToolbar small { color: var(--muted); }
+.numerologyResultToolbar button { min-height: 42px; }
+
+.numerologyReport {
+  --report-ink: #183034;
+  --report-muted: #657378;
+  --report-line: #e2ddd2;
+  overflow: hidden;
+  color: var(--report-ink);
+  border: 1px solid rgb(240 201 106 / 50%);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 94% 4%, rgb(217 78 31 / 10%), transparent 21%),
+    radial-gradient(circle at 5% 18%, rgb(42 95 107 / 10%), transparent 22%),
+    #fffcf5;
+  box-shadow: 0 28px 80px rgb(0 0 0 / 35%);
+}
+
+.numerologyReportHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 24px;
+  color: #fff;
+  background: #102f34;
+}
+.numerologyReportHeader > div { display: flex; align-items: center; gap: 12px; }
+.numerologyReportHeader img { object-fit: contain; }
+.numerologyReportHeader span { display: grid; gap: 3px; }
+.numerologyReportHeader > span { text-align: right; }
+.numerologyReportHeader small {
+  color: rgb(255 255 255 / 66%);
+  font-size: .65rem;
+  font-weight: 750;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.numerologyReportHeader div strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.2rem;
+}
+
+.numerologyClient { padding: 32px 24px 23px; text-align: center; }
+.numerologyClient p {
+  margin: 0 0 7px;
+  color: #b4522f;
+  font-size: .7rem;
+  font-weight: 850;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.numerologyClient h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.05;
+}
+.numerologyClient > span {
+  display: inline-block;
+  margin-top: 9px;
+  color: var(--report-muted);
+  font-size: .86rem;
+  font-weight: 750;
+}
+
+.numerologyMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  padding: 0 24px 24px;
+}
+.numerologyMetric,
+.numerologyMetricDebt,
+.numerologyMetricMissing {
+  position: relative;
+  min-height: 130px;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  padding: 15px;
+  overflow: hidden;
+  border: 1px solid var(--report-line);
+  border-radius: 9px;
+  background: rgb(255 255 255 / 80%);
+}
+.numerologyMetric::before,
+.numerologyMetricDebt::before,
+.numerologyMetricMissing::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: #2a5f6b;
+}
+.numerologyMetricDebt { border-color: #ecc7b6; background: #fff2e9; }
+.numerologyMetricDebt::before { background: #d94e1f; }
+.numerologyMetricMissing { background: #eff8f5; }
+.numerologyMetricMissing::before { background: #2e8674; }
+.numerologyMetric > span,
+.numerologyMetricDebt > span,
+.numerologyMetricMissing > span {
+  color: var(--report-muted);
+  font-size: .67rem;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.numerologyMetric > strong,
+.numerologyMetricDebt > strong,
+.numerologyMetricMissing > strong {
+  color: #b34a24;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.8rem, 4vw, 2.55rem);
+  line-height: 1;
+}
+.numerologyMetric > small,
+.numerologyMetricDebt > small,
+.numerologyMetricMissing > small {
+  color: var(--report-muted);
+  font-size: .68rem;
+  line-height: 1.42;
+}
+
+.numerologyColumns {
+  display: grid;
+  grid-template-columns: minmax(260px, .72fr) minmax(430px, 1.28fr);
+  gap: 11px;
+  padding: 0 24px 11px;
+}
+.numerologyReportCard {
+  min-width: 0;
+  padding: 19px;
+  border: 1px solid var(--report-line);
+  border-radius: 9px;
+  background: rgb(255 255 255 / 72%);
+}
+.numerologyCardHeading {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin-bottom: 17px;
+}
+.numerologyCardHeading > span {
+  width: 33px;
+  height: 33px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: #fff;
+  background: #173f46;
+  font-size: .65rem;
+  font-weight: 850;
+}
+.numerologyCardHeading h3 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.3rem;
+}
+.numerologyCardHeading p {
+  margin: 4px 0 0;
+  color: var(--report-muted);
+  font-size: .7rem;
+  line-height: 1.45;
+}
+
+.numerologyBirthChart {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 2px solid #244e55;
+  border-radius: 7px;
+}
+.numerologyBirthCell,
+.numerologyBirthCellMissing {
+  aspect-ratio: 1.16;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  border-right: 1px solid #9fb4b1;
+  border-bottom: 1px solid #9fb4b1;
+  background: #eef5f3;
+}
+.numerologyBirthCell:nth-child(3n),
+.numerologyBirthCellMissing:nth-child(3n) { border-right: 0; }
+.numerologyBirthCell:nth-last-child(-n + 3),
+.numerologyBirthCellMissing:nth-last-child(-n + 3) { border-bottom: 0; }
+.numerologyBirthCellMissing { background: #fff5ef; }
+.numerologyBirthCell small,
+.numerologyBirthCellMissing small {
+  color: var(--report-muted);
+  font-size: .58rem;
+  font-weight: 800;
+}
+.numerologyBirthCell strong,
+.numerologyBirthCellMissing strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: #173f46;
+  font-size: clamp(1.1rem, 3vw, 1.65rem);
+  letter-spacing: .04em;
+  text-overflow: ellipsis;
+}
+.numerologyBirthCellMissing strong { color: #d28667; }
+
+.numerologyTableWrap { overflow-x: auto; }
+.numerologyNameTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .7rem;
+}
+.numerologyNameTable th,
+.numerologyNameTable td {
+  padding: 9px 7px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--report-line);
+}
+.numerologyNameTable thead th {
+  color: var(--report-muted);
+  font-size: .6rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.numerologyNameTable tbody th { color: #b34a24; font-weight: 850; }
+.numerologyNameTable td strong,
+.numerologyLetters { display: block; }
+.numerologyLetters {
+  min-height: 14px;
+  color: var(--report-muted);
+  font-size: .58rem;
+  letter-spacing: .08em;
+}
+.numerologyNameTable td strong { margin-top: 3px; font-size: .75rem; }
+.numerologyEmpty { color: #a8a09a; }
+
+.numerologyCalculations { margin: 0 24px 24px; }
+.numerologyCalculationList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px 18px;
+}
+.numerologyCalculation {
+  display: grid;
+  grid-template-columns: minmax(130px, .75fr) minmax(150px, 1fr);
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px dashed var(--report-line);
+}
+.numerologyCalculation span { color: var(--report-muted); font-size: .72rem; }
+.numerologyCalculation strong { text-align: right; font-size: .76rem; }
+.numerologySpecials {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 15px;
+}
+.numerologySpecials > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px;
+  border-radius: 7px;
+  color: var(--report-muted);
+  background: #f1f6f4;
+  font-size: .7rem;
+}
+.numerologySpecials strong { color: #b34a24; font-size: .82rem; }
+
+.numerologyFooter {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 24px;
+  color: rgb(255 255 255 / 68%);
+  background: #102f34;
+  font-size: .58rem;
+}
+
 @media (max-width: 760px) {
   .card,
   .dashboard { padding: 26px 20px; }
@@ -1057,6 +1409,13 @@
   .uploadButton { grid-column: 1 / -1; width: 100%; }
   .thumbnailPreview { grid-template-columns: 1fr; }
   .adminToast { right: 16px; bottom: 16px; }
+  .numerologyFormPanel,
+  .numerologyColumns { grid-template-columns: 1fr; }
+  .numerologyForm { grid-template-columns: 1fr; }
+  .numerologyFormActions,
+  .numerologyMessage { grid-column: auto; }
+  .numerologyMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .numerologyCalculationList { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1065,4 +1424,63 @@
   .adminNavCard,
   .secondaryLink,
   .dangerButton { transition: none; }
+}
+
+@media (max-width: 520px) {
+  .numerologyResultToolbar,
+  .numerologyReportHeader,
+  .numerologyFooter { align-items: stretch; flex-direction: column; }
+  .numerologyResultToolbar button { width: 100%; }
+  .numerologyReportHeader > span { text-align: left; }
+  .numerologyMetrics { grid-template-columns: 1fr; padding-inline: 16px; }
+  .numerologyClient,
+  .numerologyReportHeader { padding-inline: 16px; }
+  .numerologyColumns { padding-inline: 16px; }
+  .numerologyCalculations { margin-inline: 16px; }
+  .numerologySpecials { grid-template-columns: 1fr; }
+}
+
+@media print {
+  @page { size: A4; margin: 10mm; }
+  .pageHeader,
+  .numerologyFormPanel,
+  .numerologyResultToolbar { display: none !important; }
+  .adminShell {
+    min-height: auto;
+    padding: 0;
+    background: #fff;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .numerologyWorkspace,
+  .numerologyResult { display: block; width: 100%; margin: 0; }
+  .numerologyReport { overflow: visible; border: 0; border-radius: 0; box-shadow: none; }
+  .numerologyReportHeader { padding: 13px 17px; }
+  .numerologyClient { padding: 20px 17px 14px; }
+  .numerologyClient h2 { font-size: 2.25rem; }
+  .numerologyMetrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 0 17px 16px;
+  }
+  .numerologyMetric,
+  .numerologyMetricDebt,
+  .numerologyMetricMissing {
+    min-height: 98px;
+    padding: 10px 12px;
+    break-inside: avoid;
+  }
+  .numerologyMetric > strong,
+  .numerologyMetricDebt > strong,
+  .numerologyMetricMissing > strong { font-size: 1.9rem; }
+  .numerologyColumns {
+    grid-template-columns: minmax(210px, .72fr) minmax(360px, 1.28fr);
+    gap: 7px;
+    padding: 0 17px 7px;
+  }
+  .numerologyReportCard { padding: 13px; break-inside: avoid; }
+  .numerologyCardHeading { margin-bottom: 11px; }
+  .numerologyCalculations { margin: 0 17px 16px; }
+  .numerologyCalculation { padding: 5px 0; }
+  .numerologyFooter { padding: 10px 17px; }
 }

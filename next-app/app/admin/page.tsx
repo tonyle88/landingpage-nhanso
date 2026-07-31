@@ -26,7 +26,21 @@ const operationNavigation = [
   { href: "/admin/payments", icon: "payments" as const, title: "Đối soát thanh toán", description: "Kiểm tra webhook và xác minh giao dịch SePay." },
 ];
 
-function AdminNavigationCard({ item }: { item: (typeof contentNavigation)[number] | (typeof operationNavigation)[number] }) {
+const toolNavigation = [
+  {
+    href: "/admin/numerology",
+    icon: "numerology" as const,
+    title: "Công cụ nhân số học",
+    description: "Tính 9 nhóm chỉ số, lập biểu đồ ngày sinh và xuất PDF cho khách.",
+  },
+];
+
+type AdminNavigationItem =
+  | (typeof contentNavigation)[number]
+  | (typeof operationNavigation)[number]
+  | (typeof toolNavigation)[number];
+
+function AdminNavigationCard({ item }: { item: AdminNavigationItem }) {
   return (
     <Link className={styles.adminNavCard} href={item.href}>
       <span className={styles.adminNavIcon}><AdminNavIcon name={item.icon} /></span>
@@ -89,6 +103,17 @@ export default async function AdminPage() {
           </div>
           <nav className={`${styles.adminNav} ${styles.operationNav}`} aria-label="Quản trị vận hành">
             {operationNavigation.map((item) => <AdminNavigationCard item={item} key={item.href} />)}
+          </nav>
+        </div>
+        <div className={styles.dashboardSection}>
+          <div className={styles.dashboardSectionHeading}>
+            <div><span>03</span><h2>Công cụ chuyên môn</h2></div>
+            <p>Lập hồ sơ chuyên sâu để phục vụ tư vấn.</p>
+          </div>
+          <nav className={styles.adminNav} aria-label="Công cụ chuyên môn">
+            {toolNavigation.map((item) => (
+              <AdminNavigationCard item={item} key={item.href} />
+            ))}
           </nav>
         </div>
       </section>
