@@ -221,6 +221,7 @@ test("is integrated only into the Next.js admin", async () => {
   assert.match(calculator, /exportCustomerJpg/);
   assert.match(calculator, /renderElementAsJpeg/);
   assert.match(calculator, /image\/jpeg/);
+  assert.match(calculator, /removeAttribute\("srcset"\)/);
   assert.match(calculator, /numerologyCustomerSummary/);
   assert.match(calculator, /Hồ sơ nhân số học tóm tắt/);
   assert.match(calculator, /9 nhóm chỉ số/);

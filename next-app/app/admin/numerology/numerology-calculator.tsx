@@ -86,7 +86,11 @@ async function renderElementAsJpeg(element: HTMLElement) {
   await Promise.all(sourceImages.map(async (sourceImage, index) => {
     const response = await fetch(sourceImage.currentSrc || sourceImage.src);
     if (!response.ok) throw new Error("Không thể tải hình ảnh trong bản tóm tắt.");
-    clonedImages[index].src = await blobToDataUrl(await response.blob());
+    const clonedImage = clonedImages[index];
+    clonedImage.removeAttribute("srcset");
+    clonedImage.removeAttribute("sizes");
+    clonedImage.srcset = "";
+    clonedImage.src = await blobToDataUrl(await response.blob());
   }));
 
   clone.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
