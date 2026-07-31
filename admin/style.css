@@ -569,6 +569,463 @@ a {
   box-shadow: 0 10px 24px rgba(238, 125, 54, 0.2);
 }
 
+.numerology-tool {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.numerology-input-panel {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.75fr) minmax(420px, 1.25fr);
+  gap: 28px;
+  align-items: end;
+  padding: 22px;
+  border: 1px solid rgba(240, 201, 106, 0.25);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(240, 201, 106, 0.1), transparent 32%),
+    rgba(5, 20, 23, 0.84);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.22);
+}
+
+.numerology-input-copy h3 {
+  margin: 0;
+  color: var(--white);
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+}
+
+.numerology-input-copy p:last-child {
+  max-width: 520px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.numerology-form {
+  display: grid;
+  grid-template-columns: minmax(200px, 1.3fr) minmax(180px, 0.8fr);
+  gap: 14px;
+  align-items: end;
+}
+
+.numerology-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.numerology-form-actions .primary-button {
+  min-width: 180px;
+}
+
+.numerology-form .form-message {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.numerology-result-wrap {
+  display: grid;
+  gap: 12px;
+}
+
+.numerology-result-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(9, 28, 32, 0.82);
+}
+
+.numerology-result-actions div {
+  display: grid;
+  gap: 4px;
+}
+
+.numerology-result-actions span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.numerology-report {
+  --report-ink: #183034;
+  --report-muted: #647277;
+  --report-line: #e2ddd2;
+  --report-paper: #fffcf5;
+  overflow: hidden;
+  color: var(--report-ink);
+  background:
+    radial-gradient(circle at 92% 4%, rgba(217, 78, 31, 0.11), transparent 22%),
+    radial-gradient(circle at 6% 18%, rgba(42, 95, 107, 0.11), transparent 22%),
+    var(--report-paper);
+  border: 1px solid rgba(240, 201, 106, 0.48);
+  border-radius: 14px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.34);
+}
+
+.numerology-report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px 26px;
+  color: #fff;
+  background: #102f34;
+}
+
+.numerology-report-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.numerology-report-brand img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.numerology-report-brand div,
+.numerology-report-date {
+  display: grid;
+  gap: 3px;
+}
+
+.numerology-report-brand strong {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+}
+
+.numerology-report-brand span,
+.numerology-report-date span {
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.numerology-report-date {
+  text-align: right;
+}
+
+.numerology-client-hero {
+  padding: 34px 26px 24px;
+  text-align: center;
+}
+
+.numerology-client-hero p {
+  margin: 0 0 8px;
+  color: #b4522f;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.numerology-client-hero h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  line-height: 1.05;
+}
+
+.numerology-client-hero > span {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--report-muted);
+  font-weight: 750;
+}
+
+.numerology-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0 26px 26px;
+}
+
+.numerology-metric-card {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-height: 138px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--report-line);
+  border-radius: 10px;
+}
+
+.numerology-metric-card::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: #2a5f6b;
+  border-radius: 10px 0 0 10px;
+}
+
+.numerology-metric-card > span {
+  color: var(--report-muted);
+  font-size: 0.7rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.numerology-metric-card > strong {
+  color: #b34a24;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+  line-height: 1;
+}
+
+.numerology-metric-card > small {
+  color: var(--report-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.numerology-metric-card.has-karmic-debt,
+.numerology-metric-card.is-karmic-summary {
+  background: #fff2e9;
+  border-color: #ecc7b6;
+}
+
+.numerology-metric-card.has-karmic-debt::after,
+.numerology-metric-card.is-karmic-summary::after {
+  background: #d94e1f;
+}
+
+.numerology-metric-card.is-missing-number {
+  background: #eff8f5;
+}
+
+.numerology-metric-card.is-missing-number::after {
+  background: #2e8674;
+}
+
+.numerology-report-columns {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.72fr) minmax(420px, 1.28fr);
+  gap: 12px;
+  padding: 0 26px 12px;
+}
+
+.numerology-report-card {
+  min-width: 0;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--report-line);
+  border-radius: 10px;
+}
+
+.numerology-report-card-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.numerology-report-card-heading > span {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  color: #fff;
+  background: #173f46;
+  border-radius: 50%;
+  font-size: 0.68rem;
+  font-weight: 850;
+}
+
+.numerology-report-card-heading h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+}
+
+.numerology-report-card-heading p {
+  margin: 4px 0 0;
+  color: var(--report-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.birth-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 2px solid #244e55;
+  border-radius: 8px;
+}
+
+.birth-chart-cell {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  aspect-ratio: 1.16;
+  min-width: 0;
+  background: #eef5f3;
+  border-right: 1px solid #9fb4b1;
+  border-bottom: 1px solid #9fb4b1;
+}
+
+.birth-chart-cell:nth-child(3n) {
+  border-right: 0;
+}
+
+.birth-chart-cell:nth-last-child(-n + 3) {
+  border-bottom: 0;
+}
+
+.birth-chart-cell small {
+  color: var(--report-muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.birth-chart-cell strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: #173f46;
+  font-size: clamp(1.15rem, 3vw, 1.7rem);
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+}
+
+.birth-chart-cell.is-missing {
+  background: #fff5ef;
+}
+
+.birth-chart-cell.is-missing strong {
+  color: #d28667;
+}
+
+.numerology-table-wrap {
+  overflow-x: auto;
+}
+
+.numerology-name-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+}
+
+.numerology-name-table th,
+.numerology-name-table td {
+  padding: 10px 8px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--report-line);
+}
+
+.numerology-name-table thead th {
+  color: var(--report-muted);
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.numerology-name-table tbody th {
+  color: #b34a24;
+  font-weight: 850;
+}
+
+.numerology-name-table td strong,
+.numerology-name-table td span {
+  display: block;
+}
+
+.numerology-letter-group {
+  min-height: 16px;
+  color: var(--report-muted);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+}
+
+.numerology-name-table td strong {
+  margin-top: 3px;
+  color: var(--report-ink);
+  font-size: 0.78rem;
+}
+
+.numerology-empty-part {
+  color: #a8a09a;
+}
+
+.numerology-calculations {
+  margin: 0 26px 26px;
+}
+
+.numerology-calculation-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 18px;
+}
+
+.numerology-calculation-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.7fr) minmax(140px, 1fr);
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--report-line);
+}
+
+.numerology-calculation-row span {
+  color: var(--report-muted);
+  font-size: 0.75rem;
+}
+
+.numerology-calculation-row strong {
+  text-align: right;
+  font-size: 0.8rem;
+}
+
+.numerology-special-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.numerology-special-row > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  background: #f1f6f4;
+  border-radius: 8px;
+}
+
+.numerology-special-row span {
+  color: var(--report-muted);
+  font-size: 0.72rem;
+}
+
+.numerology-special-row strong {
+  color: #b34a24;
+}
+
+.numerology-report-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 26px;
+  color: rgba(255, 255, 255, 0.68);
+  background: #102f34;
+  font-size: 0.62rem;
+}
+
 .card-top {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1137,6 +1594,15 @@ a {
     padding-top: 94px;
   }
 
+  .numerology-input-panel,
+  .numerology-report-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .numerology-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .topbar,
   .section-heading,
   .toolbar {
@@ -1168,6 +1634,161 @@ a {
 
   .package-form-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .numerology-input-panel {
+    padding: 18px;
+  }
+
+  .numerology-form {
+    grid-template-columns: 1fr;
+  }
+
+  .numerology-form-actions,
+  .numerology-form .form-message {
+    grid-column: auto;
+  }
+
+  .numerology-result-actions,
+  .numerology-report-header,
+  .numerology-report-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .numerology-result-actions .primary-button {
+    width: 100%;
+  }
+
+  .numerology-report-date {
+    text-align: left;
+  }
+
+  .numerology-client-hero,
+  .numerology-report-header {
+    padding-inline: 18px;
+  }
+
+  .numerology-metrics-grid {
+    grid-template-columns: 1fr;
+    padding-inline: 18px;
+  }
+
+  .numerology-report-columns {
+    padding-inline: 18px;
+  }
+
+  .numerology-calculations {
+    margin-inline: 18px;
+  }
+
+  .numerology-calculation-list,
+  .numerology-special-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  body.is-printing-numerology {
+    min-height: auto;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body.is-printing-numerology .admin-shell {
+    display: block !important;
+    min-height: auto;
+  }
+
+  body.is-printing-numerology .sidebar,
+  body.is-printing-numerology .topbar,
+  body.is-printing-numerology .status-strip,
+  body.is-printing-numerology .toolbar,
+  body.is-printing-numerology .section-heading,
+  body.is-printing-numerology .numerology-input-panel,
+  body.is-printing-numerology .numerology-result-actions,
+  body.is-printing-numerology .empty-state,
+  body.is-printing-numerology .toast {
+    display: none !important;
+  }
+
+  body.is-printing-numerology .workspace,
+  body.is-printing-numerology .editor-grid,
+  body.is-printing-numerology .numerology-tool,
+  body.is-printing-numerology .numerology-result-wrap {
+    display: block !important;
+    padding: 0;
+    margin: 0;
+  }
+
+  body.is-printing-numerology .numerology-report {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  body.is-printing-numerology .numerology-report-header {
+    padding: 14px 18px;
+  }
+
+  body.is-printing-numerology .numerology-client-hero {
+    padding: 22px 18px 16px;
+  }
+
+  body.is-printing-numerology .numerology-client-hero h2 {
+    font-size: 2.4rem;
+  }
+
+  body.is-printing-numerology .numerology-metrics-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+    padding: 0 18px 18px;
+  }
+
+  body.is-printing-numerology .numerology-metric-card {
+    min-height: 104px;
+    padding: 11px 13px;
+    break-inside: avoid;
+  }
+
+  body.is-printing-numerology .numerology-metric-card > strong {
+    font-size: 2rem;
+  }
+
+  body.is-printing-numerology .numerology-report-columns {
+    grid-template-columns: minmax(210px, 0.72fr) minmax(360px, 1.28fr);
+    gap: 8px;
+    padding: 0 18px 8px;
+  }
+
+  body.is-printing-numerology .numerology-report-card {
+    padding: 14px;
+    break-inside: avoid;
+  }
+
+  body.is-printing-numerology .numerology-report-card-heading {
+    margin-bottom: 12px;
+  }
+
+  body.is-printing-numerology .numerology-calculations {
+    margin: 0 18px 18px;
+  }
+
+  body.is-printing-numerology .numerology-calculation-row {
+    padding: 6px 0;
+  }
+
+  body.is-printing-numerology .numerology-report-footer {
+    padding: 11px 18px;
   }
 }
 
