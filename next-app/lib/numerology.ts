@@ -197,6 +197,21 @@ export function normalizeVietnameseName(name: string) {
     .trim();
 }
 
+export function formatVietnameseName(name: string) {
+  return String(name || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("vi-VN")
+    .split(" ")
+    .map((word) => word
+      .split("-")
+      .map((part) => part
+        ? `${part[0].toLocaleUpperCase("vi-VN")}${part.slice(1)}`
+        : "")
+      .join("-"))
+    .join(" ");
+}
+
 function isBasicVowel(char?: string) {
   return Boolean(char) && "aeiou".includes(char as string);
 }
@@ -326,7 +341,7 @@ export function calculateNumerology(
   isoDate: string,
   referenceYear = new Date().getFullYear(),
 ): NumerologyResult {
-  const cleanName = String(fullName || "").trim().replace(/\s+/g, " ");
+  const cleanName = formatVietnameseName(fullName);
   const normalizedName = normalizeVietnameseName(cleanName);
   if (!cleanName || !normalizedName) {
     throw new Error("Vui lòng nhập họ và tên hợp lệ.");
