@@ -6,6 +6,7 @@ import { memberInvitePayloadFromForm } from "@/lib/admin/member-input";
 import { optionalUuid } from "@/lib/admin/package-input";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
+import { createAuthServerClient } from "@/lib/supabase/auth-server";
 import { createServiceServerClient } from "@/lib/supabase/server";
 
 const DEFAULT_SITE_URL = "https://nhanso.clowcat.com.vn";
@@ -54,10 +55,14 @@ function inviteFailureStatus(message: string): string {
   return "error";
 }
 
+function isExistingUserError(message: string): boolean {
+  return inviteFailureStatus(message) === "exists";
+}
+
 export async function inviteMemberAction(form: FormData) {
   const principal = await requireRoleManager();
 
-  let payload;
+  let payload: ReturnType<typeof memberInvitePayloadFromForm>;
   try {
     payload = memberInvitePayloadFromForm(form);
   } catch {
@@ -67,13 +72,54 @@ export async function inviteMemberAction(form: FormData) {
   const service = createServiceServerClient();
   if (!service) redirect("/admin/members?status=config");
   const adminClient = service;
+  const databaseClient = await createAuthServerClient();
 
-  const { data: inviteData, error: inviteError } =
-    await adminClient.auth.admin.inviteUserByEmail(payload.email, {
+  async function sendInvite() {
+    return adminClient.auth.admin.inviteUserByEmail(payload.email, {
       data: { display_name: payload.displayName },
       redirectTo: getInviteRedirectUrl(),
     });
+  }
 
+  let inviteResult = await sendInvite();
+  if (
+    inviteResult.error &&
+    isExistingUserError(inviteResult.error.message)
+  ) {
+    const usersResult = await adminClient.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+    const staleUser = usersResult.data.users.find(
+      (user) => user.email?.toLowerCase() === payload.email,
+    );
+
+    if (usersResult.error || !staleUser) {
+      redirect("/admin/members?status=exists");
+    }
+
+    const existingRole = await databaseClient
+      .from("admin_roles")
+      .select("role")
+      .eq("user_id", staleUser.id)
+      .maybeSingle();
+    if (existingRole.error) redirect("/admin/members?status=error");
+    if (existingRole.data) redirect("/admin/members?status=exists");
+
+    const { error: staleProfileError } = await databaseClient
+      .from("profiles")
+      .delete()
+      .eq("id", staleUser.id);
+    const { error: staleAuthError } =
+      await adminClient.auth.admin.deleteUser(staleUser.id);
+    if (staleProfileError || staleAuthError) {
+      redirect("/admin/members?status=error");
+    }
+
+    inviteResult = await sendInvite();
+  }
+
+  const { data: inviteData, error: inviteError } = inviteResult;
   if (inviteError || !inviteData.user) {
     redirect(
       `/admin/members?status=${inviteFailureStatus(inviteError?.message || "")}`,
@@ -82,12 +128,12 @@ export async function inviteMemberAction(form: FormData) {
 
   const userId = inviteData.user.id;
   async function rollbackInvite() {
-    await adminClient.from("admin_roles").delete().eq("user_id", userId);
-    await adminClient.from("profiles").delete().eq("id", userId);
+    await databaseClient.from("admin_roles").delete().eq("user_id", userId);
+    await databaseClient.from("profiles").delete().eq("id", userId);
     await adminClient.auth.admin.deleteUser(userId);
   }
 
-  const { error: profileError } = await adminClient.from("profiles").upsert(
+  const { error: profileError } = await databaseClient.from("profiles").upsert(
     {
       id: userId,
       display_name: payload.displayName,
@@ -100,31 +146,35 @@ export async function inviteMemberAction(form: FormData) {
     redirect("/admin/members?status=error");
   }
 
-  const { error: roleError } = await adminClient.from("admin_roles").insert({
-    user_id: userId,
-    role: payload.role,
-    created_by: principal.userId,
-  });
+  const { error: roleError } = await databaseClient
+    .from("admin_roles")
+    .insert({
+      user_id: userId,
+      role: payload.role,
+      created_by: principal.userId,
+    });
 
   if (roleError) {
     await rollbackInvite();
     redirect("/admin/members?status=error");
   }
 
-  const { error: auditError } = await adminClient.from("audit_logs").insert({
-    actor_id: principal.userId,
-    actor_role: principal.role,
-    action: "admin_member.invite",
-    target_type: "admin_member",
-    target_id: userId,
-    status: "success",
-    message: "Invited a new admin member.",
-    after_data: {
-      display_name: payload.displayName,
-      email: payload.email,
-      role: payload.role,
-    },
-  });
+  const { error: auditError } = await databaseClient
+    .from("audit_logs")
+    .insert({
+      actor_id: principal.userId,
+      actor_role: principal.role,
+      action: "admin_member.invite",
+      target_type: "admin_member",
+      target_id: userId,
+      status: "success",
+      message: "Invited a new admin member.",
+      after_data: {
+        display_name: payload.displayName,
+        email: payload.email,
+        role: payload.role,
+      },
+    });
 
   if (auditError) {
     await rollbackInvite();
@@ -148,9 +198,10 @@ export async function resendMemberSetupAction(form: FormData) {
 
   const service = createServiceServerClient();
   if (!service) redirect("/admin/members?status=config");
+  const databaseClient = await createAuthServerClient();
 
   const [roleResult, userResult] = await Promise.all([
-    service
+    databaseClient
       .from("admin_roles")
       .select("role")
       .eq("user_id", userId)
@@ -172,7 +223,7 @@ export async function resendMemberSetupAction(form: FormData) {
   });
   if (error) redirect("/admin/members?status=delivery");
 
-  await service.from("audit_logs").insert({
+  await databaseClient.from("audit_logs").insert({
     actor_id: principal.userId,
     actor_role: principal.role,
     action: "admin_member.setup_link_resend",

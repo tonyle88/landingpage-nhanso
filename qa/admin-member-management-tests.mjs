@@ -22,14 +22,24 @@ test("new members use Supabase invite flow and server-side role assignment", () 
   assert.match(actions, /inviteUserByEmail/);
   assert.match(actions, /redirectTo: getInviteRedirectUrl\(\)/);
   assert.match(actions, /\/admin\/set-password/);
+  assert.match(actions, /createAuthServerClient/);
+  assert.match(actions, /databaseClient[\s\S]+\.from\("profiles"\)\.upsert/);
+  assert.match(actions, /databaseClient[\s\S]+\.from\("admin_roles"\)/);
   assert.match(actions, /\.from\("profiles"\)\.upsert/);
-  assert.match(actions, /\.from\("admin_roles"\)\.insert/);
+  assert.match(actions, /\.from\("admin_roles"\)[\s\S]+?\.insert/);
   assert.match(actions, /created_by: principal\.userId/);
   assert.match(actions, /auth\.admin\.deleteUser\(userId\)/);
   assert.match(actions, /action: "admin_member\.invite"/);
   assert.match(actions, /resetPasswordForEmail/);
   assert.match(actions, /action: "admin_member\.setup_link_resend"/);
   assert.doesNotMatch(page, /SUPABASE_SECRET_KEY|service_role|localStorage/);
+});
+
+test("a stale Auth-only invite is recovered without replacing a real member", () => {
+  assert.match(actions, /isExistingUserError/);
+  assert.match(actions, /existingRole\.data/);
+  assert.match(actions, /deleteUser\(staleUser\.id\)/);
+  assert.match(actions, /inviteResult = await sendInvite\(\)/);
 });
 
 test("member input validates fields and cannot invite another owner", () => {

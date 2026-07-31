@@ -24,7 +24,7 @@ const notices: Record<string, string> = {
   invited: "Đã tạo thành viên và gửi email mời đặt mật khẩu.",
   resent: "Đã gửi lại liên kết đặt mật khẩu cho thành viên.",
   invalid: "Họ tên, email hoặc vai trò chưa hợp lệ.",
-  exists: "Email này đã có tài khoản. Chưa tạo thêm thành viên trùng lặp.",
+  exists: "Email này đã là thành viên có phân quyền. Không tạo bản ghi trùng lặp.",
   delivery: "Chưa thể gửi email mời lúc này. Vui lòng thử lại sau.",
   config: "Máy chủ chưa có khóa quản trị Supabase để quản lý thành viên.",
   error: "Không thể tạo thành viên. Tài khoản chưa được xác nhận.",
