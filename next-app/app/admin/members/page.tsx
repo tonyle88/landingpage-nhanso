@@ -7,7 +7,10 @@ import { can, type AdminRole } from "@/lib/auth/roles";
 import { createServiceServerClient } from "@/lib/supabase/server";
 import { AdminToast } from "../admin-toast";
 import styles from "../admin.module.css";
-import { inviteMemberAction } from "./actions";
+import {
+  inviteMemberAction,
+  resendMemberSetupAction,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +21,7 @@ export const metadata: Metadata = {
 
 const notices: Record<string, string> = {
   invited: "Đã tạo thành viên và gửi email mời đặt mật khẩu.",
+  resent: "Đã gửi lại liên kết đặt mật khẩu cho thành viên.",
   invalid: "Họ tên, email hoặc vai trò chưa hợp lệ.",
   exists: "Email này đã có tài khoản. Chưa tạo thêm thành viên trùng lặp.",
   delivery: "Chưa thể gửi email mời lúc này. Vui lòng thử lại sau.",
@@ -275,6 +279,18 @@ export default async function AdminMembersPage({
                 </strong>
                 {member.lastSignInAt ? (
                   <small>Đăng nhập {formatDate(member.lastSignInAt)}</small>
+                ) : null}
+                {member.userId !== principal.userId ? (
+                  <form action={resendMemberSetupAction}>
+                    <input type="hidden" name="user_id" value={member.userId} />
+                    <button
+                      className={styles.memberLinkButton}
+                      type="submit"
+                      data-pending-label="Đang gửi lại liên kết mật khẩu…"
+                    >
+                      Gửi lại link mật khẩu
+                    </button>
+                  </form>
                 ) : null}
               </div>
               <div className={styles.memberDatum}>
