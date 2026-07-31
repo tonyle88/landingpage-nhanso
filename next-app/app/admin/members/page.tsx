@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can, type AdminRole } from "@/lib/auth/roles";
+import { createAuthServerClient } from "@/lib/supabase/auth-server";
 import { createServiceServerClient } from "@/lib/supabase/server";
 import { AdminToast } from "../admin-toast";
 import styles from "../admin.module.css";
@@ -47,7 +48,17 @@ function formatDate(value: string | undefined) {
   return Number.isNaN(date.getTime()) ? "Chưa có" : dateFormatter.format(date);
 }
 
-function getMemberStatus(user: User | undefined) {
+function getMemberStatus(
+  user: User | undefined,
+  authDirectoryAvailable: boolean,
+) {
+  if (!authDirectoryAvailable) {
+    return {
+      label: "Chưa đồng bộ trạng thái",
+      className: styles.memberStatusPending,
+    };
+  }
+
   if (!user) {
     return {
       label: "Thiếu tài khoản",
@@ -87,10 +98,12 @@ export default async function AdminMembersPage({
   if (!principal) redirect("/admin/login?reason=unauthorized");
   if (!can(principal.role, "manage_roles")) redirect("/admin");
 
+  const authClient = await createAuthServerClient();
   const service = createServiceServerClient();
   const { status } = await searchParams;
 
-  let loadError = !service;
+  let loadError = false;
+  let authDirectoryAvailable = Boolean(service);
   let members: Array<{
     userId: string;
     displayName: string;
@@ -102,50 +115,61 @@ export default async function AdminMembersPage({
     statusClassName: string;
   }> = [];
 
+  const rolesResult = await authClient
+    .from("admin_roles")
+    .select("user_id, role, created_at")
+    .order("created_at", { ascending: true });
+  const roleRows = rolesResult.data || [];
+  const userIds = roleRows.map((row) => row.user_id);
+  const profilesResult = userIds.length
+    ? await authClient
+        .from("profiles")
+        .select("id, display_name")
+        .in("id", userIds)
+    : { data: [], error: null };
+
+  let authUsers: User[] = [];
   if (service) {
-    const [rolesResult, usersResult] = await Promise.all([
-      service
-        .from("admin_roles")
-        .select("user_id, role, created_at")
-        .order("created_at", { ascending: true }),
-      service.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-    ]);
-
-    loadError = Boolean(rolesResult.error || usersResult.error);
-    const roleRows = rolesResult.data || [];
-    const userIds = roleRows.map((row) => row.user_id);
-    const profilesResult = userIds.length
-      ? await service
-          .from("profiles")
-          .select("id, display_name")
-          .in("id", userIds)
-      : { data: [], error: null };
-
-    loadError ||= Boolean(profilesResult.error);
-    const profilesById = new Map(
-      (profilesResult.data || []).map((profile) => [profile.id, profile]),
-    );
-    const usersById = new Map(
-      (usersResult.data?.users || []).map((user) => [user.id, user]),
-    );
-
-    members = roleRows.map((roleRow) => {
-      const user = usersById.get(roleRow.user_id);
-      const memberStatus = getMemberStatus(user);
-      return {
-        userId: roleRow.user_id,
-        displayName:
-          profilesById.get(roleRow.user_id)?.display_name ||
-          "Chưa cập nhật tên",
-        email: user?.email || "Không tìm thấy email",
-        role: roleRow.role,
-        createdAt: roleRow.created_at,
-        lastSignInAt: user?.last_sign_in_at,
-        statusLabel: memberStatus.label,
-        statusClassName: memberStatus.className,
-      };
+    const usersResult = await service.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
     });
+    if (usersResult.error) {
+      authDirectoryAvailable = false;
+    } else {
+      authUsers = usersResult.data.users;
+    }
   }
+
+  loadError = Boolean(rolesResult.error || profilesResult.error);
+  const profilesById = new Map(
+    (profilesResult.data || []).map((profile) => [profile.id, profile]),
+  );
+  const usersById = new Map(authUsers.map((user) => [user.id, user]));
+
+  members = roleRows.map((roleRow) => {
+    const user = usersById.get(roleRow.user_id);
+    const memberStatus = getMemberStatus(
+      user,
+      authDirectoryAvailable,
+    );
+    return {
+      userId: roleRow.user_id,
+      displayName:
+        profilesById.get(roleRow.user_id)?.display_name ||
+        "Chưa cập nhật tên",
+      email:
+        user?.email ||
+        (roleRow.user_id === principal.userId
+          ? principal.email || "Email được bảo vệ"
+          : "Email được bảo vệ"),
+      role: roleRow.role,
+      createdAt: roleRow.created_at,
+      lastSignInAt: user?.last_sign_in_at,
+      statusLabel: memberStatus.label,
+      statusClassName: memberStatus.className,
+    };
+  });
 
   return (
     <main className={styles.adminShell}>
@@ -173,10 +197,17 @@ export default async function AdminMembersPage({
       />
       {loadError ? (
         <AdminToast
-          message="Không thể tải đầy đủ danh sách thành viên."
+          message="Không thể đọc hồ sơ và phân quyền thành viên."
           tone="error"
           cleanHref="/admin/members"
         />
+      ) : null}
+      {!authDirectoryAvailable ? (
+        <div className={styles.notice} role="status">
+          Danh sách tên và vai trò vẫn được tải. Máy chủ chưa có quyền đọc
+          email và trạng thái tài khoản từ Supabase Auth; cần bổ sung khóa
+          quản trị Supabase trên môi trường đang chạy.
+        </div>
       ) : null}
 
       <section className={`${styles.adminPanel} ${styles.memberInvitePanel}`}>
