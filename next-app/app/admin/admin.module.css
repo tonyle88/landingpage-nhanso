@@ -244,7 +244,8 @@
 .secondaryLink:hover,
 .dangerButton:hover { transform: translateY(-1px); filter: brightness(1.08); }
 
-.submit:disabled { cursor: wait; opacity: .6; transform: none; }
+.submit:disabled,
+.secondaryLink:disabled { cursor: wait; opacity: .6; transform: none; }
 
 .adminNav {
   display: grid;
@@ -1054,6 +1055,8 @@
 .numerologyResultActions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 9px;
 }
 
@@ -1734,6 +1737,21 @@
   background: #fffdf8;
 }
 
+:global(body[data-numerology-image="summary"]) .numerologyCustomerSummary {
+  width: 794px;
+  height: 1123px;
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  z-index: -1;
+  display: grid !important;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 0;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
 .numerologySummaryHeader,
 .numerologySummaryIdentity,
 .numerologySummaryFooter {
@@ -2107,6 +2125,77 @@
   color: #fff;
   background: #173f46;
   box-shadow: 0 0 0 1px #d4a843;
+}
+
+.numerologySummaryPeakCycles {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px dashed #c9d5d1;
+}
+.numerologySummaryPeakCyclesHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.numerologySummaryPeakCyclesHeading strong {
+  color: #173f46;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: .58rem;
+}
+.numerologySummaryPeakCyclesHeading small {
+  color: #7a8587;
+  font-size: .34rem;
+}
+.numerologySummaryPeakCycleGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+.numerologySummaryPeakCycleGrid article {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 6px 7px;
+  border: 1px solid #d7dfdc;
+  border-left: 2px solid #d4a843;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #fffaf0, #f1f7f5);
+}
+.numerologySummaryPeakCycleGrid article > span {
+  color: #b34a24;
+  font-size: .38rem;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.numerologySummaryPeakCycleGrid article > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+.numerologySummaryPeakCycleGrid p {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 0;
+  color: #5d6e72;
+  font-size: .4rem;
+  font-weight: 750;
+}
+.numerologySummaryPeakCycleGrid p strong {
+  color: #173f46;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: .67rem;
+  line-height: 1;
+}
+.numerologySummaryPeakCycleGrid article > small {
+  padding-top: 3px;
+  border-top: 1px solid #d9e1de;
+  color: #385b61;
+  font-size: .37rem;
+  font-weight: 850;
 }
 
 .numerologySummarySine {
