@@ -1223,14 +1223,42 @@
   border: 2px solid #244e55;
   border-radius: 7px;
 }
+.numerologyChartLegend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 15px;
+  margin: -4px 0 10px;
+  color: var(--report-muted);
+  font-size: .62rem;
+  font-weight: 750;
+}
+.numerologyChartLegend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.numerologyChartLegend i {
+  width: 9px;
+  height: 9px;
+  display: inline-block;
+  border-radius: 50%;
+}
+.numerologyLegendBirth { background: #173f46; }
+.numerologyLegendName { background: #d9612b; }
+.numerologyChartLegend > small {
+  flex: 1 1 100%;
+  font-size: .58rem;
+  font-weight: 600;
+}
 .numerologyBirthCell,
 .numerologyBirthCellMissing {
-  aspect-ratio: 1.16;
+  min-height: 112px;
   min-width: 0;
   display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 4px;
+  align-content: start;
+  gap: 7px;
+  padding: 9px;
   border-right: 1px solid #9fb4b1;
   border-bottom: 1px solid #9fb4b1;
   background: #eef5f3;
@@ -1246,16 +1274,38 @@
   font-size: .58rem;
   font-weight: 800;
 }
-.numerologyBirthCell strong,
-.numerologyBirthCellMissing strong {
+.numerologyCellValues {
+  display: grid;
+  gap: 5px;
+}
+.numerologyCellValues > span {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 5px;
+}
+.numerologyCellValues em {
+  color: var(--report-muted);
+  font-size: .48rem;
+  font-style: normal;
+  font-weight: 700;
+}
+.numerologyCellValues strong {
   max-width: 100%;
   overflow: hidden;
-  color: #173f46;
-  font-size: clamp(1.1rem, 3vw, 1.65rem);
+  font-size: clamp(.85rem, 2.2vw, 1.28rem);
   letter-spacing: .04em;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.numerologyBirthCellMissing strong { color: #d28667; }
+.numerologyBirthDigits { color: #173f46; }
+.numerologyNameDigits { color: #d9612b; }
+.numerologyBirthDigitsMissing,
+.numerologyNameDigitsMissing {
+  color: #b9aaa3;
+  font-weight: 650;
+}
 
 .numerologyTableWrap { overflow-x: auto; }
 .numerologyNameTable {

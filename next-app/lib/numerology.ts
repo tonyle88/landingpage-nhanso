@@ -35,6 +35,7 @@ export type NumerologyResult = {
     consonants: NamePart;
   }>;
   digitCounts: Record<string, number>;
+  nameDigitCounts: Record<string, number>;
   missing: number[];
   karmicDebts: Array<{ display: string; sources: string[] }>;
   pyramid: {
@@ -45,6 +46,7 @@ export type NumerologyResult = {
     };
     peaks: Array<{
       value: number;
+      display: string;
       formula: string;
       challenge: number;
       challengeFormula: string;
@@ -208,11 +210,13 @@ function completeMetric(
 function pyramidFormula(left: number, right: number) {
   const raw = left + right;
   const value = reduceNumerologyNumber(raw, false);
+  const display = MASTER_LABELS[raw] || String(value);
   return {
     value,
+    display,
     formula: raw === value
-      ? `${left} + ${right} = ${value}`
-      : `${left} + ${right} = ${raw} → ${value}`,
+      ? `${left} + ${right} = ${display}`
+      : `${left} + ${right} = ${raw} → ${display}`,
   };
 }
 
@@ -310,7 +314,7 @@ export function calculateNumerology(
   const peak4 = pyramidFormula(pyramidBase.month, pyramidBase.year);
   const challenge1 = challengeFormula(pyramidBase.day, pyramidBase.month);
   const challenge2 = challengeFormula(pyramidBase.year, pyramidBase.day);
-  const challenge3 = challengeFormula(pyramidBase.month, pyramidBase.year);
+  const challenge3 = challengeFormula(peak1.value, peak2.value);
   const challenge4 = challengeFormula(pyramidBase.year, pyramidBase.month);
   const lifePathBase = reduceNumerologyNumber(lifePath.value, false);
   const firstMilestoneAge = 36 - lifePathBase;
@@ -330,6 +334,13 @@ export function calculateNumerology(
       return [digit, [...dateDigits].filter((value) => value === digit).length];
     }),
   );
+  const nameDigitCounts: Record<string, number> = Object.fromEntries(
+    Array.from({ length: 9 }, (_, index) => [String(index + 1), 0]),
+  );
+  for (const letter of normalizedName.replace(/\s/g, "")) {
+    const value = PYTHAGOREAN_VALUES[letter];
+    if (value) nameDigitCounts[String(value)] += 1;
+  }
   const missing = Object.entries(digitCounts)
     .filter(([, count]) => count === 0)
     .map(([digit]) => Number(digit));
@@ -352,6 +363,7 @@ export function calculateNumerology(
     metrics,
     nameBreakdown,
     digitCounts,
+    nameDigitCounts,
     missing,
     karmicDebts: [...debtMap.entries()].map(([display, sources]) => ({
       display,
