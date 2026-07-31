@@ -20,6 +20,21 @@ const METRICS: Array<[NumerologyMetricKey, string, string]> = [
   ["maturity", "Trưởng thành", "Đường đời + sứ mệnh"],
 ];
 const CHART_ORDER = [3, 6, 9, 2, 5, 8, 1, 4, 7];
+const CYCLE_POINT_Y = [48, 79, 143, 166, 107, 48, 79, 143, 166];
+
+function createSmoothCyclePath(points: Array<{ x: number; y: number }>) {
+  return points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point.x} ${point.y}`;
+    const previous = points[index - 1];
+    const beforePrevious = points[index - 2] || previous;
+    const next = points[index + 1] || point;
+    const control1X = previous.x + (point.x - beforePrevious.x) / 6;
+    const control1Y = previous.y + (point.y - beforePrevious.y) / 6;
+    const control2X = point.x - (next.x - previous.x) / 6;
+    const control2Y = point.y - (next.y - previous.y) / 6;
+    return `${path} C ${control1X} ${control1Y}, ${control2X} ${control2Y}, ${point.x} ${point.y}`;
+  }, "");
+}
 
 function WordPart({ part }: { part: NamePart }) {
   if (!part.raw) return <span className={styles.numerologyEmpty}>—</span>;
@@ -93,6 +108,12 @@ export function NumerologyCalculator() {
   const debtDisplay = result?.karmicDebts.length
     ? result.karmicDebts.map((item) => item.display).join(" · ")
     : "Không có";
+  const cyclePoints = result?.annualCycle.cycle.map((item, index) => ({
+    ...item,
+    x: 60 + index * 97.5,
+    y: CYCLE_POINT_Y[index],
+  })) || [];
+  const cyclePath = createSmoothCyclePath(cyclePoints);
 
   return (
     <section className={styles.numerologyWorkspace}>
@@ -445,6 +466,155 @@ export function NumerologyCalculator() {
               <div className={styles.numerologySpecials}>
                 <span>Chỉ số thiếu <strong>{missingDisplay}</strong></span>
                 <span>Chỉ số nợ nghiệp <strong>{debtDisplay}</strong></span>
+              </div>
+            </section>
+
+            <section
+              className={`${styles.numerologyReportCard} ${styles.numerologyAnnualSection}`}
+            >
+              <div className={styles.numerologyCardHeading}>
+                <span>05</span>
+                <div>
+                  <h3>Năm thế giới &amp; năm cá nhân</h3>
+                  <p>
+                    Tính theo năm hiện tại, kèm năm cá nhân kế tiếp và vị trí
+                    trong chu kỳ 9 năm.
+                  </p>
+                </div>
+              </div>
+
+              <div className={styles.numerologyAnnualCards}>
+                <article>
+                  <span>Năm thế giới {result.annualCycle.worldYear.year}</span>
+                  <strong>{result.annualCycle.worldYear.value}</strong>
+                  <small>{result.annualCycle.worldYear.formula}</small>
+                </article>
+                <article className={styles.numerologyAnnualCurrent}>
+                  <span>
+                    Năm cá nhân hiện tại · {result.annualCycle.currentPersonalYear.year}
+                  </span>
+                  <strong>
+                    PY ({result.annualCycle.currentPersonalYear.year}) ={" "}
+                    {result.annualCycle.currentPersonalYear.value}
+                  </strong>
+                  <small>{result.annualCycle.currentPersonalYear.formula}</small>
+                  <p>
+                    Vận hành:{" "}
+                    {result.annualCycle.currentPersonalYear.operatingFrom}
+                    {" – "}
+                    {result.annualCycle.currentPersonalYear.operatingTo}
+                    {" · "}
+                    {result.annualCycle.currentPersonalYear.durationMonths} tháng
+                  </p>
+                </article>
+                <article>
+                  <span>
+                    Năm cá nhân kế tiếp · {result.annualCycle.nextPersonalYear.year}
+                  </span>
+                  <strong>
+                    PY ({result.annualCycle.nextPersonalYear.year}) ={" "}
+                    {result.annualCycle.nextPersonalYear.value}
+                  </strong>
+                  <small>{result.annualCycle.nextPersonalYear.formula}</small>
+                  <p>
+                    Vận hành:{" "}
+                    {result.annualCycle.nextPersonalYear.operatingFrom}
+                    {" – "}
+                    {result.annualCycle.nextPersonalYear.operatingTo}
+                    {" · "}
+                    {result.annualCycle.nextPersonalYear.durationMonths} tháng
+                  </p>
+                </article>
+              </div>
+
+              <div className={styles.numerologySineChart}>
+                <div className={styles.numerologySineHeading}>
+                  <span>Biểu đồ chu kỳ hình sin</span>
+                  <small>
+                    Chu kỳ{" "}
+                    {result.annualCycle.cycle[0].year}
+                    {"–"}
+                    {result.annualCycle.cycle[8].year}
+                  </small>
+                </div>
+                <svg
+                  aria-label={`Chu kỳ năm cá nhân, đánh dấu năm hiện tại ${result.annualCycle.currentPersonalYear.year}`}
+                  role="img"
+                  viewBox="0 0 900 220"
+                >
+                  <line
+                    className={styles.numerologySineAxis}
+                    x1="35"
+                    x2="865"
+                    y1="107"
+                    y2="107"
+                  />
+                  <path
+                    className={styles.numerologySinePath}
+                    d={cyclePath}
+                  />
+                  {cyclePoints.map((point) => (
+                    <g key={point.year}>
+                      {point.isCurrent ? (
+                        <>
+                          <line
+                            className={styles.numerologySineCurrentLine}
+                            x1={point.x}
+                            x2={point.x}
+                            y1="20"
+                            y2="185"
+                          />
+                          <rect
+                            className={styles.numerologySineCurrentBadge}
+                            height="24"
+                            rx="12"
+                            width="86"
+                            x={point.x - 43}
+                            y="7"
+                          />
+                          <text
+                            className={styles.numerologySineCurrentBadgeText}
+                            textAnchor="middle"
+                            x={point.x}
+                            y="23"
+                          >
+                            Hiện tại
+                          </text>
+                        </>
+                      ) : null}
+                      <circle
+                        className={point.isCurrent
+                          ? styles.numerologySineCurrentPoint
+                          : styles.numerologySinePoint}
+                        cx={point.x}
+                        cy={point.y}
+                        r={point.isCurrent ? 15 : 9}
+                      />
+                      <text
+                        className={point.isCurrent
+                          ? styles.numerologySineCurrentValue
+                          : styles.numerologySineValue}
+                        textAnchor="middle"
+                        x={point.x}
+                        y={point.y + 5}
+                      >
+                        {point.value}
+                      </text>
+                      <text
+                        className={styles.numerologySineYear}
+                        textAnchor="middle"
+                        x={point.x}
+                        y="205"
+                      >
+                        {point.year}
+                      </text>
+                    </g>
+                  ))}
+                </svg>
+                <p>
+                  Thời gian vận hành được xác định riêng theo khúc giao thời
+                  của từng năm cá nhân trong chu kỳ 1–9.
+                </p>
               </div>
             </section>
 

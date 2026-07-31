@@ -1541,6 +1541,151 @@
 }
 .numerologySpecials strong { color: #b34a24; font-size: .82rem; }
 
+.numerologyAnnualSection { margin: 0 24px 24px; }
+.numerologyAnnualCards {
+  display: grid;
+  grid-template-columns: .72fr 1.14fr 1.14fr;
+  gap: 9px;
+}
+.numerologyAnnualCards article {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--report-line);
+  border-radius: 9px;
+  background: #f4f8f7;
+}
+.numerologyAnnualCards article > span {
+  color: var(--report-muted);
+  font-size: .61rem;
+  font-weight: 850;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.numerologyAnnualCards article > strong {
+  color: #173f46;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.3rem;
+  line-height: 1.15;
+}
+.numerologyAnnualCards article:first-child > strong {
+  color: #b34a24;
+  font-size: 2.25rem;
+}
+.numerologyAnnualCards article > small {
+  color: var(--report-muted);
+  font-size: .67rem;
+}
+.numerologyAnnualCards article > p {
+  margin: 3px 0 0;
+  padding-top: 7px;
+  border-top: 1px dashed #b9cbc7;
+  color: #28585f;
+  font-size: .66rem;
+  font-weight: 800;
+}
+.numerologyAnnualCards .numerologyAnnualCurrent {
+  border-color: #d3a94d;
+  background:
+    linear-gradient(135deg, rgb(255 248 222 / 96%), rgb(255 241 224 / 92%));
+  box-shadow: inset 4px 0 0 #d4a843;
+}
+.numerologyAnnualCurrent > strong { color: #b34a24 !important; }
+
+.numerologySineChart {
+  margin-top: 12px;
+  padding: 13px 15px 10px;
+  overflow: hidden;
+  border: 1px solid #cbd9d6;
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgb(237 247 244 / 80%), rgb(255 250 240 / 76%));
+}
+.numerologySineHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.numerologySineHeading > span {
+  color: #173f46;
+  font-size: .75rem;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.numerologySineHeading > small {
+  color: #b34a24;
+  font-size: .68rem;
+  font-weight: 800;
+}
+.numerologySineChart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-top: 2px;
+  overflow: visible;
+}
+.numerologySineChart > p {
+  margin: 0;
+  color: var(--report-muted);
+  font-size: .6rem;
+  text-align: center;
+}
+.numerologySineAxis {
+  stroke: #c4d2cf;
+  stroke-dasharray: 5 7;
+  stroke-width: 1.5;
+}
+.numerologySinePath {
+  fill: none;
+  stroke: #d9612b;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 5;
+}
+.numerologySinePoint {
+  fill: #fff;
+  stroke: #28585f;
+  stroke-width: 3;
+}
+.numerologySineCurrentPoint {
+  fill: #d7a52f;
+  stroke: #fff;
+  stroke-width: 4;
+  filter: drop-shadow(0 3px 4px rgb(96 66 4 / 24%));
+}
+.numerologySineValue,
+.numerologySineCurrentValue {
+  fill: #173f46;
+  font-size: 12px;
+  font-weight: 900;
+}
+.numerologySineCurrentValue {
+  fill: #fff;
+  font-size: 14px;
+}
+.numerologySineYear {
+  fill: #52686c;
+  font-size: 12px;
+  font-weight: 750;
+}
+.numerologySineCurrentLine {
+  stroke: #d4a843;
+  stroke-dasharray: 4 5;
+  stroke-width: 2;
+}
+.numerologySineCurrentBadge { fill: #173f46; }
+.numerologySineCurrentBadgeText {
+  fill: #fff;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
 .numerologyFooter {
   display: flex;
   justify-content: space-between;
@@ -1636,6 +1781,7 @@
   .numerologyMessage { grid-column: auto; }
   .numerologyMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .numerologyCalculationList { grid-template-columns: 1fr; }
+  .numerologyAnnualCards { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1662,6 +1808,8 @@
   .numerologyPyramidCycles { grid-template-columns: 1fr; }
   .numerologyCalculations { margin-inline: 16px; }
   .numerologySpecials { grid-template-columns: 1fr; }
+  .numerologyAnnualSection { margin-inline: 16px; }
+  .numerologySineChart { padding-inline: 8px; }
 }
 
 @media print {
@@ -1723,5 +1871,10 @@
   .numerologyPyramidCycles article { gap: 5px; padding: 8px; }
   .numerologyCalculations { margin: 0 17px 16px; }
   .numerologyCalculation { padding: 5px 0; }
+  .numerologyAnnualSection { margin: 0 17px 16px; break-inside: avoid; }
+  .numerologyAnnualCards { gap: 5px; }
+  .numerologyAnnualCards article { padding: 9px; }
+  .numerologySineChart { margin-top: 7px; padding: 8px 10px 6px; }
+  .numerologySineChart svg { max-height: 170px; }
   .numerologyFooter { padding: 10px 17px; }
 }
