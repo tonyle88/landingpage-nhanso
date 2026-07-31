@@ -215,5 +215,13 @@ test("is integrated only into the Next.js admin", async () => {
   );
   assert.match(calculator, /numerologySineCurrentPoint/);
   assert.match(calculator, /window\.print\(\)/);
+  assert.match(calculator, /PDF khách · 1 trang A4/);
+  assert.match(calculator, /printPdf\("summary"\)/);
+  assert.match(calculator, /numerologyCustomerSummary/);
+  assert.match(calculator, /Hồ sơ nhân số học tóm tắt/);
+  assert.match(calculator, /9 nhóm chỉ số/);
+  assert.match(styles, /body\[data-numerology-print="summary"\]/);
+  assert.match(styles, /@page customer-summary/);
+  assert.match(styles, /height: 285mm/);
   assert.match(styles, /@media print/);
 });

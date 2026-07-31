@@ -1051,6 +1051,11 @@
 .numerologyResultToolbar > span { display: grid; gap: 3px; }
 .numerologyResultToolbar small { color: var(--muted); }
 .numerologyResultToolbar button { min-height: 42px; }
+.numerologyResultActions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
 
 .numerologyReport {
   --report-ink: #183034;
@@ -1723,6 +1728,415 @@
   font-size: .58rem;
 }
 
+.numerologyCustomerSummary {
+  display: none;
+  color: #183034;
+  background: #fffdf8;
+}
+
+.numerologySummaryHeader,
+.numerologySummaryIdentity,
+.numerologySummaryFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.numerologySummaryHeader {
+  padding: 9px 12px;
+  color: #fff;
+  background: #102f34;
+}
+
+.numerologySummaryHeader > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.numerologySummaryHeader img { object-fit: contain; }
+.numerologySummaryHeader span { display: grid; gap: 1px; }
+.numerologySummaryHeader > span { text-align: right; }
+.numerologySummaryHeader strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: .85rem;
+}
+.numerologySummaryHeader small {
+  color: rgb(255 255 255 / 67%);
+  font-size: .42rem;
+  font-weight: 750;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.numerologySummaryIdentity {
+  gap: 18px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #dce3df;
+  background:
+    linear-gradient(100deg, rgb(240 201 106 / 13%), transparent 60%);
+}
+.numerologySummaryIdentity > div { min-width: 0; }
+.numerologySummaryIdentity small {
+  color: #b4522f;
+  font-size: .44rem;
+  font-weight: 850;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.numerologySummaryIdentity h2 {
+  margin: 2px 0 1px;
+  overflow: hidden;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.25rem;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.numerologySummaryIdentity span {
+  color: #607176;
+  font-size: .55rem;
+  font-weight: 750;
+}
+.numerologySummaryIdentity p {
+  max-width: 230px;
+  margin: 0;
+  color: #6b777a;
+  font-size: .48rem;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.numerologySummaryTop,
+.numerologySummaryMiddle {
+  display: grid;
+  gap: 7px;
+  padding: 7px 8px 0;
+}
+.numerologySummaryTop {
+  grid-template-columns: minmax(220px, .82fr) minmax(330px, 1.18fr);
+}
+.numerologySummaryMiddle {
+  grid-template-columns: minmax(270px, .92fr) minmax(300px, 1.08fr);
+}
+
+.numerologySummaryPanel,
+.numerologySummarySine {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #d9ded8;
+  border-radius: 7px;
+  background: rgb(255 255 255 / 88%);
+  break-inside: avoid;
+}
+
+.numerologySummaryPanelTitle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+.numerologySummaryPanelTitle > span {
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: #fff;
+  background: #173f46;
+  font-size: .42rem;
+  font-weight: 850;
+}
+.numerologySummaryPanelTitle > div { display: grid; gap: 1px; }
+.numerologySummaryPanelTitle strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: .72rem;
+}
+.numerologySummaryPanelTitle small {
+  color: #68777b;
+  font-size: .42rem;
+}
+
+.numerologySummaryBirthChart {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1.5px solid #244e55;
+  border-radius: 5px;
+}
+.numerologySummaryBirthCell,
+.numerologySummaryBirthCellMissing {
+  min-width: 0;
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-right: 1px solid #9fb4b1;
+  border-bottom: 1px solid #9fb4b1;
+  background: #eef5f3;
+}
+.numerologySummaryBirthCellMissing { background: #fff5ef; }
+.numerologySummaryBirthCell:nth-child(3n),
+.numerologySummaryBirthCellMissing:nth-child(3n) { border-right: 0; }
+.numerologySummaryBirthCell:nth-last-child(-n + 3),
+.numerologySummaryBirthCellMissing:nth-last-child(-n + 3) { border-bottom: 0; }
+.numerologySummaryBirthCell > small,
+.numerologySummaryBirthCellMissing > small {
+  grid-column: 1 / -1;
+  color: #657378;
+  font-size: .42rem;
+  font-weight: 850;
+}
+.numerologySummaryBirthCell > span,
+.numerologySummaryBirthCellMissing > span {
+  min-width: 0;
+  display: contents;
+}
+.numerologySummaryBirthCell abbr,
+.numerologySummaryBirthCellMissing abbr {
+  color: #768286;
+  font-size: .38rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+.numerologySummaryBirthCell strong,
+.numerologySummaryBirthCellMissing strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: .65rem;
+  line-height: 1;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.numerologySummaryMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+.numerologySummaryMetrics > div {
+  min-width: 0;
+  min-height: 41px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 6px;
+  border-left: 2px solid #2a5f6b;
+  border-radius: 5px;
+  background: #f2f7f6;
+}
+.numerologySummaryMetrics span {
+  color: #68777b;
+  font-size: .43rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.numerologySummaryMetrics strong {
+  color: #b34a24;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: .9rem;
+  line-height: 1;
+}
+.numerologySummaryMetrics .numerologySummaryMetricSpecial {
+  border-color: #2e8674;
+  background: #eef8f4;
+}
+.numerologySummaryMetrics .numerologySummaryMetricDebt {
+  border-color: #d94e1f;
+  background: #fff1e8;
+}
+
+.numerologySummaryPyramid {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  padding: 3px 8px 0;
+}
+.numerologySummaryPyramidLevel,
+.numerologySummaryPyramidPair > div {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+.numerologySummaryPyramidNode {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0;
+  border: 1px solid #8aa9a4;
+  border-radius: 50%;
+  background: #fff;
+}
+.numerologySummaryPyramidLevel:first-child .numerologySummaryPyramidNode {
+  border-color: #d2693f;
+  background: #fff0e7;
+}
+.numerologySummaryPyramidNode span,
+.numerologySummaryPyramidNode small {
+  color: #68777b;
+  font-size: .34rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.numerologySummaryPyramidNode strong {
+  color: #b34a24;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: .85rem;
+  line-height: .95;
+}
+.numerologySummaryPyramid p {
+  margin: 0;
+  color: #536a6e;
+  font-size: .38rem;
+  font-weight: 750;
+}
+.numerologySummaryPyramid > i {
+  min-height: 12px;
+  display: grid;
+  place-items: center;
+  color: #b8862e;
+  font-size: .5rem;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: .2em;
+}
+.numerologySummaryPyramidPair {
+  width: min(230px, 100%);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-items: center;
+  gap: 50px;
+}
+.numerologySummaryPyramidBase {
+  width: min(260px, 100%);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 5px;
+}
+.numerologySummaryPyramidBase > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px;
+  border: 1px solid #b8cbc7;
+  border-radius: 5px;
+  color: #657378;
+  background: #eaf4f1;
+  font-size: .38rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.numerologySummaryPyramidBase strong {
+  color: #b34a24;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: .7rem;
+}
+
+.numerologySummaryAnnual {
+  display: grid;
+  grid-template-columns: .55fr 1fr 1fr;
+  gap: 4px;
+}
+.numerologySummaryAnnual > div {
+  min-width: 0;
+  min-height: 63px;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding: 6px;
+  border: 1px solid #d7dfdc;
+  border-radius: 6px;
+  background: #f3f8f6;
+}
+.numerologySummaryAnnual span {
+  color: #657378;
+  font-size: .4rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+.numerologySummaryAnnual strong {
+  color: #173f46;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: .72rem;
+  line-height: 1.1;
+}
+.numerologySummaryAnnual > div:first-child strong {
+  color: #b34a24;
+  font-size: 1.25rem;
+}
+.numerologySummaryAnnual small {
+  color: #52686c;
+  font-size: .37rem;
+  line-height: 1.25;
+}
+.numerologySummaryAnnual .numerologySummaryAnnualCurrent {
+  border-color: #d4a843;
+  background: #fff7df;
+  box-shadow: inset 2px 0 0 #d4a843;
+}
+.numerologySummaryAnnualCurrent strong { color: #b34a24; }
+
+.numerologySummaryCycleStrip {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 3px;
+  margin-top: 6px;
+}
+.numerologySummaryCycleStrip > span {
+  display: grid;
+  place-items: center;
+  gap: 1px;
+  padding: 4px 2px;
+  border-radius: 4px;
+  color: #52686c;
+  background: #edf4f2;
+}
+.numerologySummaryCycleStrip small { font-size: .34rem; }
+.numerologySummaryCycleStrip strong { font-size: .56rem; }
+.numerologySummaryCycleStrip .numerologySummaryCycleCurrent {
+  color: #fff;
+  background: #173f46;
+  box-shadow: 0 0 0 1px #d4a843;
+}
+
+.numerologySummarySine {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  margin: 7px 8px 0;
+  padding-bottom: 4px;
+  background:
+    linear-gradient(180deg, rgb(237 247 244 / 86%), rgb(255 250 240 / 80%));
+}
+.numerologySummarySine .numerologySummaryPanelTitle {
+  margin-bottom: 0;
+}
+.numerologySummarySine svg {
+  width: 100%;
+  height: 150px;
+  display: block;
+  align-self: center;
+  margin-top: -3px;
+  overflow: visible;
+}
+
+.numerologySummaryFooter {
+  margin-top: auto;
+  padding: 6px 10px;
+  color: rgb(255 255 255 / 70%);
+  background: #102f34;
+  font-size: .4rem;
+}
+
 .memberInvitePanel {
   display: grid;
   grid-template-columns: minmax(250px, .72fr) minmax(480px, 1.28fr);
@@ -2072,6 +2486,11 @@
   .numerologyResultToolbar,
   .numerologyReportHeader,
   .numerologyFooter { align-items: stretch; flex-direction: column; }
+  .numerologyResultActions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
   .numerologyResultToolbar button { width: 100%; }
   .numerologyReportHeader > span { text-align: left; }
   .numerologyMetrics { grid-template-columns: 1fr; padding-inline: 16px; }
@@ -2090,6 +2509,7 @@
 
 @media print {
   @page { size: A4; margin: 10mm; }
+  @page customer-summary { size: A4 portrait; margin: 6mm; }
   .pageHeader,
   .numerologyFormPanel,
   .numerologyResultToolbar { display: none !important; }
@@ -2102,6 +2522,22 @@
   }
   .numerologyWorkspace,
   .numerologyResult { display: block; width: 100%; margin: 0; }
+  :global(body[data-numerology-print="summary"]) .numerologyReport {
+    display: none !important;
+  }
+  :global(body[data-numerology-print="summary"]) .numerologyCustomerSummary {
+    width: 100%;
+    height: 285mm;
+    display: grid !important;
+    grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
+    overflow: hidden;
+    border: 0;
+    page: customer-summary;
+    break-after: avoid-page;
+    break-inside: avoid-page;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
   .numerologyReport { overflow: visible; border: 0; border-radius: 0; box-shadow: none; }
   .numerologyReportHeader { padding: 13px 17px; }
   .numerologyClient { padding: 20px 17px 14px; }

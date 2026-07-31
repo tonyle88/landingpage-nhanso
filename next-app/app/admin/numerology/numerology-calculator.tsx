@@ -86,20 +86,24 @@ export function NumerologyCalculator() {
     setMessage("");
   }
 
-  function printPdf() {
+  function printPdf(mode: "full" | "summary") {
     if (!result) return;
     const previousTitle = document.title;
     const safeName = result.normalizedName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
-    document.title = `Ban-do-nhan-so-${safeName || "khach-hang"}`;
-    const restoreTitle = () => {
+    document.title = mode === "summary"
+      ? `Tom-tat-nhan-so-${safeName || "khach-hang"}`
+      : `Ban-do-nhan-so-${safeName || "khach-hang"}`;
+    document.body.dataset.numerologyPrint = mode;
+    const restorePrintState = () => {
       document.title = previousTitle;
+      delete document.body.dataset.numerologyPrint;
     };
-    window.addEventListener("afterprint", restoreTitle, { once: true });
+    window.addEventListener("afterprint", restorePrintState, { once: true });
     window.print();
-    window.setTimeout(restoreTitle, 500);
+    window.setTimeout(restorePrintState, 800);
   }
 
   const missingDisplay = result?.missing.length
@@ -168,9 +172,22 @@ export function NumerologyCalculator() {
               <strong>Đã lập đủ 9 nhóm chỉ số</strong>
               <small>Kiểm tra lại thông tin trước khi xuất.</small>
             </span>
-            <button className={styles.submit} onClick={printPdf} type="button">
-              ↓ Xuất PDF
-            </button>
+            <div className={styles.numerologyResultActions}>
+              <button
+                className={styles.secondaryLink}
+                onClick={() => printPdf("full")}
+                type="button"
+              >
+                ↓ PDF đầy đủ
+              </button>
+              <button
+                className={styles.submit}
+                onClick={() => printPdf("summary")}
+                type="button"
+              >
+                ↓ PDF khách · 1 trang A4
+              </button>
+            </div>
           </div>
 
           <article
@@ -628,6 +645,312 @@ export function NumerologyCalculator() {
               <span>
                 Clow Cat Patronus · Bản đồ tham khảo theo nhân số học Pythagoras
               </span>
+              <span>{result.normalizedName} · {result.formattedDate}</span>
+            </footer>
+          </article>
+
+          <article
+            aria-label="Hồ sơ nhân số học tóm tắt một trang A4"
+            className={styles.numerologyCustomerSummary}
+          >
+            <header className={styles.numerologySummaryHeader}>
+              <div>
+                <Image
+                  alt=""
+                  height={38}
+                  src="/assets/images/logo2.png"
+                  width={38}
+                />
+                <span>
+                  <strong>Clow Cat Patronus</strong>
+                  <small>Hồ sơ nhân số học tóm tắt</small>
+                </span>
+              </div>
+              <span>
+                <small>Ngày lập</small>
+                <strong>{generatedAt}</strong>
+              </span>
+            </header>
+
+            <section className={styles.numerologySummaryIdentity}>
+              <div>
+                <small>Hồ sơ khách hàng</small>
+                <h2>{result.fullName}</h2>
+                <span>Ngày sinh {result.formattedDate}</span>
+              </div>
+              <p>
+                Bản tổng hợp kết quả cuối theo hệ thống nhân số học Pythagoras.
+              </p>
+            </section>
+
+            <section className={styles.numerologySummaryTop}>
+              <article className={styles.numerologySummaryPanel}>
+                <div className={styles.numerologySummaryPanelTitle}>
+                  <span>01</span>
+                  <div>
+                    <strong>Biểu đồ ngày sinh &amp; họ tên</strong>
+                    <small>Xanh: ngày sinh · Cam: họ tên</small>
+                  </div>
+                </div>
+                <div className={styles.numerologySummaryBirthChart}>
+                  {CHART_ORDER.map((number) => {
+                    const birthCount =
+                      result.digitCounts[String(number)] || 0;
+                    const nameCount =
+                      result.nameDigitCounts[String(number)] || 0;
+                    return (
+                      <div
+                        className={birthCount
+                          ? styles.numerologySummaryBirthCell
+                          : styles.numerologySummaryBirthCellMissing}
+                        key={number}
+                      >
+                        <small>Số {number}</small>
+                        <span>
+                          <abbr title="Ngày sinh">NS</abbr>
+                          <strong className={birthCount
+                            ? styles.numerologyBirthDigits
+                            : styles.numerologyBirthDigitsMissing}
+                          >
+                            {birthCount
+                              ? String(number).repeat(birthCount)
+                              : "—"}
+                          </strong>
+                        </span>
+                        <span>
+                          <abbr title="Họ tên">HT</abbr>
+                          <strong className={nameCount
+                            ? styles.numerologyNameDigits
+                            : styles.numerologyNameDigitsMissing}
+                          >
+                            {nameCount
+                              ? String(number).repeat(nameCount)
+                              : "—"}
+                          </strong>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </article>
+
+              <article className={styles.numerologySummaryPanel}>
+                <div className={styles.numerologySummaryPanelTitle}>
+                  <span>02</span>
+                  <div>
+                    <strong>9 nhóm chỉ số</strong>
+                    <small>Chỉ hiển thị kết quả cuối</small>
+                  </div>
+                </div>
+                <div className={styles.numerologySummaryMetrics}>
+                  {METRICS.map(([key, label]) => (
+                    <div key={key}>
+                      <span>{label}</span>
+                      <strong>{result.metrics[key].display}</strong>
+                    </div>
+                  ))}
+                  <div className={styles.numerologySummaryMetricSpecial}>
+                    <span>Chỉ số thiếu</span>
+                    <strong>{missingDisplay}</strong>
+                  </div>
+                  <div className={styles.numerologySummaryMetricDebt}>
+                    <span>Nợ nghiệp</span>
+                    <strong>{debtDisplay}</strong>
+                  </div>
+                </div>
+              </article>
+            </section>
+
+            <section className={styles.numerologySummaryMiddle}>
+              <article className={styles.numerologySummaryPanel}>
+                <div className={styles.numerologySummaryPanelTitle}>
+                  <span>03</span>
+                  <div>
+                    <strong>Kim tự tháp Pitago</strong>
+                    <small>Đỉnh · thử thách · mốc tuổi</small>
+                  </div>
+                </div>
+                <div className={styles.numerologySummaryPyramid}>
+                  <div className={styles.numerologySummaryPyramidLevel}>
+                    <div className={styles.numerologySummaryPyramidNode}>
+                      <span>Đỉnh 4</span>
+                      <strong>{result.pyramid.peaks[3].display}</strong>
+                      <small>TT {result.pyramid.peaks[3].challenge}</small>
+                    </div>
+                    <p>
+                      {result.pyramid.peaks[3].milestoneAge} tuổi ·{" "}
+                      {result.pyramid.peaks[3].milestoneYear}
+                    </p>
+                  </div>
+                  <i aria-hidden="true">↑</i>
+                  <div className={styles.numerologySummaryPyramidLevel}>
+                    <div className={styles.numerologySummaryPyramidNode}>
+                      <span>Đỉnh 3</span>
+                      <strong>{result.pyramid.peaks[2].display}</strong>
+                      <small>TT {result.pyramid.peaks[2].challenge}</small>
+                    </div>
+                    <p>
+                      {result.pyramid.peaks[2].milestoneAge} tuổi ·{" "}
+                      {result.pyramid.peaks[2].milestoneYear}
+                    </p>
+                  </div>
+                  <i aria-hidden="true">↗ ↑ ↖</i>
+                  <div className={styles.numerologySummaryPyramidPair}>
+                    {[0, 1].map((index) => (
+                      <div key={index}>
+                        <div className={styles.numerologySummaryPyramidNode}>
+                          <span>Đỉnh {index + 1}</span>
+                          <strong>
+                            {result.pyramid.peaks[index].display}
+                          </strong>
+                          <small>
+                            TT {result.pyramid.peaks[index].challenge}
+                          </small>
+                        </div>
+                        <p>
+                          {result.pyramid.peaks[index].milestoneAge} tuổi ·{" "}
+                          {result.pyramid.peaks[index].milestoneYear}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className={styles.numerologySummaryPyramidBase}>
+                    <span>Tháng <strong>{result.pyramid.base.month}</strong></span>
+                    <span>Ngày <strong>{result.pyramid.base.day}</strong></span>
+                    <span>Năm <strong>{result.pyramid.base.year}</strong></span>
+                  </div>
+                </div>
+              </article>
+
+              <article className={styles.numerologySummaryPanel}>
+                <div className={styles.numerologySummaryPanelTitle}>
+                  <span>04</span>
+                  <div>
+                    <strong>Năm cá nhân</strong>
+                    <small>Hiện tại và chu kỳ kế tiếp</small>
+                  </div>
+                </div>
+                <div className={styles.numerologySummaryAnnual}>
+                  <div>
+                    <span>
+                      Năm thế giới{" "}
+                      {result.annualCycle.worldYear.year}
+                    </span>
+                    <strong>{result.annualCycle.worldYear.value}</strong>
+                  </div>
+                  <div className={styles.numerologySummaryAnnualCurrent}>
+                    <span>Năm cá nhân hiện tại</span>
+                    <strong>
+                      PY ({result.annualCycle.currentPersonalYear.year}) ={" "}
+                      {result.annualCycle.currentPersonalYear.value}
+                    </strong>
+                    <small>
+                      {result.annualCycle.currentPersonalYear.operatingFrom}
+                      {" – "}
+                      {result.annualCycle.currentPersonalYear.operatingTo}
+                    </small>
+                  </div>
+                  <div>
+                    <span>Năm cá nhân kế tiếp</span>
+                    <strong>
+                      PY ({result.annualCycle.nextPersonalYear.year}) ={" "}
+                      {result.annualCycle.nextPersonalYear.value}
+                    </strong>
+                    <small>
+                      {result.annualCycle.nextPersonalYear.operatingFrom}
+                      {" – "}
+                      {result.annualCycle.nextPersonalYear.operatingTo}
+                    </small>
+                  </div>
+                </div>
+                <div className={styles.numerologySummaryCycleStrip}>
+                  {result.annualCycle.cycle.map((item) => (
+                    <span
+                      className={item.isCurrent
+                        ? styles.numerologySummaryCycleCurrent
+                        : undefined}
+                      key={item.year}
+                    >
+                      <small>{item.year}</small>
+                      <strong>{item.value}</strong>
+                    </span>
+                  ))}
+                </div>
+              </article>
+            </section>
+
+            <section className={styles.numerologySummarySine}>
+              <div className={styles.numerologySummaryPanelTitle}>
+                <span>05</span>
+                <div>
+                  <strong>Biểu đồ chu kỳ hình SIN</strong>
+                  <small>
+                    Chu kỳ {result.annualCycle.cycle[0].year}
+                    {"–"}
+                    {result.annualCycle.cycle[8].year}
+                  </small>
+                </div>
+              </div>
+              <svg
+                aria-label={`Chu kỳ năm cá nhân, đánh dấu năm hiện tại ${result.annualCycle.currentPersonalYear.year}`}
+                role="img"
+                viewBox="0 0 900 220"
+              >
+                <line
+                  className={styles.numerologySineAxis}
+                  x1="35"
+                  x2="865"
+                  y1="107"
+                  y2="107"
+                />
+                <path
+                  className={styles.numerologySinePath}
+                  d={cyclePath}
+                />
+                {cyclePoints.map((point) => (
+                  <g key={point.year}>
+                    {point.isCurrent ? (
+                      <line
+                        className={styles.numerologySineCurrentLine}
+                        x1={point.x}
+                        x2={point.x}
+                        y1="20"
+                        y2="185"
+                      />
+                    ) : null}
+                    <circle
+                      className={point.isCurrent
+                        ? styles.numerologySineCurrentPoint
+                        : styles.numerologySinePoint}
+                      cx={point.x}
+                      cy={point.y}
+                      r={point.isCurrent ? 15 : 9}
+                    />
+                    <text
+                      className={point.isCurrent
+                        ? styles.numerologySineCurrentValue
+                        : styles.numerologySineValue}
+                      textAnchor="middle"
+                      x={point.x}
+                      y={point.y + 5}
+                    >
+                      {point.value}
+                    </text>
+                    <text
+                      className={styles.numerologySineYear}
+                      textAnchor="middle"
+                      x={point.x}
+                      y="205"
+                    >
+                      {point.year}
+                    </text>
+                  </g>
+                ))}
+              </svg>
+            </section>
+
+            <footer className={styles.numerologySummaryFooter}>
+              <span>Clow Cat Patronus · Nhân số học Pythagoras</span>
               <span>{result.normalizedName} · {result.formattedDate}</span>
             </footer>
           </article>
