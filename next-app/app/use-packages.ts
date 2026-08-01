@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import type { PublicPackage } from "@/lib/packages";
+import { landingPlainText } from "@/lib/landing-text";
 
 type PackageData = PublicPackage;
 
@@ -14,6 +15,7 @@ declare global {
 }
 
 function normalizePackages(values: unknown[]) {
+  const seenCodes = new Set<string>();
   return values
     .map<PackageData | null>((value, index) => {
       if (!value || typeof value !== "object") return null;
@@ -38,16 +40,26 @@ function normalizePackages(values: unknown[]) {
           ? item.features.map(String).filter(Boolean)
           : [],
         buttonText: String(item.buttonText || "Đặt Lịch Ngay").trim(),
-        sortOrder: Number(item.sortOrder || index + 1),
+        sortOrder: Number(item.sortOrder ?? index + 1),
         enabled: true,
       };
     })
     .filter((item): item is PackageData => Boolean(item))
+    .filter((item) => {
+      if (seenCodes.has(item.code)) return false;
+      seenCodes.add(item.code);
+      return true;
+    })
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 function appendSanitizedHtml(element: HTMLElement, value: string) {
-  element.innerHTML = window.ClowSanitizeHtml?.(value) || "";
+  const sanitized = window.ClowSanitizeHtml?.(value);
+  if (sanitized) {
+    element.innerHTML = sanitized;
+    return;
+  }
+  element.textContent = landingPlainText(value);
 }
 
 function createPackageCard(item: PackageData, index: number) {

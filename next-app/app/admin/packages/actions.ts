@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
@@ -35,6 +35,7 @@ export async function savePackageAction(form: FormData) {
     p_payload: payload,
   });
   if (error) redirect("/admin/packages?status=error");
+  updateTag("public-packages");
   revalidatePath("/admin/packages");
   revalidatePath("/");
   redirect("/admin/packages?status=saved");
@@ -66,6 +67,7 @@ export async function deletePackageAction(form: FormData) {
   }
   const { error } = await supabase.rpc("admin_delete_package", { p_id: id });
   if (error) redirect("/admin/packages?status=error");
+  updateTag("public-packages");
   revalidatePath("/admin/packages");
   revalidatePath("/");
   redirect("/admin/packages?status=deleted");

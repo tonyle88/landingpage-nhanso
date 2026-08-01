@@ -25,6 +25,10 @@ test("admin package UI gates permissions and uses server-side RPC actions", () =
   assert.match(actions, /can\(principal\.role, "manage_content"\)/);
   assert.match(actions, /rpc\("admin_save_package"/);
   assert.match(actions, /rpc\("admin_delete_package"/);
+  assert.equal(
+    (actions.match(/updateTag\("public-packages"\)/g) || []).length,
+    2,
+  );
   assert.match(actions, /revalidatePath\("\/"\)/);
   assert.match(page, /getAdminPrincipal/);
   assert.match(page, /confirmation/);

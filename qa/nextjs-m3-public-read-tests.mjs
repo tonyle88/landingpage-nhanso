@@ -25,14 +25,18 @@ test("packages use a server-only typed Supabase read with bounded fallback", asy
 });
 
 test("Google packages remain fallback-only after Supabase returns rows", async () => {
-  const [runtime, content] = await Promise.all([
+  const [runtime, content, packageRuntime] = await Promise.all([
     read("app/landing-runtime.tsx"),
     read("app/use-landing-content.ts"),
+    read("app/use-packages.ts"),
   ]);
 
   assert.match(runtime, /usePackages\(initialPackages\)/);
   assert.match(runtime, /initialPackages\.length > 0/);
   assert.match(content, /!preferSupabasePackages/);
+  assert.match(packageRuntime, /item\.sortOrder \?\? index \+ 1/);
+  assert.match(packageRuntime, /seenCodes\.has\(item\.code\)/);
+  assert.match(packageRuntime, /landingPlainText\(value\)/);
 });
 
 test("testimonials use the same bounded server read and Google fallback", async () => {

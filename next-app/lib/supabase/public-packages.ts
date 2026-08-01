@@ -47,7 +47,7 @@ async function queryPublicPackages(): Promise<PublicPackagesResult> {
 
 const readCachedPublicPackages = unstable_cache(
   queryPublicPackages,
-  ["public-packages-v1"],
+  ["public-packages-v2"],
   { revalidate: 300, tags: ["public-packages"] },
 );
 
