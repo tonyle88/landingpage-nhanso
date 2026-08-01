@@ -8,6 +8,10 @@ type PackageData = PublicPackage;
 
 declare global {
   interface Window {
+    ClowCurrentPackages?: PublicPackage[];
+    ClowBookingPackagesRuntime?: {
+      sync: (packages: PublicPackage[]) => void;
+    };
     ClowPackagesRuntime?: {
       render: (packages: unknown[]) => void;
     };
@@ -31,6 +35,8 @@ function normalizePackages(values: unknown[]) {
         code,
         name,
         onlinePrice,
+        offlinePrice: Number(item.offlinePrice || onlinePrice),
+        currency: String(item.currency || "VND").trim().toUpperCase(),
         unit: rawUnit.startsWith("/") ? rawUnit : `/${rawUnit}`,
         icon: String(item.icon || "sparkles").replace(/^fa-/, ""),
         accent: String(item.accent || "teal").toLowerCase(),
@@ -153,6 +159,8 @@ export function usePackages(initialPackages: PublicPackage[] = []) {
     const render = (values: unknown[]) => {
       const packages = normalizePackages(values);
       if (!packages.length) return;
+      window.ClowCurrentPackages = packages;
+      window.ClowBookingPackagesRuntime?.sync(packages);
       disposeRender();
       grid.replaceChildren();
       document.querySelector("#packages .package-carousel-controls")?.remove();

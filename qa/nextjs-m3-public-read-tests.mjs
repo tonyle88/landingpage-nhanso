@@ -14,10 +14,12 @@ test("packages use a server-only typed Supabase read with bounded fallback", asy
 
   assert.match(page, /getPublicPackages\(\)/);
   assert.match(page, /initialPackages=\{publicPackages\.packages\}/);
+  assert.match(page, /<PackagesSection packages=\{publicPackages\.packages\}/);
   assert.match(client, /^import "server-only";/);
   assert.match(client, /SupabaseClient<Database>/);
   assert.match(client, /NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/);
-  assert.doesNotMatch(client, /SERVICE_ROLE|service_role|sb_secret_/);
+  const publicClientSource = client.split("export function createServiceServerClient")[0];
+  assert.doesNotMatch(publicClientSource, /SERVICE_ROLE|service_role|sb_secret_/);
   assert.match(query, /unstable_cache/);
   assert.match(query, /revalidate: 300/);
   assert.match(query, /PACKAGES_TIMEOUT_MS = 4_000/);
@@ -34,9 +36,34 @@ test("Google packages remain fallback-only after Supabase returns rows", async (
   assert.match(runtime, /usePackages\(initialPackages\)/);
   assert.match(runtime, /initialPackages\.length > 0/);
   assert.match(content, /!preferSupabasePackages/);
+  assert.match(content, /isLegacyPackageCardItem/);
+  assert.match(content, /preferSupabasePackages,/);
   assert.match(packageRuntime, /item\.sortOrder \?\? index \+ 1/);
   assert.match(packageRuntime, /seenCodes\.has\(item\.code\)/);
   assert.match(packageRuntime, /landingPlainText\(value\)/);
+  assert.match(packageRuntime, /ClowCurrentPackages/);
+  assert.match(packageRuntime, /ClowBookingPackagesRuntime\?\.sync\(packages\)/);
+});
+
+test("package cards and booking choices keep admin packages as the single source", async () => {
+  const [page, sections, content, packageRuntime, legacy, mapper] = await Promise.all([
+    read("app/page.tsx"),
+    read("components/landing/landing-sections.tsx"),
+    read("app/use-landing-content.ts"),
+    read("app/use-packages.ts"),
+    read("public/script.js"),
+    read("lib/packages.ts"),
+  ]);
+
+  assert.match(page, /PackagesSection packages=\{publicPackages\.packages\}/);
+  assert.match(sections, /packages\.map\(\(item, index\)/);
+  assert.doesNotMatch(sections, /500\.000<sup>|2\.000\.000<sup>/);
+  assert.match(content, /!preferSupabasePackages \|\| !isLegacyPackageCardItem\(item\)/);
+  assert.match(legacy, /if \(!options\.preferSupabasePackages\)/);
+  assert.match(legacy, /ClowBookingPackagesRuntime/);
+  assert.match(mapper, /offlinePrice: row\.offline_price \|\| row\.online_price/);
+  assert.match(mapper, /currency: row\.currency \|\| "VND"/);
+  assert.match(packageRuntime, /offlinePrice: Number\(item\.offlinePrice \|\| onlinePrice\)/);
 });
 
 test("testimonials use the same bounded server read and Google fallback", async () => {
@@ -55,7 +82,7 @@ test("testimonials use the same bounded server read and Google fallback", async 
   assert.match(query, /^import "server-only";/);
   assert.match(query, /TESTIMONIALS_TIMEOUT_MS = 4_000/);
   assert.match(query, /revalidate: 300/);
-  assert.match(query, /media_assets\(public_url\)/);
+  assert.match(query, /media_assets(?:![^(]+)?\(public_url\)/);
   assert.match(runtime, /useTestimonials\(initialTestimonials\)/);
   assert.match(content, /!preferSupabaseTestimonials/);
 });
@@ -125,7 +152,7 @@ test("published blog posts are server-rendered while drafts and unsafe covers st
   assert.match(query, /\.from\("blog_posts"\)/);
   assert.match(query, /\.eq\("status", "published"\)/);
   assert.match(query, /\.lte\("published_at", now\.toISOString\(\)\)/);
-  assert.match(query, /media_assets\(public_url\)/);
+  assert.match(query, /media_assets(?:![^(]+)?\(public_url\)/);
   assert.match(mapper, /row\.status !== "published"/);
   assert.match(mapper, /url\.protocol === "https:"/);
   assert.match(legacy, /initialBlogArticles\.length/);

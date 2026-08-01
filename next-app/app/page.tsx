@@ -57,7 +57,7 @@ export default async function LandingPage() {
         rel="stylesheet"
         href="/assets/vendor/fontawesome/css/all.min.css"
       />
-      <link rel="stylesheet" href="/style.css?v=20260729-summary-font" />
+      <link rel="stylesheet" href="/style.css?v=20260801-admin-packages" />
 
       <LandingRuntime
         initialPackages={publicPackages.packages}
@@ -79,7 +79,7 @@ export default async function LandingPage() {
           <AboutSection />
           <BenefitsSection />
           <TestimonialsSection />
-          <PackagesSection />
+          <PackagesSection packages={publicPackages.packages} />
           <PackageComparisonSection />
           <MethodsSection />
           <ProcessSection />
@@ -97,7 +97,7 @@ export default async function LandingPage() {
         defer
       />
       <script src="/assets/js/sanitize-html.js" nonce={nonce} defer />
-      <script src="/script.js" nonce={nonce} defer />
+      <script src="/script.js?v=20260801-admin-packages" nonce={nonce} defer />
     </>
   );
 }

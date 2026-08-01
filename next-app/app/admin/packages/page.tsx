@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
+import { landingPlainText } from "@/lib/landing-text";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
 import { deletePackageAction } from "./actions";
 import { PackageForm } from "./package-form";
@@ -71,7 +72,7 @@ export default async function AdminPackagesPage({
             <article className={styles.recordCard} key={item.id}>
               <div className={styles.recordSummary}>
                 <div>
-                  <strong>{item.name}</strong>
+                  <strong>{landingPlainText(item.name)}</strong>
                   <span>{item.code} · thứ tự {item.sort_order}</span>
                 </div>
                 <span className={item.enabled ? styles.active : styles.inactive}>

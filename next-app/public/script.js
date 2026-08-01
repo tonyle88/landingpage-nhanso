@@ -100,11 +100,13 @@ async function refreshPaymentSettingsBeforePayment() {
 function applyLegacyLandingContent(payload, options = {}) {
   initYouTubeEmbeds();
 
-  const packages = normalizePackages(payload.packages);
-  if (packages.length > 0) {
-    syncPackageOptionsFromPackages(packages);
-  } else {
-    syncPackageOptionsFromLandingContent(payload.items);
+  if (!options.preferSupabasePackages) {
+    const packages = normalizePackages(payload.packages);
+    if (packages.length > 0) {
+      syncPackageOptionsFromPackages(packages);
+    } else {
+      syncPackageOptionsFromLandingContent(payload.items);
+    }
   }
 
 }
@@ -112,6 +114,12 @@ function applyLegacyLandingContent(payload, options = {}) {
 window.ClowLandingContentRuntime = {
   applyLegacy: applyLegacyLandingContent,
 };
+window.ClowBookingPackagesRuntime = {
+  sync: syncPackageOptionsFromPackages,
+};
+if (Array.isArray(window.ClowCurrentPackages) && window.ClowCurrentPackages.length) {
+  syncPackageOptionsFromPackages(normalizePackages(window.ClowCurrentPackages));
+}
 window.dispatchEvent(new Event('clow-landing-runtime-ready'));
 
 function normalizePackages(packages) {
