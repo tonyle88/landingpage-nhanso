@@ -1788,13 +1788,16 @@
 }
 
 .numerologySummaryIdentity {
+  flex-direction: column;
+  justify-content: center;
   gap: 18px;
   padding: 8px 12px;
+  text-align: center;
   border-bottom: 1px solid #dce3df;
   background:
     linear-gradient(100deg, rgb(240 201 106 / 13%), transparent 60%);
 }
-.numerologySummaryIdentity > div { min-width: 0; }
+.numerologySummaryIdentity > div { min-width: 0; width: 100%; }
 .numerologySummaryIdentity small {
   color: #b4522f;
   font-size: .44rem;
@@ -1806,23 +1809,23 @@
   margin: 2px 0 1px;
   overflow: hidden;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.25rem;
+  font-size: 1.55rem;
   line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .numerologySummaryIdentity span {
   color: #607176;
-  font-size: .55rem;
+  font-size: .62rem;
   font-weight: 750;
 }
 .numerologySummaryIdentity p {
-  max-width: 230px;
-  margin: 0;
+  max-width: none;
+  margin: -12px 0 0;
   color: #6b777a;
   font-size: .48rem;
   line-height: 1.4;
-  text-align: right;
+  text-align: center;
 }
 
 .numerologySummaryTop,
@@ -1962,8 +1965,15 @@
   line-height: 1;
 }
 .numerologySummaryMetrics .numerologySummaryMetricSpecial {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
   border-color: #2e8674;
   background: #eef8f4;
+}
+.numerologySummaryMetrics .numerologySummaryMetricSpecial strong {
+  font-size: .78rem;
+  text-align: right;
+  white-space: nowrap;
 }
 .numerologySummaryMetrics .numerologySummaryMetricDebt {
   border-color: #d94e1f;
@@ -2596,16 +2606,250 @@
   .numerologySineChart { padding-inline: 8px; }
 }
 
+/* Export theme inspired by the Clow Cat Patronus Vietnamese report. */
+.numerologyReport,
+.numerologyCustomerSummary {
+  --report-ink: #f7f3ea;
+  --report-muted: #b9c7c6;
+  --report-line: rgb(177 201 198 / 24%);
+  color: var(--report-ink);
+  background:
+    radial-gradient(circle at 94% 5%, rgb(131 75 48 / 34%) 0 14%, transparent 14.2%),
+    radial-gradient(circle at 4% 92%, rgb(44 73 73 / 54%) 0 17%, transparent 17.2%),
+    radial-gradient(circle at 58% 18%, rgb(212 168 67 / 8%), transparent 25%),
+    #071f23;
+}
+.numerologyReportHeader,
+.numerologySummaryHeader,
+.numerologyFooter,
+.numerologySummaryFooter {
+  border-color: rgb(212 168 67 / 26%);
+  background: rgb(6 27 31 / 92%);
+}
+.numerologyClient h2,
+.numerologyCardHeading h3,
+.numerologySummaryIdentity h2,
+.numerologySummaryPanelTitle strong,
+.numerologySummaryPeakCyclesHeading strong,
+.numerologySineHeading > span {
+  color: #fffaf2;
+}
+.numerologyClient p,
+.numerologySummaryIdentity small,
+.numerologyCardHeading h3,
+.numerologySummaryPanelTitle strong,
+.numerologySummaryPeakCyclesHeading strong {
+  color: #f2b27e;
+}
+.numerologyClient > span,
+.numerologyCardHeading p,
+.numerologyChartLegend,
+.numerologyMetric > span,
+.numerologyMetricDebt > span,
+.numerologyMetricMissing > span,
+.numerologyMetric > small,
+.numerologyMetricDebt > small,
+.numerologyMetricMissing > small,
+.numerologyNameTable thead th,
+.numerologyLetters,
+.numerologySummaryIdentity span,
+.numerologySummaryIdentity p,
+.numerologySummaryPanelTitle small,
+.numerologySummaryMetrics span,
+.numerologySummaryPeakCyclesHeading small {
+  color: var(--report-muted);
+}
+.numerologyMetric,
+.numerologyMetricDebt,
+.numerologyMetricMissing,
+.numerologyReportCard,
+.numerologySummaryPanel,
+.numerologySummarySine,
+.numerologyPyramidCycles article,
+.numerologyAnnualCards article,
+.numerologySummaryAnnual > div,
+.numerologySummaryPeakCycleGrid article {
+  border-color: var(--report-line);
+  background: rgb(255 255 255 / 6%);
+}
+.numerologyMetricDebt,
+.numerologySummaryMetrics .numerologySummaryMetricDebt {
+  border-color: rgb(232 76 25 / 48%);
+  background: rgb(111 52 33 / 34%);
+}
+.numerologyMetricMissing,
+.numerologySummaryMetrics .numerologySummaryMetricSpecial {
+  border-color: rgb(91 227 208 / 34%);
+  background: rgb(30 83 77 / 34%);
+}
+.numerologyMetric > strong,
+.numerologyMetricDebt > strong,
+.numerologyMetricMissing > strong,
+.numerologyNameTable tbody th,
+.numerologySpecials strong,
+.numerologySummaryMetrics strong,
+.numerologySummaryAnnualCurrent strong {
+  color: #f1b383;
+}
+.numerologyCardHeading > span,
+.numerologySummaryPanelTitle > span {
+  color: #fff;
+  background: #e84a16;
+}
+.numerologyBirthChart,
+.numerologySummaryBirthChart { border-color: #67817f; }
+.numerologyBirthCell,
+.numerologySummaryBirthCell {
+  border-color: #516c6b;
+  background: rgb(82 112 111 / 35%);
+}
+.numerologyBirthCellMissing,
+.numerologySummaryBirthCellMissing {
+  border-color: #516c6b;
+  background: rgb(104 65 45 / 30%);
+}
+.numerologyBirthCell small,
+.numerologyBirthCellMissing small,
+.numerologyCellValues abbr,
+.numerologySummaryBirthCell > small,
+.numerologySummaryBirthCellMissing > small,
+.numerologySummaryBirthCell abbr,
+.numerologySummaryBirthCellMissing abbr { color: #c0cdcb; }
+.numerologyBirthDigits,
+.numerologySummaryBirthCell > span:nth-of-type(1) strong { color: #8ee8dc; }
+.numerologyNameDigits,
+.numerologySummaryBirthCell > span:nth-of-type(2) strong { color: #f2b27e; }
+.numerologyBirthDigitsMissing,
+.numerologyNameDigitsMissing,
+.numerologySummaryBirthCellMissing strong { color: #8d8b84 !important; }
+.numerologyNameTable th,
+.numerologyNameTable td,
+.numerologyCalculation,
+.numerologyPyramidCycles article p,
+.numerologyAnnualCards article > p,
+.numerologySummaryPeakCycles,
+.numerologySummaryPeakCycleGrid article > small {
+  border-color: var(--report-line);
+}
+.numerologyNameTable td strong,
+.numerologyCalculation strong,
+.numerologyPyramidCycles article strong { color: #fff7ee; }
+.numerologyPyramid,
+.numerologySummaryPyramid {
+  border-color: rgb(125 162 157 / 42%);
+  background:
+    radial-gradient(circle at 50% 35%, rgb(91 227 208 / 8%), transparent 43%),
+    rgb(6 36 40 / 88%);
+}
+.numerologyPyramidCircle,
+.numerologyPyramidBase > div,
+.numerologySummaryPyramidNode,
+.numerologySummaryPyramidBase > span {
+  color: #f7f3ea;
+  border-color: #71888a;
+  background: #082429;
+  box-shadow: none;
+}
+.numerologyPyramidTop .numerologyPyramidCircle,
+.numerologySummaryPyramidLevel:first-child .numerologySummaryPyramidNode {
+  border-color: #e0713f;
+  background: rgb(91 55 42 / 82%);
+  box-shadow: 0 0 0 5px rgb(232 74 22 / 8%);
+}
+.numerologyPyramidMiddle .numerologyPyramidCircle {
+  border-color: #d4a843;
+  background: #102e31;
+}
+.numerologyPyramidTop span,
+.numerologyPyramidMiddle span,
+.numerologyPyramidPair span,
+.numerologyPyramidBase span,
+.numerologySummaryPyramidNode span,
+.numerologySummaryPyramidNode small,
+.numerologySummaryPyramidBase > span { color: #b9c7c6; }
+.numerologyPyramidTop strong,
+.numerologyPyramidMiddle strong,
+.numerologyPyramidPair strong,
+.numerologyPyramidBase strong,
+.numerologySummaryPyramidNode strong,
+.numerologySummaryPyramidBase strong { color: #5be3d0; }
+.numerologyPyramidMilestone {
+  color: #f7f3ea !important;
+  border-color: rgb(177 201 198 / 26%);
+  background: rgb(6 28 32 / 88%);
+}
+.numerologyPyramidRule,
+.numerologyAnnualCards .numerologyAnnualCurrent,
+.numerologySummaryAnnual .numerologySummaryAnnualCurrent {
+  border-color: #d4a843;
+  background: rgb(94 66 38 / 38%);
+}
+.numerologyPyramidRule > span,
+.numerologyPyramidRule > small,
+.numerologyPyramidCycles article small,
+.numerologyPyramidCycles article p,
+.numerologyCalculation span,
+.numerologySpecials > span,
+.numerologyAnnualCards article > span,
+.numerologyAnnualCards article > small,
+.numerologyAnnualCards article > p,
+.numerologySineChart > p,
+.numerologySummaryAnnual span,
+.numerologySummaryAnnual small,
+.numerologySummaryPeakCycleGrid p,
+.numerologySummaryPeakCycleGrid article > small { color: var(--report-muted); }
+.numerologySpecials > span,
+.numerologySummaryCycleStrip > span {
+  color: #c5d0cf;
+  background: rgb(255 255 255 / 7%);
+}
+.numerologyAnnualCards article > strong,
+.numerologySummaryAnnual strong,
+.numerologySummaryPeakCycleGrid p strong { color: #fff8ef; }
+.numerologySineChart,
+.numerologySummarySine {
+  border-color: rgb(125 162 157 / 42%);
+  background: rgb(10 42 46 / 82%);
+}
+.numerologySineAxis { stroke: #587573; }
+.numerologySinePoint { fill: #082429; stroke: #70d8ca; }
+.numerologySineValue { fill: #eaf9f6; }
+.numerologySineYear { fill: #b9c7c6; }
+.numerologySineCurrentBadge { fill: #e84a16; }
+.numerologySummaryIdentity {
+  border-color: rgb(212 168 67 / 28%);
+  background: rgb(255 255 255 / 4%);
+}
+.numerologySummaryMetrics > div {
+  border-color: #5a8583;
+  background: rgb(255 255 255 / 6%);
+}
+.numerologySummaryCycleStrip .numerologySummaryCycleCurrent {
+  color: #fff;
+  background: #e84a16;
+  box-shadow: 0 0 0 1px #d4a843;
+}
+.numerologySummaryPeakCycleGrid article {
+  border-left-color: #d4a843;
+  background: rgb(255 255 255 / 6%);
+}
+.numerologySummaryPeakCycleGrid article > span { color: #f2b27e; }
+
 @media print {
-  @page { size: A4; margin: 10mm; }
-  @page customer-summary { size: A4 portrait; margin: 6mm; }
+  @page { size: A4; margin: 0; }
+  @page customer-summary { size: A4 portrait; margin: 0; }
+  :global(html),
+  :global(body) {
+    min-height: 100%;
+    background: #071f23 !important;
+  }
   .pageHeader,
   .numerologyFormPanel,
   .numerologyResultToolbar { display: none !important; }
   .adminShell {
     min-height: auto;
     padding: 0;
-    background: #fff;
+    background: #071f23;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
@@ -2615,10 +2859,12 @@
     display: none !important;
   }
   :global(body[data-numerology-print="summary"]) .numerologyCustomerSummary {
-    width: 100%;
-    height: 285mm;
+    width: 210mm;
+    height: 297mm;
     display: grid !important;
     grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
+    box-sizing: border-box;
+    padding: 6mm;
     overflow: hidden;
     border: 0;
     page: customer-summary;
@@ -2627,7 +2873,18 @@
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
-  .numerologyReport { overflow: visible; border: 0; border-radius: 0; box-shadow: none; }
+  .numerologyReport {
+    width: 210mm;
+    min-height: 297mm;
+    box-sizing: border-box;
+    padding: 10mm;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
   .numerologyReportHeader { padding: 13px 17px; }
   .numerologyClient { padding: 20px 17px 14px; }
   .numerologyClient h2 { font-size: 2.25rem; }
