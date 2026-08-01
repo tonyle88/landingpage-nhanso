@@ -130,9 +130,10 @@ test("published blog posts are server-rendered while drafts and unsafe covers st
 });
 
 test("public routes expose canonical metadata, structured data, sitemap and robots", async () => {
-  const [rootLayout, blogPage, sitemap, robots] = await Promise.all([
+  const [rootLayout, blogPage, shareImage, sitemap, robots] = await Promise.all([
     read("app/layout.tsx"),
     read("app/blog/page.tsx"),
+    read("app/blog/share-image/route.tsx"),
     read("app/sitemap.ts"),
     read("app/robots.ts"),
   ]);
@@ -140,6 +141,16 @@ test("public routes expose canonical metadata, structured data, sitemap and robo
   assert.match(rootLayout, /canonical: "\/"/);
   assert.match(blogPage, /generateMetadata/);
   assert.match(blogPage, /canonical: "\/blog"/);
+  assert.match(blogPage, /new URL\("\/blog\/share-image"/);
+  assert.match(blogPage, /searchParams\.set\("title", article\.title/);
+  assert.match(blogPage, /width: 1200/);
+  assert.match(blogPage, /height: 630/);
+  assert.match(blogPage, /summary_large_image/);
+  assert.match(shareImage, /ImageResponse/);
+  assert.match(shareImage, /logo2\.png/);
+  assert.match(shareImage, /searchParams\.get\("title"\)/);
+  assert.match(shareImage, /width: 1200/);
+  assert.match(shareImage, /height: 630/);
   assert.match(blogPage, /type="application\/ld\+json"/);
   assert.match(blogPage, /"@type": "BlogPosting"/);
   assert.match(sitemap, /getPublicBlogPosts/);

@@ -22,6 +22,47 @@ const METRICS: Array<[NumerologyMetricKey, string, string]> = [
 const CHART_ORDER = [3, 6, 9, 2, 5, 8, 1, 4, 7];
 const CYCLE_POINT_Y = [48, 79, 143, 166, 107, 48, 178, 130, 82];
 
+async function ensureCustomerJpgFonts() {
+  const definitions = [
+    {
+      family: "NumerologyExportSans",
+      source:
+        "/assets/vendor/fonts/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCuM70w-.ttf",
+      descriptors: { weight: "700" },
+    },
+    {
+      family: "NumerologyExportSerif",
+      source:
+        "/assets/vendor/fonts/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKeiukDQ.ttf",
+      descriptors: { weight: "700" },
+    },
+    {
+      family: "NumerologyExportScript",
+      source:
+        "/assets/vendor/fonts/nuFRD-vYSZviVYUb_rj3ij__anPXDTnCjmHKM4nYO7KN_qiTbtY.ttf",
+      descriptors: { style: "italic", weight: "400" },
+    },
+  ] satisfies Array<{
+    family: string;
+    source: string;
+    descriptors: FontFaceDescriptors;
+  }>;
+
+  await Promise.all(definitions.map(async ({ family, source, descriptors }) => {
+    if (document.fonts.check(`12px ${family}`)) return;
+    try {
+      const loaded = await new FontFace(
+        family,
+        `url("${source}") format("truetype")`,
+        descriptors,
+      ).load();
+      document.fonts.add(loaded);
+    } catch {
+      // The canvas keeps its system-font fallback if a local font cannot load.
+    }
+  }));
+}
+
 function createSmoothCyclePath(points: Array<{ x: number; y: number }>) {
   return points.reduce((path, point, index) => {
     if (index === 0) return `M ${point.x} ${point.y}`;
@@ -73,7 +114,7 @@ function drawCanvasText(
   context.textAlign = options.align || "left";
   context.textBaseline = "alphabetic";
   context.fillStyle = options.color || "#183034";
-  context.font = options.font || "12px Arial, sans-serif";
+  context.font = options.font || "12px NumerologyExportSans, Arial, sans-serif";
   context.fillText(String(value), x, y, options.maxWidth);
   context.restore();
 }
@@ -93,14 +134,14 @@ function drawCanvasSectionTitle(
   drawCanvasText(context, number, x + 15, y + 19, {
     align: "center",
     color: "#ffffff",
-    font: "800 8px Arial, sans-serif",
+    font: "800 9px NumerologyExportSans, Arial, sans-serif",
   });
   drawCanvasText(context, title, x + 36, y + 14, {
-    font: "700 15px Georgia, serif",
+    font: "700 17px NumerologyExportSerif, Georgia, serif",
   });
   drawCanvasText(context, subtitle, x + 36, y + 27, {
     color: "#68777b",
-    font: "7px Arial, sans-serif",
+    font: "8px NumerologyExportSans, Arial, sans-serif",
   });
 }
 
@@ -118,6 +159,7 @@ async function renderCustomerSummaryAsJpeg(
   result: NumerologyResult,
   generatedAt: string,
 ) {
+  await ensureCustomerJpgFonts();
   await document.fonts.ready;
   const logicalWidth = 794;
   const logicalHeight = 1123;
@@ -135,47 +177,52 @@ async function renderCustomerSummaryAsJpeg(
   context.fillRect(0, 0, logicalWidth, 58);
   drawCanvasText(context, "Clow Cat Patronus", 28, 31, {
     color: "#ffffff",
-    font: "700 18px Georgia, serif",
+    font: "700 20px NumerologyExportSerif, Georgia, serif",
   });
   drawCanvasText(context, "HỒ SƠ NHÂN SỐ HỌC TÓM TẮT", 28, 44, {
     color: "#b8c6c7",
-    font: "700 7px Arial, sans-serif",
+    font: "700 8px NumerologyExportSans, Arial, sans-serif",
   });
   drawCanvasText(context, "NGÀY LẬP", 766, 22, {
     align: "right",
     color: "#b8c6c7",
-    font: "700 7px Arial, sans-serif",
+    font: "700 8px NumerologyExportSans, Arial, sans-serif",
   });
   drawCanvasText(context, generatedAt, 766, 39, {
     align: "right",
     color: "#ffffff",
-    font: "700 14px Georgia, serif",
+    font: "700 15px NumerologyExportSerif, Georgia, serif",
   });
 
   context.fillStyle = "#fffaf0";
-  context.fillRect(0, 58, logicalWidth, 76);
-  drawCanvasText(context, "HỒ SƠ KHÁCH HÀNG", 24, 81, {
+  context.fillRect(0, 58, logicalWidth, 96);
+  drawCanvasText(context, "HỒ SƠ KHÁCH HÀNG", logicalWidth / 2, 78, {
+    align: "center",
     color: "#b4522f",
-    font: "800 7px Arial, sans-serif",
+    font: "800 8px NumerologyExportSans, Arial, sans-serif",
   });
-  const nameFontSize = result.fullName.length > 28 ? 21 : 26;
-  drawCanvasText(context, result.fullName, 24, 111, {
-    font: `700 ${nameFontSize}px Georgia, serif`,
-    maxWidth: 490,
+  context.strokeStyle = "#d4a843";
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(188, 86);
+  context.lineTo(292, 86);
+  context.moveTo(502, 86);
+  context.lineTo(606, 86);
+  context.stroke();
+  const nameFontSize = result.fullName.length > 28 ? 29 : 35;
+  drawCanvasText(context, result.fullName, logicalWidth / 2, 119, {
+    align: "center",
+    color: "#153b42",
+    font: `italic 400 ${nameFontSize}px NumerologyExportScript, Georgia, serif`,
+    maxWidth: 700,
   });
-  drawCanvasText(context, `Ngày sinh ${result.formattedDate}`, 24, 126, {
-    color: "#607176",
-    font: "700 8px Arial, sans-serif",
+  drawCanvasText(context, `Ngày sinh · ${result.formattedDate}`, logicalWidth / 2, 142, {
+    align: "center",
+    color: "#b4522f",
+    font: "700 11px NumerologyExportSans, Arial, sans-serif",
   });
-  drawCanvasText(
-    context,
-    "Bản tổng hợp kết quả cuối theo hệ thống nhân số học Pythagoras.",
-    770,
-    104,
-    { align: "right", color: "#6b777a", font: "7px Arial, sans-serif" },
-  );
 
-  const topY = 142;
+  const topY = 162;
   drawCanvasPanel(context, 12, topY, 310, 242);
   drawCanvasSectionTitle(
     context,
@@ -202,11 +249,11 @@ async function renderCustomerSummaryAsJpeg(
     context.strokeRect(x, y, cellWidth, cellHeight);
     drawCanvasText(context, `Số ${number}`, x + 7, y + 12, {
       color: "#657378",
-      font: "700 7px Arial, sans-serif",
+      font: "700 8.5px NumerologyExportSans, Arial, sans-serif",
     });
     drawCanvasText(context, "NS", x + 7, y + 31, {
       color: "#768286",
-      font: "700 6px Arial, sans-serif",
+      font: "700 7.5px NumerologyExportSans, Arial, sans-serif",
     });
     drawCanvasText(
       context,
@@ -216,13 +263,13 @@ async function renderCustomerSummaryAsJpeg(
       {
         align: "right",
         color: birthCount ? "#173f46" : "#b9aaa3",
-        font: `800 ${birthCount > 5 ? 9 : 12}px Arial, sans-serif`,
+        font: `800 ${birthCount > 5 ? 10 : 13}px NumerologyExportSans, Arial, sans-serif`,
         maxWidth: 62,
       },
     );
     drawCanvasText(context, "HT", x + 7, y + 49, {
       color: "#768286",
-      font: "700 6px Arial, sans-serif",
+      font: "700 7.5px NumerologyExportSans, Arial, sans-serif",
     });
     drawCanvasText(
       context,
@@ -232,7 +279,7 @@ async function renderCustomerSummaryAsJpeg(
       {
         align: "right",
         color: nameCount ? "#d94e1f" : "#b9aaa3",
-        font: `800 ${nameCount > 5 ? 9 : 12}px Arial, sans-serif`,
+        font: `800 ${nameCount > 5 ? 10 : 13}px NumerologyExportSans, Arial, sans-serif`,
         maxWidth: 62,
       },
     );
@@ -278,18 +325,18 @@ async function renderCustomerSummaryAsJpeg(
     context.fillRect(x, y, 2, 52);
     drawCanvasText(context, metric.label.toUpperCase(), x + 8, y + 20, {
       color: "#68777b",
-      font: "800 6px Arial, sans-serif",
+      font: "800 7px NumerologyExportSans, Arial, sans-serif",
       maxWidth: 78,
     });
     drawCanvasText(context, metric.value, x + 130, y + 33, {
       align: "right",
       color: "#b34a24",
-      font: "700 16px Georgia, serif",
+      font: "700 18px NumerologyExportSerif, Georgia, serif",
       maxWidth: 74,
     });
   });
 
-  const middleY = 392;
+  const middleY = 412;
   drawCanvasPanel(context, 12, middleY, 340, 302);
   drawCanvasSectionTitle(
     context,
@@ -325,22 +372,22 @@ async function renderCustomerSummaryAsJpeg(
     drawCanvasText(context, label, x, y - 9, {
       align: "center",
       color: "#657378",
-      font: "700 6px Arial, sans-serif",
+      font: "700 7px NumerologyExportSans, Arial, sans-serif",
     });
     drawCanvasText(context, peak.display, x, y + 9, {
       align: "center",
       color: "#b34a24",
-      font: "700 18px Georgia, serif",
+      font: "700 20px NumerologyExportSerif, Georgia, serif",
     });
     drawCanvasText(context, `TT ${peak.challenge}`, x, y + 19, {
       align: "center",
       color: "#657378",
-      font: "700 6px Arial, sans-serif",
+      font: "700 7px NumerologyExportSans, Arial, sans-serif",
     });
     drawCanvasText(context, `${peak.milestoneAge} tuổi · ${peak.milestoneYear}`, x, y + 40, {
       align: "center",
       color: "#3e5f64",
-      font: "700 7px Arial, sans-serif",
+      font: "700 8px NumerologyExportSans, Arial, sans-serif",
     });
   });
   [
@@ -352,12 +399,12 @@ async function renderCustomerSummaryAsJpeg(
     drawRoundRect(context, x, middleY + 271, 91, 23, 5, "#eaf4f1", "#b8cbc7");
     drawCanvasText(context, label, x + 10, middleY + 286, {
       color: "#657378",
-      font: "700 6px Arial, sans-serif",
+      font: "700 7px NumerologyExportSans, Arial, sans-serif",
     });
     drawCanvasText(context, value, x + 74, middleY + 287, {
       align: "right",
       color: "#b34a24",
-      font: "700 12px Georgia, serif",
+      font: "700 14px NumerologyExportSerif, Georgia, serif",
     });
   });
 
@@ -404,18 +451,20 @@ async function renderCustomerSummaryAsJpeg(
     );
     drawCanvasText(context, card.title.toUpperCase(), annualX + 7, middleY + 70, {
       color: "#657378",
-      font: "700 5.5px Arial, sans-serif",
+      font: "700 6.4px NumerologyExportSans, Arial, sans-serif",
       maxWidth: card.width - 14,
     });
     drawCanvasText(context, card.value, annualX + 7, middleY + 92, {
       color: index === 1 ? "#b34a24" : "#173f46",
-      font: index === 0 ? "700 19px Georgia, serif" : "700 13px Georgia, serif",
+      font: index === 0
+        ? "700 20px NumerologyExportSerif, Georgia, serif"
+        : "700 14px NumerologyExportSerif, Georgia, serif",
       maxWidth: card.width - 14,
     });
     if (card.note) {
       drawCanvasText(context, card.note, annualX + 7, middleY + 106, {
         color: "#52686c",
-        font: "5px Arial, sans-serif",
+        font: "5.8px NumerologyExportSans, Arial, sans-serif",
         maxWidth: card.width - 14,
       });
     }
@@ -436,17 +485,17 @@ async function renderCustomerSummaryAsJpeg(
     drawCanvasText(context, item.year, x + 19.5, middleY + 136, {
       align: "center",
       color: item.isCurrent ? "#ffffff" : "#52686c",
-      font: "5px Arial, sans-serif",
+      font: "5.8px NumerologyExportSans, Arial, sans-serif",
     });
     drawCanvasText(context, item.value, x + 19.5, middleY + 149, {
       align: "center",
       color: item.isCurrent ? "#ffffff" : "#52686c",
-      font: "700 9px Arial, sans-serif",
+      font: "700 10px NumerologyExportSans, Arial, sans-serif",
     });
   });
   drawCanvasText(context, "4 ĐỈNH CAO & THỬ THÁCH", 372, middleY + 174, {
     color: "#173f46",
-    font: "700 9px Georgia, serif",
+    font: "700 10px NumerologyExportSerif, Georgia, serif",
   });
   result.pyramid.peaks.forEach((peak, index) => {
     const column = index % 2;
@@ -458,24 +507,24 @@ async function renderCustomerSummaryAsJpeg(
     context.fillRect(x, y, 2, 46);
     drawCanvasText(context, `CHU KỲ ${index + 1}`, x + 8, y + 12, {
       color: "#b34a24",
-      font: "800 6px Arial, sans-serif",
+      font: "800 7px NumerologyExportSans, Arial, sans-serif",
     });
     drawCanvasText(context, `Đỉnh ${peak.display}`, x + 8, y + 26, {
       color: "#173f46",
-      font: "700 8px Arial, sans-serif",
+      font: "700 9px NumerologyExportSans, Arial, sans-serif",
     });
     drawCanvasText(context, `Thử thách ${peak.challenge}`, x + 98, y + 26, {
       color: "#173f46",
-      font: "700 8px Arial, sans-serif",
+      font: "700 9px NumerologyExportSans, Arial, sans-serif",
     });
     drawCanvasText(context, `${peak.milestoneAge} tuổi · ${peak.milestoneYear}`, x + 8, y + 39, {
       color: "#52686c",
-      font: "700 6px Arial, sans-serif",
+      font: "700 7px NumerologyExportSans, Arial, sans-serif",
     });
   });
 
-  const sineY = 702;
-  drawCanvasPanel(context, 12, sineY, 770, 386);
+  const sineY = 722;
+  drawCanvasPanel(context, 12, sineY, 770, 365);
   drawCanvasSectionTitle(
     context,
     "05",
@@ -542,12 +591,12 @@ async function renderCustomerSummaryAsJpeg(
     drawCanvasText(context, point.value, point.x, point.y + 3, {
       align: "center",
       color: point.isCurrent ? "#ffffff" : "#173f46",
-      font: "800 8px Arial, sans-serif",
+      font: "800 9px NumerologyExportSans, Arial, sans-serif",
     });
     drawCanvasText(context, point.year, point.x, sineY + 324, {
       align: "center",
       color: "#52686c",
-      font: "700 7px Arial, sans-serif",
+      font: "700 8px NumerologyExportSans, Arial, sans-serif",
     });
   });
   const currentPoint = sinePoints.find((point) => point.isCurrent);
@@ -556,27 +605,31 @@ async function renderCustomerSummaryAsJpeg(
     drawCanvasText(context, "HIỆN TẠI", currentPoint.x, sineY + 71, {
       align: "center",
       color: "#ffffff",
-      font: "800 7px Arial, sans-serif",
+      font: "800 8px NumerologyExportSans, Arial, sans-serif",
     });
   }
   drawCanvasText(
     context,
     "Thời gian vận hành được xác định riêng theo khúc giao thời của từng năm cá nhân.",
     397,
-    sineY + 365,
-    { align: "center", color: "#68777b", font: "7px Arial, sans-serif" },
+    sineY + 346,
+    {
+      align: "center",
+      color: "#68777b",
+      font: "8px NumerologyExportSans, Arial, sans-serif",
+    },
   );
 
   context.fillStyle = "#102f34";
   context.fillRect(0, 1095, logicalWidth, 28);
   drawCanvasText(context, "Clow Cat Patronus · Nhân số học Pythagoras", 20, 1113, {
     color: "#b8c6c7",
-    font: "6px Arial, sans-serif",
+    font: "7px NumerologyExportSans, Arial, sans-serif",
   });
   drawCanvasText(context, `${result.normalizedName} · ${result.formattedDate}`, 774, 1113, {
     align: "right",
     color: "#b8c6c7",
-    font: "6px Arial, sans-serif",
+    font: "7px NumerologyExportSans, Arial, sans-serif",
   });
 
   return await new Promise<Blob>((resolve, reject) => {

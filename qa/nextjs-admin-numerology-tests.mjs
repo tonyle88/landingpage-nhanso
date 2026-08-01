@@ -231,6 +231,10 @@ test("is integrated only into the Next.js admin", async () => {
   assert.match(calculator, /JPG khách · khổ A4/);
   assert.match(calculator, /exportCustomerJpg/);
   assert.match(calculator, /renderCustomerSummaryAsJpeg/);
+  assert.match(calculator, /ensureCustomerJpgFonts/);
+  assert.match(calculator, /NumerologyExportScript/);
+  assert.match(calculator, /result\.fullName, logicalWidth \/ 2/);
+  assert.match(calculator, /Ngày sinh ·/);
   assert.match(calculator, /image\/jpeg/);
   assert.doesNotMatch(calculator, /foreignObject/);
   assert.doesNotMatch(calculator, /drawImage/);
