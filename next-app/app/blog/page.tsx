@@ -57,6 +57,15 @@ export async function generateMetadata({
   const articleId = requestedArticleId((await searchParams).id);
   const publicBlogPosts = await getPublicBlogPosts();
   const article = publicBlogPosts.posts.find((post) => post.id === articleId);
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://nhanso.clowcat.com.vn";
+  const shareImageUrl = new URL("/blog/share-image", siteUrl);
+  if (article) {
+    shareImageUrl.searchParams.set("id", article.id);
+    shareImageUrl.searchParams.set("title", article.title.slice(0, 120));
+    shareImageUrl.searchParams.set("summary", article.summary.slice(0, 190));
+  }
+  const shareImage = shareImageUrl.href;
 
   if (!article) {
     return {
@@ -65,10 +74,26 @@ export async function generateMetadata({
         "Bài viết giúp bạn khám phá bản thân, tính cách, điểm mạnh và hành trình phát triển qua nhân số học.",
       alternates: { canonical: "/blog" },
       openGraph: {
+        type: "website",
+        siteName: "Clow Cat Patronus",
+        locale: "vi_VN",
         title: "Giải Mã Nhân Số Học | Clow Cat Patronus",
         description:
           "Khám phá bản thân và hành trình phát triển của chính mình qua nhân số học.",
-        images: ["/assets/images/hero_bg.png"],
+        images: [{
+          url: shareImage,
+          width: 1200,
+          height: 630,
+          alt: "Giải Mã Nhân Số Học · Clow Cat Patronus",
+          type: "image/png",
+        }],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: "Giải Mã Nhân Số Học | Clow Cat Patronus",
+        description:
+          "Khám phá bản thân và hành trình phát triển của chính mình qua nhân số học.",
+        images: [shareImage],
       },
     };
   }
@@ -80,13 +105,25 @@ export async function generateMetadata({
     alternates: { canonical },
     openGraph: {
       type: "article",
+      siteName: "Clow Cat Patronus",
+      locale: "vi_VN",
       title: article.title,
       description: article.summary,
       publishedTime: article.date,
       url: canonical,
-      images: article.thumbnail
-        ? [article.thumbnail]
-        : ["/assets/images/hero_bg.png"],
+      images: [{
+        url: shareImage,
+        width: 1200,
+        height: 630,
+        alt: `${article.title} · Clow Cat Patronus`,
+        type: "image/png",
+      }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description: article.summary,
+      images: [shareImage],
     },
   };
 }
