@@ -36,7 +36,7 @@ type LandingContentPayload = {
 type LandingContentBridge = {
   applyLegacy: (
     payload: LandingContentPayload,
-    options: { fromCache: boolean },
+    options: { fromCache: boolean; preferSupabasePackages: boolean },
   ) => void;
 };
 
@@ -161,6 +161,13 @@ function applyContentItem(item: RuntimeLandingContentItem) {
   });
 }
 
+function isLegacyPackageCardItem(item: RuntimeLandingContentItem) {
+  const key = String(item.key || "").trim();
+  const selector = String(item.selector || "").trim();
+  return /^packages\.(?:year|big3|big7|combo3)(?:[._]|$)/i.test(key)
+    || /(?:#packages\s+)?\.(?:package-card|package-name|package-price|price-current|price-unit|package-features|featured-badge|btn-package)\b/i.test(selector);
+}
+
 function applySectionsLayout(layout: LandingSection[]) {
   const container = document.querySelector<HTMLElement>("#dynamic-layout");
   if (!container) return;
@@ -221,7 +228,9 @@ function applyReactContent(
   preferSupabaseSections: boolean,
 ) {
   if (!preferSupabaseItems) {
-    payload.items.forEach(applyContentItem);
+    payload.items
+      .filter((item) => !preferSupabasePackages || !isLegacyPackageCardItem(item))
+      .forEach(applyContentItem);
     window.ClowMiniReportRuntime?.sync(payload.items);
   }
   if (payload.paymentSettings) {
@@ -348,7 +357,10 @@ export function useLandingContent(
           false,
           false,
         );
-        bridge.applyLegacy(initialContent, { fromCache: true });
+        bridge.applyLegacy(initialContent, {
+          fromCache: true,
+          preferSupabasePackages,
+        });
       }
       const cachedPayload = readCache();
       if (cachedPayload) {
@@ -359,7 +371,10 @@ export function useLandingContent(
           preferSupabaseItems,
           preferSupabaseSections,
         );
-        bridge.applyLegacy(cachedPayload, { fromCache: true });
+        bridge.applyLegacy(cachedPayload, {
+          fromCache: true,
+          preferSupabasePackages,
+        });
         finishLoading();
       }
 
@@ -373,7 +388,10 @@ export function useLandingContent(
           preferSupabaseItems,
           preferSupabaseSections,
         );
-        bridge.applyLegacy(payload, { fromCache: false });
+        bridge.applyLegacy(payload, {
+          fromCache: false,
+          preferSupabasePackages,
+        });
         writeCache(payload);
       } catch (error) {
         if (!controller.signal.aborted) {

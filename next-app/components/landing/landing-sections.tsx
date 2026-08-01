@@ -1,3 +1,6 @@
+import type { PublicPackage } from "@/lib/packages";
+import { landingPlainText } from "@/lib/landing-text";
+
 export function LandingPreamble() {
   return (
     <>
@@ -574,7 +577,63 @@ export function TestimonialsSection() {
   );
 }
 
-export function PackagesSection() {
+function LandingPackageCard({ item, index }: { item: PublicPackage; index: number }) {
+  const glowClass = item.accent === "gold"
+    ? "glow-gold"
+    : item.accent === "orange"
+      ? "glow-orange"
+      : "glow-teal";
+  const currencyLabel = item.currency.toUpperCase() === "VND"
+    ? "đ"
+    : item.currency.toUpperCase();
+
+  return (
+    <div
+      className={`package-card reveal${item.featured ? " package-featured" : ""}`}
+      data-delay={index * 100}
+    >
+      <div className={`package-glow ${glowClass}`} />
+      {item.featured ? <div className="featured-glow-ring" /> : null}
+      {item.badge ? <div className="featured-badge">{landingPlainText(item.badge)}</div> : null}
+      <div className="package-header">
+        <div className={`package-icon${item.featured ? " featured-icon" : ""}`}>
+          <i className={`fa-solid fa-${item.icon.replace(/^fa-/, "")}`} aria-hidden="true" />
+        </div>
+        <h3
+          className={`package-name${item.featured ? " featured-name" : ""}`}
+          style={{ whiteSpace: "pre-line" }}
+        >
+          {landingPlainText(item.name)}
+        </h3>
+        <div className={`package-price${item.featured ? " featured-price-wrap" : ""}`}>
+          <span className={`price-current${item.featured ? " price-highlight" : ""}`}>
+            {item.onlinePrice.toLocaleString("vi-VN")}<sup>{currencyLabel}</sup>
+          </span>
+          <span className="price-unit">{item.unit}</span>
+        </div>
+      </div>
+      <div className={`package-divider${item.featured ? " featured-divider" : ""}`} />
+      <ul className="package-features">
+        {item.features.map((feature, featureIndex) => (
+          <li key={`${item.code}-${featureIndex}`}>
+            <span className={`feature-check${item.featured ? " featured-check" : ""}`}>✦</span>{" "}
+            <span>{landingPlainText(feature)}</span>
+          </li>
+        ))}
+      </ul>
+      <a
+        href="#contact"
+        className={item.featured ? "btn btn-primary btn-featured-pkg" : "btn btn-package"}
+        id={`pkg-${item.code}`}
+        data-package-code={item.code}
+      >
+        {item.buttonText}
+      </a>
+    </div>
+  );
+}
+
+export function PackagesSection({ packages = [] }: { packages?: PublicPackage[] }) {
   return (
     <section className="packages section" id="packages">
       <div className="section-bg-shared bg-img-2" />
@@ -591,141 +650,14 @@ export function PackagesSection() {
           </div>
         </div>
 
-        <div className="packages-grid packages-grid-3">
-          <div className="package-card reveal" data-delay="0">
-            <div className="package-glow glow-orange" />
-            <div className="package-header">
-              <div className="package-icon">
-                <i className="fa-solid fa-hourglass-half" aria-hidden="true" />
-              </div>
-              <h3 className="package-name">Dự Đoán Năm Cá Nhân</h3>
-              <div className="package-price">
-                <span className="price-current">
-                  500.000<sup>đ</sup>
-                </span>
-                <span className="price-unit">/buổi</span>
-              </div>
+        <div className={`packages-grid${packages.length === 3 ? " packages-grid-3" : ""}${packages.length > 3 ? " packages-carousel-enabled" : ""}`}>
+          {packages.length ? packages.map((item, index) => (
+            <LandingPackageCard item={item} index={index} key={item.code} />
+          )) : (
+            <div className="packages-empty" role="status">
+              Đang đồng bộ danh sách gói tư vấn…
             </div>
-            <div className="package-divider" />
-            <ul className="package-features">
-              {[
-                "Dự đoán xu hướng năm cá nhân",
-                "Nhận diện cơ hội & thách thức",
-                "Định hướng theo chu kỳ số",
-                "Gợi ý hành động phù hợp năm",
-              ].map((feature) => (
-                <li key={feature}>
-                  <span className="feature-check">✦</span>{" "}
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-            <a href="#contact" className="btn btn-package" id="pkg-year">
-              Đặt Lịch Ngay
-            </a>
-          </div>
-
-          <div
-            className="package-card package-featured reveal"
-            data-delay="100"
-          >
-            <div className="package-glow glow-gold" />
-            <div className="featured-glow-ring" />
-            <div className="featured-badge">✨ Toàn Diện Nhất ✨</div>
-            <div className="package-header">
-              <div className="package-icon featured-icon">
-                <i className="fa-solid fa-infinity" aria-hidden="true" />
-              </div>
-              <h3 className="package-name featured-name">
-                Phân Tích Toàn Diện
-              </h3>
-              <div className="package-price featured-price-wrap">
-                <span className="price-current price-highlight">
-                  2.000.000<sup>đ</sup>
-                </span>
-                <span className="price-unit">/buổi</span>
-              </div>
-            </div>
-            <div className="package-divider featured-divider" />
-            <ul className="package-features">
-              <li>
-                <span className="feature-check featured-check">✦</span>{" "}
-                <span><strong>7 chỉ số cốt lõi</strong>: chủ đạo · linh hồn · sứ mệnh · nhân cách · thái độ · trưởng thành · nợ nghiệp</span>
-              </li>
-              <li>
-                <span className="feature-check featured-check">✦</span>{" "}
-                <span><strong>4 đỉnh cao</strong> trong cuộc đời</span>
-              </li>
-              <li>
-                <span className="feature-check featured-check">✦</span>{" "}
-                <span><strong>3 chu kỳ</strong> cuộc đời lớn</span>
-              </li>
-              <li>
-                <span className="feature-check featured-check">✦</span>{" "}
-                <span>Sơ đồ mũi tên phẩm chất</span>
-              </li>
-              <li>
-                <span className="feature-check featured-check">✦</span>{" "}
-                <span>Thông điệp chữa lành chuyên sâu</span>
-              </li>
-              <li>
-                <span className="feature-check gift featured-check">🎁</span>{" "}
-                <span>Tặng file PDF tóm tắt đầy đủ</span>
-              </li>
-            </ul>
-            <a
-              href="#contact"
-              className="btn btn-primary btn-featured-pkg"
-              id="pkg-big7"
-            >
-              Đặt Lịch Ngay
-            </a>
-          </div>
-
-          <div className="package-card reveal" data-delay="200">
-            <div className="package-glow glow-teal" />
-            <div className="package-header">
-              <div className="package-icon">
-                <i className="fa-solid fa-fingerprint" aria-hidden="true" />
-              </div>
-              <h3 className="package-name">
-                Phân Tích 3 Chỉ Số
-                <br />
-                Tính Cách Nổi Bật
-              </h3>
-              <div className="package-price">
-                <span className="price-current">
-                  1.000.000<sup>đ</sup>
-                </span>
-                <span className="price-unit">/buổi</span>
-              </div>
-            </div>
-            <ul className="package-features">
-              <li>
-                <span className="feature-check">✦</span>{" "}
-                <span>Phân tích <strong>BIG 3</strong>: chủ đạo · linh hồn · sứ mệnh</span>
-              </li>
-              <li>
-                <span className="feature-check">✦</span>{" "}
-                <span><strong>4 đỉnh cao</strong> trong cuộc đời</span>
-              </li>
-              <li>
-                <span className="feature-check">✦</span>{" "}
-                <span><strong>3 chu kỳ</strong> cuộc đời lớn</span>
-              </li>
-              <li>
-                <span className="feature-check">✦</span>{" "}
-                <span>Định hướng học tập, công việc &amp; quan hệ</span>
-              </li>
-              <li>
-                <span className="feature-check">✦</span>{" "}
-                <span>Thông điệp chữa lành &amp; lộ trình cá nhân</span>
-              </li>
-            </ul>
-            <a href="#contact" className="btn btn-package" id="pkg-big3">
-              Đặt Lịch Ngay
-            </a>
-          </div>
+          )}
         </div>
 
         <div className="session-info reveal">

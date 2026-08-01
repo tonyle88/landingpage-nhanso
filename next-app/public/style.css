@@ -1700,6 +1700,17 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .packages-grid-3 {
   grid-template-columns: repeat(3, 1fr);
 }
+.packages-empty {
+  grid-column: 1 / -1;
+  padding: 42px 24px;
+  border: 1px solid rgba(212, 168, 67, 0.32);
+  border-radius: var(--border-radius-lg);
+  color: var(--color-gold-light);
+  background: rgba(13, 43, 48, 0.72);
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
 .packages-carousel-enabled {
   display: flex;
   max-width: min(1180px, calc(100vw - 56px));

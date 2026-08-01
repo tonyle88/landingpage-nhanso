@@ -6,6 +6,8 @@ export type PublicPackage = {
   code: string;
   name: string;
   onlinePrice: number;
+  offlinePrice: number;
+  currency: string;
   unit: string;
   icon: string;
   accent: string;
@@ -25,6 +27,8 @@ export function toPublicPackage(row: PackageRow): PublicPackage | null {
     code: row.code,
     name: row.name,
     onlinePrice: row.online_price,
+    offlinePrice: row.offline_price || row.online_price,
+    currency: row.currency || "VND",
     unit: row.unit || "/buổi",
     icon: row.icon || "sparkles",
     accent: row.accent_color || "teal",
