@@ -10,6 +10,7 @@ type AdminNavIconName =
   | "customers"
   | "payments"
   | "numerology"
+  | "reports"
   | "members";
 
 export function AdminNavIcon({ name }: { name: AdminNavIconName }) {
@@ -70,6 +71,12 @@ export function AdminNavIcon({ name }: { name: AdminNavIconName }) {
       <>
         <rect x="4" y="3.5" width="16" height="17" rx="2" />
         <path d="M8 8h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h4" />
+      </>
+    ),
+    reports: (
+      <>
+        <path d="M6 3.5h9l3 3V20H6V3.5Z" />
+        <path d="M15 3.5V7h3M9 11h6M9 14.5h6M9 18h4" />
       </>
     ),
     members: (

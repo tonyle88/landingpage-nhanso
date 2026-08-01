@@ -66,6 +66,7 @@
     "test:admin-customers": "node --test ../qa/admin-customer-management-tests.mjs",
     "test:admin-members": "node --test ../qa/admin-member-management-tests.mjs",
     "test:admin-numerology": "node --experimental-strip-types --test ../qa/nextjs-admin-numerology-tests.mjs",
+    "test:admin-reports": "node --test ../qa/admin-customer-report-tests.mjs",
     "test:booking-calendar": "node --test ../qa/booking-calendar-integration-tests.mjs",
     "test:rls": "node ../qa/run-supabase-rls-isolated.mjs",
     "test:schema": "node --test ../qa/supabase-schema-tests.mjs",

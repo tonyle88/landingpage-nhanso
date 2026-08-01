@@ -33,6 +33,12 @@ const toolNavigation = [
     title: "Công cụ nhân số học",
     description: "Tính 9 nhóm chỉ số, lập biểu đồ ngày sinh và xuất PDF cho khách.",
   },
+  {
+    href: "/admin/reports",
+    icon: "reports" as const,
+    title: "Xuất PDF report khách hàng",
+    description: "Ghép file DOCX và bản đồ JPG A4 thành hồ sơ phân tích hoàn chỉnh.",
+  },
 ];
 
 const systemNavigation = [

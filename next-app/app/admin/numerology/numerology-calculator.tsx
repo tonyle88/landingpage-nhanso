@@ -770,6 +770,82 @@ function WordPart({ part }: { part: NamePart }) {
   );
 }
 
+const PYRAMID_EDGES = [
+  "month-peak-1",
+  "day-peak-1",
+  "day-peak-2",
+  "year-peak-2",
+  "peak-1-peak-3",
+  "peak-2-peak-3",
+  "peak-3-peak-4",
+] as const;
+
+function PyramidTree({
+  pyramid,
+  compact = false,
+}: {
+  pyramid: NumerologyResult["pyramid"];
+  compact?: boolean;
+}) {
+  const baseNodes = [
+    { key: "month", label: "Tháng", value: pyramid.base.month },
+    { key: "day", label: "Ngày", value: pyramid.base.day },
+    { key: "year", label: "Năm", value: pyramid.base.year },
+  ];
+
+  return (
+    <div
+      aria-label="Sơ đồ cây kim tự tháp Pitago"
+      className={`${styles.numerologyPyramidVisual} ${
+        compact ? styles.numerologyPyramidVisualCompact : ""
+      }`}
+    >
+      <div className={styles.numerologyPyramidLegend} aria-hidden="true">
+        <span><i />Đỉnh cao</span>
+        <span><i />Thử thách</span>
+      </div>
+      <div className={styles.numerologyPyramidTree}>
+        {PYRAMID_EDGES.map((edge) => (
+          <i
+            aria-hidden="true"
+            className={styles.numerologyPyramidTreeEdge}
+            data-edge={edge}
+            key={edge}
+          />
+        ))}
+
+        {pyramid.peaks.map((peak, index) => (
+          <div
+            className={styles.numerologyPyramidTreePeak}
+            data-node={`peak-${index + 1}`}
+            key={`peak-${index + 1}`}
+          >
+            <span>Đỉnh {index + 1}</span>
+            <strong>{peak.display}</strong>
+            <b aria-label={`Thử thách ${peak.challenge}`}>
+              {peak.challenge}
+            </b>
+            <small className={styles.numerologyPyramidMilestone}>
+              {peak.milestoneAge}T · {peak.milestoneYear}
+            </small>
+          </div>
+        ))}
+
+        {baseNodes.map((node) => (
+          <div
+            className={styles.numerologyPyramidTreeBase}
+            data-node={`base-${node.key}`}
+            key={node.key}
+          >
+            <strong>{node.value}</strong>
+            <span>{node.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function NumerologyCalculator() {
   const [fullName, setFullName] = useState("");
   const [birthDate, setBirthDate] = useState("");
@@ -1135,62 +1211,7 @@ export function NumerologyCalculator() {
                 </div>
               </div>
               <div className={styles.numerologyPyramidLayout}>
-                <div
-                  aria-label="Biểu đồ kim tự tháp Pitago"
-                  className={styles.numerologyPyramid}
-                >
-                  <div className={styles.numerologyPyramidTop}>
-                    <div className={styles.numerologyPyramidCircle}>
-                      <span>Đỉnh 4</span>
-                      <strong>{result.pyramid.peaks[3].display}</strong>
-                    </div>
-                    <small className={styles.numerologyPyramidMilestone}>
-                      {result.pyramid.peaks[3].milestoneAge} tuổi ·{" "}
-                      {result.pyramid.peaks[3].milestoneYear}
-                    </small>
-                  </div>
-                  <div className={styles.numerologyPyramidArrow}>↑</div>
-                  <div className={styles.numerologyPyramidMiddle}>
-                    <div className={styles.numerologyPyramidCircle}>
-                      <span>Đỉnh 3</span>
-                      <strong>{result.pyramid.peaks[2].display}</strong>
-                    </div>
-                    <small className={styles.numerologyPyramidMilestone}>
-                      {result.pyramid.peaks[2].milestoneAge} tuổi ·{" "}
-                      {result.pyramid.peaks[2].milestoneYear}
-                    </small>
-                  </div>
-                  <div className={styles.numerologyPyramidArrow}>↗ ↑ ↖</div>
-                  <div className={styles.numerologyPyramidPair}>
-                    {[0, 1].map((index) => (
-                      <div key={index}>
-                        <div className={styles.numerologyPyramidCircle}>
-                          <span>Đỉnh {index + 1}</span>
-                          <strong>{result.pyramid.peaks[index].display}</strong>
-                        </div>
-                        <small className={styles.numerologyPyramidMilestone}>
-                          {result.pyramid.peaks[index].milestoneAge} tuổi ·{" "}
-                          {result.pyramid.peaks[index].milestoneYear}
-                        </small>
-                      </div>
-                    ))}
-                  </div>
-                  <div className={styles.numerologyPyramidArrow}>↗ ↑ ↖</div>
-                  <div className={styles.numerologyPyramidBase}>
-                    <div>
-                      <span>Tháng sinh</span>
-                      <strong>{result.pyramid.base.month}</strong>
-                    </div>
-                    <div>
-                      <span>Ngày sinh</span>
-                      <strong>{result.pyramid.base.day}</strong>
-                    </div>
-                    <div>
-                      <span>Năm sinh</span>
-                      <strong>{result.pyramid.base.year}</strong>
-                    </div>
-                  </div>
-                </div>
+                <PyramidTree pyramid={result.pyramid} />
 
                 <div className={styles.numerologyPyramidDetails}>
                   <div className={styles.numerologyPyramidRule}>
@@ -1525,56 +1546,7 @@ export function NumerologyCalculator() {
                     <small>Đỉnh · thử thách · mốc tuổi</small>
                   </div>
                 </div>
-                <div className={styles.numerologySummaryPyramid}>
-                  <div className={styles.numerologySummaryPyramidLevel}>
-                    <div className={styles.numerologySummaryPyramidNode}>
-                      <span>Đỉnh 4</span>
-                      <strong>{result.pyramid.peaks[3].display}</strong>
-                      <small>TT {result.pyramid.peaks[3].challenge}</small>
-                    </div>
-                    <p>
-                      {result.pyramid.peaks[3].milestoneAge} tuổi ·{" "}
-                      {result.pyramid.peaks[3].milestoneYear}
-                    </p>
-                  </div>
-                  <i aria-hidden="true">↑</i>
-                  <div className={styles.numerologySummaryPyramidLevel}>
-                    <div className={styles.numerologySummaryPyramidNode}>
-                      <span>Đỉnh 3</span>
-                      <strong>{result.pyramid.peaks[2].display}</strong>
-                      <small>TT {result.pyramid.peaks[2].challenge}</small>
-                    </div>
-                    <p>
-                      {result.pyramid.peaks[2].milestoneAge} tuổi ·{" "}
-                      {result.pyramid.peaks[2].milestoneYear}
-                    </p>
-                  </div>
-                  <i aria-hidden="true">↗ ↑ ↖</i>
-                  <div className={styles.numerologySummaryPyramidPair}>
-                    {[0, 1].map((index) => (
-                      <div key={index}>
-                        <div className={styles.numerologySummaryPyramidNode}>
-                          <span>Đỉnh {index + 1}</span>
-                          <strong>
-                            {result.pyramid.peaks[index].display}
-                          </strong>
-                          <small>
-                            TT {result.pyramid.peaks[index].challenge}
-                          </small>
-                        </div>
-                        <p>
-                          {result.pyramid.peaks[index].milestoneAge} tuổi ·{" "}
-                          {result.pyramid.peaks[index].milestoneYear}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className={styles.numerologySummaryPyramidBase}>
-                    <span>Tháng <strong>{result.pyramid.base.month}</strong></span>
-                    <span>Ngày <strong>{result.pyramid.base.day}</strong></span>
-                    <span>Năm <strong>{result.pyramid.base.year}</strong></span>
-                  </div>
-                </div>
+                <PyramidTree compact pyramid={result.pyramid} />
               </article>
 
               <article className={styles.numerologySummaryPanel}>

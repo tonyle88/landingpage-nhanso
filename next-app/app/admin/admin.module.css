@@ -1183,7 +1183,7 @@
 
 .numerologyColumns {
   display: grid;
-  grid-template-columns: minmax(260px, .72fr) minmax(430px, 1.28fr);
+  grid-template-columns: minmax(300px, .78fr) minmax(440px, 1.22fr);
   gap: 11px;
   padding: 0 24px 11px;
 }
@@ -1354,127 +1354,232 @@
 .numerologyPyramidLayout {
   display: grid;
   grid-template-columns: minmax(300px, .78fr) minmax(440px, 1.22fr);
-  gap: 18px;
+  gap: 11px;
   align-items: stretch;
+  margin-inline: -19px;
 }
-.numerologyPyramid {
+.numerologyPyramidVisual {
   min-width: 0;
   display: grid;
-  justify-items: center;
-  align-content: center;
-  padding: 18px;
+  align-content: start;
+  gap: 8px;
+  padding: 16px;
   border: 1px solid #cbd9d6;
   border-radius: 10px;
   background:
     radial-gradient(circle at 50% 35%, rgb(240 201 106 / 18%), transparent 42%),
     #f2f8f6;
 }
-.numerologyPyramidTop,
-.numerologyPyramidMiddle,
-.numerologyPyramidPair > div {
-  min-width: 94px;
-  display: grid;
-  justify-items: center;
-  gap: 3px;
+.numerologyPyramidLegend {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 6px 10px;
+  border: 1px solid rgb(44 104 102 / 34%);
+  border-radius: 8px;
+  color: #31575b;
+  background: rgb(255 255 255 / 48%);
+  font-size: .58rem;
+  font-weight: 800;
 }
-.numerologyPyramidCircle {
-  width: 76px;
-  height: 76px;
+.numerologyPyramidLegend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.numerologyPyramidLegend i {
+  width: 13px;
+  height: 13px;
+  display: inline-block;
+  border: 2px solid #71888a;
+  border-radius: 50%;
+}
+.numerologyPyramidLegend > span:last-child i {
+  border-color: #dca72a;
+  background: #dca72a;
+}
+.numerologyPyramidTree {
+  --pyramid-peak-size: 78px;
+  --pyramid-base-size: 68px;
+  --pyramid-challenge-size: 30px;
+  position: relative;
+  width: min(540px, 100%);
+  min-height: 500px;
+  margin: 0 auto;
+}
+.numerologyPyramidTreePeak,
+.numerologyPyramidTreeBase {
+  position: absolute;
+  z-index: 2;
   display: grid;
   place-items: center;
   align-content: center;
-  gap: 3px;
-  padding: 9px;
-  border: 1px solid #89a9a4;
+  transform: translate(-50%, -50%);
+  border: 2px solid #71888a;
   border-radius: 50%;
   color: #173f46;
   background: #fff;
   box-shadow: 0 8px 20px rgb(23 63 70 / 10%);
 }
-.numerologyPyramidTop .numerologyPyramidCircle {
+.numerologyPyramidTreePeak {
+  width: var(--pyramid-peak-size);
+  height: var(--pyramid-peak-size);
+  gap: 2px;
+  padding: 8px;
+}
+.numerologyPyramidTreeBase {
+  width: var(--pyramid-base-size);
+  height: var(--pyramid-base-size);
+  padding: 7px;
+}
+.numerologyPyramidTreePeak[data-node="peak-1"] { left: 31%; top: 63%; }
+.numerologyPyramidTreePeak[data-node="peak-2"] { left: 69%; top: 63%; }
+.numerologyPyramidTreePeak[data-node="peak-3"] { left: 50%; top: 37%; border-color: #c69f3b; }
+.numerologyPyramidTreePeak[data-node="peak-4"] {
+  left: 50%;
+  top: 13%;
   border-color: #d2693f;
   background: #fff0e7;
   box-shadow: 0 0 0 6px rgb(217 78 31 / 8%);
 }
-.numerologyPyramidMiddle .numerologyPyramidCircle {
-  border-color: #c69f3b;
-  background: #fff8df;
-}
-.numerologyPyramidPair,
-.numerologyPyramidBase {
-  width: 100%;
-  display: grid;
-  align-items: center;
-}
-.numerologyPyramidPair {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  justify-items: center;
-  gap: 50px;
-}
-.numerologyPyramidBase {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  justify-items: center;
-  gap: 8px;
-}
-.numerologyPyramidBase > div {
-  min-width: 68px;
-  min-height: 68px;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 3px;
-  padding: 9px;
-  border: 1px solid #89a9a4;
-  border-radius: 9px;
-  color: #173f46;
-  background: #e9f3f0;
-  box-shadow: none;
-}
-.numerologyPyramidTop span,
-.numerologyPyramidMiddle span,
-.numerologyPyramidPair span,
-.numerologyPyramidBase span {
+.numerologyPyramidTreeBase[data-node="base-month"] { left: 14%; top: 89%; }
+.numerologyPyramidTreeBase[data-node="base-day"] { left: 50%; top: 89%; }
+.numerologyPyramidTreeBase[data-node="base-year"] { left: 86%; top: 89%; }
+.numerologyPyramidTreePeak > span,
+.numerologyPyramidTreeBase > span {
   color: var(--report-muted);
   font-size: .55rem;
   font-weight: 800;
   letter-spacing: .04em;
   text-transform: uppercase;
 }
-.numerologyPyramidTop strong,
-.numerologyPyramidMiddle strong,
-.numerologyPyramidPair strong,
-.numerologyPyramidBase strong {
+.numerologyPyramidTreePeak > strong,
+.numerologyPyramidTreeBase > strong {
   color: #b34a24;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 1.45rem;
   line-height: 1;
 }
-.numerologyPyramidTop small,
-.numerologyPyramidMiddle small,
-.numerologyPyramidPair small {
-  color: var(--report-muted);
-  font-size: .52rem;
-  text-align: center;
-}
-.numerologyPyramidMilestone {
-  display: block;
-  min-width: max-content;
-  padding: 3px 7px;
-  border: 1px solid #d3dfdc;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 84%);
-  font-weight: 800;
-  line-height: 1.1;
-  white-space: nowrap;
-}
-.numerologyPyramidArrow {
-  min-height: 23px;
+.numerologyPyramidTreeBase > strong { color: #173f46; }
+.numerologyPyramidTreePeak > b {
+  position: absolute;
+  left: -7%;
+  top: -5%;
+  width: var(--pyramid-challenge-size);
+  height: var(--pyramid-challenge-size);
   display: grid;
   place-items: center;
-  color: #b8862e;
-  font-size: .8rem;
-  font-weight: 900;
-  letter-spacing: .28em;
+  transform: translate(-50%, -50%);
+  border: 1px solid #b68e5e;
+  border-radius: 50%;
+  color: #dca72a;
+  background: #5a4137;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: .72rem;
+  line-height: 1;
+  box-shadow: 0 5px 13px rgb(23 63 70 / 18%);
+}
+.numerologyPyramidTreePeak[data-node="peak-2"] > b {
+  right: -43%;
+  left: auto;
+}
+.numerologyPyramidMilestone {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  z-index: 3;
+  min-width: max-content;
+  padding: 3px 7px;
+  transform: translateX(-50%);
+  border: 1px solid #d3dfdc;
+  border-radius: 999px;
+  color: var(--report-muted);
+  background: rgb(255 255 255 / 84%);
+  font-size: .52rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+}
+.numerologyPyramidTreeBase > span {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 50%;
+  min-width: max-content;
+  transform: translateX(-50%);
+  color: #31575b;
+  font-weight: 850;
+}
+.numerologyPyramidTreeEdge {
+  position: absolute;
+  z-index: 1;
+  height: 2px;
+  transform-origin: left center;
+  background: #9b826c;
+}
+.numerologyPyramidTreeEdge::after {
+  position: absolute;
+  top: 50%;
+  right: -1px;
+  content: "";
+  width: 0;
+  height: 0;
+  transform: translateY(-50%);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 7px solid #9b826c;
+}
+.numerologyPyramidTreeEdge[data-edge="month-peak-1"] { left: 20%; top: 82%; width: 15%; transform: rotate(-58deg); }
+.numerologyPyramidTreeEdge[data-edge="day-peak-1"] { left: 45%; top: 82%; width: 16%; transform: rotate(-132deg); }
+.numerologyPyramidTreeEdge[data-edge="day-peak-2"] { left: 55%; top: 82%; width: 16%; transform: rotate(-48deg); }
+.numerologyPyramidTreeEdge[data-edge="year-peak-2"] { left: 80%; top: 82%; width: 15%; transform: rotate(-122deg); }
+.numerologyPyramidTreeEdge[data-edge="peak-1-peak-3"] { left: 36%; top: 57%; width: 19%; transform: rotate(-49deg); }
+.numerologyPyramidTreeEdge[data-edge="peak-2-peak-3"] { left: 64%; top: 57%; width: 19%; transform: rotate(-131deg); }
+.numerologyPyramidTreeEdge[data-edge="peak-3-peak-4"] { left: 50%; top: 31%; width: 11%; transform: rotate(-90deg); }
+
+.numerologyPyramidVisualCompact {
+  gap: 3px;
+  padding: 4px 7px 2px;
+  border: 0;
+  background: transparent;
+}
+.numerologyPyramidVisualCompact .numerologyPyramidLegend {
+  min-height: 20px;
+  gap: 11px;
+  padding: 2px 6px;
+  font-size: .38rem;
+}
+.numerologyPyramidVisualCompact .numerologyPyramidLegend i {
+  width: 8px;
+  height: 8px;
+  border-width: 1px;
+}
+.numerologyPyramidVisualCompact .numerologyPyramidTree {
+  --pyramid-peak-size: 42px;
+  --pyramid-base-size: 38px;
+  --pyramid-challenge-size: 18px;
+  min-height: 238px;
+}
+.numerologyPyramidVisualCompact .numerologyPyramidTreePeak,
+.numerologyPyramidVisualCompact .numerologyPyramidTreeBase { border-width: 1px; }
+.numerologyPyramidVisualCompact .numerologyPyramidTreePeak > span,
+.numerologyPyramidVisualCompact .numerologyPyramidTreeBase > span { font-size: .32rem; }
+.numerologyPyramidVisualCompact .numerologyPyramidTreePeak > strong,
+.numerologyPyramidVisualCompact .numerologyPyramidTreeBase > strong { font-size: .82rem; }
+.numerologyPyramidVisualCompact .numerologyPyramidTreePeak > b { font-size: .48rem; }
+.numerologyPyramidVisualCompact .numerologyPyramidMilestone {
+  top: calc(100% + 4px);
+  padding: 1px 4px;
+  font-size: .33rem;
+}
+.numerologyPyramidVisualCompact .numerologyPyramidTreeBase > span { top: calc(100% + 3px); }
+.numerologyPyramidVisualCompact .numerologyPyramidTreeEdge { height: 1px; }
+.numerologyPyramidVisualCompact .numerologyPyramidTreeEdge::after {
+  border-top-width: 2px;
+  border-bottom-width: 2px;
+  border-left-width: 4px;
 }
 
 .numerologyPyramidDetails { min-width: 0; display: grid; gap: 10px; }
@@ -1838,7 +1943,7 @@
   grid-template-columns: minmax(220px, .82fr) minmax(330px, 1.18fr);
 }
 .numerologySummaryMiddle {
-  grid-template-columns: minmax(270px, .92fr) minmax(300px, 1.08fr);
+  grid-template-columns: minmax(220px, .82fr) minmax(330px, 1.18fr);
 }
 
 .numerologySummaryPanel,
@@ -2597,7 +2702,14 @@
   .numerologyReportHeader { padding-inline: 16px; }
   .numerologyColumns { padding-inline: 16px; }
   .numerologyPyramidSection { margin-inline: 16px; }
-  .numerologyPyramid { padding-inline: 10px; }
+  .numerologyPyramid,
+  .numerologyPyramidVisual { padding-inline: 10px; }
+  .numerologyPyramidTree {
+    --pyramid-peak-size: 68px;
+    --pyramid-base-size: 58px;
+    --pyramid-challenge-size: 26px;
+    min-height: 430px;
+  }
   .numerologyPyramidPair { gap: 18px; }
   .numerologyPyramidCycles { grid-template-columns: 1fr; }
   .numerologyCalculations { margin-inline: 16px; }
@@ -2735,12 +2847,41 @@
 .numerologyCalculation strong,
 .numerologyPyramidCycles article strong { color: #fff7ee; }
 .numerologyPyramid,
+.numerologyPyramidVisual,
 .numerologySummaryPyramid {
   border-color: rgb(125 162 157 / 42%);
   background:
     radial-gradient(circle at 50% 35%, rgb(91 227 208 / 8%), transparent 43%),
     rgb(6 36 40 / 88%);
 }
+.numerologyPyramidLegend {
+  color: #d4dfdd;
+  border-color: rgb(91 227 208 / 28%);
+  background: rgb(43 91 88 / 28%);
+}
+.numerologyPyramidTreePeak,
+.numerologyPyramidTreeBase {
+  color: #f7f3ea;
+  border-color: #71888a;
+  background: #082429;
+  box-shadow: none;
+}
+.numerologyPyramidTreePeak[data-node="peak-4"] {
+  border-color: #e0713f;
+  background: rgb(91 55 42 / 82%);
+  box-shadow: 0 0 0 5px rgb(232 74 22 / 8%);
+}
+.numerologyPyramidTreePeak[data-node="peak-3"] {
+  border-color: #d4a843;
+  background: #102e31;
+}
+.numerologyPyramidTreePeak > span,
+.numerologyPyramidTreeBase > span { color: #b9c7c6; }
+.numerologyPyramidTreePeak > strong,
+.numerologyPyramidTreeBase > strong { color: #5be3d0; }
+.numerologyPyramidTreeEdge { background: #9b826c; }
+.numerologyPyramidTreeEdge::after { border-left-color: #9b826c; }
+.numerologyPyramidVisualCompact { background: transparent; }
 .numerologyPyramidCircle,
 .numerologyPyramidBase > div,
 .numerologySummaryPyramidNode,
@@ -2904,7 +3045,7 @@
   .numerologyMetricDebt > strong,
   .numerologyMetricMissing > strong { font-size: 1.9rem; }
   .numerologyColumns {
-    grid-template-columns: minmax(210px, .72fr) minmax(360px, 1.28fr);
+    grid-template-columns: minmax(230px, .78fr) minmax(350px, 1.22fr);
     gap: 7px;
     padding: 0 17px 7px;
   }
@@ -2928,10 +3069,29 @@
   }
   .numerologyPyramidSection { margin: 0 17px 7px; break-inside: avoid; }
   .numerologyPyramidLayout {
-    grid-template-columns: minmax(250px, .78fr) minmax(350px, 1.22fr);
-    gap: 10px;
+    grid-template-columns: minmax(230px, .78fr) minmax(350px, 1.22fr);
+    gap: 7px;
+    margin-inline: -13px;
   }
-  .numerologyPyramid { padding: 10px; }
+  .numerologyPyramid,
+  .numerologyPyramidVisual { padding: 10px; }
+  .numerologyPyramidVisual { gap: 4px; }
+  .numerologyPyramidLegend {
+    min-height: 24px;
+    padding: 3px 7px;
+    font-size: .46rem;
+  }
+  .numerologyPyramidTree {
+    --pyramid-peak-size: 50px;
+    --pyramid-base-size: 44px;
+    --pyramid-challenge-size: 20px;
+    min-height: 300px;
+  }
+  .numerologyPyramidTreePeak > span,
+  .numerologyPyramidTreeBase > span { font-size: .38rem; }
+  .numerologyPyramidTreePeak > strong,
+  .numerologyPyramidTreeBase > strong { font-size: 1rem; }
+  .numerologyPyramidTreePeak > b { font-size: .5rem; }
   .numerologyPyramidCircle,
   .numerologyPyramidBase > div {
     min-width: 62px;
@@ -2945,6 +3105,13 @@
   .numerologyPyramidMilestone {
     padding: 2px 5px;
     font-size: .46rem !important;
+  }
+  .numerologyPyramidVisualCompact { padding: 3px 6px 1px; }
+  .numerologyPyramidVisualCompact .numerologyPyramidTree {
+    --pyramid-peak-size: 42px;
+    --pyramid-base-size: 38px;
+    --pyramid-challenge-size: 18px;
+    min-height: 238px;
   }
   .numerologyPyramidArrow { min-height: 15px; }
   .numerologyPyramidCycles { gap: 5px; }
