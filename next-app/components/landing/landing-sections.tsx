@@ -49,7 +49,11 @@ export function LandingNavbar() {
         <ul className="nav-links" id="nav-links">
           {navItems.map(([href, label]) => (
             <li key={href}>
-              <a href={href} className="nav-link">
+              <a
+                href={href}
+                className="nav-link"
+                {...(href === "/quiz" ? { "data-nav-fixed": "quiz" } : {})}
+              >
                 {label}
               </a>
             </li>
