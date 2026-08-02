@@ -8,6 +8,7 @@ import {
   type NumerologyMetricKey,
   type NumerologyResult,
 } from "@/lib/numerology";
+import { ClowGlint } from "@/components/ui/clow-glint";
 import styles from "../admin.module.css";
 
 const METRICS: Array<[NumerologyMetricKey, string, string]> = [
@@ -976,7 +977,7 @@ export function NumerologyCalculator() {
           </label>
           <div className={styles.numerologyFormActions}>
             <button className={styles.submit} type="submit">
-              ✦ Lập bản đồ
+              <ClowGlint size="sm" /> Lập bản đồ
             </button>
             <button className={styles.secondaryLink} onClick={reset} type="button">
               Làm mới

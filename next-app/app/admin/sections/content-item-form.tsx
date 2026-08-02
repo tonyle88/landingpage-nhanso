@@ -17,7 +17,10 @@ export type AdminLandingContentItem = {
 export function ContentItemForm({ item }: { item: AdminLandingContentItem }) {
   const type = String(item.value.type || "text").toLowerCase();
   const rawValue = item.value.value == null ? "" : String(item.value.value);
-  const displayValue = type === "text" ? landingPlainText(rawValue) : rawValue;
+  const valueWithoutLegacyGlints = rawValue.replace(/\u2726/g, "");
+  const displayValue = type === "text"
+    ? landingPlainText(valueWithoutLegacyGlints).trim()
+    : valueWithoutLegacyGlints;
   const multiline = type === "html" || displayValue.length > 100 || displayValue.includes("\n");
 
   return (

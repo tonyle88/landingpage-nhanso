@@ -424,7 +424,7 @@ function renderBlogHome() {
             <!-- Ribbon top decoration -->
             <div style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 12px;">
               <div style="height: 1px; width: 60px; background: linear-gradient(to right, transparent, var(--primary));"></div>
-              <span style="color: var(--primary); font-size: 0.75rem; letter-spacing: 4px; font-weight: 700; text-transform: uppercase; font-family: 'Inter', sans-serif;">✦ GIẢI MÃ NHÂN SỐ HỌC ✦</span>
+              <span style="color: var(--primary); font-size: 0.75rem; letter-spacing: 4px; font-weight: 700; text-transform: uppercase; font-family: 'Inter', sans-serif;"><span class="clow-glint clow-glint--xs" aria-hidden="true"></span> GIẢI MÃ NHÂN SỐ HỌC <span class="clow-glint clow-glint--xs" aria-hidden="true"></span></span>
               <div style="height: 1px; width: 60px; background: linear-gradient(to left, transparent, var(--primary));"></div>
             </div>
             <!-- Main ribbon banner -->
@@ -440,9 +440,9 @@ function renderBlogHome() {
             </div>
             <!-- Stars decoration -->
             <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 16px;">
-              <span style="color: rgba(212,168,67,0.4); font-size: 0.6rem;">✦</span>
-              <span style="color: rgba(212,168,67,0.7); font-size: 0.9rem;">✦</span>
-              <span style="color: rgba(212,168,67,0.4); font-size: 0.6rem;">✦</span>
+              <span class="clow-glint clow-glint--xs clow-glint--muted" aria-hidden="true"></span>
+              <span class="clow-glint clow-glint--sm" aria-hidden="true"></span>
+              <span class="clow-glint clow-glint--xs clow-glint--muted" aria-hidden="true"></span>
             </div>
           </div>
         </div>
@@ -752,9 +752,9 @@ async function renderArticleDetail(id) {
         <div style="height:1px; background:linear-gradient(to right, transparent, rgba(212,168,67,0.5), transparent); margin-bottom:28px;"></div>
         <h1 style="font-family:'Playfair Display',serif; font-size:clamp(1.8rem,5vw,3rem); line-height:1.35; font-weight:900; background:linear-gradient(180deg, #f5d98a 0%, #d4a843 50%, #c09030 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:20px;">${escapeHtml(article.title)}</h1>
         <div style="display:flex; justify-content:center; gap:16px;">
-          <span style="color:rgba(212,168,67,0.4); font-size:0.6rem;">✦</span>
-          <span style="color:rgba(212,168,67,0.8); font-size:0.9rem;">✦</span>
-          <span style="color:rgba(212,168,67,0.4); font-size:0.6rem;">✦</span>
+          <span class="clow-glint clow-glint--xs clow-glint--muted" aria-hidden="true"></span>
+          <span class="clow-glint clow-glint--sm" aria-hidden="true"></span>
+          <span class="clow-glint clow-glint--xs clow-glint--muted" aria-hidden="true"></span>
         </div>
         <div style="height:1px; background:linear-gradient(to right, transparent, rgba(212,168,67,0.5), transparent); margin-top:28px;"></div>
       </div>
@@ -778,7 +778,7 @@ async function renderArticleDetail(id) {
       <!-- Related Articles -->
       <div style="margin-top:20px; padding-top:40px; border-top:1px solid rgba(212,168,67,0.2);">
         <div style="text-align:center; margin-bottom:32px;">
-          <span style="font-size:0.75rem; letter-spacing:4px; color:rgba(212,168,67,0.6); text-transform:uppercase; font-weight:700;">✦ BÀI VIẾT LIÊN QUAN ✦</span>
+          <span style="font-size:0.75rem; letter-spacing:4px; color:rgba(212,168,67,0.6); text-transform:uppercase; font-weight:700;"><span class="clow-glint clow-glint--xs" aria-hidden="true"></span> BÀI VIẾT LIÊN QUAN <span class="clow-glint clow-glint--xs" aria-hidden="true"></span></span>
           <h3 style="font-family:'Playfair Display',serif; font-size:1.8rem; margin:8px 0 0; background:linear-gradient(180deg,#f5d98a,#d4a843); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">Khám Phá Thêm</h3>
         </div>
         <div style="display:flex; flex-direction:column; gap:14px;">

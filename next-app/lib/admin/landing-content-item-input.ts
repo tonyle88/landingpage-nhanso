@@ -10,7 +10,7 @@ export function landingContentPayloadFromForm(form: FormData) {
   const selector = String(form.get("selector") || "").trim();
   const attribute = String(form.get("attribute") || "").trim();
   const type = String(form.get("type") || "text").trim().toLowerCase();
-  const rawValue = String(form.get("value") || "").trim();
+  const rawValue = String(form.get("value") || "").replace(/\u2726/g, "").trim();
 
   if (!/^landing\.content\.[a-z0-9][a-z0-9._-]{1,100}$/.test(key)) throw new Error("invalid key");
   if (!selector || selector.length > 500) throw new Error("invalid selector");

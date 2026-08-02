@@ -129,8 +129,8 @@ function createPackageCard(item: PackageData, index: number) {
   item.features.forEach((feature) => {
     const row = document.createElement("li");
     const check = document.createElement("span");
-    check.className = `feature-check${item.featured ? " featured-check" : ""}`;
-    check.textContent = "✦";
+    check.className = `clow-glint clow-glint--sm feature-check${item.featured ? " featured-check" : ""}`;
+    check.setAttribute("aria-hidden", "true");
     const text = document.createElement("span");
     appendSanitizedHtml(text, feature);
     row.append(check, document.createTextNode(" "), text);

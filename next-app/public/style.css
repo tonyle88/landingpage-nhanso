@@ -2281,10 +2281,13 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
 .testimonial-card::before,
 .testimonial-card::after {
-  content: '✦';
+  content: '';
   position: absolute;
-  color: var(--color-gold);
-  font-size: 1rem;
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(145deg, #fff1b8 3%, #f0c96a 38%, #ef7a3a 72%, #bd7337 100%);
+  clip-path: polygon(50% 0, 61% 37%, 100% 50%, 61% 63%, 50% 100%, 39% 63%, 0 50%, 39% 37%);
+  filter: drop-shadow(0 0 5px rgba(240, 201, 106, 0.5));
   z-index: 2;
   opacity: 0.8;
 }
