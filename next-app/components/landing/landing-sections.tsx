@@ -28,6 +28,7 @@ export function LandingNavbar() {
     ["#packages", "Gói Tư Vấn"],
     ["#process", "Hành Trình"],
     ["/blog", "Giải mã nhân số học"],
+    ["/quiz", "Quiz"],
   ];
 
   return (

@@ -161,6 +161,25 @@ export function usePackages(initialPackages: PublicPackage[] = []) {
       if (!packages.length) return;
       window.ClowCurrentPackages = packages;
       window.ClowBookingPackagesRuntime?.sync(packages);
+
+      const requestedCode = new URL(window.location.href).searchParams.get("package");
+      if (requestedCode && packages.some((item) => item.code === requestedCode)) {
+        const consultationType = document.querySelector<HTMLSelectElement>("#consultation-type");
+        const packageSelect = document.querySelector<HTMLSelectElement>("#package");
+        if (consultationType && packageSelect) {
+          consultationType.value = consultationType.value || "online";
+          consultationType.dispatchEvent(new Event("change", { bubbles: true }));
+          window.setTimeout(() => {
+            const hasOption = Array.from(packageSelect.options).some((option) => option.value === requestedCode);
+            if (!hasOption) return;
+            packageSelect.value = requestedCode;
+            packageSelect.dispatchEvent(new Event("change", { bubbles: true }));
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete("package");
+            window.history.replaceState({}, "", `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`);
+          }, 0);
+        }
+      }
       disposeRender();
       grid.replaceChildren();
       document.querySelector("#packages .package-carousel-controls")?.remove();

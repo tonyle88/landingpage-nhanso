@@ -17,6 +17,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.8,
     },
+    {
+      url: new URL("/quiz", siteUrl).href,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
     ...posts.map((post) => ({
       url: new URL(`/blog?id=${encodeURIComponent(post.id)}`, siteUrl).href,
       lastModified: post.date,
