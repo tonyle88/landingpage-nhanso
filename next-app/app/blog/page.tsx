@@ -14,6 +14,7 @@ const navItems = [
   { href: "/#packages", label: "Gói Tư Vấn" },
   { href: "/#process", label: "Hành Trình" },
   { href: "/blog", label: "Giải Mã Nhân Số Học" },
+  { href: "/quiz", label: "Quiz" },
 ];
 
 const socialLinks = [
