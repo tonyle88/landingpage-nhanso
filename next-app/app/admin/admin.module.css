@@ -1194,6 +1194,179 @@
   margin: 0 auto;
 }
 
+.numerologyHistoryPanel {
+  display: grid;
+  gap: 16px;
+  padding: 22px 24px;
+  border: 1px solid rgb(105 225 207 / 22%);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 92% 0, rgb(236 101 43 / 12%), transparent 27%),
+    linear-gradient(145deg, rgb(8 34 38 / 96%), rgb(7 25 29 / 94%));
+  box-shadow: 0 18px 55px rgb(0 0 0 / 22%);
+}
+
+.numerologyHistoryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.numerologyHistoryHeader h2 {
+  margin: 5px 0 4px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.55rem, 3vw, 2.15rem);
+}
+
+.numerologyHistoryHeader > div > p:last-child {
+  margin: 0;
+  color: var(--muted);
+  font-size: .82rem;
+}
+
+.numerologyArchiveStatus {
+  flex: 0 0 auto;
+  padding: 9px 13px;
+  border: 1px solid rgb(240 201 106 / 28%);
+  border-radius: 999px;
+  background: rgb(240 201 106 / 9%);
+  color: var(--gold-soft);
+  font-size: .73rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.numerologyArchiveStatus[data-saving="true"] {
+  animation: numerologyArchivePulse 1.2s ease-in-out infinite;
+}
+
+@keyframes numerologyArchivePulse {
+  50% { opacity: .55; box-shadow: 0 0 22px rgb(240 201 106 / 22%); }
+}
+
+.numerologyHistoryList {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  transition: opacity .2s ease;
+}
+
+.numerologyHistoryList[aria-busy="true"] { opacity: .55; }
+
+.numerologyHistoryItem {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgb(128 162 160 / 20%);
+  border-radius: 9px;
+  background: rgb(19 53 57 / 68%);
+}
+
+.numerologyHistoryItem > button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.numerologyHistoryItem > button:hover strong { color: var(--gold-soft); }
+.numerologyHistoryItem > button > span {
+  grid-row: 1 / 3;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(94 225 208 / 34%);
+  border-radius: 50%;
+  background: rgb(7 33 37 / 86%);
+  color: #6ee1d3;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.numerologyHistoryItem > button strong,
+.numerologyHistoryItem > button small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.numerologyHistoryItem > button strong { font-size: .82rem; }
+.numerologyHistoryItem > button small { color: var(--muted); font-size: .69rem; }
+
+.numerologyHistoryItem > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid rgb(128 162 160 / 16%);
+}
+
+.numerologyHistoryItem > div a {
+  padding: 8px 6px;
+  color: #c7d5d3;
+  font-size: .66rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+
+.numerologyHistoryItem > div a + a { border-left: 1px solid rgb(128 162 160 / 16%); }
+.numerologyHistoryItem > div a:hover { background: rgb(240 201 106 / 9%); color: var(--gold-soft); }
+
+.numerologyHistoryEmpty {
+  min-height: 110px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  border: 1px dashed rgb(128 162 160 / 25%);
+  border-radius: 9px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.numerologyHistoryEmpty strong { color: #fff; font-size: .85rem; }
+.numerologyHistoryEmpty span { font-size: .75rem; }
+
+.numerologyHistoryFooter {
+  min-height: 31px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.numerologyHistoryFooter > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .74rem;
+}
+
+.numerologyHistoryFooter nav { display: flex; align-items: center; gap: 9px; }
+.numerologyHistoryFooter nav span { color: var(--muted); font-size: .72rem; }
+.numerologyHistoryFooter button {
+  min-height: 31px;
+  padding: 5px 10px;
+  border: 1px solid rgb(240 201 106 / 25%);
+  border-radius: 7px;
+  background: rgb(240 201 106 / 8%);
+  color: #fff;
+  font: inherit;
+  font-size: .7rem;
+  cursor: pointer;
+}
+.numerologyHistoryFooter button:disabled { opacity: .35; cursor: default; }
+
 .numerologyFormPanel {
   display: grid;
   grid-template-columns: minmax(260px, .8fr) minmax(480px, 1.2fr);
@@ -2869,6 +3042,7 @@
   .numerologyFormPanel,
   .numerologyColumns,
   .numerologyPyramidLayout { grid-template-columns: 1fr; }
+  .numerologyHistoryList { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .numerologyForm { grid-template-columns: 1fr; }
   .numerologyFormActions,
   .numerologyMessage { grid-column: auto; }
@@ -2899,6 +3073,12 @@
 }
 
 @media (max-width: 520px) {
+  .numerologyHistoryPanel { padding: 18px 14px; }
+  .numerologyHistoryHeader,
+  .numerologyHistoryFooter { align-items: stretch; flex-direction: column; }
+  .numerologyHistoryList { grid-template-columns: 1fr; }
+  .numerologyArchiveStatus { align-self: start; }
+  .numerologyHistoryFooter nav { justify-content: space-between; }
   .numerologyResultToolbar,
   .numerologyReportHeader,
   .numerologyFooter { align-items: stretch; flex-direction: column; }
@@ -3197,6 +3377,7 @@
     background: #071f23 !important;
   }
   .pageHeader,
+  .numerologyHistoryPanel,
   .numerologyFormPanel,
   .numerologyResultToolbar { display: none !important; }
   .adminShell {

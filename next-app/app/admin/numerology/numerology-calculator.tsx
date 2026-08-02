@@ -8,6 +8,7 @@ import {
   type NumerologyMetricKey,
   type NumerologyResult,
 } from "@/lib/numerology";
+import type { NumerologyRecordListItem } from "@/lib/admin/numerology-records";
 import { ClowGlint } from "@/components/ui/clow-glint";
 import styles from "../admin.module.css";
 
@@ -753,9 +754,281 @@ async function renderCustomerSummaryAsJpeg(
         ? resolve(blob)
         : reject(new Error("Không thể tạo file JPG.")),
       "image/jpeg",
-      0.94,
+      0.86,
     );
   });
+}
+
+async function renderCustomerDetailAsJpeg(
+  result: NumerologyResult,
+  generatedAt: string,
+) {
+  await ensureCustomerJpgFonts();
+  await document.fonts.ready;
+  const logicalWidth = 794;
+  const logicalHeight = 1123;
+  const pixelRatio = 2;
+  const canvas = document.createElement("canvas");
+  canvas.width = logicalWidth * pixelRatio;
+  canvas.height = logicalHeight * pixelRatio;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Trình duyệt không hỗ trợ tạo PDF đầy đủ.");
+  context.scale(pixelRatio, pixelRatio);
+  context.fillStyle = "#071f23";
+  context.fillRect(0, 0, logicalWidth, logicalHeight);
+
+  const accent = context.createRadialGradient(720, 120, 0, 720, 120, 230);
+  accent.addColorStop(0, "rgba(128, 72, 47, .5)");
+  accent.addColorStop(1, "rgba(128, 72, 47, 0)");
+  context.fillStyle = accent;
+  context.fillRect(490, 0, 304, 360);
+  context.fillStyle = "rgba(6, 27, 31, .96)";
+  context.fillRect(0, 0, logicalWidth, 58);
+  drawCanvasText(context, "Clow Cat Patronus", 28, 31, {
+    color: "#fff",
+    font: "700 20px NumerologyExportSerif, Georgia, serif",
+  });
+  drawCanvasText(context, "BẢN ĐỒ NHÂN SỐ HỌC ĐẦY ĐỦ · TRANG 2", 28, 44, {
+    color: "#b8c6c7",
+    font: "700 8px NumerologyExportSans, Arial, sans-serif",
+  });
+  drawCanvasText(context, generatedAt, 766, 36, {
+    align: "right",
+    color: "#fff",
+    font: "700 14px NumerologyExportSerif, Georgia, serif",
+  });
+
+  drawCanvasText(context, result.fullName, logicalWidth / 2, 104, {
+    align: "center",
+    color: "#fffaf2",
+    font: `italic 400 ${result.fullName.length > 28 ? 29 : 35}px NumerologyExportScript, Georgia, serif`,
+    maxWidth: 700,
+  });
+  drawCanvasText(context, `Ngày sinh · ${result.formattedDate}`, logicalWidth / 2, 130, {
+    align: "center",
+    color: "#f2b27e",
+    font: "700 13px NumerologyExportSans, Arial, sans-serif",
+  });
+
+  drawCanvasPanel(context, 18, 154, 758, 266);
+  drawCanvasSectionTitle(context, "06", "Chi tiết 9 nhóm chỉ số", "Kết quả và phép tính đối chiếu", 30, 166);
+  const detailedMetrics = [
+    ...METRICS.map(([key, label]) => ({
+      label,
+      value: result.metrics[key].display,
+      formula: result.metrics[key].formula,
+    })),
+    {
+      label: "Chỉ số thiếu",
+      value: result.missing.length ? result.missing.join(" · ") : "Không có",
+      formula: "Các số không xuất hiện trong ngày sinh",
+    },
+    {
+      label: "Nợ nghiệp",
+      value: result.karmicDebts.length
+        ? result.karmicDebts.map((item) => item.display).join(" · ")
+        : "Không có",
+      formula: result.karmicDebts.length
+        ? result.karmicDebts.map((item) => item.sources.join(", ")).join(" · ")
+        : "Không phát hiện 13/4, 14/5, 16/7 hoặc 19/1",
+    },
+  ];
+  detailedMetrics.forEach((metric, index) => {
+    const column = index % 3;
+    const row = Math.floor(index / 3);
+    const x = 30 + column * 247;
+    const y = 210 + row * 65;
+    drawRoundRect(context, x, y, 235, 56, 6, index === 8 ? "#432d25" : "#18373a", "#3b5a5e");
+    drawCanvasText(context, metric.label.toUpperCase(), x + 10, y + 17, {
+      color: "#b9c7c6",
+      font: "800 8px NumerologyExportSans, Arial, sans-serif",
+    });
+    drawCanvasText(context, metric.value, x + 225, y + 28, {
+      align: "right",
+      color: "#f2b27e",
+      font: "700 18px NumerologyExportSerif, Georgia, serif",
+      maxWidth: 90,
+    });
+    drawCanvasText(context, metric.formula, x + 10, y + 46, {
+      color: "#d3dddc",
+      font: "8.2px NumerologyExportSans, Arial, sans-serif",
+      maxWidth: 212,
+    });
+  });
+
+  drawCanvasPanel(context, 18, 434, 370, 286);
+  drawCanvasSectionTitle(context, "07", "Giải mã họ tên", "Từng từ theo hệ Pythagoras", 30, 446);
+  ["TỪ", "SỨ MỆNH", "LINH HỒN", "NHÂN CÁCH"].forEach((label, index) => {
+    drawCanvasText(context, label, 34 + [0, 91, 187, 279][index], 500, {
+      color: "#f2b27e",
+      font: "800 8px NumerologyExportSans, Arial, sans-serif",
+    });
+  });
+  result.nameBreakdown.slice(0, 9).forEach((word, index) => {
+    const y = 528 + index * 20;
+    context.strokeStyle = "rgba(143, 168, 166, .24)";
+    context.beginPath();
+    context.moveTo(30, y + 7);
+    context.lineTo(376, y + 7);
+    context.stroke();
+    const value = (part: NamePart) => part.raw === part.reduced
+      ? String(part.raw || "—")
+      : `${part.raw} → ${part.reduced}`;
+    drawCanvasText(context, word.word, 34, y, {
+      color: "#fff",
+      font: "700 9px NumerologyExportSans, Arial, sans-serif",
+      maxWidth: 78,
+    });
+    drawCanvasText(context, value(word.all), 125, y, { color: "#dbe6e4", font: "9px NumerologyExportSans, Arial, sans-serif" });
+    drawCanvasText(context, value(word.vowels), 221, y, { color: "#dbe6e4", font: "9px NumerologyExportSans, Arial, sans-serif" });
+    drawCanvasText(context, value(word.consonants), 313, y, { color: "#dbe6e4", font: "9px NumerologyExportSans, Arial, sans-serif" });
+  });
+
+  drawCanvasPanel(context, 402, 434, 374, 286);
+  drawCanvasSectionTitle(context, "08", "Bốn đỉnh cao & thử thách", result.pyramid.firstMilestoneFormula, 414, 446);
+  result.pyramid.peaks.forEach((peak, index) => {
+    const y = 502 + index * 49;
+    drawRoundRect(context, 414, y, 350, 41, 5, "#17373a", "#3b5a5e");
+    drawCanvasText(context, `CHU KỲ ${index + 1}`, 424, y + 15, {
+      color: "#f2b27e",
+      font: "800 8px NumerologyExportSans, Arial, sans-serif",
+    });
+    drawCanvasText(context, `Đỉnh ${peak.display}`, 424, y + 32, {
+      color: "#fff",
+      font: "700 11px NumerologyExportSans, Arial, sans-serif",
+    });
+    drawCanvasText(context, peak.formula, 492, y + 32, {
+      color: "#b9c7c6",
+      font: "8px NumerologyExportSans, Arial, sans-serif",
+      maxWidth: 100,
+    });
+    drawCanvasText(context, `TT ${peak.challenge}`, 606, y + 18, {
+      color: "#f2b27e",
+      font: "700 10px NumerologyExportSans, Arial, sans-serif",
+    });
+    drawCanvasText(context, `${peak.milestoneAge} tuổi · ${peak.milestoneYear}`, 754, y + 31, {
+      align: "right",
+      color: "#fff",
+      font: "700 9px NumerologyExportSans, Arial, sans-serif",
+    });
+  });
+
+  drawCanvasPanel(context, 18, 734, 758, 335);
+  drawCanvasSectionTitle(context, "09", "Năm thế giới & năm cá nhân", "Chu kỳ hiện tại và thời gian vận hành", 30, 746);
+  const annual = result.annualCycle;
+  const annualCards = [
+    { title: `Năm thế giới ${annual.worldYear.year}`, value: String(annual.worldYear.value), formula: annual.worldYear.formula },
+    { title: `PY (${annual.currentPersonalYear.year})`, value: String(annual.currentPersonalYear.value), formula: annual.currentPersonalYear.formula },
+    { title: `PY (${annual.nextPersonalYear.year})`, value: String(annual.nextPersonalYear.value), formula: annual.nextPersonalYear.formula },
+  ];
+  annualCards.forEach((card, index) => {
+    const x = 30 + index * 247;
+    drawRoundRect(context, x, 798, 235, 74, 6, index === 1 ? "#503b2d" : "#18373a", index === 1 ? "#d4a843" : "#3b5a5e");
+    drawCanvasText(context, card.title.toUpperCase(), x + 10, 818, { color: "#b9c7c6", font: "800 8px NumerologyExportSans, Arial, sans-serif" });
+    drawCanvasText(context, card.value, x + 225, 843, { align: "right", color: "#f2b27e", font: "700 25px NumerologyExportSerif, Georgia, serif" });
+    drawCanvasText(context, card.formula, x + 10, 861, { color: "#fff", font: "8.5px NumerologyExportSans, Arial, sans-serif", maxWidth: 205 });
+  });
+  drawCanvasText(context, `Hiện tại: ${annual.currentPersonalYear.operatingFrom} – ${annual.currentPersonalYear.operatingTo}`, 30, 901, {
+    color: "#fff",
+    font: "700 11px NumerologyExportSans, Arial, sans-serif",
+  });
+  drawCanvasText(context, `Kế tiếp: ${annual.nextPersonalYear.operatingFrom} – ${annual.nextPersonalYear.operatingTo}`, 408, 901, {
+    color: "#fff",
+    font: "700 11px NumerologyExportSans, Arial, sans-serif",
+  });
+  annual.cycle.forEach((item, index) => {
+    const x = 31 + index * 81;
+    drawRoundRect(context, x, 927, 72, 61, 6, item.isCurrent ? "#e84a16" : "#17373a", item.isCurrent ? "#d4a843" : "#3b5a5e");
+    drawCanvasText(context, item.year, x + 36, 948, { align: "center", color: "#b9c7c6", font: "9px NumerologyExportSans, Arial, sans-serif" });
+    drawCanvasText(context, item.value, x + 36, 975, { align: "center", color: "#fff", font: "700 19px NumerologyExportSerif, Georgia, serif" });
+  });
+  drawCanvasText(context, "PDF được tối ưu bằng ảnh JPEG A4 nén chất lượng cao để tiết kiệm dung lượng.", logicalWidth / 2, 1030, {
+    align: "center",
+    color: "#b9c7c6",
+    font: "9px NumerologyExportSans, Arial, sans-serif",
+  });
+  context.fillStyle = "rgba(6, 27, 31, .96)";
+  context.fillRect(0, 1095, logicalWidth, 28);
+  drawCanvasText(context, "Clow Cat Patronus · Hồ sơ riêng tư", 20, 1113, { color: "#b8c6c7", font: "8px NumerologyExportSans, Arial, sans-serif" });
+  drawCanvasText(context, `${result.normalizedName} · ${result.formattedDate}`, 774, 1113, { align: "right", color: "#b8c6c7", font: "8px NumerologyExportSans, Arial, sans-serif" });
+
+  return await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => blob ? resolve(blob) : reject(new Error("Không thể tạo trang PDF chi tiết.")),
+      "image/jpeg",
+      0.84,
+    );
+  });
+}
+
+function joinBytes(chunks: Uint8Array[]) {
+  const length = chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0);
+  const output = new Uint8Array(length);
+  let offset = 0;
+  chunks.forEach((chunk) => {
+    output.set(chunk, offset);
+    offset += chunk.byteLength;
+  });
+  return output;
+}
+
+async function createPdfFromJpegPages(pages: Blob[]) {
+  const encoder = new TextEncoder();
+  const pageWidth = 595.28;
+  const pageHeight = 841.89;
+  const objectCount = 2 + pages.length * 3;
+  const objects = new Map<number, Uint8Array>();
+  const pageObjectIds = pages.map((_, index) => 3 + index * 3);
+  objects.set(1, encoder.encode("<< /Type /Catalog /Pages 2 0 R >>"));
+  objects.set(2, encoder.encode(`<< /Type /Pages /Count ${pages.length} /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(" ")}] >>`));
+
+  for (let index = 0; index < pages.length; index += 1) {
+    const pageId = 3 + index * 3;
+    const contentId = pageId + 1;
+    const imageId = pageId + 2;
+    const imageBytes = new Uint8Array(await pages[index].arrayBuffer());
+    const content = encoder.encode(`q\n${pageWidth} 0 0 ${pageHeight} 0 0 cm\n/Im1 Do\nQ`);
+    objects.set(pageId, encoder.encode(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /XObject << /Im1 ${imageId} 0 R >> >> /Contents ${contentId} 0 R >>`));
+    objects.set(contentId, joinBytes([
+      encoder.encode(`<< /Length ${content.byteLength} >>\nstream\n`),
+      content,
+      encoder.encode("\nendstream"),
+    ]));
+    objects.set(imageId, joinBytes([
+      encoder.encode(`<< /Type /XObject /Subtype /Image /Width 1588 /Height 2246 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageBytes.byteLength} >>\nstream\n`),
+      imageBytes,
+      encoder.encode("\nendstream"),
+    ]));
+  }
+
+  const chunks: Uint8Array[] = [new Uint8Array([37, 80, 68, 70, 45, 49, 46, 52, 10, 37, 211, 235, 233, 225, 10])];
+  const offsets = new Array<number>(objectCount + 1).fill(0);
+  let length = chunks[0].byteLength;
+  for (let id = 1; id <= objectCount; id += 1) {
+    const body = objects.get(id);
+    if (!body) throw new Error("Không thể đóng gói PDF.");
+    offsets[id] = length;
+    const object = joinBytes([encoder.encode(`${id} 0 obj\n`), body, encoder.encode("\nendobj\n")]);
+    chunks.push(object);
+    length += object.byteLength;
+  }
+  const xrefOffset = length;
+  const xref = ["xref", `0 ${objectCount + 1}`, "0000000000 65535 f "];
+  for (let id = 1; id <= objectCount; id += 1) {
+    xref.push(`${String(offsets[id]).padStart(10, "0")} 00000 n `);
+  }
+  chunks.push(encoder.encode(`${xref.join("\n")}\ntrailer\n<< /Size ${objectCount + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`));
+  return new Blob([joinBytes(chunks)], { type: "application/pdf" });
+}
+
+async function createOptimizedArchiveFiles(
+  result: NumerologyResult,
+  generatedAt: string,
+) {
+  const summary = await renderCustomerSummaryAsJpeg(result, generatedAt);
+  const detail = await renderCustomerDetailAsJpeg(result, generatedAt);
+  const pdf = await createPdfFromJpegPages([summary, detail]);
+  return { image: summary, pdf };
 }
 
 function WordPart({ part }: { part: NamePart }) {
@@ -847,26 +1120,116 @@ function PyramidTree({
   );
 }
 
-export function NumerologyCalculator() {
+type NumerologyCalculatorProps = {
+  canSave: boolean;
+  historyAvailable: boolean;
+  historyLimit: number;
+  initialRecords: NumerologyRecordListItem[];
+  initialTotal: number;
+};
+
+function formatArchiveBytes(bytes: number) {
+  if (!bytes) return "0 KB";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatArchiveDate(value: string) {
+  const [year, month, day] = value.split("-");
+  return year && month && day ? `${day}/${month}/${year}` : value;
+}
+
+export function NumerologyCalculator({
+  canSave,
+  historyAvailable,
+  historyLimit,
+  initialRecords,
+  initialTotal,
+}: NumerologyCalculatorProps) {
   const [fullName, setFullName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [result, setResult] = useState<NumerologyResult | null>(null);
   const [generatedAt, setGeneratedAt] = useState("");
   const [message, setMessage] = useState("");
   const [isExportingJpg, setIsExportingJpg] = useState(false);
+  const [isSavingArchive, setIsSavingArchive] = useState(false);
+  const [records, setRecords] = useState(initialRecords);
+  const [historyTotal, setHistoryTotal] = useState(initialTotal);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPageCount, setHistoryPageCount] = useState(
+    Math.max(1, Math.ceil(initialTotal / 20)),
+  );
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyMessage, setHistoryMessage] = useState(
+    historyAvailable ? "" : "Kho hồ sơ chưa sẵn sàng. Hãy áp dụng migration mới.",
+  );
+
+  async function loadHistoryPage(page: number) {
+    if (!historyAvailable || historyLoading) return;
+    setHistoryLoading(true);
+    setHistoryMessage("");
+    try {
+      const response = await fetch(`/api/admin/numerology-records?page=${page}`, {
+        cache: "no-store",
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Không thể tải danh sách.");
+      setRecords(payload.records || []);
+      setHistoryTotal(payload.total || 0);
+      setHistoryPage(payload.page || page);
+      setHistoryPageCount(payload.pageCount || 1);
+    } catch (error) {
+      setHistoryMessage(error instanceof Error ? error.message : "Không thể tải danh sách.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  async function saveArchive(
+    nextResult: NumerologyResult,
+    generatedAtLabel: string,
+  ) {
+    if (!canSave || !historyAvailable) return;
+    setIsSavingArchive(true);
+    setHistoryMessage("Đang tối ưu và lưu PDF đầy đủ cùng ảnh A4…");
+    try {
+      const files = await createOptimizedArchiveFiles(nextResult, generatedAtLabel);
+      const form = new FormData();
+      form.set("customerName", nextResult.fullName);
+      form.set("normalizedName", nextResult.normalizedName);
+      form.set("birthDate", nextResult.isoDate);
+      form.set("resultData", JSON.stringify(nextResult));
+      form.set("pdf", files.pdf, "ban-do-nhan-so.pdf");
+      form.set("image", files.image, "tom-tat-a4.jpg");
+      const response = await fetch("/api/admin/numerology-records", {
+        method: "POST",
+        body: form,
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Không thể lưu hồ sơ.");
+      await loadHistoryPage(1);
+      setHistoryMessage("Đã lưu riêng tư PDF đầy đủ và ảnh A4 đã tối ưu.");
+    } catch (error) {
+      setHistoryMessage(error instanceof Error ? error.message : "Không thể lưu hồ sơ.");
+    } finally {
+      setIsSavingArchive(false);
+    }
+  }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
       const nextResult = calculateNumerology(fullName, birthDate);
-      setResult(nextResult);
-      setFullName(nextResult.fullName);
-      setGeneratedAt(new Intl.DateTimeFormat("vi-VN", {
+      const generatedAtLabel = new Intl.DateTimeFormat("vi-VN", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
-      }).format(new Date()));
+      }).format(new Date());
+      setResult(nextResult);
+      setFullName(nextResult.fullName);
+      setGeneratedAt(generatedAtLabel);
       setMessage("");
+      void saveArchive(nextResult, generatedAtLabel);
       window.requestAnimationFrame(() => {
         document.getElementById("numerology-report")?.scrollIntoView({
           behavior: "smooth",
@@ -875,6 +1238,30 @@ export function NumerologyCalculator() {
       });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Không thể tính chỉ số.");
+    }
+  }
+
+  function openRecentRecord(record: NumerologyRecordListItem) {
+    try {
+      const nextResult = calculateNumerology(record.customerName, record.birthDate);
+      const generatedAtLabel = new Intl.DateTimeFormat("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }).format(new Date(record.updatedAt));
+      setFullName(nextResult.fullName);
+      setBirthDate(nextResult.isoDate);
+      setResult(nextResult);
+      setGeneratedAt(generatedAtLabel);
+      setMessage("");
+      window.requestAnimationFrame(() => {
+        document.getElementById("numerology-report")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    } catch {
+      setHistoryMessage("Không thể mở lại hồ sơ này.");
     }
   }
 
@@ -945,13 +1332,83 @@ export function NumerologyCalculator() {
 
   return (
     <section className={styles.numerologyWorkspace}>
+      <section className={styles.numerologyHistoryPanel}>
+        <div className={styles.numerologyHistoryHeader}>
+          <div>
+            <p className={styles.eyebrow}>Kho hồ sơ riêng tư</p>
+            <h2>Khách hàng tra gần đây</h2>
+            <p>
+              Hiển thị {historyTotal}/{historyLimit} hồ sơ gần nhất · 20 người mỗi trang.
+            </p>
+          </div>
+          <span className={styles.numerologyArchiveStatus} data-saving={isSavingArchive}>
+            {isSavingArchive ? "Đang tối ưu file…" : "PDF + JPG A4"}
+          </span>
+        </div>
+
+        {records.length ? (
+          <div className={styles.numerologyHistoryList} aria-busy={historyLoading}>
+            {records.map((record) => (
+              <article className={styles.numerologyHistoryItem} key={record.id}>
+                <button type="button" onClick={() => openRecentRecord(record)}>
+                  <span>{record.customerName.charAt(0)}</span>
+                  <strong>{record.customerName}</strong>
+                  <small>Ngày sinh {formatArchiveDate(record.birthDate)}</small>
+                </button>
+                <div>
+                  <a
+                    href={`/api/admin/numerology-records/${record.id}/download?type=pdf`}
+                  >
+                    PDF · {formatArchiveBytes(record.pdfByteSize)}
+                  </a>
+                  <a
+                    href={`/api/admin/numerology-records/${record.id}/download?type=jpg`}
+                  >
+                    JPG · {formatArchiveBytes(record.imageByteSize)}
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.numerologyHistoryEmpty}>
+            <ClowGlint size="sm" />
+            <strong>Chưa có hồ sơ đã lưu</strong>
+            <span>Hồ sơ đầu tiên sẽ xuất hiện sau khi bạn lập bản đồ.</span>
+          </div>
+        )}
+
+        <div className={styles.numerologyHistoryFooter}>
+          <p role="status">{historyMessage}</p>
+          {historyPageCount > 1 ? (
+            <nav aria-label="Phân trang hồ sơ gần đây">
+              <button
+                disabled={historyLoading || historyPage <= 1}
+                onClick={() => void loadHistoryPage(historyPage - 1)}
+                type="button"
+              >
+                ← Trước
+              </button>
+              <span>Trang {historyPage}/{historyPageCount}</span>
+              <button
+                disabled={historyLoading || historyPage >= historyPageCount}
+                onClick={() => void loadHistoryPage(historyPage + 1)}
+                type="button"
+              >
+                Sau →
+              </button>
+            </nav>
+          ) : null}
+        </div>
+      </section>
+
       <section className={styles.numerologyFormPanel}>
         <div>
           <p className={styles.eyebrow}>Hồ sơ khách hàng</p>
           <h2>Thông tin lập bản đồ</h2>
           <p>
-            Áp dụng cùng công thức Pythagoras như trang chủ. Dữ liệu chỉ được
-            tính trong trình duyệt, không tự lưu hoặc gửi lên hệ thống.
+            Áp dụng cùng công thức Pythagoras như trang chủ. PDF đầy đủ và ảnh
+            A4 được tối ưu rồi lưu trong kho riêng tư của trang quản trị.
           </p>
         </div>
         <form className={styles.numerologyForm} onSubmit={submit}>

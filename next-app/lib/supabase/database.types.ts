@@ -494,6 +494,59 @@ export type Database = {
         }
         Relationships: []
       }
+      numerology_records: {
+        Row: {
+          a4_image_path: string
+          birth_date: string
+          created_at: string
+          created_by: string | null
+          customer_name: string
+          full_pdf_path: string
+          id: string
+          image_byte_size: number
+          normalized_name: string
+          pdf_byte_size: number
+          result_data: Json
+          updated_at: string
+        }
+        Insert: {
+          a4_image_path: string
+          birth_date: string
+          created_at?: string
+          created_by?: string | null
+          customer_name: string
+          full_pdf_path: string
+          id?: string
+          image_byte_size: number
+          normalized_name: string
+          pdf_byte_size: number
+          result_data?: Json
+          updated_at?: string
+        }
+        Update: {
+          a4_image_path?: string
+          birth_date?: string
+          created_at?: string
+          created_by?: string | null
+          customer_name?: string
+          full_pdf_path?: string
+          id?: string
+          image_byte_size?: number
+          normalized_name?: string
+          pdf_byte_size?: number
+          result_data?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "numerology_records_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_transactions: {
         Row: {
           amount: number
