@@ -222,8 +222,9 @@ test("is integrated only into the Next.js admin", async () => {
   assert.match(calculator, /Biểu đồ chu kỳ hình sin/);
   assert.match(
     calculator,
-    /CYCLE_POINT_Y = \[48, 79, 143, 166, 107, 48, 178, 130, 82\]/,
+    /CYCLE_POINT_Y = \[48, 79, 143, 160, 107, 58, 178, 130, 48\]/,
   );
+  assert.match(calculator, /Shared by the live chart, full PDF, customer PDF and A4 JPG/);
   assert.match(calculator, /numerologySineCurrentPoint/);
   assert.match(calculator, /window\.print\(\)/);
   assert.match(calculator, /PDF khách · 1 trang A4/);
