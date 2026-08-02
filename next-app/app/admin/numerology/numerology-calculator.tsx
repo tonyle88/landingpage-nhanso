@@ -22,7 +22,9 @@ const METRICS: Array<[NumerologyMetricKey, string, string]> = [
   ["maturity", "Trưởng thành", "Đường đời + sứ mệnh"],
 ];
 const CHART_ORDER = [3, 6, 9, 2, 5, 8, 1, 4, 7];
-const CYCLE_POINT_Y = [48, 79, 143, 166, 107, 48, 178, 130, 82];
+// Shared by the live chart, full PDF, customer PDF and A4 JPG.
+// 1/9 are level, 6 sits slightly lower, and 7 remains below a raised 4.
+const CYCLE_POINT_Y = [48, 79, 143, 160, 107, 58, 178, 130, 48];
 
 async function ensureCustomerJpgFonts() {
   const definitions = [
