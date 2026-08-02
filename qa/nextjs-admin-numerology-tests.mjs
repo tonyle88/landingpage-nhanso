@@ -264,3 +264,57 @@ test("is integrated only into the Next.js admin", async () => {
   assert.match(styles, /padding: 6mm/);
   assert.match(styles, /@media print/);
 });
+
+test("archives optimized PDF and A4 JPG files for configurable recent history", async () => {
+  const [
+    page,
+    calculator,
+    listRoute,
+    downloadRoute,
+    recordsConfig,
+    recordsServerConfig,
+    migration,
+    styles,
+  ] = await Promise.all([
+    readFile(new URL("../next-app/app/admin/numerology/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/admin/numerology/numerology-calculator.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/api/admin/numerology-records/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/api/admin/numerology-records/[id]/download/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/lib/admin/numerology-records.ts", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/lib/admin/numerology-records.server.ts", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/supabase/migrations/202608020001_numerology_recent_archive.sql", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/admin/admin.module.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(recordsConfig, /NUMEROLOGY_HISTORY_LIMIT = 50/);
+  assert.match(recordsConfig, /NUMEROLOGY_HISTORY_PAGE_SIZE = 20/);
+  assert.match(recordsServerConfig, /process\.env\.NUMEROLOGY_HISTORY_LIMIT/);
+  assert.match(recordsServerConfig, /admin\.numerology_history_limit/);
+  assert.match(recordsServerConfig, /Math\.min\(Math\.max\(Math\.round\(parsed\), 20\), 1000\)/);
+  assert.match(migration, /'admin\.numerology_history_limit'/);
+  assert.match(migration, /'\{"limit": 50\}'::jsonb/);
+  assert.match(migration, /'numerology-exports'/);
+  assert.match(migration, /false,/);
+  assert.match(migration, /create table if not exists public\.numerology_records/);
+  assert.match(migration, /numerology_records_admin_read/);
+  assert.match(page, /initialRecords/);
+  assert.match(page, /historyLimit=\{historyLimit\}/);
+  assert.match(calculator, /Khách hàng tra gần đây/);
+  assert.match(calculator, /loadHistoryPage/);
+  assert.match(calculator, /createOptimizedArchiveFiles/);
+  assert.match(calculator, /createPdfFromJpegPages/);
+  assert.match(calculator, /renderCustomerDetailAsJpeg/);
+  assert.match(calculator, /method: "POST"/);
+  assert.match(calculator, /20 người mỗi trang/);
+  assert.match(calculator, /download\?type=pdf/);
+  assert.match(calculator, /download\?type=jpg/);
+  assert.match(listRoute, /jpeg\(\{/);
+  assert.match(listRoute, /quality: 84/);
+  assert.match(listRoute, /chromaSubsampling: "4:4:4"/);
+  assert.match(listRoute, /range\(historyLimit, historyLimit \+ 999\)/);
+  assert.match(listRoute, /can\(principal\.role, "manage_content"\)/);
+  assert.match(downloadRoute, /Cache-Control": "private, no-store"/);
+  assert.match(downloadRoute, /getAdminPrincipal/);
+  assert.match(styles, /\.numerologyHistoryList/);
+  assert.match(styles, /grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
+});
