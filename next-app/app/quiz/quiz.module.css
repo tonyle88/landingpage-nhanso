@@ -7,14 +7,19 @@
   --peach: #f4b785;
   min-height: 100vh;
   color: #f7f4ee;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   background:
-    radial-gradient(circle at 86% 8%, rgb(239 106 46 / 15%), transparent 25%),
-    radial-gradient(circle at 12% 70%, rgb(38 196 190 / 10%), transparent 30%),
-    linear-gradient(rgb(3 24 29 / 91%), rgb(3 24 29 / 96%)),
+    radial-gradient(circle at 84% 5%, rgb(239 106 46 / 19%), transparent 26%),
+    radial-gradient(circle at 10% 68%, rgb(34 203 194 / 13%), transparent 31%),
+    linear-gradient(rgb(2 18 23 / 88%), rgb(2 18 23 / 97%)),
     url("/assets/images/hero_bg.webp") center / cover fixed,
-    #03181d;
+    #021419;
   font-family: "Montserrat", Arial, sans-serif;
 }
+.page::before { position: fixed; inset: 0; z-index: -1; content: ""; opacity: .55; background-image: radial-gradient(circle, rgb(255 245 204 / 75%) 0 1px, transparent 1.5px), radial-gradient(circle, rgb(74 222 211 / 60%) 0 1px, transparent 1.5px); background-position: 0 0, 37px 59px; background-size: 91px 91px, 137px 137px; mask-image: linear-gradient(to bottom, #000, transparent 90%); animation: starVeil 28s linear infinite; }
+.page::after { width: 54vw; height: 54vw; position: fixed; top: 18%; left: 50%; z-index: -1; content: ""; transform: translateX(-50%); border-radius: 50%; opacity: .35; background: conic-gradient(from 0deg, transparent, rgb(240 201 106 / 12%), transparent 23%, rgb(41 199 190 / 10%), transparent 51%, rgb(239 106 46 / 10%), transparent 75%); filter: blur(35px); animation: orbitTurn 80s linear infinite; }
 .cosmicField { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .cosmicField > span { position: absolute; color: rgb(240 201 106 / 9%); font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.5rem, 5vw, 5.5rem); animation: numberDrift 14s ease-in-out infinite alternate; }
 .cosmicField > span:nth-child(1) { top: 13%; left: 3%; }
@@ -61,39 +66,73 @@
 .menuButton span { width: 20px; height: 2px; display: block; margin: 3px auto; background: #fff; }
 
 .main { width: min(1180px, calc(100% - 36px)); position: relative; z-index: 1; margin: 0 auto; padding: clamp(54px, 8vw, 110px) 0 72px; }
-.intro { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); gap: 54px; align-items: end; }
+.intro { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(360px, .8fr); gap: 54px; align-items: center; }
 .introCopy { max-width: 780px; }
 .kicker { display: inline-flex; padding: 8px 13px; border: 1px solid rgb(240 201 106 / 35%); border-radius: 999px; color: var(--gold); font-size: .68rem; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
 .intro h1 { margin: 22px 0 18px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.8rem, 6vw, 5.5rem); line-height: .98; letter-spacing: -.035em; }
 .intro h1 em { color: var(--peach); font-weight: 500; }
 .introCopy > p { max-width: 690px; margin: 0; color: rgb(255 255 255 / 66%); font-size: clamp(.96rem, 1.5vw, 1.12rem); line-height: 1.75; }
-.trustNotes { display: grid; grid-template-columns: repeat(3, 1fr); position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: rgb(255 255 255 / 4%); }
+.mysticPanel { display: grid; justify-items: center; gap: 20px; }
+.mysticPortal { width: min(330px, 80vw); aspect-ratio: 1; position: relative; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle, rgb(240 201 106 / 14%) 0 3%, rgb(11 55 59 / 72%) 4% 18%, rgb(2 20 25 / 86%) 43%, transparent 72%); filter: drop-shadow(0 0 34px rgb(37 198 188 / 18%)); }
+.portalRingOuter, .portalRingMiddle, .portalRingInner { position: absolute; border-radius: 50%; }
+.portalRingOuter { inset: 2%; border: 1px solid rgb(240 201 106 / 30%); box-shadow: 0 0 40px rgb(240 201 106 / 8%), inset 0 0 40px rgb(240 201 106 / 6%); animation: orbitTurn 42s linear infinite; }
+.portalRingOuter::before, .portalRingOuter::after { position: absolute; content: ""; border-radius: 50%; }
+.portalRingOuter::before { inset: 8%; border: 1px dashed rgb(70 211 201 / 28%); }
+.portalRingOuter::after { width: 13px; height: 13px; top: 10%; left: 17%; background: var(--orange); box-shadow: 0 0 22px var(--orange); }
+.portalRingMiddle { inset: 16%; border: 1px solid rgb(70 211 201 / 30%); animation: orbitTurn 27s linear infinite reverse; }
+.portalRingMiddle::before { position: absolute; inset: 10%; content: ""; transform: rotate(45deg); border: 1px solid rgb(240 201 106 / 20%); }
+.portalRingInner { inset: 31%; border: 1px dashed rgb(240 201 106 / 42%); animation: orbitTurn 16s linear infinite; }
+.portalCore { width: 116px; height: 116px; position: relative; z-index: 2; display: grid; place-items: center; align-content: center; border: 1px solid rgb(240 201 106 / 46%); border-radius: 50%; background: radial-gradient(circle at 38% 30%, #164b4d, #061f24 68%); box-shadow: 0 0 45px rgb(240 201 106 / 14%), inset 0 0 28px rgb(0 0 0 / 45%); }
+.portalCore small, .portalCore span { color: rgb(255 255 255 / 50%); font-size: .48rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.portalCore strong { margin: 2px 0; color: var(--peach); font-family: Georgia, "Times New Roman", serif; font-size: 2.45rem; line-height: 1; text-shadow: 0 0 18px rgb(244 183 133 / 50%); }
+.mysticPortal > span { position: absolute; z-index: 3; color: var(--gold); font-family: Georgia, "Times New Roman", serif; text-shadow: 0 0 12px rgb(240 201 106 / 60%); }
+.portalNumberOne { top: 2%; left: 48%; }
+.portalNumberThree { top: 48%; right: 1%; }
+.portalNumberSix { bottom: 2%; left: 48%; }
+.portalNumberNine { top: 48%; left: 1%; }
+.mysticPortal .portalMaster { right: 0; bottom: 20%; left: 0; color: rgb(74 218 207 / 72%); font-size: .55rem; letter-spacing: .13em; text-align: center; }
+.trustNotes { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: rgb(255 255 255 / 4%); backdrop-filter: blur(12px); }
 .trustNotes::before { width: 170px; height: 170px; position: absolute; top: -115px; right: -62px; content: ""; border: 1px solid rgb(240 201 106 / 16%); border-radius: 50%; box-shadow: 0 0 55px rgb(240 201 106 / 7%); }
 .trustNotes span { min-height: 112px; display: grid; place-items: center; align-content: center; gap: 7px; padding: 16px 8px; border-right: 1px solid var(--line); color: rgb(255 255 255 / 55%); font-size: .6rem; font-weight: 800; letter-spacing: .06em; text-align: center; text-transform: uppercase; }
 .trustNotes span:last-child { border-right: 0; }
 .trustNotes strong { color: var(--peach); font-family: Georgia, "Times New Roman", serif; font-size: 1.7rem; }
 
-.quizShell { margin-top: 56px; padding: clamp(22px, 4vw, 46px); border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(145deg, rgb(8 40 45 / 97%), rgb(5 29 34 / 98%)); box-shadow: 0 34px 100px rgb(0 0 0 / 32%); }
+.quizShell { margin-top: 56px; position: relative; padding: clamp(22px, 4vw, 46px); overflow: hidden; border: 1px solid rgb(240 201 106 / 30%); border-radius: 22px; background: linear-gradient(145deg, rgb(8 43 47 / 94%), rgb(3 24 29 / 98%)); box-shadow: 0 34px 100px rgb(0 0 0 / 40%), inset 0 1px rgb(255 255 255 / 4%); backdrop-filter: blur(18px); }
+.quizShell::before { width: 460px; height: 460px; position: absolute; top: -330px; right: -190px; content: ""; border: 1px solid rgb(240 201 106 / 16%); border-radius: 50%; box-shadow: 0 0 75px rgb(240 201 106 / 5%); }
+.quizShell::after { width: 300px; height: 300px; position: absolute; bottom: -235px; left: -130px; content: ""; border: 1px dashed rgb(69 208 199 / 14%); border-radius: 50%; }
 .progressHeader { display: flex; justify-content: space-between; color: rgb(255 255 255 / 56%); font-size: .69rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
 .progressHeader strong { color: var(--gold); }
 .progressTrack { height: 4px; margin-top: 12px; overflow: hidden; border-radius: 99px; background: rgb(255 255 255 / 8%); }
 .progressTrack span { height: 100%; display: block; position: relative; border-radius: inherit; background: linear-gradient(90deg, var(--gold), var(--orange)); box-shadow: 0 0 18px rgb(239 106 46 / 60%); transition: width .35s ease; }
 .progressTrack span::after { width: 9px; height: 9px; position: absolute; top: 50%; right: 0; content: ""; transform: translate(50%, -50%); border-radius: 50%; background: #fff6dc; box-shadow: 0 0 14px var(--gold); }
+.constellationProgress { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(12, 1fr); gap: 5px; margin: 19px 0 0; }
+.constellationProgress > span { min-width: 0; position: relative; display: grid; place-items: center; }
+.constellationProgress > span::before { width: 100%; height: 1px; position: absolute; top: 50%; left: -50%; content: ""; background: rgb(255 255 255 / 10%); }
+.constellationProgress > span:first-child::before { display: none; }
+.constellationProgress i { width: 25px; height: 25px; position: relative; z-index: 1; display: grid; place-items: center; border: 1px solid rgb(255 255 255 / 15%); border-radius: 50%; color: rgb(255 255 255 / 35%); background: #08282d; font-family: Georgia, "Times New Roman", serif; font-size: .46rem; font-style: normal; transition: .3s ease; }
+.constellationProgress .constellationComplete::before { background: linear-gradient(90deg, var(--gold), rgb(239 106 46 / 65%)); }
+.constellationComplete i { border-color: var(--gold); color: #071f23; background: var(--gold); }
+.constellationActive i { transform: scale(1.22); border-color: var(--orange); color: #fff; background: var(--orange); box-shadow: 0 0 0 5px rgb(239 106 46 / 10%), 0 0 22px rgb(239 106 46 / 65%); }
 .questionLayout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: clamp(28px, 5vw, 70px); padding-top: 42px; animation: questionReveal .48s ease both; }
 .questionNumber { width: 118px; height: 118px; display: grid; place-items: center; position: relative; color: rgb(240 201 106 / 35%); border: 1px solid rgb(240 201 106 / 16%); border-radius: 50%; font-family: Georgia, "Times New Roman", serif; font-size: 3.6rem; line-height: 1; box-shadow: inset 0 0 38px rgb(240 201 106 / 4%); }
 .questionNumber::before, .questionNumber::after { position: absolute; content: ""; border-radius: 50%; }
 .questionNumber::before { inset: -12px; border: 1px dashed rgb(64 201 193 / 24%); animation: orbitTurn 18s linear infinite; }
 .questionNumber::after { width: 9px; height: 9px; top: -8px; left: 51px; background: var(--orange); box-shadow: 0 0 15px rgb(239 106 46 / 75%); }
+.numberFrequency { display: inline-flex; margin-top: 20px; padding: 6px 10px; border: 1px solid rgb(74 218 207 / 22%); border-radius: 999px; color: rgb(74 218 207 / 75%); font-size: .55rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
 .questionAside p { margin: 13px 0 10px; color: var(--gold); font-size: .67rem; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
 .questionAside small { display: block; color: rgb(255 255 255 / 55%); font-size: .76rem; line-height: 1.6; }
-.questionPanel h2 { max-width: 720px; margin: 0 0 28px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(1.75rem, 3.4vw, 2.7rem); line-height: 1.12; }
+.mysticPrompt { display: flex; align-items: center; gap: 9px; margin-bottom: 13px; color: var(--gold); }
+.mysticPrompt span { animation: symbolTwinkle 1.8s ease-in-out infinite alternate; }
+.mysticPrompt span:last-child { animation-delay: -.9s; }
+.mysticPrompt small { color: rgb(255 255 255 / 42%); font-size: .56rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.questionPanel h2 { max-width: 720px; margin: 0 0 28px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(1.75rem, 3.4vw, 2.7rem); line-height: 1.12; text-wrap: balance; }
 .options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .option { min-height: 132px; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 13px; position: relative; padding: 19px; overflow: hidden; border: 1px solid rgb(255 255 255 / 11%); border-radius: 11px; color: #fff; background: rgb(255 255 255 / 4%); text-align: left; cursor: pointer; transition: transform .18s ease, border-color .18s ease, background .18s ease; }
 .option::after { width: 70px; height: 70px; position: absolute; right: -52px; bottom: -52px; content: ""; border: 1px solid rgb(240 201 106 / 0%); border-radius: 50%; transition: right .25s ease, bottom .25s ease, border-color .25s ease; }
 .option:hover { transform: translateY(-2px); border-color: rgb(240 201 106 / 45%); background: rgb(240 201 106 / 7%); }
 .option:hover::after, .optionSelected::after { right: -23px; bottom: -23px; border-color: rgb(240 201 106 / 22%); }
-.optionSelected { border-color: var(--orange); background: linear-gradient(145deg, rgb(239 106 46 / 17%), rgb(240 201 106 / 7%)); box-shadow: inset 0 0 0 1px rgb(239 106 46 / 30%); }
-.optionMarker { width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid rgb(255 255 255 / 24%); border-radius: 50%; color: #071f23; background: transparent; font-size: .72rem; font-weight: 900; }
+.optionSelected { border-color: var(--orange); background: radial-gradient(circle at 95% 5%, rgb(240 201 106 / 12%), transparent 37%), linear-gradient(145deg, rgb(239 106 46 / 18%), rgb(240 201 106 / 7%)); box-shadow: inset 0 0 0 1px rgb(239 106 46 / 30%), 0 10px 30px rgb(0 0 0 / 20%); }
+.optionMarker { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid rgb(255 255 255 / 24%); border-radius: 50%; color: rgb(255 255 255 / 38%); background: transparent; font-family: Georgia, "Times New Roman", serif; font-size: .55rem; font-weight: 900; }
 .optionSelected .optionMarker { border-color: var(--gold); background: var(--gold); }
 .option > span:last-child { display: grid; gap: 8px; }
 .option strong { font-size: .88rem; line-height: 1.35; }
@@ -143,10 +182,12 @@
 .footer a { color: rgb(255 255 255 / 62%); text-decoration: none; }
 
 @keyframes orbitTurn { to { transform: rotate(360deg); } }
+@keyframes starVeil { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(50px, 30px, 0); } }
 @keyframes numberDrift { from { transform: translate3d(0, -8px, 0) rotate(-2deg); } to { transform: translate3d(14px, 14px, 0) rotate(3deg); } }
 @keyframes questionReveal { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes resultReveal { from { opacity: 0; transform: scale(.985) translateY(18px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 @keyframes resultPulse { 70% { box-shadow: 0 0 0 16px rgb(239 106 46 / 0%); } 100% { box-shadow: 0 0 0 0 rgb(239 106 46 / 0%); } }
+@keyframes symbolTwinkle { from { opacity: .35; transform: scale(.85) rotate(-8deg); } to { opacity: 1; transform: scale(1.12) rotate(8deg); text-shadow: 0 0 13px var(--gold); } }
 
 @media (max-width: 1050px) {
   .menuButton { display: block; }
@@ -168,6 +209,7 @@
   .quizShell { margin-top: 34px; padding: 20px 15px; }
   .questionLayout { grid-template-columns: 1fr; gap: 22px; padding-top: 28px; }
   .questionAside > span { display: none; }
+  .questionAside .numberFrequency { display: inline-flex; }
   .questionAside small { max-width: 500px; }
   .options { grid-template-columns: 1fr; }
   .option { min-height: 112px; }
@@ -179,5 +221,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .progressTrack span, .option { transition: none; }
-  .cosmicField > span, .cosmicField > i, .questionLayout, .questionNumber::before, .result, .resultMark { animation: none; }
+  .page::before, .page::after, .cosmicField > span, .cosmicField > i, .questionLayout, .questionNumber::before, .result, .resultMark, .portalRingOuter, .portalRingMiddle, .portalRingInner, .mysticPrompt span { animation: none; }
 }

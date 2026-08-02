@@ -12,8 +12,10 @@ test("adds Quiz to public navigation and reads enabled admin packages", () => {
   const blog = read("next-app/app/blog/page.tsx");
   const page = read("next-app/app/quiz/page.tsx");
   assert.match(landing, /\["\/quiz", "Quiz"\]/);
+  assert.match(landing, /"data-nav-fixed": "quiz"/);
   assert.match(blog, /href: "\/quiz", label: "Quiz"/);
   assert.match(page, /getPublicPackages\(\)/);
+  assert.match(read("next-app/app/use-landing-content.ts"), /element\.matches\("\[data-nav-fixed\]"\)/);
 });
 
 test("recommends each package family from matching answers", async () => {

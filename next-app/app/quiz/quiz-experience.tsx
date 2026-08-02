@@ -6,6 +6,8 @@ import { landingPlainText } from "@/lib/landing-text";
 import type { PublicPackage } from "@/lib/packages";
 import { QUIZ_QUESTIONS, recommendPackages } from "@/lib/package-quiz";
 
+const mysticNumbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "11/2", "22/4", "33/6"];
+
 function formatPrice(value: number, currency: string) {
   const suffix = currency.toUpperCase() === "VND" ? "đ" : ` ${currency.toUpperCase()}`;
   return `${value.toLocaleString("vi-VN")}${suffix}`;
@@ -24,6 +26,7 @@ export default function QuizExperience({ packages }: { packages: PublicPackage[]
   );
   const recommendation = recommendations[0];
   const progress = finished ? 100 : Math.round(((step + 1) / QUIZ_QUESTIONS.length) * 100);
+  const mysticNumber = mysticNumbers[step] || "∞";
 
   function next() {
     if (!selected) return;
@@ -43,7 +46,7 @@ export default function QuizExperience({ packages }: { packages: PublicPackage[]
   return (
     <div className={styles.page}>
       <div className={styles.cosmicField} aria-hidden="true">
-        {['1', '2', '3', '4', '5', '6', '7', '8', '9', '11/2', '22/4', '33/6'].map((number) => (
+        {mysticNumbers.map((number) => (
           <span key={number}>{number}</span>
         ))}
         <i /><i /><i />
@@ -82,10 +85,23 @@ export default function QuizExperience({ packages }: { packages: PublicPackage[]
               nhu cầu hiện tại — không cần nhập tên, email hay ngày sinh.
             </p>
           </div>
-          <div className={styles.trustNotes} aria-label="Thông tin về bài quiz">
-            <span><strong>12</strong>Câu hỏi</span>
-            <span><strong>01</strong>Gợi ý chính</span>
-            <span><strong>0</strong>Dữ liệu cá nhân</span>
+          <div className={styles.mysticPanel}>
+            <div className={styles.mysticPortal} aria-hidden="true">
+              <div className={styles.portalRingOuter} />
+              <div className={styles.portalRingMiddle} />
+              <div className={styles.portalRingInner} />
+              <span className={styles.portalNumberOne}>1</span>
+              <span className={styles.portalNumberThree}>3</span>
+              <span className={styles.portalNumberSix}>6</span>
+              <span className={styles.portalNumberNine}>9</span>
+              <span className={styles.portalMaster}>11/2 · 22/4 · 33/6</span>
+              <div className={styles.portalCore}><small>Mở cổng</small><strong>12</strong><span>tầng nhu cầu</span></div>
+            </div>
+            <div className={styles.trustNotes} aria-label="Thông tin về bài quiz">
+              <span><strong>12</strong>Câu hỏi</span>
+              <span><strong>01</strong>Gợi ý chính</span>
+              <span><strong>0</strong>Dữ liệu cá nhân</span>
+            </div>
           </div>
         </section>
 
@@ -97,18 +113,34 @@ export default function QuizExperience({ packages }: { packages: PublicPackage[]
           <div className={styles.progressTrack} aria-hidden="true">
             <span style={{ width: `${progress}%` }} />
           </div>
+          <div className={styles.constellationProgress} aria-label={`Tiến độ ${progress}%`}>
+            {QUIZ_QUESTIONS.map((item, index) => {
+              const complete = finished || index < step;
+              const active = !finished && index === step;
+              return (
+                <span
+                  className={`${complete ? styles.constellationComplete : ""}${active ? ` ${styles.constellationActive}` : ""}`}
+                  key={item.id}
+                >
+                  <i>{mysticNumbers[index]}</i>
+                </span>
+              );
+            })}
+          </div>
 
           {!finished && question ? (
             <div className={styles.questionLayout} key={question.id}>
               <aside className={styles.questionAside}>
                 <span className={styles.questionNumber}>{String(step + 1).padStart(2, "0")}</span>
+                <span className={styles.numberFrequency}>Tần số {mysticNumber}</span>
                 <p>{question.eyebrow}</p>
                 <small>{question.hint}</small>
               </aside>
               <div className={styles.questionPanel}>
+                <div className={styles.mysticPrompt}><span>✦</span><small>Chọn bằng cảm nhận đầu tiên của bạn</small><span>✦</span></div>
                 <h2>{question.question}</h2>
                 <div className={styles.options} role="radiogroup" aria-label={question.question}>
-                  {question.options.map((option) => {
+                  {question.options.map((option, optionIndex) => {
                     const active = selected === option.id;
                     return (
                       <button
@@ -119,7 +151,7 @@ export default function QuizExperience({ packages }: { packages: PublicPackage[]
                         role="radio"
                         type="button"
                       >
-                        <span className={styles.optionMarker}>{active ? "✓" : ""}</span>
+                        <span className={styles.optionMarker}>{active ? "✓" : String(optionIndex + 1).padStart(2, "0")}</span>
                         <span><strong>{option.label}</strong><small>{option.description}</small></span>
                       </button>
                     );

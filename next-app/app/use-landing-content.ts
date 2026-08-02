@@ -128,6 +128,9 @@ function applyContentItem(item: RuntimeLandingContentItem) {
 
   const type = String(override?.type || item.type || "text").toLowerCase();
   document.querySelectorAll<HTMLElement>(selector).forEach((element) => {
+    // Older content records target navbar entries by nth-child. Keep newly
+    // added routes stable so a former CTA selector cannot rename the Quiz link.
+    if (element.matches("[data-nav-fixed]")) return;
     if (type === "html") {
       const html = element.matches("#about .mentor-feature-card span")
         ? value
