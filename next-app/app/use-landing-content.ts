@@ -110,12 +110,29 @@ function sanitizeHtml(value: unknown) {
   return window.ClowSanitizeHtml?.(value) || "";
 }
 
+function createClowGlint(size: "xs" | "sm" = "sm", muted = false) {
+  const icon = document.createElement("span");
+  icon.className = `clow-glint clow-glint--${size}${muted ? " clow-glint--muted" : ""}`;
+  icon.setAttribute("aria-hidden", "true");
+  return icon;
+}
+
+function applyGlintWrappedText(element: HTMLElement, value: string) {
+  const textValue = landingPlainText(value).trim();
+  element.replaceChildren(
+    createClowGlint("sm"),
+    document.createTextNode(` ${textValue} `),
+    createClowGlint("sm"),
+  );
+}
+
 function applyContentItem(item: RuntimeLandingContentItem) {
   if (item.enabled === false) return;
   const key = String(item.key || "").trim();
   const override = CONTENT_OVERRIDES[key];
   const selector = String(override?.selector || item.selector || "").trim();
   let value = item.value == null ? "" : String(item.value);
+  value = value.replace(/\u2726/g, "");
   const trimmed = value.trim();
   if (key === "hero.stat_3_number" && trimmed === "1") value = "100%";
   if (
@@ -158,6 +175,10 @@ function applyContentItem(item: RuntimeLandingContentItem) {
       if (type === "src" && element.tagName === "IMG" && previous?.tagName === "SOURCE") {
         previous.setAttribute("srcset", value);
       }
+      return;
+    }
+    if (element.dataset.clowGlintWrap === "true") {
+      applyGlintWrappedText(element, value);
       return;
     }
     element.textContent = landingPlainText(value);
@@ -205,11 +226,11 @@ function applySectionsLayout(layout: LandingSection[]) {
     title.textContent = section.title || "";
     const divider = document.createElement("div");
     divider.className = "section-divider";
-    ["✦", "✦", "✦"].forEach((symbol) => {
-      const span = document.createElement("span");
-      span.textContent = symbol;
-      divider.appendChild(span);
-    });
+    divider.append(
+      createClowGlint("xs", true),
+      createClowGlint("sm"),
+      createClowGlint("xs", true),
+    );
     header.append(title, divider);
     const content = document.createElement("div");
     content.className = "generic-content reveal";

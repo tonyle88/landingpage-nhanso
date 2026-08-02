@@ -1,5 +1,6 @@
 import type { PublicPackage } from "@/lib/packages";
 import { landingPlainText } from "@/lib/landing-text";
+import { ClowGlint, ClowGlintDivider } from "@/components/ui/clow-glint";
 
 export function LandingPreamble() {
   return (
@@ -140,7 +141,9 @@ export function HeroSection() {
       </div>
 
       <div className="hero-content">
-        <div className="hero-badge reveal">✦ Hơn 800 ca tư vấn thực tế ✦</div>
+        <div className="hero-badge reveal" data-clow-glint-wrap="true">
+          <ClowGlint size="sm" /> Hơn 800 ca tư vấn thực tế <ClowGlint size="sm" />
+        </div>
         <h1 className="hero-title reveal">
           <span className="title-line title-gradient-anim">NHÂN SỐ HỌC</span>
           <span className="title-line accent">KHAI PHÁ</span>
@@ -155,7 +158,7 @@ export function HeroSection() {
             <span className="stat-number">3+</span>
             <span className="stat-label">Năm kinh nghiệm</span>
           </div>
-          <div className="stat-divider">✦</div>
+          <div className="stat-divider"><ClowGlint size="sm" /></div>
           <div
             className="stat-item stat-anim"
             style={{ animationDelay: "0.2s" }}
@@ -163,7 +166,7 @@ export function HeroSection() {
             <span className="stat-number glow-text">800+</span>
             <span className="stat-label">Ca tư vấn</span>
           </div>
-          <div className="stat-divider">✦</div>
+          <div className="stat-divider"><ClowGlint size="sm" /></div>
           <div
             className="stat-item stat-anim"
             style={{ animationDelay: "0.4s" }}
@@ -219,7 +222,7 @@ export function PainPointsSection() {
           <span className="section-tag">Bạn Đang Gặp Phải?</span>
           <h2 className="section-title">Những Câu Hỏi Chưa Có Lời Giải</h2>
           <div className="section-divider">
-            <span>✦</span><span>✦</span><span>✦</span>
+            <ClowGlintDivider />
           </div>
         </div>
         <div className="pain-grid">
@@ -367,7 +370,7 @@ export function AboutSection() {
           <span className="section-tag">Về Chúng Tôi</span>
           <h2 className="section-title">Những Người Đồng Hành</h2>
           <div className="section-divider">
-            <span>✦</span><span>✦</span><span>✦</span>
+            <ClowGlintDivider />
           </div>
         </div>
 
@@ -500,7 +503,7 @@ export function BenefitsSection() {
           <span className="section-tag">Những Gì Bạn Nhận Được</span>
           <h2 className="section-title">Sau Buổi Tư Vấn, Bạn Sẽ</h2>
           <div className="section-divider">
-            <span>✦</span><span>✦</span><span>✦</span>
+            <ClowGlintDivider />
           </div>
         </div>
         <div className="benefits-grid">
@@ -543,7 +546,7 @@ export function TestimonialsSection() {
             <span className="testimonial-title-accent">Chữa Lành</span>
           </h2>
           <div className="section-divider">
-            <span>✦</span><span>✦</span><span>✦</span>
+            <ClowGlintDivider />
           </div>
         </div>
       </div>
@@ -621,7 +624,7 @@ function LandingPackageCard({ item, index }: { item: PublicPackage; index: numbe
       <ul className="package-features">
         {item.features.map((feature, featureIndex) => (
           <li key={`${item.code}-${featureIndex}`}>
-            <span className={`feature-check${item.featured ? " featured-check" : ""}`}>✦</span>{" "}
+            <ClowGlint className={`feature-check${item.featured ? " featured-check" : ""}`} size="sm" />{" "}
             <span>{landingPlainText(feature)}</span>
           </li>
         ))}
@@ -651,7 +654,7 @@ export function PackagesSection({ packages = [] }: { packages?: PublicPackage[] 
             <span>Phù Hợp</span>
           </h2>
           <div className="section-divider">
-            <span>✦</span><span>✦</span><span>✦</span>
+            <ClowGlintDivider />
           </div>
         </div>
 
@@ -715,7 +718,7 @@ export function PackageComparisonSection() {
           <span className="section-tag">Chọn Gói Dễ Hơn</span>
           <h2 className="section-title">So Sánh Nhanh Các Gói Tư Vấn</h2>
           <div className="section-divider">
-            <span>✦</span><span>✦</span><span>✦</span>
+            <ClowGlintDivider />
           </div>
         </div>
         <div className="compare-table-wrap reveal">
@@ -920,7 +923,7 @@ export function ProcessSection() {
           <span className="section-tag">Hành Trình</span>
           <h2 className="section-title">Chỉ 3 Bước Đơn Giản</h2>
           <div className="section-divider">
-            <span>✦</span><span>✦</span><span>✦</span>
+            <ClowGlintDivider />
           </div>
         </div>
         <div className="process-steps">
@@ -996,7 +999,7 @@ export function FaqSection() {
           <span className="section-tag">Giải Đáp Trước Khi Đặt Lịch</span>
           <h2 className="section-title">Những Câu Hỏi Thường Gặp</h2>
           <div className="section-divider">
-            <span>✦</span><span>✦</span><span>✦</span>
+            <ClowGlintDivider />
           </div>
         </div>
         <div className="faq-list reveal">
@@ -1026,7 +1029,7 @@ export function ContactSection() {
             Khám Phá Bản Thân
           </h2>
           <div className="section-divider">
-            <span>✦</span><span>✦</span><span>✦</span>
+            <ClowGlintDivider />
           </div>
         </div>
         <div className="contact-grid">
@@ -1288,7 +1291,7 @@ export function LandingFooter() {
         <div className="footer-bottom">
           <p>© 2026 ClowCat Patronus. Tất cả quyền được bảo lưu.</p>
           <p className="footer-made-with">
-            ✦ Được tạo ra với tình yêu và năng lượng tích cực ✦
+            <ClowGlint size="xs" /> Được tạo ra với tình yêu và năng lượng tích cực <ClowGlint size="xs" />
           </p>
         </div>
       </div>

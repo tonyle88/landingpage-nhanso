@@ -6,6 +6,7 @@ import styles from "./blog.module.css";
 import { serializeJsonForHtml } from "@/lib/blog";
 import { getPublicBlogCategories } from "@/lib/supabase/public-blog-categories";
 import { getPublicBlogPosts } from "@/lib/supabase/public-blog-posts";
+import { ClowGlint } from "@/components/ui/clow-glint";
 
 const navItems = [
   { href: "/#about", label: "Về Chúng Tôi" },
@@ -333,7 +334,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
           <div className="footer-bottom">
             <p>© 2026 ClowCat Patronus. Tất cả quyền được bảo lưu.</p>
             <p className="footer-made-with">
-              ✦ Được tạo ra với tình yêu và năng lượng tích cực ✦
+              <ClowGlint size="xs" /> Được tạo ra với tình yêu và năng lượng tích cực <ClowGlint size="xs" />
             </p>
           </div>
         </div>

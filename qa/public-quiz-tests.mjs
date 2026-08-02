@@ -64,3 +64,36 @@ test("keeps the result CTA connected to the recommended admin package", () => {
   assert.match(packagesRuntime, /searchParams\.get\("package"\)/);
   assert.doesNotMatch(client, /const packages\s*=\s*\[/);
 });
+
+test("animates question changes and gives every question its own energy color", () => {
+  const client = read("next-app/app/quiz/quiz-experience.tsx");
+  const css = read("next-app/app/quiz/quiz.module.css");
+  assert.match(client, /const questionThemes = \[/);
+  assert.match(client, /--question-accent/);
+  assert.match(client, /transition\("forward"/);
+  assert.match(client, /transition\("back"/);
+  assert.match(css, /@keyframes questionOrbitIn/);
+  assert.match(css, /@keyframes questionOrbitOut/);
+  assert.match(css, /@keyframes answerOrbit/);
+  assert.match(css, /prefers-reduced-motion/);
+});
+
+test("allows content managers to add and edit 10–15 Quiz questions", () => {
+  const dashboard = read("next-app/app/admin/page.tsx");
+  const page = read("next-app/app/admin/quiz/page.tsx");
+  const editor = read("next-app/app/admin/quiz/quiz-editor.tsx");
+  const action = read("next-app/app/admin/quiz/actions.ts");
+  const publicPage = read("next-app/app/quiz/page.tsx");
+  const schema = read("next-app/lib/quiz-question-schema.ts");
+
+  assert.match(dashboard, /href: "\/admin\/quiz"/);
+  assert.match(page, /can\(principal\.role, "manage_content"\)/);
+  assert.match(editor, /Thêm câu hỏi/);
+  assert.match(editor, /Thêm đáp án/);
+  assert.match(editor, /Màu năng lượng/);
+  assert.match(editor, /Gợi ý nhóm dịch vụ/);
+  assert.match(action, /admin_save_site_setting/);
+  assert.match(publicPage, /getPublicQuizQuestions\(\)/);
+  assert.match(schema, /QUIZ_MIN_QUESTIONS = 10/);
+  assert.match(schema, /QUIZ_MAX_QUESTIONS = 15/);
+});

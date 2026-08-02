@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 
 const contentNavigation = [
   { href: "/admin/sections", icon: "sections" as const, title: "Nội dung trang chủ", description: "Chỉnh sửa section, tiêu đề, nút bấm và SEO." },
+  { href: "/admin/quiz", icon: "numerology" as const, title: "Quản lý Quiz", description: "Thêm, sửa câu hỏi, đáp án, màu sắc và nhóm dịch vụ gợi ý." },
   { href: "/admin/packages", icon: "packages" as const, title: "Gói dịch vụ", description: "Quản lý nội dung, mức giá và trạng thái hiển thị." },
   { href: "/admin/testimonials", icon: "testimonials" as const, title: "Testimonials", description: "Cập nhật hình ảnh và phản hồi của khách hàng." },
   { href: "/admin/blog", icon: "blog" as const, title: "Bài viết & danh mục", description: "Soạn bài, phân loại và kiểm soát xuất bản." },

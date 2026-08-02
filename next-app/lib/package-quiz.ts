@@ -14,6 +14,7 @@ export type QuizQuestion = {
   eyebrow: string;
   question: string;
   hint: string;
+  color?: string;
   options: QuizOption[];
 };
 
@@ -35,8 +36,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "priority",
     eyebrow: "Nhu cầu hiện tại",
-    question: "Điều bạn muốn được tháo gỡ nhất lúc này là gì?",
-    hint: "Chọn điều gần nhất với tình trạng thật của bạn, không cần suy nghĩ quá lâu.",
+    question: "Trong 3 tháng gần đây, tình huống nào khiến bạn suy nghĩ nhiều nhất?",
+    hint: "Hãy chọn đúng tình huống đang lặp lại hoặc chiếm nhiều năng lượng của bạn nhất, thay vì chọn điều nghe có vẻ lý tưởng.",
     options: [
       {
         id: "next-year",
@@ -67,8 +68,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "depth",
     eyebrow: "Mức độ phân tích",
-    question: "Bạn muốn buổi tư vấn đi sâu đến đâu?",
-    hint: "Mức độ càng sâu, lượng thông tin và phạm vi phân tích càng rộng.",
+    question: "Nếu nhận một bản phân tích, bạn muốn nó trả lời cụ thể tới mức nào?",
+    hint: "Hãy cân nhắc lượng thông tin bạn thật sự có thời gian đọc, ghi chú và ứng dụng sau buổi tư vấn.",
     options: [
       {
         id: "focused",
@@ -99,8 +100,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "outcome",
     eyebrow: "Kết quả mong muốn",
-    question: "Sau buổi xem, điều gì sẽ khiến bạn cảm thấy đáng giá nhất?",
-    hint: "Hãy chọn đầu ra bạn thực sự muốn mang về và sử dụng sau buổi tư vấn.",
+    question: "Sau buổi tư vấn, kết quả cụ thể nào sẽ khiến bạn thấy thời gian và chi phí là xứng đáng?",
+    hint: "Chọn thứ bạn muốn mang về để sử dụng ngay: quyết định rõ ràng, hiểu bản thân, một bản đồ dài hạn hay góc nhìn chữa lành.",
     options: [
       {
         id: "action-plan",
@@ -131,8 +132,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "scope",
     eyebrow: "Phạm vi cần hỗ trợ",
-    question: "Chủ đề bạn đang quan tâm thuộc nhóm nào?",
-    hint: "Nếu có nhiều vấn đề cùng lúc, hãy chọn phương án cuối.",
+    question: "Tình huống thực tế nào gần nhất với điều bạn đang cần hỗ trợ?",
+    hint: "Hãy nghĩ đến một việc đang diễn ra thật: đổi việc, chọn hướng học, mối quan hệ, cảm xúc hoặc một mô thức lặp lại lâu năm.",
     options: [
       {
         id: "timing",
@@ -163,8 +164,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "readiness",
     eyebrow: "Cách bạn muốn bắt đầu",
-    question: "Hình thức nào phù hợp với bạn nhất ở thời điểm này?",
-    hint: "Không có lựa chọn tốt hơn tuyệt đối — chỉ có lựa chọn phù hợp hơn với hiện tại.",
+    question: "Ở thời điểm hiện tại, bạn sẵn sàng dành bao nhiêu năng lượng cho việc hiểu và thay đổi bản thân?",
+    hint: "Đừng chọn theo mức giá trước; hãy chọn theo mức độ bạn sẵn sàng tiếp nhận thông tin và thực hành sau buổi xem.",
     options: [
       {
         id: "small-step",
@@ -195,8 +196,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "timing",
     eyebrow: "Thời điểm cần hỗ trợ",
-    question: "Bạn muốn câu trả lời tập trung vào khoảng thời gian nào?",
-    hint: "Khoảng thời gian mong muốn giúp xác định gói theo năm hay bản đồ có giá trị dài hạn.",
+    question: "Quyết định hoặc vấn đề của bạn cần được soi chiếu trong khoảng thời gian nào?",
+    hint: "Một quyết định trong 6–12 tháng cần cách đọc khác với nhu cầu hiểu toàn bộ các chu kỳ và cột mốc cuộc đời.",
     options: [
       {
         id: "this-year",
@@ -227,8 +228,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "familiarity",
     eyebrow: "Mức độ quen thuộc",
-    question: "Bạn đã từng tìm hiểu nhân số học đến đâu?",
-    hint: "Câu này giúp gợi ý lượng thông tin vừa đủ, tránh quá ít hoặc quá tải.",
+    question: "Khi nghe các khái niệm như đường đời, linh hồn, sứ mệnh hay đỉnh cao, bạn đang ở mức nào?",
+    hint: "Trả lời đúng mức độ quen thuộc giúp hệ thống tránh gợi ý một gói quá cơ bản hoặc quá nhiều thông tin.",
     options: [
       {
         id: "newcomer",
@@ -259,8 +260,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "guidance-style",
     eyebrow: "Phong cách tư vấn",
-    question: "Bạn muốn được dẫn dắt theo cách nào nhất?",
-    hint: "Hãy chọn cách tiếp nhận khiến bạn cảm thấy dễ hiểu và có động lực hành động.",
+    question: "Trong một buổi tư vấn, cách dẫn dắt nào giúp bạn dễ hiểu và tin tưởng nhất?",
+    hint: "Hãy chọn kiểu trao đổi từng khiến bạn có động lực hành động: trực tiếp, giải thích logic, có lộ trình hay đối thoại soi chiếu.",
     options: [
       {
         id: "direct-actions",
@@ -291,8 +292,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "takeaway",
     eyebrow: "Tài liệu sau buổi xem",
-    question: "Bạn cần lưu lại nội dung ở mức nào?",
-    hint: "Một số gói tập trung vào buổi tư vấn; gói chuyên sâu phù hợp hơn khi cần bản đồ để xem lại.",
+    question: "Một tháng sau buổi tư vấn, bạn muốn còn lại tài liệu gì để xem lại?",
+    hint: "Nếu bạn thường quên chi tiết hoặc muốn dùng kết quả ở nhiều cột mốc, hãy ưu tiên phương án có bản đồ và báo cáo đầy đủ.",
     options: [
       {
         id: "remember-actions",
@@ -323,8 +324,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "clarity",
     eyebrow: "Độ rõ của vấn đề",
-    question: "Hiện tại bạn đã gọi tên được câu hỏi của mình chưa?",
-    hint: "Câu hỏi càng rõ thì gói tập trung càng phù hợp; vấn đề mơ hồ thường cần phạm vi rộng hơn.",
+    question: "Nếu phải viết nhu cầu của mình thành một câu ngay bây giờ, bạn rõ đến mức nào?",
+    hint: "Ví dụ: “Tôi có nên đổi việc trong năm nay?” là câu hỏi rõ; “Tôi thấy mắc kẹt nhưng không hiểu vì sao” cần phạm vi soi chiếu rộng hơn.",
     options: [
       {
         id: "clear-decision",
@@ -355,8 +356,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "life-areas",
     eyebrow: "Số lĩnh vực liên quan",
-    question: "Có bao nhiêu khía cạnh cuộc sống đang liên quan đến nhu cầu này?",
-    hint: "Hãy tính cả những phần có ảnh hưởng qua lại, chẳng hạn công việc kéo theo cảm xúc hoặc mối quan hệ.",
+    question: "Vấn đề hiện tại đang ảnh hưởng tới bao nhiêu mặt trong đời sống của bạn?",
+    hint: "Hãy tính cả tác động dây chuyền: công việc ảnh hưởng tài chính, tài chính ảnh hưởng cảm xúc, cảm xúc ảnh hưởng các mối quan hệ.",
     options: [
       {
         id: "one-upcoming-area",
@@ -387,8 +388,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "after-session",
     eyebrow: "Cách ứng dụng kết quả",
-    question: "Bạn dự định dùng kết quả sau buổi tư vấn như thế nào?",
-    hint: "Cách sử dụng kết quả cũng quyết định lượng thông tin phù hợp với bạn.",
+    question: "Trong 30 ngày sau buổi tư vấn, bạn thực sự sẽ dùng kết quả theo cách nào?",
+    hint: "Chọn hành động thực tế nhất bạn có thể làm: lên kế hoạch năm, quan sát thói quen, xem lại bản đồ hay tiếp tục hành trình chữa lành.",
     options: [
       {
         id: "act-this-year",
@@ -453,10 +454,11 @@ function dominantProfile(value: Record<QuizProfile, number>): QuizProfile {
 export function recommendPackages(
   packages: PublicPackage[],
   answers: Record<string, string>,
+  questions: QuizQuestion[] = QUIZ_QUESTIONS,
 ): PackageRecommendation[] {
   const preference = weights();
 
-  QUIZ_QUESTIONS.forEach((question) => {
+  questions.forEach((question) => {
     const answer = question.options.find((option) => option.id === answers[question.id]);
     if (!answer) return;
     (Object.keys(preference) as QuizProfile[]).forEach((profile) => {

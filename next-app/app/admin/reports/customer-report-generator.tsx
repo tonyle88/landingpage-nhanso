@@ -10,6 +10,7 @@ import {
 } from "@/lib/client-docx-report";
 import adminStyles from "../admin.module.css";
 import styles from "./customer-report.module.css";
+import { ClowGlint } from "@/components/ui/clow-glint";
 
 type SectionPage = {
   section: CustomerReportSection;
@@ -93,7 +94,7 @@ function ReportBlock({ block }: { block: CustomerReportBlock }) {
   if (block.kind === "list") {
     return (
       <div className={styles.reportListItem}>
-        <span aria-hidden="true">✦</span>
+        <ClowGlint size="xs" />
         <p><TextWithLead text={block.text} /></p>
       </div>
     );

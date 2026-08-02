@@ -1,3 +1,5 @@
+import { ClowGlint } from "@/components/ui/clow-glint";
+
 function ArrowIcon() {
   return (
     <svg
@@ -253,7 +255,7 @@ export default function BookingFlow() {
               <i className="fa-solid fa-check" aria-hidden="true" />
             </div>
             <div className="success-stars">
-              <span>✦</span><span>★</span><span>✦</span>
+              <ClowGlint size="sm" /><span>★</span><ClowGlint size="sm" />
             </div>
           </div>
           <h2 id="modal-suc-title">Đặt Lịch Thành Công! 🎉</h2>
