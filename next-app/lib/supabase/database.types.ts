@@ -506,6 +506,7 @@ export type Database = {
           image_byte_size: number
           normalized_name: string
           pdf_byte_size: number
+          report_number: number
           result_data: Json
           updated_at: string
         }
@@ -520,6 +521,7 @@ export type Database = {
           image_byte_size: number
           normalized_name: string
           pdf_byte_size: number
+          report_number?: number
           result_data?: Json
           updated_at?: string
         }
@@ -534,6 +536,7 @@ export type Database = {
           image_byte_size?: number
           normalized_name?: string
           pdf_byte_size?: number
+          report_number?: number
           result_data?: Json
           updated_at?: string
         }
@@ -797,6 +800,10 @@ export type Database = {
       admin_set_sepay_auto_confirmation: {
         Args: { p_enabled: boolean }
         Returns: boolean
+      }
+      reserve_numerology_report_number: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       admin_transition_booking: {
         Args: {

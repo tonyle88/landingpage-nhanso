@@ -195,6 +195,7 @@ function drawCanvasArrow(
 async function renderCustomerSummaryAsJpeg(
   result: NumerologyResult,
   generatedAt: string,
+  reportNumber: number,
 ) {
   await ensureCustomerJpgFonts();
   await document.fonts.ready;
@@ -227,7 +228,7 @@ async function renderCustomerSummaryAsJpeg(
     color: "#ffffff",
     font: "700 20px NumerologyExportSerif, Georgia, serif",
   });
-  drawCanvasText(context, "HỒ SƠ NHÂN SỐ HỌC TÓM TẮT", 28, 44, {
+  drawCanvasText(context, `HỒ SƠ NHÂN SỐ HỌC SỐ ${reportNumber} · TÓM TẮT`, 28, 44, {
     color: "#b8c6c7",
     font: "700 8px NumerologyExportSans, Arial, sans-serif",
   });
@@ -244,7 +245,7 @@ async function renderCustomerSummaryAsJpeg(
 
   context.fillStyle = "rgba(255, 255, 255, 0.04)";
   context.fillRect(0, 58, logicalWidth, 96);
-  drawCanvasText(context, "HỒ SƠ KHÁCH HÀNG", logicalWidth / 2, 78, {
+  drawCanvasText(context, `HỒ SƠ NHÂN SỐ HỌC SỐ ${reportNumber}`, logicalWidth / 2, 78, {
     align: "center",
     color: "#f2b27e",
     font: "800 8px NumerologyExportSans, Arial, sans-serif",
@@ -764,6 +765,7 @@ async function renderCustomerSummaryAsJpeg(
 async function renderCustomerDetailAsJpeg(
   result: NumerologyResult,
   generatedAt: string,
+  reportNumber: number,
 ) {
   await ensureCustomerJpgFonts();
   await document.fonts.ready;
@@ -790,7 +792,7 @@ async function renderCustomerDetailAsJpeg(
     color: "#fff",
     font: "700 20px NumerologyExportSerif, Georgia, serif",
   });
-  drawCanvasText(context, "BẢN ĐỒ NHÂN SỐ HỌC ĐẦY ĐỦ · TRANG 2", 28, 44, {
+  drawCanvasText(context, `BẢN ĐỒ NHÂN SỐ HỌC SỐ ${reportNumber} · TRANG 2`, 28, 44, {
     color: "#b8c6c7",
     font: "700 8px NumerologyExportSans, Arial, sans-serif",
   });
@@ -1026,9 +1028,10 @@ async function createPdfFromJpegPages(pages: Blob[]) {
 async function createOptimizedArchiveFiles(
   result: NumerologyResult,
   generatedAt: string,
+  reportNumber: number,
 ) {
-  const summary = await renderCustomerSummaryAsJpeg(result, generatedAt);
-  const detail = await renderCustomerDetailAsJpeg(result, generatedAt);
+  const summary = await renderCustomerSummaryAsJpeg(result, generatedAt, reportNumber);
+  const detail = await renderCustomerDetailAsJpeg(result, generatedAt, reportNumber);
   const pdf = await createPdfFromJpegPages([summary, detail]);
   return { image: summary, pdf };
 }
@@ -1151,10 +1154,13 @@ export function NumerologyCalculator({
   const [fullName, setFullName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [result, setResult] = useState<NumerologyResult | null>(null);
+  const [manualReportNumber, setManualReportNumber] = useState("");
+  const [reportNumber, setReportNumber] = useState<number | null>(null);
   const [generatedAt, setGeneratedAt] = useState("");
   const [message, setMessage] = useState("");
   const [isExportingJpg, setIsExportingJpg] = useState(false);
   const [isSavingArchive, setIsSavingArchive] = useState(false);
+  const [isResolvingReportNumber, setIsResolvingReportNumber] = useState(false);
   const [records, setRecords] = useState(initialRecords);
   const [historyTotal, setHistoryTotal] = useState(initialTotal);
   const [historyPage, setHistoryPage] = useState(1);
@@ -1190,14 +1196,20 @@ export function NumerologyCalculator({
   async function saveArchive(
     nextResult: NumerologyResult,
     generatedAtLabel: string,
+    nextReportNumber: number,
   ) {
     if (!canSave || !historyAvailable) return;
     setIsSavingArchive(true);
     setHistoryMessage("Đang tối ưu và lưu PDF đầy đủ cùng ảnh A4…");
     try {
-      const files = await createOptimizedArchiveFiles(nextResult, generatedAtLabel);
+      const files = await createOptimizedArchiveFiles(
+        nextResult,
+        generatedAtLabel,
+        nextReportNumber,
+      );
       const form = new FormData();
       form.set("customerName", nextResult.fullName);
+      form.set("reportNumber", String(nextReportNumber));
       form.set("normalizedName", nextResult.normalizedName);
       form.set("birthDate", nextResult.isoDate);
       form.set("resultData", JSON.stringify(nextResult));
@@ -1218,20 +1230,43 @@ export function NumerologyCalculator({
     }
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function resolveReportNumber(nextResult: NumerologyResult) {
+    const response = await fetch("/api/admin/numerology-records/report-number", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        normalizedName: nextResult.normalizedName,
+        birthDate: nextResult.isoDate,
+        requestedNumber: manualReportNumber.trim() || null,
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Không thể cấp số hồ sơ.");
+    const resolved = Number(payload.reportNumber);
+    if (!Number.isSafeInteger(resolved) || resolved < 1) {
+      throw new Error("Số hồ sơ được cấp không hợp lệ.");
+    }
+    return resolved;
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isResolvingReportNumber) return;
+    setIsResolvingReportNumber(true);
     try {
       const nextResult = calculateNumerology(fullName, birthDate);
+      const nextReportNumber = await resolveReportNumber(nextResult);
       const generatedAtLabel = new Intl.DateTimeFormat("vi-VN", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
       }).format(new Date());
       setResult(nextResult);
+      setReportNumber(nextReportNumber);
       setFullName(nextResult.fullName);
       setGeneratedAt(generatedAtLabel);
       setMessage("");
-      void saveArchive(nextResult, generatedAtLabel);
+      void saveArchive(nextResult, generatedAtLabel, nextReportNumber);
       window.requestAnimationFrame(() => {
         document.getElementById("numerology-report")?.scrollIntoView({
           behavior: "smooth",
@@ -1240,6 +1275,8 @@ export function NumerologyCalculator({
       });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Không thể tính chỉ số.");
+    } finally {
+      setIsResolvingReportNumber(false);
     }
   }
 
@@ -1254,6 +1291,8 @@ export function NumerologyCalculator({
       setFullName(nextResult.fullName);
       setBirthDate(nextResult.isoDate);
       setResult(nextResult);
+      setReportNumber(record.reportNumber);
+      setManualReportNumber("");
       setGeneratedAt(generatedAtLabel);
       setMessage("");
       window.requestAnimationFrame(() => {
@@ -1271,20 +1310,22 @@ export function NumerologyCalculator({
     setFullName("");
     setBirthDate("");
     setResult(null);
+    setManualReportNumber("");
+    setReportNumber(null);
     setGeneratedAt("");
     setMessage("");
   }
 
   function printPdf(mode: "full" | "summary") {
-    if (!result) return;
+    if (!result || !reportNumber) return;
     const previousTitle = document.title;
     const safeName = result.normalizedName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
     document.title = mode === "summary"
-      ? `Tom-tat-nhan-so-${safeName || "khach-hang"}`
-      : `Ban-do-nhan-so-${safeName || "khach-hang"}`;
+      ? `Ho-so-${reportNumber}-tom-tat-${safeName || "khach-hang"}`
+      : `Ho-so-${reportNumber}-day-du-${safeName || "khach-hang"}`;
     document.body.dataset.numerologyPrint = mode;
     const restorePrintState = () => {
       document.title = previousTitle;
@@ -1296,12 +1337,12 @@ export function NumerologyCalculator({
   }
 
   async function exportCustomerJpg() {
-    if (!result || isExportingJpg) return;
+    if (!result || !reportNumber || isExportingJpg) return;
     setIsExportingJpg(true);
     setMessage("");
 
     try {
-      const jpeg = await renderCustomerSummaryAsJpeg(result, generatedAt);
+      const jpeg = await renderCustomerSummaryAsJpeg(result, generatedAt, reportNumber);
       const safeName = result.normalizedName
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
@@ -1309,7 +1350,7 @@ export function NumerologyCalculator({
       const url = URL.createObjectURL(jpeg);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `Tom-tat-nhan-so-${safeName || "khach-hang"}.jpg`;
+      link.download = `Ho-so-${reportNumber}-${safeName || "khach-hang"}.jpg`;
       link.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) {
@@ -1355,7 +1396,9 @@ export function NumerologyCalculator({
                 <button type="button" onClick={() => openRecentRecord(record)}>
                   <span>{record.customerName.charAt(0)}</span>
                   <strong>{record.customerName}</strong>
-                  <small>Ngày sinh {formatArchiveDate(record.birthDate)}</small>
+                  <small>
+                    Hồ sơ số {record.reportNumber} · Ngày sinh {formatArchiveDate(record.birthDate)}
+                  </small>
                 </button>
                 <div>
                   <a
@@ -1434,9 +1477,28 @@ export function NumerologyCalculator({
               value={birthDate}
             />
           </label>
+          <label className={styles.field}>
+            Số hồ sơ (không bắt buộc)
+            <input
+              autoComplete="off"
+              inputMode="numeric"
+              maxLength={9}
+              onChange={(event) => {
+                setManualReportNumber(event.target.value.replace(/\D/g, ""));
+              }}
+              pattern="[1-9][0-9]{0,8}"
+              placeholder="Để trống để cấp tự động"
+              value={manualReportNumber}
+            />
+          </label>
           <div className={styles.numerologyFormActions}>
-            <button className={styles.submit} type="submit">
-              <ClowGlint size="sm" /> Lập bản đồ
+            <button
+              className={styles.submit}
+              disabled={isResolvingReportNumber}
+              type="submit"
+            >
+              <ClowGlint size="sm" />
+              {isResolvingReportNumber ? "Đang cấp số hồ sơ…" : "Lập bản đồ"}
             </button>
             <button className={styles.secondaryLink} onClick={reset} type="button">
               Làm mới
@@ -1453,7 +1515,7 @@ export function NumerologyCalculator({
           <div className={styles.numerologyResultToolbar}>
             <span>
               <strong>Đã lập đủ 9 nhóm chỉ số</strong>
-              <small>Kiểm tra lại thông tin trước khi xuất.</small>
+              <small>Hồ sơ nhân số học số {reportNumber}</small>
             </span>
             <div className={styles.numerologyResultActions}>
               <button
@@ -1505,7 +1567,7 @@ export function NumerologyCalculator({
             </header>
 
             <section className={styles.numerologyClient}>
-              <p>Hồ sơ nhân số học</p>
+              <p>Hồ sơ nhân số học số {reportNumber}</p>
               <h2>{result.fullName}</h2>
               <span>Ngày sinh {result.formattedDate}</span>
             </section>
@@ -1886,7 +1948,7 @@ export function NumerologyCalculator({
           </article>
 
           <article
-            aria-label="Hồ sơ nhân số học tóm tắt một trang A4"
+            aria-label={`Hồ sơ nhân số học số ${reportNumber} tóm tắt một trang A4`}
             className={styles.numerologyCustomerSummary}
           >
             <header className={styles.numerologySummaryHeader}>
@@ -1899,7 +1961,7 @@ export function NumerologyCalculator({
                 />
                 <span>
                   <strong>Clow Cat Patronus</strong>
-                  <small>Hồ sơ nhân số học tóm tắt</small>
+                  <small>Hồ sơ nhân số học số {reportNumber} · Tóm tắt</small>
                 </span>
               </div>
               <span>
@@ -1910,7 +1972,7 @@ export function NumerologyCalculator({
 
             <section className={styles.numerologySummaryIdentity}>
               <div>
-                <small>Hồ sơ khách hàng</small>
+                <small>Hồ sơ nhân số học số {reportNumber}</small>
                 <h2>{result.fullName}</h2>
                 <span>Ngày sinh {result.formattedDate}</span>
               </div>

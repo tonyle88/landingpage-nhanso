@@ -249,7 +249,7 @@ test("is integrated only into the Next.js admin", async () => {
   assert.doesNotMatch(calculator, /foreignObject/);
   assert.doesNotMatch(calculator, /drawImage/);
   assert.match(calculator, /numerologyCustomerSummary/);
-  assert.match(calculator, /Hồ sơ nhân số học tóm tắt/);
+  assert.match(calculator, /Hồ sơ nhân số học số \{reportNumber\}/);
   assert.match(calculator, /9 nhóm chỉ số/);
   assert.match(calculator, /4 đỉnh cao &amp; thử thách/);
   assert.match(calculator, /numerologySummaryPeakCycles/);
@@ -318,4 +318,33 @@ test("archives optimized PDF and A4 JPG files for configurable recent history", 
   assert.match(downloadRoute, /getAdminPrincipal/);
   assert.match(styles, /\.numerologyHistoryList/);
   assert.match(styles, /grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
+});
+
+test("assigns a durable manual or automatic number to every numerology export", async () => {
+  const [calculator, listRoute, numberRoute, recordsConfig, migration] = await Promise.all([
+    readFile(new URL("../next-app/app/admin/numerology/numerology-calculator.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/api/admin/numerology-records/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/api/admin/numerology-records/report-number/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/lib/admin/numerology-records.ts", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/supabase/migrations/202608030001_numerology_report_numbers.sql", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(calculator, /Số hồ sơ \(không bắt buộc\)/);
+  assert.match(calculator, /Để trống để cấp tự động/);
+  assert.match(calculator, /resolveReportNumber/);
+  assert.match(calculator, /report-number/);
+  assert.match(calculator, /HỒ SƠ NHÂN SỐ HỌC SỐ \$\{reportNumber\}/);
+  assert.match(calculator, /Hồ sơ nhân số học số \{reportNumber\}/);
+  assert.match(calculator, /renderCustomerSummaryAsJpeg\(result, generatedAt, reportNumber\)/);
+  assert.match(calculator, /renderCustomerDetailAsJpeg\(result, generatedAt, reportNumber\)/);
+  assert.match(calculator, /form\.set\("reportNumber", String\(nextReportNumber\)\)/);
+  assert.match(listRoute, /report_number: reportNumber/);
+  assert.match(listRoute, /Số hồ sơ \$\{reportNumber\} đã được sử dụng/);
+  assert.match(numberRoute, /requestedNumber/);
+  assert.match(numberRoute, /reserve_numerology_report_number/);
+  assert.match(recordsConfig, /reportNumber: number/);
+  assert.match(migration, /create sequence if not exists public\.numerology_report_number_seq/);
+  assert.match(migration, /add column if not exists report_number bigint/);
+  assert.match(migration, /create unique index if not exists numerology_records_report_number_key/);
+  assert.match(migration, /create or replace function public\.reserve_numerology_report_number/);
 });

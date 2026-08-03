@@ -54,7 +54,7 @@ export async function GET(request: Request) {
   const { data, error, count } = await supabase
     .from("numerology_records")
     .select(
-      "id,customer_name,birth_date,pdf_byte_size,image_byte_size,updated_at",
+      "id,report_number,customer_name,birth_date,pdf_byte_size,image_byte_size,updated_at",
       { count: "exact" },
     )
     .order("updated_at", { ascending: false })
@@ -98,6 +98,7 @@ export async function POST(request: Request) {
   }
 
   const customerName = String(form.get("customerName") || "").trim();
+  const reportNumber = Number.parseInt(String(form.get("reportNumber") || ""), 10);
   const normalizedName = String(form.get("normalizedName") || "").trim();
   const birthDate = String(form.get("birthDate") || "").trim();
   const resultData = String(form.get("resultData") || "");
@@ -106,6 +107,9 @@ export async function POST(request: Request) {
 
   if (customerName.length < 2 || customerName.length > 160) {
     return jsonError("Họ tên khách hàng không hợp lệ.", 400);
+  }
+  if (!Number.isSafeInteger(reportNumber) || reportNumber < 1 || reportNumber > 999_999_999) {
+    return jsonError("Số hồ sơ không hợp lệ.", 400);
   }
   if (normalizedName.length < 2 || normalizedName.length > 180) {
     return jsonError("Tên chuẩn hóa không hợp lệ.", 400);
@@ -157,10 +161,23 @@ export async function POST(request: Request) {
 
   const { data: existing } = await service
     .from("numerology_records")
-    .select("id,full_pdf_path,a4_image_path")
+    .select("id,report_number,full_pdf_path,a4_image_path")
     .eq("normalized_name", normalizedName)
     .eq("birth_date", birthDate)
     .maybeSingle();
+  const { data: reportNumberConflict, error: reportNumberConflictError } = await service
+    .from("numerology_records")
+    .select("id")
+    .eq("report_number", reportNumber)
+    .neq("id", existing?.id || "00000000-0000-0000-0000-000000000000")
+    .maybeSingle();
+  if (reportNumberConflictError) {
+    console.error("numerology report number conflict check failed", reportNumberConflictError.code);
+    return jsonError("Không thể kiểm tra số hồ sơ lúc này.", 503);
+  }
+  if (reportNumberConflict) {
+    return jsonError(`Số hồ sơ ${reportNumber} đã được sử dụng.`, 409);
+  }
   const id = existing?.id || randomUUID();
   const pdfPath = `records/${id}/full.pdf`;
   const imagePath = `records/${id}/a4.jpg`;
@@ -198,6 +215,7 @@ export async function POST(request: Request) {
     .from("numerology_records")
     .upsert({
       id,
+      report_number: reportNumber,
       customer_name: customerName,
       normalized_name: normalizedName,
       birth_date: birthDate,
@@ -209,7 +227,7 @@ export async function POST(request: Request) {
       created_by: principal.userId,
       updated_at: now,
     }, { onConflict: "normalized_name,birth_date" })
-    .select("id,customer_name,birth_date,pdf_byte_size,image_byte_size,updated_at")
+    .select("id,report_number,customer_name,birth_date,pdf_byte_size,image_byte_size,updated_at")
     .single();
 
   if (saveError || !saved) {
@@ -217,6 +235,9 @@ export async function POST(request: Request) {
       await service.storage.from(NUMEROLOGY_EXPORT_BUCKET).remove(uploadedPaths);
     }
     console.error("numerology metadata save failed", saveError?.code);
+    if (saveError?.code === "23505") {
+      return jsonError(`Số hồ sơ ${reportNumber} đã được sử dụng.`, 409);
+    }
     return jsonError("Không thể lưu hồ sơ khách hàng.", 503);
   }
 
