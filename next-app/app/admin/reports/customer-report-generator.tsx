@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ChangeEvent, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import {
   parseCustomerReportDocx,
   type CustomerReportBlock,
@@ -136,12 +136,17 @@ export function CustomerReportGenerator() {
   const [customerName, setCustomerName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [expertName, setExpertName] = useState("Lê Chí Cường");
-  const [serviceName, setServiceName] = useState("Định Hướng bằng Nhân Số Học");
-  const [packageName, setPackageName] = useState(
-    "Phân Tích Toàn Diện (Gói Toàn Diện Nhất)",
-  );
+  const [generatedAt, setGeneratedAt] = useState("");
   const [message, setMessage] = useState("");
   const [isReading, setIsReading] = useState(false);
+
+  useEffect(() => {
+    setGeneratedAt(new Intl.DateTimeFormat("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(new Date()));
+  }, []);
 
   const sectionPages = useMemo(() => (
     parsed?.sections.flatMap(paginateSection) || []
@@ -209,8 +214,6 @@ export function CustomerReportGenerator() {
     setCustomerName("");
     setBirthDate("");
     setExpertName("Lê Chí Cường");
-    setServiceName("Định Hướng bằng Nhân Số Học");
-    setPackageName("Phân Tích Toàn Diện (Gói Toàn Diện Nhất)");
     setMessage("");
   }
 
@@ -254,14 +257,6 @@ export function CustomerReportGenerator() {
             Chuyên gia đồng hành
             <input onChange={(event) => setExpertName(event.target.value)} value={expertName} />
           </label>
-          <label className={adminStyles.field}>
-            Dịch vụ
-            <input onChange={(event) => setServiceName(event.target.value)} value={serviceName} />
-          </label>
-          <label className={adminStyles.field}>
-            Gói dịch vụ tư vấn
-            <input onChange={(event) => setPackageName(event.target.value)} value={packageName} />
-          </label>
         </div>
 
         {message ? <p className={styles.reportMessage} role="status">{message}</p> : null}
@@ -284,6 +279,10 @@ export function CustomerReportGenerator() {
 
           <div className={styles.reportDocument} id="customer-report">
             <article className={`${styles.reportPage} ${styles.reportCover}`} data-report-page>
+              <div className={styles.reportCoverBrand}>
+                <Image alt="Clow Cat Patronus" height={82} src="/assets/images/logo2.png" width={82} />
+                <span><strong>Clow Cat Patronus</strong></span>
+              </div>
               <div className={styles.reportCoverTitle}>
                 <span>Hồ sơ</span>
                 <strong>Nhân số học</strong>
@@ -296,19 +295,18 @@ export function CustomerReportGenerator() {
                   <small>{birthDate || "Chưa nhận diện"}</small>
                 </h2>
                 <span>
-                  Tấm bản đồ giúp bạn hiểu rõ bản thân · tính cách · điểm mạnh
-                  và hành trình phát triển của chính mình.
+                  Bản phân tích chuyên sâu giúp nhận diện tính cách, nội tâm,
+                  bài học và lộ trình chuyển hóa cá nhân.
                 </span>
               </div>
               <div className={styles.reportCoverStats}>
-                <div><strong>7</strong><span>Chỉ số cốt lõi</span></div>
-                <div><strong>3</strong><span>Chu kỳ cuộc đời lớn</span></div>
-                <div><strong>4</strong><span>Đỉnh cao cuộc đời</span></div>
+                <div><strong>9</strong><span>Chỉ số cốt lõi</span></div>
+                <div><strong>{parsed.sections.length}</strong><span>Chương phân tích</span></div>
+                <div><strong>{totalPages}</strong><span>Trang hồ sơ</span></div>
               </div>
               <div className={styles.reportCoverMeta}>
                 <span><small>Chuyên gia đồng hành</small><strong>{expertName || "Clow Cat Patronus"}</strong></span>
-                <span><small>Dịch vụ</small><strong>{serviceName || "Định Hướng bằng Nhân Số Học"}</strong></span>
-                <span><small>Gói dịch vụ tư vấn</small><strong>{packageName || "Phân Tích Toàn Diện"}</strong></span>
+                <span><small>Ngày lập report</small><strong>{generatedAt}</strong></span>
               </div>
               <footer>© 2026 Clow Cat Patronus · Được tạo ra với tình yêu và năng lượng tích cực</footer>
             </article>
