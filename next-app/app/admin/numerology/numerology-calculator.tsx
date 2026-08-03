@@ -1126,6 +1126,7 @@ function PyramidTree({
 }
 
 type NumerologyCalculatorProps = {
+  canConfigureHistory: boolean;
   canSave: boolean;
   historyAvailable: boolean;
   historyLimit: number;
@@ -1145,6 +1146,7 @@ function formatArchiveDate(value: string) {
 }
 
 export function NumerologyCalculator({
+  canConfigureHistory,
   canSave,
   historyAvailable,
   historyLimit,
@@ -1162,6 +1164,9 @@ export function NumerologyCalculator({
   const [isSavingArchive, setIsSavingArchive] = useState(false);
   const [isResolvingReportNumber, setIsResolvingReportNumber] = useState(false);
   const [records, setRecords] = useState(initialRecords);
+  const [configuredHistoryLimit, setConfiguredHistoryLimit] = useState(historyLimit);
+  const [historyLimitDraft, setHistoryLimitDraft] = useState(String(historyLimit));
+  const [historyLimitSaving, setHistoryLimitSaving] = useState(false);
   const [historyTotal, setHistoryTotal] = useState(initialTotal);
   const [historyPage, setHistoryPage] = useState(1);
   const [historyPageCount, setHistoryPageCount] = useState(
@@ -1186,10 +1191,44 @@ export function NumerologyCalculator({
       setHistoryTotal(payload.total || 0);
       setHistoryPage(payload.page || page);
       setHistoryPageCount(payload.pageCount || 1);
+      if (payload.historyLimit) {
+        setConfiguredHistoryLimit(payload.historyLimit);
+        setHistoryLimitDraft(String(payload.historyLimit));
+      }
     } catch (error) {
       setHistoryMessage(error instanceof Error ? error.message : "Không thể tải danh sách.");
     } finally {
       setHistoryLoading(false);
+    }
+  }
+
+  async function updateHistoryLimit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!canConfigureHistory || historyLimitSaving) return;
+    const limit = Number(historyLimitDraft);
+    if (!Number.isSafeInteger(limit) || limit < 20 || limit > 1000) {
+      setHistoryMessage("Giới hạn phải là số nguyên từ 20 đến 1000.");
+      return;
+    }
+    setHistoryLimitSaving(true);
+    setHistoryMessage("Đang cập nhật giới hạn riêng cho từng tài khoản…");
+    try {
+      const response = await fetch("/api/admin/numerology-records/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Không thể cập nhật giới hạn.");
+      const nextLimit = Number(payload.historyLimit) || limit;
+      setConfiguredHistoryLimit(nextLimit);
+      setHistoryLimitDraft(String(nextLimit));
+      await loadHistoryPage(1);
+      setHistoryMessage(`Đã đặt giới hạn ${nextLimit} hồ sơ cho mỗi tài khoản.`);
+    } catch (error) {
+      setHistoryMessage(error instanceof Error ? error.message : "Không thể cập nhật giới hạn.");
+    } finally {
+      setHistoryLimitSaving(false);
     }
   }
 
@@ -1381,12 +1420,40 @@ export function NumerologyCalculator({
             <p className={styles.eyebrow}>Kho hồ sơ riêng tư</p>
             <h2>Khách hàng tra gần đây</h2>
             <p>
-              Hiển thị {historyTotal}/{historyLimit} hồ sơ gần nhất · 20 người mỗi trang.
+              Kho của riêng tài khoản đang đăng nhập · {historyTotal}/{configuredHistoryLimit} hồ sơ
+              gần nhất · 20 người mỗi trang.
             </p>
           </div>
-          <span className={styles.numerologyArchiveStatus} data-saving={isSavingArchive}>
-            {isSavingArchive ? "Đang tối ưu file…" : "PDF + JPG A4"}
-          </span>
+          <div className={styles.numerologyHistoryControls}>
+            <span className={styles.numerologyArchiveStatus} data-saving={isSavingArchive}>
+              {isSavingArchive ? "Đang tối ưu file…" : "PDF + JPG A4"}
+            </span>
+            {canConfigureHistory ? (
+              <form onSubmit={updateHistoryLimit}>
+                <label htmlFor="numerology-history-limit">Giới hạn mỗi tài khoản</label>
+                <span>
+                  <input
+                    aria-describedby="numerology-history-limit-help"
+                    id="numerology-history-limit"
+                    max={1000}
+                    min={20}
+                    onChange={(event) => setHistoryLimitDraft(event.target.value)}
+                    step={1}
+                    type="number"
+                    value={historyLimitDraft}
+                  />
+                  <button disabled={historyLimitSaving} type="submit">
+                    {historyLimitSaving ? "Đang lưu…" : "Lưu giới hạn"}
+                  </button>
+                </span>
+                <small id="numerology-history-limit-help">Từ 20–1000 hồ sơ, áp dụng riêng cho từng user.</small>
+              </form>
+            ) : (
+              <small className={styles.numerologyHistoryLimitNote}>
+                Giới hạn {configuredHistoryLimit} hồ sơ/tài khoản
+              </small>
+            )}
+          </div>
         </div>
 
         {records.length ? (

@@ -348,3 +348,44 @@ test("assigns a durable manual or automatic number to every numerology export", 
   assert.match(migration, /create unique index if not exists numerology_records_report_number_key/);
   assert.match(migration, /create or replace function public\.reserve_numerology_report_number/);
 });
+
+test("isolates numerology archives per signed-in user and exposes a guarded limit control", async () => {
+  const [
+    page,
+    calculator,
+    listRoute,
+    numberRoute,
+    downloadRoute,
+    settingsRoute,
+    migration,
+    styles,
+  ] = await Promise.all([
+    readFile(new URL("../next-app/app/admin/numerology/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/admin/numerology/numerology-calculator.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/api/admin/numerology-records/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/api/admin/numerology-records/report-number/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/api/admin/numerology-records/[id]/download/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/api/admin/numerology-records/settings/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/supabase/migrations/202608030002_numerology_per_user_vaults.sql", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/admin/admin.module.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(page, /\.eq\("created_by", principal\.userId\)/);
+  assert.match(page, /canConfigureHistory=\{can\(principal\.role, "manage_operations"\)\}/);
+  assert.match(listRoute, /\.eq\("created_by", principal\.userId\)/);
+  assert.match(listRoute, /users\/\$\{principal\.userId\}\/records\/\$\{id\}/);
+  assert.match(listRoute, /onConflict: "created_by,normalized_name,birth_date"/);
+  assert.match(numberRoute, /\.eq\("created_by", principal\.userId\)/);
+  assert.match(downloadRoute, /\.eq\("created_by", principal\.userId\)/);
+  assert.match(settingsRoute, /can\(principal\.role, "manage_operations"\)/);
+  assert.match(settingsRoute, /limit < 20 \|\| limit > 1000/);
+  assert.match(settingsRoute, /admin_save_site_setting/);
+  assert.match(calculator, /Giới hạn mỗi tài khoản/);
+  assert.match(calculator, /api\/admin\/numerology-records\/settings/);
+  assert.match(calculator, /áp dụng riêng cho từng user/);
+  assert.match(styles, /\.numerologyHistoryControls/);
+  assert.match(migration, /created_by = auth\.uid\(\)/);
+  assert.match(migration, /numerology_records_owner_customer_key/);
+  assert.match(migration, /numerology_records_owner_report_number_key/);
+  assert.match(migration, /users\/.*created_by.*\/records\//s);
+});

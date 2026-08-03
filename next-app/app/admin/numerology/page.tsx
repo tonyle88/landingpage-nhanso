@@ -31,6 +31,7 @@ export default async function AdminNumerologyPage() {
       "id,report_number,customer_name,birth_date,pdf_byte_size,image_byte_size,updated_at",
       { count: "exact" },
     )
+    .eq("created_by", principal.userId)
     .order("updated_at", { ascending: false })
     .range(0, NUMEROLOGY_HISTORY_PAGE_SIZE - 1);
   const initialRecords = error ? [] : (data || []).map(toNumerologyRecordListItem);
@@ -51,6 +52,7 @@ export default async function AdminNumerologyPage() {
         </Link>
       </header>
       <NumerologyCalculator
+        canConfigureHistory={can(principal.role, "manage_operations")}
         canSave={can(principal.role, "manage_content")}
         historyAvailable={!error}
         historyLimit={historyLimit}

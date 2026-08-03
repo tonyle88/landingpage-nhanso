@@ -1242,6 +1242,65 @@
   animation: numerologyArchivePulse 1.2s ease-in-out infinite;
 }
 
+.numerologyHistoryControls {
+  flex: 0 0 auto;
+  display: grid;
+  justify-items: end;
+  gap: 9px;
+}
+
+.numerologyHistoryControls form {
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+}
+
+.numerologyHistoryControls form > label,
+.numerologyHistoryControls form > small,
+.numerologyHistoryLimitNote {
+  color: var(--muted);
+  font-size: .66rem;
+}
+
+.numerologyHistoryControls form > label {
+  color: #fff;
+  font-weight: 750;
+}
+
+.numerologyHistoryControls form > span {
+  display: flex;
+  gap: 7px;
+}
+
+.numerologyHistoryControls input {
+  width: 88px;
+  min-height: 34px;
+  padding: 5px 9px;
+  border: 1px solid rgb(105 225 207 / 28%);
+  border-radius: 7px;
+  outline: 0;
+  background: rgb(4 24 28 / 82%);
+  color: #fff;
+  font: inherit;
+  font-size: .76rem;
+  font-weight: 750;
+}
+
+.numerologyHistoryControls input:focus { border-color: #6ee1d3; }
+.numerologyHistoryControls button {
+  min-height: 34px;
+  padding: 5px 11px;
+  border: 1px solid rgb(240 201 106 / 36%);
+  border-radius: 7px;
+  cursor: pointer;
+  color: #101d1f;
+  background: linear-gradient(135deg, var(--gold-soft), var(--orange-soft));
+  font: inherit;
+  font-size: .7rem;
+  font-weight: 850;
+}
+.numerologyHistoryControls button:disabled { cursor: wait; opacity: .55; }
+
 @keyframes numerologyArchivePulse {
   50% { opacity: .55; box-shadow: 0 0 22px rgb(240 201 106 / 22%); }
 }
@@ -3078,6 +3137,8 @@
   .numerologyHistoryFooter { align-items: stretch; flex-direction: column; }
   .numerologyHistoryList { grid-template-columns: 1fr; }
   .numerologyArchiveStatus { align-self: start; }
+  .numerologyHistoryControls,
+  .numerologyHistoryControls form { justify-items: start; }
   .numerologyHistoryFooter nav { justify-content: space-between; }
   .numerologyResultToolbar,
   .numerologyReportHeader,
