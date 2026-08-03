@@ -34,6 +34,15 @@ test("reads DOCX and map files locally before printing A4 pages", async () => {
   assert.match(component, /window\.print\(\)/);
   assert.match(component, /Xuất PDF report/);
   assert.match(component, /data-report-page/);
+  assert.match(component, /<span>Hồ sơ<\/span>/);
+  assert.match(component, /<strong>Nhân số học<\/strong>/);
+  assert.match(component, /<em>Toàn diện<\/em>/);
+  assert.match(component, /Tấm bản đồ giúp bạn hiểu rõ bản thân/);
+  assert.match(component, /<strong>3<\/strong><span>Chu kỳ cuộc đời lớn<\/span>/);
+  assert.match(component, /<strong>4<\/strong><span>Đỉnh cao cuộc đời<\/span>/);
+  assert.match(component, /Định Hướng bằng Nhân Số Học/);
+  assert.match(component, /Phân Tích Toàn Diện \(Gói Toàn Diện Nhất\)/);
+  assert.match(component, /Được tạo ra với tình yêu và năng lượng tích cực/);
   assert.doesNotMatch(component, /fetch\(|XMLHttpRequest|FormData/);
 
   assert.match(parser, /word\/document\.xml/);
@@ -46,5 +55,8 @@ test("reads DOCX and map files locally before printing A4 pages", async () => {
   assert.match(css, /width: 210mm/);
   assert.match(css, /height: 297mm/);
   assert.match(css, /break-after: page/);
+  assert.match(css, /--report-teal: #42dfd1/);
+  assert.match(css, /\.reportCoverTitle/);
+  assert.match(css, /\.reportCoverStats > div:nth-child\(2\) strong/);
+  assert.match(css, /\.reportCoverMeta > span/);
 });
-
