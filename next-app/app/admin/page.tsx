@@ -35,6 +35,12 @@ const toolNavigation = [
     description: "Tính 9 nhóm chỉ số, lập biểu đồ ngày sinh và xuất PDF cho khách.",
   },
   {
+    href: "/admin/numerology/archive",
+    icon: "customers" as const,
+    title: "Kho hồ sơ nhân số",
+    description: "Tra cứu theo tên hoặc mã hồ sơ, tải file và chủ động xóa hồ sơ cũ.",
+  },
+  {
     href: "/admin/reports",
     icon: "reports" as const,
     title: "Xuất PDF report khách hàng",

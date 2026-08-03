@@ -389,3 +389,33 @@ test("isolates numerology archives per signed-in user and exposes a guarded limi
   assert.match(migration, /numerology_records_owner_report_number_key/);
   assert.match(migration, /users\/.*created_by.*\/records\//s);
 });
+
+test("adds a separate searchable numerology archive with owner-scoped deletion", async () => {
+  const [dashboard, calculator, archivePage, archiveActions, deleteButton, styles] = await Promise.all([
+    readFile(new URL("../next-app/app/admin/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/admin/numerology/numerology-calculator.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/admin/numerology/archive/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/admin/numerology/archive/actions.ts", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/admin/numerology/archive/archive-delete-button.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../next-app/app/admin/admin.module.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(dashboard, /href: "\/admin\/numerology\/archive"/);
+  assert.match(dashboard, /Kho hồ sơ nhân số/);
+  assert.match(calculator, /Quản lý toàn bộ kho/);
+  assert.match(archivePage, /Tìm theo tên hoặc mã hồ sơ/);
+  assert.match(archivePage, /\.eq\("created_by", principal\.userId\)/);
+  assert.match(archivePage, /\.eq\("report_number", Number\.parseInt\(query, 10\)\)/);
+  assert.match(archivePage, /\.ilike\("customer_name", `%\$\{query\}%`\)/);
+  assert.match(archivePage, /NUMEROLOGY_HISTORY_PAGE_SIZE/);
+  assert.match(archivePage, /download\?type=pdf/);
+  assert.match(archivePage, /download\?type=jpg/);
+  assert.match(archiveActions, /can\(principal\.role, "manage_content"\)/);
+  assert.match(archiveActions, /\.eq\("created_by", principal\.userId\)/);
+  assert.match(archiveActions, /NUMEROLOGY_EXPORT_BUCKET/);
+  assert.match(archiveActions, /\.remove\(\[deleted\.full_pdf_path, deleted\.a4_image_path\]\)/);
+  assert.match(deleteButton, /Thao tác này không thể hoàn tác/);
+  assert.match(deleteButton, /requestSubmit/);
+  assert.match(styles, /\.numerologyArchiveTable/);
+  assert.match(styles, /\.numerologyArchiveDelete/);
+});
