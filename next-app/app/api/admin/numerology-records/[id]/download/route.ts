@@ -37,6 +37,7 @@ export async function GET(
     .from("numerology_records")
     .select("customer_name,full_pdf_path,a4_image_path")
     .eq("id", id)
+    .eq("created_by", principal.userId)
     .maybeSingle();
   if (error || !record) return new Response("Not found", { status: 404 });
 

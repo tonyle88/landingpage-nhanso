@@ -50,6 +50,7 @@ export async function POST(request: Request) {
   const { data: existing, error: existingError } = await supabase
     .from("numerology_records")
     .select("id,report_number")
+    .eq("created_by", principal.userId)
     .eq("normalized_name", normalizedName)
     .eq("birth_date", birthDate)
     .maybeSingle();
@@ -63,6 +64,7 @@ export async function POST(request: Request) {
     const { data: conflict, error: conflictError } = await supabase
       .from("numerology_records")
       .select("id")
+      .eq("created_by", principal.userId)
       .eq("report_number", requestedNumber)
       .neq("id", existing?.id || "00000000-0000-0000-0000-000000000000")
       .maybeSingle();

@@ -57,6 +57,7 @@ export async function GET(request: Request) {
       "id,report_number,customer_name,birth_date,pdf_byte_size,image_byte_size,updated_at",
       { count: "exact" },
     )
+    .eq("created_by", principal.userId)
     .order("updated_at", { ascending: false })
     .range(
       offset,
@@ -162,12 +163,14 @@ export async function POST(request: Request) {
   const { data: existing } = await service
     .from("numerology_records")
     .select("id,report_number,full_pdf_path,a4_image_path")
+    .eq("created_by", principal.userId)
     .eq("normalized_name", normalizedName)
     .eq("birth_date", birthDate)
     .maybeSingle();
   const { data: reportNumberConflict, error: reportNumberConflictError } = await service
     .from("numerology_records")
     .select("id")
+    .eq("created_by", principal.userId)
     .eq("report_number", reportNumber)
     .neq("id", existing?.id || "00000000-0000-0000-0000-000000000000")
     .maybeSingle();
@@ -179,9 +182,14 @@ export async function POST(request: Request) {
     return jsonError(`Số hồ sơ ${reportNumber} đã được sử dụng.`, 409);
   }
   const id = existing?.id || randomUUID();
-  const pdfPath = `records/${id}/full.pdf`;
-  const imagePath = `records/${id}/a4.jpg`;
+  const ownerPrefix = `users/${principal.userId}/records/${id}`;
+  const pdfPath = `${ownerPrefix}/full.pdf`;
+  const imagePath = `${ownerPrefix}/a4.jpg`;
   const uploadedPaths: string[] = [];
+  const newlyAddressedPaths = [
+    existing?.full_pdf_path !== pdfPath ? pdfPath : null,
+    existing?.a4_image_path !== imagePath ? imagePath : null,
+  ].filter((path): path is string => Boolean(path));
 
   const { error: pdfUploadError } = await service.storage
     .from(NUMEROLOGY_EXPORT_BUCKET)
@@ -202,9 +210,12 @@ export async function POST(request: Request) {
       contentType: "image/jpeg",
       cacheControl: "3600",
       upsert: true,
-    });
+  });
   if (imageUploadError) {
-    await service.storage.from(NUMEROLOGY_EXPORT_BUCKET).remove(uploadedPaths);
+    const cleanupPaths = uploadedPaths.filter((path) => newlyAddressedPaths.includes(path));
+    if (cleanupPaths.length) {
+      await service.storage.from(NUMEROLOGY_EXPORT_BUCKET).remove(cleanupPaths);
+    }
     console.error("numerology image upload failed", imageUploadError.message);
     return jsonError("Không thể lưu ảnh A4 vào kho riêng tư.", 503);
   }
@@ -226,13 +237,14 @@ export async function POST(request: Request) {
       image_byte_size: imageBytes.byteLength,
       created_by: principal.userId,
       updated_at: now,
-    }, { onConflict: "normalized_name,birth_date" })
+    }, { onConflict: "created_by,normalized_name,birth_date" })
     .select("id,report_number,customer_name,birth_date,pdf_byte_size,image_byte_size,updated_at")
     .single();
 
   if (saveError || !saved) {
-    if (!existing) {
-      await service.storage.from(NUMEROLOGY_EXPORT_BUCKET).remove(uploadedPaths);
+    const cleanupPaths = uploadedPaths.filter((path) => newlyAddressedPaths.includes(path));
+    if (cleanupPaths.length) {
+      await service.storage.from(NUMEROLOGY_EXPORT_BUCKET).remove(cleanupPaths);
     }
     console.error("numerology metadata save failed", saveError?.code);
     if (saveError?.code === "23505") {
@@ -241,9 +253,18 @@ export async function POST(request: Request) {
     return jsonError("Không thể lưu hồ sơ khách hàng.", 503);
   }
 
+  const replacedLegacyPaths = existing ? [
+    existing.full_pdf_path !== pdfPath ? existing.full_pdf_path : null,
+    existing.a4_image_path !== imagePath ? existing.a4_image_path : null,
+  ].filter((path): path is string => Boolean(path)) : [];
+  if (replacedLegacyPaths.length) {
+    await service.storage.from(NUMEROLOGY_EXPORT_BUCKET).remove(replacedLegacyPaths);
+  }
+
   const { data: staleRecords } = await service
     .from("numerology_records")
     .select("id,full_pdf_path,a4_image_path")
+    .eq("created_by", principal.userId)
     .order("updated_at", { ascending: false })
     .range(historyLimit, historyLimit + 999);
   if (staleRecords?.length) {
