@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import {
   calculateNumerology,
@@ -1425,6 +1426,9 @@ export function NumerologyCalculator({
             </p>
           </div>
           <div className={styles.numerologyHistoryControls}>
+            <Link className={styles.numerologyArchiveManageLink} href="/admin/numerology/archive">
+              Quản lý toàn bộ kho →
+            </Link>
             <span className={styles.numerologyArchiveStatus} data-saving={isSavingArchive}>
               {isSavingArchive ? "Đang tối ưu file…" : "PDF + JPG A4"}
             </span>

@@ -1300,6 +1300,13 @@
   font-weight: 850;
 }
 .numerologyHistoryControls button:disabled { cursor: wait; opacity: .55; }
+.numerologyArchiveManageLink {
+  color: var(--gold-soft);
+  font-size: .72rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+.numerologyArchiveManageLink:hover { color: #fff; }
 
 @keyframes numerologyArchivePulse {
   50% { opacity: .55; box-shadow: 0 0 22px rgb(240 201 106 / 22%); }
@@ -1425,6 +1432,140 @@
   cursor: pointer;
 }
 .numerologyHistoryFooter button:disabled { opacity: .35; cursor: default; }
+
+.numerologyArchiveSummary {
+  width: min(1280px, 100%);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0 auto 16px;
+  overflow: hidden;
+  border: 1px solid rgb(105 225 207 / 22%);
+  border-radius: 10px;
+  background: rgb(105 225 207 / 18%);
+}
+.numerologyArchiveSummary > div {
+  display: grid;
+  gap: 5px;
+  padding: 18px 20px;
+  background: linear-gradient(145deg, rgb(8 34 38 / 97%), rgb(7 25 29 / 96%));
+}
+.numerologyArchiveSummary strong {
+  color: var(--gold-soft);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.9rem;
+}
+.numerologyArchiveSummary span { color: var(--muted); font-size: .75rem; font-weight: 750; }
+.numerologyArchivePanel { width: min(1280px, 100%); margin: 0 auto; }
+.numerologyArchiveSearch {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto auto;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgb(255 255 255 / 3%);
+}
+.numerologyArchiveSearch .submit,
+.numerologyArchiveSearch .secondaryLink { min-height: 46px; }
+.numerologyArchiveTable {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.numerologyArchiveTableHeader,
+.numerologyArchiveRow {
+  display: grid;
+  grid-template-columns: minmax(230px, 1.25fr) 105px 145px minmax(190px, .9fr) 110px;
+  gap: 14px;
+  align-items: center;
+}
+.numerologyArchiveTableHeader {
+  padding: 11px 15px;
+  background: rgb(255 255 255 / 6%);
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 850;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.numerologyArchiveRow {
+  min-height: 90px;
+  padding: 13px 15px;
+  border-top: 1px solid var(--line);
+  background: rgb(255 255 255 / 2%);
+}
+.numerologyArchiveRow:nth-child(odd) { background: rgb(255 255 255 / 3.5%); }
+.numerologyArchiveRow:hover { background: rgb(240 201 106 / 6%); }
+.numerologyArchiveRow > div:first-child {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.numerologyArchiveRow > div:first-child > span {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(94 225 208 / 34%);
+  border-radius: 50%;
+  color: #6ee1d3;
+  background: rgb(7 33 37 / 86%);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.08rem;
+  font-weight: 750;
+}
+.numerologyArchiveRow p { min-width: 0; display: grid; gap: 4px; margin: 0; }
+.numerologyArchiveRow p strong,
+.numerologyArchiveRow p small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.numerologyArchiveRow p strong { color: #fff; font-size: .84rem; }
+.numerologyArchiveRow p small,
+.numerologyArchiveRow time,
+.numerologyArchiveRow > small { color: var(--muted); font-size: .7rem; }
+.numerologyArchiveRow > strong { color: var(--gold-soft); font-size: .82rem; }
+.numerologyArchiveDownloads { display: flex; flex-wrap: wrap; gap: 6px; }
+.numerologyArchiveDownloads a {
+  padding: 7px 9px;
+  border: 1px solid rgb(105 225 207 / 20%);
+  border-radius: 7px;
+  color: #d7e2e0;
+  background: rgb(105 225 207 / 6%);
+  font-size: .67rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+.numerologyArchiveDownloads a:hover { border-color: rgb(240 201 106 / 34%); color: var(--gold-soft); }
+.numerologyArchiveDelete {
+  min-height: 36px;
+  padding: 6px 11px;
+  border: 1px solid rgb(255 138 128 / 42%);
+  border-radius: 7px;
+  cursor: pointer;
+  color: #ffaaa3;
+  background: rgb(255 138 128 / 7%);
+  font: inherit;
+  font-size: .68rem;
+  font-weight: 800;
+}
+.numerologyArchiveDelete:hover { background: rgb(255 138 128 / 13%); color: #fff; }
+.numerologyArchiveEmpty {
+  min-height: 190px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  padding: 24px;
+  border: 1px dashed rgb(105 225 207 / 22%);
+  border-radius: 9px;
+  color: var(--muted);
+  text-align: center;
+}
+.numerologyArchiveEmpty strong { color: #fff; font-family: Georgia, "Times New Roman", serif; font-size: 1.25rem; }
+.numerologyArchiveEmpty span { font-size: .78rem; }
 
 .numerologyFormPanel {
   display: grid;
@@ -3102,6 +3243,23 @@
   .numerologyColumns,
   .numerologyPyramidLayout { grid-template-columns: 1fr; }
   .numerologyHistoryList { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .numerologyArchiveSummary { grid-template-columns: 1fr; }
+  .numerologyArchiveSummary > div { grid-template-columns: auto 1fr; align-items: center; }
+  .numerologyArchiveSearch { grid-template-columns: 1fr; }
+  .numerologyArchiveSearch .submit,
+  .numerologyArchiveSearch .secondaryLink { width: 100%; }
+  .numerologyArchiveTableHeader { display: none; }
+  .numerologyArchiveRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px 16px;
+    align-items: start;
+  }
+  .numerologyArchiveRow > div:first-child { grid-column: 1 / -1; }
+  .numerologyArchiveRow > strong { grid-column: 1; }
+  .numerologyArchiveRow > time { grid-column: 1; }
+  .numerologyArchiveDownloads { grid-column: 1; }
+  .numerologyArchiveRow > form,
+  .numerologyArchiveRow > small { grid-column: 2; grid-row: 2 / span 3; align-self: center; }
   .numerologyForm { grid-template-columns: 1fr; }
   .numerologyFormActions,
   .numerologyMessage { grid-column: auto; }
@@ -3140,6 +3298,14 @@
   .numerologyHistoryControls,
   .numerologyHistoryControls form { justify-items: start; }
   .numerologyHistoryFooter nav { justify-content: space-between; }
+  .numerologyArchiveRow { grid-template-columns: 1fr; }
+  .numerologyArchiveRow > div:first-child,
+  .numerologyArchiveRow > strong,
+  .numerologyArchiveRow > time,
+  .numerologyArchiveDownloads,
+  .numerologyArchiveRow > form,
+  .numerologyArchiveRow > small { grid-column: 1; grid-row: auto; }
+  .numerologyArchiveRow > form button { width: 100%; }
   .numerologyResultToolbar,
   .numerologyReportHeader,
   .numerologyFooter { align-items: stretch; flex-direction: column; }
