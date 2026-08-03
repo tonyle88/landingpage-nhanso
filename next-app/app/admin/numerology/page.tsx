@@ -28,7 +28,7 @@ export default async function AdminNumerologyPage() {
   const { data, error, count } = await supabase
     .from("numerology_records")
     .select(
-      "id,customer_name,birth_date,pdf_byte_size,image_byte_size,updated_at",
+      "id,report_number,customer_name,birth_date,pdf_byte_size,image_byte_size,updated_at",
       { count: "exact" },
     )
     .order("updated_at", { ascending: false })

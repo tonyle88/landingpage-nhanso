@@ -4,6 +4,7 @@ export const NUMEROLOGY_EXPORT_BUCKET = "numerology-exports";
 
 export type NumerologyRecordListItem = {
   id: string;
+  reportNumber: number;
   customerName: string;
   birthDate: string;
   pdfByteSize: number;
@@ -13,6 +14,7 @@ export type NumerologyRecordListItem = {
 
 export type NumerologyRecordRow = {
   id: string;
+  report_number: number;
   customer_name: string;
   birth_date: string;
   pdf_byte_size: number;
@@ -25,6 +27,7 @@ export function toNumerologyRecordListItem(
 ): NumerologyRecordListItem {
   return {
     id: row.id,
+    reportNumber: row.report_number,
     customerName: row.customer_name,
     birthDate: row.birth_date,
     pdfByteSize: row.pdf_byte_size,

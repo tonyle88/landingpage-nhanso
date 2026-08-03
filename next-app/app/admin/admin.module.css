@@ -1397,7 +1397,7 @@
 
 .numerologyForm {
   display: grid;
-  grid-template-columns: minmax(220px, 1.2fr) minmax(180px, .8fr);
+  grid-template-columns: minmax(210px, 1.2fr) minmax(155px, .72fr) minmax(180px, .8fr);
   gap: 13px;
   align-items: end;
 }
