@@ -62,4 +62,8 @@ test("reads DOCX and map files locally before printing A4 pages", async () => {
   assert.match(css, /\.reportCoverTitle/);
   assert.match(css, /\.reportCoverStats/);
   assert.match(css, /\.reportCoverMeta > span/);
+  assert.match(css, /\.reportParagraph,\s*\.reportListItem p \{[^}]*text-align: justify;/s);
+  assert.match(css, /text-align-last: left;/);
+  assert.match(css, /text-justify: inter-word;/);
+  assert.match(component, /data-report-page lang="vi"/);
 });

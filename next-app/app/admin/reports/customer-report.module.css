@@ -464,6 +464,15 @@
   font-size: .8rem;
   line-height: 1.62;
 }
+.reportParagraph,
+.reportListItem p {
+  text-align: justify;
+  text-align-last: left;
+  text-justify: inter-word;
+  overflow-wrap: break-word;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
 .reportParagraph strong,
 .reportListItem strong { color: var(--report-peach); }
 .reportSubheading {
@@ -499,6 +508,7 @@
   text-align: center;
 }
 .reportListItem p {
+  min-width: 0;
   margin: 0;
   color: #e8ebe8;
   font-size: .75rem;

@@ -112,7 +112,7 @@ function ReportPageFrame({
   pageNumber: number;
 }) {
   return (
-    <article className={styles.reportPage} data-report-page>
+    <article className={styles.reportPage} data-report-page lang="vi">
       <header className={styles.reportPageHeader}>
         <span>
           <Image alt="Clow Cat Patronus" height={34} src="/assets/images/logo2.png" width={34} />
