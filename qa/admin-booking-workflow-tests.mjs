@@ -135,7 +135,7 @@ test("booking reports require operations access and preserve status filters", ()
 test("admin forms show one shared pending state and prevent repeat submits", () => {
   assert.match(adminLayout, /AdminPendingOverlay/);
   assert.match(pendingOverlay, /document\.addEventListener\("submit"/);
-  assert.match(pendingOverlay, /event\.defaultPrevented/);
+  assert.match(pendingOverlay, /form\.dataset\.adminPending === "manual"/);
   assert.match(pendingOverlay, /control\.disabled = true/);
   assert.match(pendingOverlay, /Đang xử lý/);
   assert.match(pendingOverlay, /Không đóng trang hoặc bấm lại/);
