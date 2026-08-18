@@ -1366,9 +1366,11 @@ export function NumerologyCalculator({
     document.title = mode === "summary"
       ? `Ho-so-${reportNumber}-tom-tat-${safeName || "khach-hang"}`
       : `Ho-so-${reportNumber}-day-du-${safeName || "khach-hang"}`;
+    document.documentElement.dataset.numerologyPrint = mode;
     document.body.dataset.numerologyPrint = mode;
     const restorePrintState = () => {
       document.title = previousTitle;
+      delete document.documentElement.dataset.numerologyPrint;
       delete document.body.dataset.numerologyPrint;
     };
     window.addEventListener("afterprint", restorePrintState, { once: true });

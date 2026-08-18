@@ -2,6 +2,10 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { PRODUCTION_SUPABASE_URL } from "@/lib/supabase/config";
 import type { Database } from "@/lib/supabase/database.types";
+import {
+  classifyAuthLoginError,
+  type LoginFeedbackCode,
+} from "@/lib/auth/login-feedback";
 
 type CookieMutation = {
   name: string;
@@ -9,27 +13,50 @@ type CookieMutation = {
   options: Parameters<NextResponse["cookies"]["set"]>[2];
 };
 
-export async function POST(request: NextRequest) {
+function jsonResponse(
+  body: { ok: boolean; code?: LoginFeedbackCode },
+  status: number,
+) {
+  const response = NextResponse.json(body, { status });
+  response.headers.set(
+    "Cache-Control",
+    "private, no-cache, no-store, must-revalidate, max-age=0",
+  );
+  response.headers.set("Expires", "0");
+  response.headers.set("Pragma", "no-cache");
+  return response;
+}
+
+function hasValidOrigin(request: NextRequest) {
   const origin = request.headers.get("origin");
-  if (origin && new URL(origin).host !== request.nextUrl.host) {
-    return NextResponse.json({ ok: false }, { status: 403 });
+  if (!origin) return true;
+  try {
+    return new URL(origin).origin === request.nextUrl.origin;
+  } catch {
+    return false;
+  }
+}
+
+export async function POST(request: NextRequest) {
+  if (!hasValidOrigin(request)) {
+    return jsonResponse({ ok: false, code: "invalid_request" }, 403);
   }
 
   let payload: { email?: unknown; password?: unknown };
   try {
     payload = await request.json();
   } catch {
-    return NextResponse.json({ ok: false }, { status: 400 });
+    return jsonResponse({ ok: false, code: "invalid_request" }, 400);
   }
   const email = typeof payload.email === "string" ? payload.email.trim() : "";
   const password = typeof payload.password === "string" ? payload.password : "";
   if (!email || !password) {
-    return NextResponse.json({ ok: false }, { status: 400 });
+    return jsonResponse({ ok: false, code: "invalid_request" }, 400);
   }
 
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!publishableKey) {
-    return NextResponse.json({ ok: false }, { status: 503 });
+    return jsonResponse({ ok: false, code: "service_unavailable" }, 503);
   }
 
   const cookieMutations: CookieMutation[] = [];
@@ -47,20 +74,22 @@ export async function POST(request: NextRequest) {
       },
     },
   );
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  const response = NextResponse.json(
-    { ok: !error },
-    { status: error ? 401 : 200 },
-  );
+  let error: { code?: string; status?: number } | null;
+  try {
+    const result = await supabase.auth.signInWithPassword({ email, password });
+    error = result.error;
+  } catch {
+    return jsonResponse({ ok: false, code: "service_unavailable" }, 503);
+  }
+  const failure = error ? classifyAuthLoginError(error) : null;
+  const response = failure
+    ? jsonResponse({ ok: false, code: failure.code }, failure.status)
+    : jsonResponse({ ok: true }, 200);
   cookieMutations.forEach(({ name, value, options }) =>
     response.cookies.set(name, value, options),
   );
   Object.entries(cacheHeaders).forEach(([name, value]) =>
     response.headers.set(name, value),
-  );
-  response.headers.set(
-    "Cache-Control",
-    "private, no-cache, no-store, must-revalidate, max-age=0",
   );
   return response;
 }

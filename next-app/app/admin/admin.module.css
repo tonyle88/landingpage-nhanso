@@ -739,6 +739,7 @@
 }
 
 .notice { border: 1px solid rgb(240 201 106 / 35%); background: rgb(240 201 106 / 9%); color: var(--gold-soft); }
+.noticeSuccess { border-color: rgb(115 217 178 / 45%); background: rgb(115 217 178 / 10%); color: #9ce9ca; }
 .alertPanel { display: grid; gap: 4px; border: 1px solid rgb(255 138 128 / 45%); background: rgb(255 138 128 / 9%); color: #ffb0aa; }
 .message { width: min(1280px, 100%); min-height: 24px; margin: 0 auto; color: var(--danger); font-size: .88rem; }
 .securityNote { margin: 22px 0 0; color: var(--muted); font-size: .78rem; text-align: center; }
@@ -3598,11 +3599,6 @@
 @media print {
   @page { size: A4; margin: 0; }
   @page customer-summary { size: A4 portrait; margin: 0; }
-  :global(html),
-  :global(body) {
-    min-height: 100%;
-    background: #071f23 !important;
-  }
   .pageHeader,
   .numerologyHistoryPanel,
   .numerologyFormPanel,

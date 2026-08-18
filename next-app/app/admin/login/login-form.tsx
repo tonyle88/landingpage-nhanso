@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import {
+  loginFeedbackFromResponse,
+  loginFeedbackMessage,
+} from "@/lib/auth/login-feedback";
 import styles from "../admin.module.css";
 
 export function LoginForm() {
@@ -29,7 +33,12 @@ export function LoginForm() {
         body: JSON.stringify({ email, password }),
       });
       if (!response.ok) {
-        setMessage("Không thể đăng nhập. Vui lòng kiểm tra lại thông tin.");
+        const payload: unknown = await response.json().catch(() => null);
+        setMessage(
+          loginFeedbackMessage(
+            loginFeedbackFromResponse(payload, response.status),
+          ),
+        );
         return;
       }
       window.location.replace("/admin");
@@ -58,14 +67,19 @@ export function LoginForm() {
           name="password"
           type="password"
           autoComplete="current-password"
-          minLength={12}
+          aria-describedby="admin-login-message"
           required
         />
       </label>
       <button className={styles.submit} type="submit" disabled={submitting}>
         {submitting ? "Đang xác minh…" : "Đăng nhập"}
       </button>
-      <p className={styles.message} role="status" aria-live="polite">
+      <p
+        className={styles.message}
+        id="admin-login-message"
+        role="alert"
+        aria-live="assertive"
+      >
         {message}
       </p>
     </form>

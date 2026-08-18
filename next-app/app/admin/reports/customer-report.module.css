@@ -597,13 +597,11 @@
 
 @media print {
   @page { size: A4 portrait; margin: 0; }
-  :global(html),
-  :global(body[data-customer-report-print="true"]) {
-    min-height: auto;
-    margin: 0;
-    background: #071f23 !important;
+  :global(body[data-customer-report-print="true"]) .reportUploader,
+  :global(body[data-customer-report-print="true"]) .reportToolbar,
+  :global(body[data-customer-report-print="true"]) .reportEmptyState {
+    display: none !important;
   }
-  :global(body[data-customer-report-print="true"]) [data-report-ui] { display: none !important; }
   :global(body[data-customer-report-print="true"]) .reportWorkspace,
   :global(body[data-customer-report-print="true"]) .reportPreviewArea,
   :global(body[data-customer-report-print="true"]) .reportDocument {

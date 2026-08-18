@@ -44,6 +44,11 @@ export default async function AdminLoginPage({
             Phiên đăng nhập không hợp lệ hoặc tài khoản chưa được cấp quyền.
           </p>
         ) : null}
+        {reason === "signed-out" ? (
+          <p className={`${styles.notice} ${styles.noticeSuccess}`} role="status">
+            Bạn đã đăng xuất an toàn khỏi hệ thống quản trị.
+          </p>
+        ) : null}
         <LoginForm />
         <p className={styles.securityNote}>
           Phiên được quản lý bằng cookie; trang này không cung cấp đăng ký mới.
