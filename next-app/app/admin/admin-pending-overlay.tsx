@@ -54,6 +54,7 @@ export function AdminPendingOverlay() {
     const handleSubmit = (event: SubmitEvent) => {
       const form = event.target;
       if (!(form instanceof HTMLFormElement)) return;
+      if (form.dataset.adminPending === "manual") return;
 
       // Wait until the submit event finishes so React can capture the form
       // payload before controls are disabled. React server actions call

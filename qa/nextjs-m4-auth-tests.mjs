@@ -25,6 +25,7 @@ const [
   setPasswordForm,
   inviteRedirect,
   loginFeedback,
+  pendingOverlay,
 ] = await Promise.all([
   read("next-app/lib/supabase/auth-server.ts"),
   read("next-app/lib/supabase/auth-browser.ts"),
@@ -44,6 +45,7 @@ const [
   import(
     pathToFileURL(new URL("next-app/lib/auth/login-feedback.ts", root).pathname)
   ),
+  read("next-app/app/admin/admin-pending-overlay.tsx"),
 ]);
 
 test("role matrix keeps owner recovery distinct from daily admin", () => {
@@ -109,6 +111,10 @@ test("admin routes are invite-only and authorize on the server", () => {
   assert.doesNotMatch(adminLogin, /minLength=\{12\}/);
   assert.match(adminLogin, /loginFeedbackFromResponse/);
   assert.match(adminLogin, /role="alert"/);
+  assert.match(adminLogin, /data-admin-pending="manual"/);
+  assert.match(adminLogin, /AbortController/);
+  assert.match(adminLogin, /LOGIN_TIMEOUT_MS = 12_000/);
+  assert.match(pendingOverlay, /form\.dataset\.adminPending === "manual"/);
   assert.match(adminLoginPage, /reason === "signed-out"/);
   assert.match(adminLoginPage, /Bạn đã đăng xuất an toàn/);
   assert.match(adminPage, /getAdminPrincipal\(\)/);

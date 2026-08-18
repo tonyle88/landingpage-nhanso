@@ -7,6 +7,8 @@ import {
 } from "@/lib/auth/login-feedback";
 import styles from "../admin.module.css";
 
+const LOGIN_TIMEOUT_MS = 12_000;
+
 export function LoginForm() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -24,11 +26,14 @@ export function LoginForm() {
 
     setSubmitting(true);
     setMessage("");
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), LOGIN_TIMEOUT_MS);
     try {
       const response = await fetch("/admin/login/session", {
         method: "POST",
         credentials: "same-origin",
         cache: "no-store",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
@@ -42,15 +47,24 @@ export function LoginForm() {
         return;
       }
       window.location.replace("/admin");
-    } catch {
-      setMessage("Hệ thống đăng nhập tạm thời không khả dụng.");
+    } catch (error) {
+      setMessage(
+        error instanceof DOMException && error.name === "AbortError"
+          ? "Xác minh đăng nhập mất quá nhiều thời gian. Vui lòng thử lại."
+          : "Hệ thống đăng nhập tạm thời không khả dụng.",
+      );
     } finally {
+      window.clearTimeout(timeout);
       setSubmitting(false);
     }
   }
 
   return (
-    <form className={styles.form} onSubmit={handleSubmit}>
+    <form
+      className={styles.form}
+      data-admin-pending="manual"
+      onSubmit={handleSubmit}
+    >
       <label className={styles.field}>
         Email
         <input
