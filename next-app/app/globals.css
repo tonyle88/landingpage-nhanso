@@ -95,3 +95,18 @@ p {
 @media (prefers-reduced-motion: reduce) {
   .clow-glint { animation: none; }
 }
+
+@media print {
+  html[data-numerology-print],
+  body[data-numerology-print] {
+    min-height: 100%;
+    background: #071f23 !important;
+  }
+
+  html[data-customer-report-print="true"],
+  body[data-customer-report-print="true"] {
+    min-height: auto;
+    margin: 0;
+    background: #071f23 !important;
+  }
+}

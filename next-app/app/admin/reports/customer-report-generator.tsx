@@ -197,8 +197,10 @@ export function CustomerReportGenerator() {
     if (!isReady) return;
     const oldTitle = document.title;
     document.title = `Report-nhan-so-${customerName.trim().replace(/\s+/g, "-")}`;
+    document.documentElement.dataset.customerReportPrint = "true";
     document.body.dataset.customerReportPrint = "true";
     const cleanup = () => {
+      delete document.documentElement.dataset.customerReportPrint;
       delete document.body.dataset.customerReportPrint;
       document.title = oldTitle;
     };

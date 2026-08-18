@@ -4,9 +4,19 @@ import { PRODUCTION_SUPABASE_URL } from "@/lib/supabase/config";
 import type { Database } from "@/lib/supabase/database.types";
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get("origin");
+  if (origin) {
+    try {
+      if (new URL(origin).origin !== request.nextUrl.origin) {
+        return NextResponse.json({ ok: false }, { status: 403 });
+      }
+    } catch {
+      return NextResponse.json({ ok: false }, { status: 403 });
+    }
+  }
   const response = new NextResponse(null, {
     status: 303,
-    headers: { Location: "/admin/login" },
+    headers: { Location: "/admin/login?reason=signed-out" },
   });
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (publishableKey) {
