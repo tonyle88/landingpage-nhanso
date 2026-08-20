@@ -27,6 +27,8 @@ const blogRuntime = await read("next-app/public/blog.js");
 const mediaUpload = await read("next-app/lib/admin/media-upload.ts");
 const adminPage = await read("next-app/app/admin/blog/page.tsx");
 const publicPosts = await read("next-app/lib/supabase/public-blog-posts.ts");
+const packageJson = JSON.parse(await read("next-app/package.json"));
+const nextConfig = await read("next-app/next.config.ts");
 
 test("blog RPCs enforce roles, transactional audit and grants", () => {
   assert.match(migration, /admin_save_blog_post/);
@@ -63,6 +65,10 @@ test("one cover upload derives compressed WebP cover and thumbnail", () => {
   assert.match(actions, /width: 1600, height: 1200, fit: "inside", quality: 70/);
   assert.match(actions, /width: 640, height: 360, fit: "cover", quality: 70/);
   assert.match(mediaUpload, /\.webp\(\{ quality: webp\.quality \?\? 70/);
+  assert.doesNotMatch(mediaUpload, /^import sharp from "sharp";/m);
+  assert.match(mediaUpload, /await import\("sharp"\)/);
+  assert.equal(packageJson.dependencies.sharp, "0.35.3");
+  assert.match(nextConfig, /"\.\/node_modules\/@img\/sharp-libvips-linux-x64\/\*\*\/\*"/);
   assert.match(mediaUpload, /uploadMime = "image\/webp"/);
   assert.match(mediaUpload, /mime_type: uploadMime/);
 });
