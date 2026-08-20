@@ -5,7 +5,61 @@ import { redirect } from "next/navigation";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
 import { parseQuizQuestions, QUIZ_SETTING_KEY } from "@/lib/quiz-question-schema";
+import {
+  LIFE_WHEEL_SETTING_KEY,
+  LOVE_LANGUAGE_SETTING_KEY,
+  parseLoveLanguageQuestions,
+  parseVakadQuestions,
+  parseWheelCategories,
+  VAKAD_SETTING_KEY,
+} from "@/lib/self-discovery-tools";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
+import type { Json } from "@/lib/supabase/database.types";
+
+type ToolSaveConfig = {
+  field: string;
+  key: string;
+  description: string;
+  invalidStatus: string;
+  errorStatus: string;
+  savedStatus: string;
+  valueField: "questions" | "categories";
+  parse: (value: unknown) => unknown[] | null;
+  publicPath: string;
+};
+
+async function saveToolQuestions(form: FormData, config: ToolSaveConfig) {
+  const principal = await getAdminPrincipal();
+  if (!principal || !can(principal.role, "manage_content")) redirect("/admin/login?reason=unauthorized");
+
+  let content: unknown[] | null = null;
+  try {
+    const raw = String(form.get(config.field) || "");
+    if (!raw || raw.length > 300_000) throw new Error("tool payload invalid");
+    content = config.parse(JSON.parse(raw));
+    if (!content) throw new Error("tool content invalid");
+  } catch {
+    redirect(`/admin/quiz?status=${config.invalidStatus}`);
+  }
+
+  const supabase = await createAuthServerClient();
+  const { error } = await supabase.rpc("admin_save_site_setting", {
+    p_key: config.key,
+    p_payload: {
+      value: { [config.valueField]: content },
+      description: config.description,
+      is_public: true,
+    } as Json,
+  });
+  if (error) {
+    console.error("admin_save_self_discovery_questions failed", { key: config.key, code: error.code, message: error.message });
+    redirect(`/admin/quiz?status=${config.errorStatus}`);
+  }
+
+  revalidatePath("/admin/quiz");
+  revalidatePath(config.publicPath);
+  redirect(`/admin/quiz?status=${config.savedStatus}`);
+}
 
 export async function saveQuizQuestionsAction(form: FormData) {
   const principal = await getAdminPrincipal();
@@ -40,4 +94,31 @@ export async function saveQuizQuestionsAction(form: FormData) {
   revalidatePath("/admin/quiz");
   revalidatePath("/quiz");
   redirect("/admin/quiz?status=saved");
+}
+
+export async function saveVakadQuestionsAction(form: FormData) {
+  return saveToolQuestions(form, {
+    field: "vakadQuestions", key: VAKAD_SETTING_KEY, valueField: "questions",
+    description: "Bộ câu hỏi công cụ VAKAd", parse: parseVakadQuestions,
+    invalidStatus: "invalid-vakad", errorStatus: "error-vakad", savedStatus: "saved-vakad",
+    publicPath: "/quiz/cong-cu/vakad",
+  });
+}
+
+export async function saveLoveLanguageQuestionsAction(form: FormData) {
+  return saveToolQuestions(form, {
+    field: "loveQuestions", key: LOVE_LANGUAGE_SETTING_KEY, valueField: "questions",
+    description: "Bộ câu hỏi công cụ Ngôn ngữ yêu thương", parse: parseLoveLanguageQuestions,
+    invalidStatus: "invalid-love", errorStatus: "error-love", savedStatus: "saved-love",
+    publicPath: "/quiz/cong-cu/ngon-ngu-yeu-thuong",
+  });
+}
+
+export async function saveLifeWheelQuestionsAction(form: FormData) {
+  return saveToolQuestions(form, {
+    field: "wheelCategories", key: LIFE_WHEEL_SETTING_KEY, valueField: "categories",
+    description: "Bộ câu hỏi công cụ Bánh xe cuộc đời", parse: parseWheelCategories,
+    invalidStatus: "invalid-wheel", errorStatus: "error-wheel", savedStatus: "saved-wheel",
+    publicPath: "/quiz/cong-cu/banh-xe-cuoc-doi",
+  });
 }
