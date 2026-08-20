@@ -1,17 +1,14 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import styles from "./tool.module.css";
 import {
-  LOVE_LANGUAGE_QUESTIONS,
   LOVE_LANGUAGES,
   scoreLifeWheel,
   scoreLoveLanguages,
   scoreVakad,
   SELF_DISCOVERY_TOOLS,
   VAKAD_DIMENSIONS,
-  VAKAD_QUESTIONS,
-  WHEEL_CATEGORIES,
   type LoveLanguageCode,
   type LoveLanguageQuestion,
   type SelfDiscoveryToolSlug,
@@ -21,6 +18,18 @@ import {
 } from "@/lib/self-discovery-tools";
 
 type ChartItem = { key: string; label: string; value: number; color: string };
+
+const RANK_COLORS: Record<number, string> = {
+  4: "#f4c75b",
+  3: "#56ddd2",
+  2: "#71b7ff",
+  1: "#f28ab8",
+};
+
+const SCALE_COLORS = [
+  "#ef6a4d", "#f07c4e", "#ee9450", "#e8ab54", "#dbbe59",
+  "#bfc962", "#9ed16c", "#7fd47b", "#63d392", "#55d5b7",
+];
 
 function ToolHeader({ slug }: { slug: SelfDiscoveryToolSlug }) {
   const [open, setOpen] = useState(false);
@@ -112,11 +121,36 @@ function ScoreBars({ items, max, suffix = " điểm" }: { items: ChartItem[]; ma
   return (
     <div className={styles.scoreBars}>
       {items.map((item) => (
-        <div className={styles.scoreBar} key={item.key}>
+        <div className={styles.scoreBar} key={item.key} style={{ "--score-accent": item.color } as CSSProperties}>
           <div><span><i style={{ background: item.color }} />{item.label}</span><strong>{item.value.toLocaleString("vi-VN", { maximumFractionDigits: 1 })}{suffix}</strong></div>
           <b aria-hidden="true"><span style={{ width: `${Math.min(100, (item.value / max) * 100)}%`, background: item.color }} /></b>
         </div>
       ))}
+    </div>
+  );
+}
+
+function DonutChart({ items, suffix = " điểm" }: { items: ChartItem[]; suffix?: string }) {
+  const total = items.reduce((sum, item) => sum + item.value, 0) || 1;
+  const ordered = [...items].sort((a, b) => b.value - a.value);
+  let cursor = 0;
+  const gradient = items.map((item) => {
+    const start = cursor;
+    cursor += (item.value / total) * 100;
+    return `${item.color} ${start}% ${cursor}%`;
+  }).join(", ");
+  const top = ordered[0];
+  const topPercent = Math.round((top.value / total) * 100);
+
+  return (
+    <div className={styles.donutPanel}>
+      <div className={styles.donutTitle}><span>Tỷ trọng kết quả</span><small>So sánh trực quan giữa các nhóm</small></div>
+      <div className={styles.donut} style={{ background: `conic-gradient(${gradient})` }} role="img" aria-label="Biểu đồ tròn tỷ trọng kết quả">
+        <div><strong>{topPercent}%</strong><span>{top.label}</span><small>Nổi trội</small></div>
+      </div>
+      <div className={styles.donutLegend}>
+        {ordered.map((item) => <div key={item.key}><i style={{ background: item.color }} /><span>{item.label}</span><strong>{item.value.toLocaleString("vi-VN", { maximumFractionDigits: 1 })}{suffix}</strong></div>)}
+      </div>
     </div>
   );
 }
@@ -167,11 +201,11 @@ function VakadAssessment({ questions }: { questions: ReadonlyArray<VakadQuestion
     return (
       <ResultShell onRestart={restart}>
         <div className={styles.resultHeading}><span>VAKAd của bạn</span><h1>{topKeys.map((key) => VAKAD_DIMENSIONS[key].label).join(" & ")}</h1><p>{balanceText}. Hãy xem đây là cách ưu tiên tự nhiên, không phải giới hạn cố định.</p></div>
-        <div className={styles.chartGrid}><RadarChart items={items} max={60} /><ScoreBars items={ordered} max={60} /></div>
+        <div className={styles.chartGrid}><RadarChart items={items} max={60} /><DonutChart items={items} /><ScoreBars items={ordered} max={60} /></div>
         <div className={styles.insightGrid}>
           {ordered.map((item, index) => {
             const detail = VAKAD_DIMENSIONS[item.key as VakadDimension];
-            return <article className={index === 0 ? styles.primaryInsight : ""} key={item.key}><span>{index === 0 ? "Kênh nổi trội" : `Vị trí ${index + 1}`}</span><h2>{detail.label} · {item.value}</h2><p>{detail.description}</p><strong>Ứng dụng:</strong><p>{detail.suggestion}</p></article>;
+            return <article className={index === 0 ? styles.primaryInsight : ""} key={item.key} style={{ "--insight-accent": detail.color } as CSSProperties}><span>{index === 0 ? "Kênh nổi trội" : `Vị trí ${index + 1}`}</span><h2>{detail.label} · {item.value}</h2><p>{detail.description}</p><strong>Ứng dụng:</strong><p>{detail.suggestion}</p></article>;
           })}
         </div>
       </ResultShell>
@@ -188,7 +222,8 @@ function VakadAssessment({ questions }: { questions: ReadonlyArray<VakadQuestion
           {question.options.map((option) => {
             const index = ranking.indexOf(option.dimension);
             const score = index >= 0 ? 4 - index : null;
-            return <button className={`${styles.rankOption}${score ? ` ${styles.selectedOption}` : ""}`} onClick={() => toggle(option.dimension)} type="button" key={option.dimension}><span>{score || "·"}</span><p>{option.text}</p><small>{score ? ["", "Ít đúng", "Đúng", "Khá đúng", "Đúng nhất"][score] : "Chưa xếp hạng"}</small></button>;
+            const color = score ? RANK_COLORS[score] : VAKAD_DIMENSIONS[option.dimension].color;
+            return <button className={`${styles.rankOption}${score ? ` ${styles.selectedOption}` : ""}`} onClick={() => toggle(option.dimension)} style={{ "--option-accent": color } as CSSProperties} type="button" key={option.dimension}><span>{score || "·"}</span><p>{option.text}</p><small>{score ? ["", "Ít đúng", "Đúng", "Khá đúng", "Đúng nhất"][score] : "Chưa xếp hạng"}</small></button>;
           })}
         </div>
         <Navigation first={step === 0} final={step === questions.length - 1} canContinue={ranking.length === 4} onBack={() => setStep((value) => Math.max(0, value - 1))} onNext={() => step === questions.length - 1 ? setFinished(true) : setStep((value) => value + 1)} />
@@ -213,9 +248,9 @@ function LoveLanguageAssessment({ questions }: { questions: ReadonlyArray<LoveLa
     return (
       <ResultShell onRestart={restart}>
         <div className={styles.resultHeading}><span>Ngôn ngữ nổi trội</span><h1>{topKeys.map((key) => LOVE_LANGUAGES[key].label).join(" & ")}</h1><p>Điểm cao cho thấy cách bạn dễ nhận biết tình cảm nhất. Điểm thấp không có nghĩa là bạn không cần hình thức đó.</p></div>
-        <div className={styles.chartGrid}><RadarChart items={items} max={12} /><ScoreBars items={ordered} max={12} suffix=" / 12" /></div>
+        <div className={styles.chartGrid}><RadarChart items={items} max={12} /><DonutChart items={items} suffix=" / 12" /><ScoreBars items={ordered} max={12} suffix=" / 12" /></div>
         <div className={styles.insightGrid}>
-          {ordered.map((item, index) => { const detail = LOVE_LANGUAGES[item.key as LoveLanguageCode]; return <article className={index === 0 ? styles.primaryInsight : ""} key={item.key}><span>{index === 0 ? "Ngôn ngữ chính" : `Vị trí ${index + 1}`}</span><h2>{detail.label} · {item.value}</h2><p>{detail.description}</p><strong>Gợi ý:</strong><p>{detail.suggestion}</p></article>; })}
+          {ordered.map((item, index) => { const detail = LOVE_LANGUAGES[item.key as LoveLanguageCode]; return <article className={index === 0 ? styles.primaryInsight : ""} key={item.key} style={{ "--insight-accent": detail.color } as CSSProperties}><span>{index === 0 ? "Ngôn ngữ chính" : `Vị trí ${index + 1}`}</span><h2>{detail.label} · {item.value}</h2><p>{detail.description}</p><strong>Gợi ý:</strong><p>{detail.suggestion}</p></article>; })}
         </div>
       </ResultShell>
     );
@@ -227,7 +262,7 @@ function LoveLanguageAssessment({ questions }: { questions: ReadonlyArray<LoveLa
         <div className={styles.questionMeta}><span>{String(step + 1).padStart(2, "0")}</span><p>Nếu phải chọn một điều khiến bạn cảm thấy được yêu thương hơn, bạn sẽ chọn điều nào?</p></div>
         <h1>Điều nào gần với mong muốn thật của bạn hơn?</h1>
         <div className={styles.loveOptions} role="radiogroup">
-          {question.options.map((option) => <button aria-checked={selected === option.code} className={`${styles.loveOption}${selected === option.code ? ` ${styles.selectedOption}` : ""}`} onClick={() => setAnswers((current) => ({ ...current, [question.id]: option.code }))} role="radio" type="button" key={option.code}><span>{option.code}</span><p>{option.text}</p></button>)}
+          {question.options.map((option) => <button aria-checked={selected === option.code} className={`${styles.loveOption}${selected === option.code ? ` ${styles.selectedOption}` : ""}`} onClick={() => setAnswers((current) => ({ ...current, [question.id]: option.code }))} role="radio" style={{ "--option-accent": LOVE_LANGUAGES[option.code].color } as CSSProperties} type="button" key={option.code}><span>{option.code}</span><p>{option.text}</p><small>{selected === option.code ? "Đã chọn" : LOVE_LANGUAGES[option.code].shortLabel}</small></button>)}
         </div>
         <Navigation first={step === 0} final={step === questions.length - 1} canContinue={Boolean(selected)} onBack={() => setStep((value) => Math.max(0, value - 1))} onNext={() => step === questions.length - 1 ? setFinished(true) : setStep((value) => value + 1)} />
       </div>
@@ -255,13 +290,13 @@ function LifeWheelAssessment({ categories }: { categories: ReadonlyArray<WheelCa
     return (
       <ResultShell onRestart={restart}>
         <div className={styles.resultHeading}><span>Mức cân bằng hiện tại</span><h1>{overall.toFixed(1)} / 10</h1><p>{balance <= 2 ? "Bánh xe của bạn tương đối cân bằng." : balance <= 4 ? "Một vài vùng đang chênh lệch và cần được chăm sóc có chủ đích." : "Bánh xe có độ chênh lớn; hãy bắt đầu từ vùng thấp nhất bằng bước nhỏ, thực tế."}</p></div>
-        <div className={styles.chartGrid}><RadarChart items={items} max={10} /><ScoreBars items={ordered} max={10} suffix=" / 10" /></div>
+        <div className={styles.chartGrid}><RadarChart items={items} max={10} /><DonutChart items={items} suffix=" / 10" /><ScoreBars items={ordered} max={10} suffix=" / 10" /></div>
         <div className={styles.wheelSummary}>
-          <article><span>Vùng đang nâng đỡ bạn</span><h2>{categories.find((item) => item.id === high.key)?.label} · {high.value}</h2><p>Đây có thể là nguồn lực giúp bạn cải thiện các vùng còn lại.</p></article>
-          <article className={styles.priorityCard}><span>Vùng ưu tiên</span><h2>{lowCategory.label} · {low.value}</h2><p>{lowCategory.action}</p></article>
+          <article style={{ "--insight-accent": high.color } as CSSProperties}><span>Vùng đang nâng đỡ bạn</span><h2>{categories.find((item) => item.id === high.key)?.label} · {high.value}</h2><p>Đây có thể là nguồn lực giúp bạn cải thiện các vùng còn lại.</p></article>
+          <article className={styles.priorityCard} style={{ "--insight-accent": low.color } as CSSProperties}><span>Vùng ưu tiên</span><h2>{lowCategory.label} · {low.value}</h2><p>{lowCategory.action}</p></article>
         </div>
         <div className={styles.insightGrid}>
-          {ordered.map((item) => { const detail = categories.find((entry) => entry.id === item.key)!; const level = item.value >= 8 ? "Đang nâng đỡ" : item.value >= 6 ? "Khá ổn" : item.value >= 4 ? "Cần chú ý" : "Ưu tiên phục hồi"; return <article key={item.key}><span>{level}</span><h2>{detail.label} · {item.value}</h2><p>{detail.action}</p></article>; })}
+          {ordered.map((item) => { const detail = categories.find((entry) => entry.id === item.key)!; const level = item.value >= 8 ? "Đang nâng đỡ" : item.value >= 6 ? "Khá ổn" : item.value >= 4 ? "Cần chú ý" : "Ưu tiên phục hồi"; return <article key={item.key} style={{ "--insight-accent": detail.color } as CSSProperties}><span>{level}</span><h2>{detail.label} · {item.value}</h2><p>{detail.action}</p></article>; })}
         </div>
       </ResultShell>
     );
@@ -269,14 +304,14 @@ function LifeWheelAssessment({ categories }: { categories: ReadonlyArray<WheelCa
   return (
     <section className={styles.assessment}>
       <Progress current={step + 1} total={categories.length} label={`Vùng ${step + 1} / ${categories.length}`} />
-      <div className={styles.questionCard} key={category.id} style={{ "--section-accent": category.color } as React.CSSProperties}>
+      <div className={styles.questionCard} key={category.id} style={{ "--section-accent": category.color } as CSSProperties}>
         <div className={styles.questionMeta}><span>{String(step + 1).padStart(2, "0")}</span><p>Chấm theo trải nghiệm hiện tại: <strong>1 · rất chưa hài lòng</strong> đến <strong>10 · rất hài lòng</strong>.</p></div>
         <h1>{category.label}</h1>
         <div className={styles.wheelQuestions}>
           {category.questions.map((text, index) => {
             const id = `${category.id}-${index + 1}`;
             const value = answers[id];
-            return <fieldset key={id}><legend><span>{index + 1}</span>{text}</legend><div className={styles.scale}>{Array.from({ length: 10 }, (_, score) => score + 1).map((score) => <button aria-label={`${score} điểm`} className={value === score ? styles.scaleSelected : ""} onClick={() => setAnswers((current) => ({ ...current, [id]: score }))} type="button" key={score}>{score}</button>)}</div><small>{value ? `${value}/10` : "Chưa chấm"}</small></fieldset>;
+            return <fieldset key={id}><legend><span>{index + 1}</span>{text}</legend><div className={styles.scale}>{Array.from({ length: 10 }, (_, score) => score + 1).map((score) => <button aria-label={`${score} điểm`} className={value === score ? styles.scaleSelected : ""} onClick={() => setAnswers((current) => ({ ...current, [id]: score }))} style={{ "--score-color": SCALE_COLORS[score - 1] } as CSSProperties} type="button" key={score}>{score}</button>)}</div><small className={value ? styles.scoredLabel : ""}>{value ? `${value}/10 · Đã chấm` : "Chưa chấm"}</small></fieldset>;
           })}
         </div>
         <Navigation first={step === 0} final={step === categories.length - 1} canContinue={Boolean(complete)} onBack={() => setStep((value) => Math.max(0, value - 1))} onNext={() => step === categories.length - 1 ? setFinished(true) : setStep((value) => value + 1)} />
@@ -294,7 +329,7 @@ export default function ToolExperience(props: ToolExperienceProps) {
   const { slug } = props;
   const tool = SELF_DISCOVERY_TOOLS.find((item) => item.slug === slug)!;
   return (
-    <div className={styles.page} style={{ "--tool-accent": tool.accent } as React.CSSProperties}>
+    <div className={styles.page} style={{ "--tool-accent": tool.accent } as CSSProperties}>
       <div className={styles.cosmicField} aria-hidden="true"><span>1</span><span>3</span><span>6</span><span>9</span><span>11/2</span><span>22/4</span><i /><i /></div>
       <ToolHeader slug={slug} />
       <main className={styles.main}>
