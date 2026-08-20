@@ -112,6 +112,21 @@ test("newest blog posts appear first in admin and public lists", () => {
   assert.doesNotMatch(adminPage, /order\("updated_at", \{ ascending: false \}\)/);
 });
 
+test("admin blog loads lightweight rows before the current page details", () => {
+  assert.match(adminPage, /const BLOG_LIST_COLUMNS = "id,category_id,slug,title,summary/);
+  assert.match(adminPage, /\.select\(BLOG_LIST_COLUMNS\)/);
+  assert.match(adminPage, /const visiblePostIds = visiblePostRows\.map/);
+  assert.match(adminPage, /\.select\("\*"\)\.in\("id", visiblePostIds\)/);
+  assert.match(adminPage, /const detailedPostsById = new Map/);
+});
+
+test("admin blog renders malformed update dates without crashing the page", () => {
+  assert.match(adminPage, /function adminDate\(/);
+  assert.match(adminPage, /Number\.isFinite\(date\.getTime\(\)\)/);
+  assert.match(adminPage, /const updatedDate = adminDate\(item\.updated_at\)/);
+  assert.match(adminPage, /<time dateTime=\{updatedDate\.dateTime\}>\{updatedDate\.label\}<\/time>/);
+});
+
 test("blog saves show a blocking pending state and prevent repeated submits", () => {
   assert.match(form, /data-pending-label=/);
   assert.match(form, /Đang lưu bài viết…/);

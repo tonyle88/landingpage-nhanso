@@ -5,6 +5,7 @@ import { AdminToast } from "../admin-toast";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
+import type { Tables } from "@/lib/supabase/database.types";
 import { deleteBlogCategoryAction, deleteBlogPostAction } from "./actions";
 import { BlogPostForm } from "./blog-post-form";
 import { CategoryForm } from "./category-form";
@@ -17,6 +18,10 @@ export const metadata: Metadata = {
 };
 
 const PAGE_SIZE = 8;
+const BLOG_LIST_COLUMNS = "id,category_id,slug,title,summary,pinned,status,published_at,created_at,updated_at";
+const adminDateFormatter = new Intl.DateTimeFormat("vi-VN", {
+  dateStyle: "short",
+});
 const notices: Record<string, string> = {
   saved: "Đã lưu bài viết và ghi audit log.",
   deleted: "Đã xóa bài viết và ghi audit log.",
@@ -65,16 +70,25 @@ function blogHref(params: Record<string, string | number | undefined>) {
   return suffix ? `/admin/blog?${suffix}` : "/admin/blog";
 }
 
+function adminDate(value: string | null | undefined) {
+  if (!value) return { dateTime: undefined, label: "—" };
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) {
+    return { dateTime: undefined, label: "—" };
+  }
+  return { dateTime: date.toISOString(), label: adminDateFormatter.format(date) };
+}
+
 export default async function AdminBlogPage({ searchParams }: { searchParams: Promise<Params> }) {
   const principal = await getAdminPrincipal();
   if (!principal) redirect("/admin/login?reason=unauthorized");
   if (!can(principal.role, "manage_content")) redirect("/admin");
 
   const supabase = await createAuthServerClient();
-  const [{ data: posts, error }, { data: categories }] = await Promise.all([
+  const [{ data: posts, error: listError }, { data: categories, error: categoriesError }] = await Promise.all([
     supabase
       .from("blog_posts")
-      .select("*")
+      .select(BLOG_LIST_COLUMNS)
       .order("pinned", { ascending: false })
       .order("published_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false }),
@@ -94,7 +108,18 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: Pr
   const totalPages = Math.max(1, Math.ceil(filteredPosts.length / PAGE_SIZE));
   const requestedPage = Number.parseInt(params.page || "1", 10);
   const currentPage = Math.min(totalPages, Math.max(1, Number.isFinite(requestedPage) ? requestedPage : 1));
-  const visiblePosts = filteredPosts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const visiblePostRows = filteredPosts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const visiblePostIds = visiblePostRows.map((post) => post.id);
+  const { data: detailedPosts, error: detailError } = visiblePostIds.length
+    ? await supabase.from("blog_posts").select("*").in("id", visiblePostIds)
+    : { data: [] as Tables<"blog_posts">[], error: null };
+  const detailedPostsById = new Map(
+    (detailedPosts || []).map((post) => [post.id, post]),
+  );
+  const visiblePosts = visiblePostRows.flatMap((post) => {
+    const detailedPost = detailedPostsById.get(post.id);
+    return detailedPost ? [detailedPost] : [];
+  });
   const publishedCount = (posts || []).filter((post) => post.status === "published").length;
   const toastCode = params.category_status || params.status;
   const toastMessage = params.category_status
@@ -118,7 +143,13 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: Pr
         tone={toastTone}
         cleanHref={params.category_status ? "/admin/blog?view=categories" : "/admin/blog"}
       />
-      {error ? <AdminToast message="Không thể tải danh sách bài viết." tone="error" cleanHref="/admin/blog" /> : null}
+      {listError || categoriesError || detailError ? (
+        <AdminToast
+          message="Không thể tải đầy đủ dữ liệu bài viết. Hãy tải lại trang hoặc đổi bộ lọc."
+          tone="error"
+          cleanHref="/admin/blog"
+        />
+      ) : null}
 
       <section className={styles.blogStats} aria-label="Thống kê blog">
         <div><strong>{posts?.length || 0}</strong><span>Tổng bài viết</span></div>
@@ -190,29 +221,33 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: Pr
 
             <div className={styles.blogTable}>
               <div className={`${styles.blogTableHeader} ${styles.postColumns}`}><span>Bài viết</span><span>Chủ đề</span><span>Cập nhật</span><span>Trạng thái</span></div>
-              {visiblePosts.map((item) => (
-                <details className={styles.blogTableRow} key={item.id}>
-                  <summary className={styles.postColumns}>
-                    <span className={styles.postTitle}><strong>{item.title}</strong><small>{item.pinned ? "📌 " : ""}{item.slug}</small></span>
-                    <span>{item.category_id ? categoryNames.get(item.category_id) || "—" : "Chưa phân loại"}</span>
-                    <time dateTime={item.updated_at || undefined}>{item.updated_at ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "short" }).format(new Date(item.updated_at)) : "—"}</time>
-                    <span className={item.status === "published" ? styles.active : styles.inactive}>{item.status === "published" ? "Đã xuất bản" : item.status === "draft" ? "Bản nháp" : "Lưu trữ"}</span>
-                  </summary>
-                  <div className={styles.blogEditPanel}>
-                    <div className={styles.editPanelHeading}><div><p className={styles.eyebrow}>Chỉnh sửa bài viết</p><h3>{item.title}</h3></div><span>Thay đổi được lưu qua audit log</span></div>
-                    <BlogPostForm item={item} categories={categoryRows} />
-                    <form className={styles.dangerForm} action={deleteBlogPostAction}>
-                      <input type="hidden" name="id" value={item.id} />
-                      <label className={`${styles.field} ${styles.dangerField}`}>
-                        <span>Nhập <strong>XOA</strong> để xác nhận</span>
-                        <input name="confirmation" autoComplete="off" required />
-                      </label>
-                      <button className={styles.dangerButton} type="submit">Xóa bài viết</button>
-                    </form>
-                  </div>
-                </details>
-              ))}
-              {visiblePosts.length === 0 ? <div className={styles.blogEmpty}><strong>Không tìm thấy bài viết</strong><span>Hãy đổi bộ lọc hoặc tạo bài viết mới.</span></div> : null}
+              {visiblePosts.map((item) => {
+                const updatedDate = adminDate(item.updated_at);
+                return (
+                  <details className={styles.blogTableRow} key={item.id}>
+                    <summary className={styles.postColumns}>
+                      <span className={styles.postTitle}><strong>{item.title}</strong><small>{item.pinned ? "📌 " : ""}{item.slug}</small></span>
+                      <span>{item.category_id ? categoryNames.get(item.category_id) || "—" : "Chưa phân loại"}</span>
+                      <time dateTime={updatedDate.dateTime}>{updatedDate.label}</time>
+                      <span className={item.status === "published" ? styles.active : styles.inactive}>{item.status === "published" ? "Đã xuất bản" : item.status === "draft" ? "Bản nháp" : "Lưu trữ"}</span>
+                    </summary>
+                    <div className={styles.blogEditPanel}>
+                      <div className={styles.editPanelHeading}><div><p className={styles.eyebrow}>Chỉnh sửa bài viết</p><h3>{item.title}</h3></div><span>Thay đổi được lưu qua audit log</span></div>
+                      <BlogPostForm item={item} categories={categoryRows} />
+                      <form className={styles.dangerForm} action={deleteBlogPostAction}>
+                        <input type="hidden" name="id" value={item.id} />
+                        <label className={`${styles.field} ${styles.dangerField}`}>
+                          <span>Nhập <strong>XOA</strong> để xác nhận</span>
+                          <input name="confirmation" autoComplete="off" required />
+                        </label>
+                        <button className={styles.dangerButton} type="submit">Xóa bài viết</button>
+                      </form>
+                    </div>
+                  </details>
+                );
+              })}
+              {visiblePostRows.length === 0 ? <div className={styles.blogEmpty}><strong>Không tìm thấy bài viết</strong><span>Hãy đổi bộ lọc hoặc tạo bài viết mới.</span></div> : null}
+              {visiblePostRows.length > 0 && visiblePosts.length === 0 ? <div className={styles.blogEmpty}><strong>Không thể tải chi tiết bài viết</strong><span>Hãy tải lại trang để thử lại.</span></div> : null}
             </div>
 
             <nav className={styles.pagination} aria-label="Phân trang bài viết">
