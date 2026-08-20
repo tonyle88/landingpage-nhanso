@@ -1,6 +1,27 @@
 export type SelfDiscoveryToolSlug = "vakad" | "ngon-ngu-yeu-thuong" | "banh-xe-cuoc-doi";
 export type VakadDimension = "V" | "A" | "K" | "Ad";
 export type LoveLanguageCode = "A" | "B" | "C" | "D" | "E";
+export type VakadQuestion = {
+  id: string;
+  question: string;
+  options: ReadonlyArray<{ dimension: VakadDimension; text: string }>;
+};
+export type LoveLanguageQuestion = {
+  id: string;
+  options: ReadonlyArray<{ code: LoveLanguageCode; text: string }>;
+};
+export type WheelCategory = {
+  id: string;
+  shortLabel: string;
+  label: string;
+  color: string;
+  action: string;
+  questions: ReadonlyArray<string>;
+};
+
+export const VAKAD_SETTING_KEY = "quiz.tools.vakad";
+export const LOVE_LANGUAGE_SETTING_KEY = "quiz.tools.love_languages";
+export const LIFE_WHEEL_SETTING_KEY = "quiz.tools.life_wheel";
 
 export const SELF_DISCOVERY_TOOLS = [
   {
@@ -272,9 +293,12 @@ export function isSelfDiscoveryToolSlug(value: string): value is SelfDiscoveryTo
   return SELF_DISCOVERY_TOOLS.some((tool) => tool.slug === value);
 }
 
-export function scoreVakad(rankings: Record<string, readonly VakadDimension[]>) {
+export function scoreVakad(
+  rankings: Record<string, readonly VakadDimension[]>,
+  questions: ReadonlyArray<VakadQuestion> = VAKAD_QUESTIONS,
+) {
   const scores: Record<VakadDimension, number> = { V: 0, A: 0, K: 0, Ad: 0 };
-  for (const question of VAKAD_QUESTIONS) {
+  for (const question of questions) {
     const ranking = rankings[question.id] || [];
     ranking.forEach((dimension, index) => {
       if (dimension in scores) scores[dimension] += 4 - index;
@@ -283,19 +307,107 @@ export function scoreVakad(rankings: Record<string, readonly VakadDimension[]>) 
   return scores;
 }
 
-export function scoreLoveLanguages(answers: Record<string, LoveLanguageCode>) {
+export function scoreLoveLanguages(
+  answers: Record<string, LoveLanguageCode>,
+  questions: ReadonlyArray<LoveLanguageQuestion> = LOVE_LANGUAGE_QUESTIONS,
+) {
   const scores: Record<LoveLanguageCode, number> = { A: 0, B: 0, C: 0, D: 0, E: 0 };
-  for (const question of LOVE_LANGUAGE_QUESTIONS) {
+  for (const question of questions) {
     const code = answers[question.id];
     if (code in scores) scores[code] += 1;
   }
   return scores;
 }
 
-export function scoreLifeWheel(answers: Record<string, number>) {
-  return Object.fromEntries(WHEEL_CATEGORIES.map((category) => {
+export function scoreLifeWheel(
+  answers: Record<string, number>,
+  categories: ReadonlyArray<WheelCategory> = WHEEL_CATEGORIES,
+) {
+  return Object.fromEntries(categories.map((category) => {
     const values = category.questions.map((_, index) => answers[`${category.id}-${index + 1}`]).filter(Number.isFinite);
     const average = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
     return [category.id, Math.round(average * 10) / 10];
-  })) as Record<(typeof WHEEL_CATEGORIES)[number]["id"], number>;
+  })) as Record<string, number>;
+}
+
+function cleanText(value: unknown, maxLength: number) {
+  return typeof value === "string" ? value.replace(/\s+/g, " ").trim().slice(0, maxLength) : "";
+}
+
+function settingValue(value: unknown, field: string) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const source = (value as Record<string, unknown>)[field];
+  return Array.isArray(source) ? source : null;
+}
+
+export function parseVakadQuestions(value: unknown): VakadQuestion[] | null {
+  const source = settingValue(value, "questions") || (Array.isArray(value) ? value : null);
+  if (!source || source.length !== VAKAD_QUESTIONS.length) return null;
+  const dimensions: VakadDimension[] = ["V", "A", "K", "Ad"];
+  const parsed: VakadQuestion[] = [];
+  for (const [index, entry] of source.entries()) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return null;
+    const item = entry as Record<string, unknown>;
+    const question = cleanText(item.question, 280);
+    const options = Array.isArray(item.options) ? item.options : [];
+    if (!question || options.length !== 4) return null;
+    const seen = new Set<VakadDimension>();
+    const parsedOptions: Array<{ dimension: VakadDimension; text: string }> = [];
+    for (const option of options) {
+      if (!option || typeof option !== "object" || Array.isArray(option)) return null;
+      const record = option as Record<string, unknown>;
+      const dimension = record.dimension as VakadDimension;
+      const text = cleanText(record.text, 360);
+      if (!dimensions.includes(dimension) || seen.has(dimension) || !text) return null;
+      seen.add(dimension);
+      parsedOptions.push({ dimension, text });
+    }
+    parsed.push({ id: `vakad-${index + 1}`, question, options: parsedOptions });
+  }
+  return parsed;
+}
+
+export function parseLoveLanguageQuestions(value: unknown): LoveLanguageQuestion[] | null {
+  const source = settingValue(value, "questions") || (Array.isArray(value) ? value : null);
+  if (!source || source.length !== LOVE_LANGUAGE_QUESTIONS.length) return null;
+  const codes: LoveLanguageCode[] = ["A", "B", "C", "D", "E"];
+  const parsed: LoveLanguageQuestion[] = [];
+  for (const [index, entry] of source.entries()) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return null;
+    const options = Array.isArray((entry as Record<string, unknown>).options)
+      ? (entry as Record<string, unknown>).options as unknown[]
+      : [];
+    if (options.length !== 2) return null;
+    const parsedOptions: Array<{ code: LoveLanguageCode; text: string }> = [];
+    for (const option of options) {
+      if (!option || typeof option !== "object" || Array.isArray(option)) return null;
+      const record = option as Record<string, unknown>;
+      const code = record.code as LoveLanguageCode;
+      const text = cleanText(record.text, 420);
+      if (!codes.includes(code) || !text) return null;
+      parsedOptions.push({ code, text });
+    }
+    if (parsedOptions[0].code === parsedOptions[1].code) return null;
+    parsed.push({ id: `love-${index + 1}`, options: parsedOptions });
+  }
+  return parsed;
+}
+
+export function parseWheelCategories(value: unknown): WheelCategory[] | null {
+  const source = settingValue(value, "categories") || (Array.isArray(value) ? value : null);
+  if (!source || source.length !== WHEEL_CATEGORIES.length) return null;
+  const defaults = new Map(WHEEL_CATEGORIES.map((category) => [category.id, category]));
+  const parsed: WheelCategory[] = [];
+  for (const entry of source) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return null;
+    const item = entry as Record<string, unknown>;
+    const id = cleanText(item.id, 40);
+    const fallback = defaults.get(id as (typeof WHEEL_CATEGORIES)[number]["id"]);
+    const label = cleanText(item.label, 120);
+    const questions = Array.isArray(item.questions) ? item.questions.map((question) => cleanText(question, 500)) : [];
+    if (!fallback || !label || questions.length !== fallback.questions.length || questions.some((question) => !question)) return null;
+    parsed.push({ id, label, shortLabel: fallback.shortLabel, color: fallback.color, action: fallback.action, questions });
+  }
+  if (new Set(parsed.map((category) => category.id)).size !== WHEEL_CATEGORIES.length) return null;
+  return parsed;
 }

@@ -1,15 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import {
   isSelfDiscoveryToolSlug,
   SELF_DISCOVERY_TOOLS,
-  type SelfDiscoveryToolSlug,
 } from "@/lib/self-discovery-tools";
+import { getPublicSelfDiscoveryContent } from "@/lib/supabase/public-self-discovery-tools";
 import ToolExperience from "./tool-experience";
-
-export function generateStaticParams() {
-  return SELF_DISCOVERY_TOOLS.map(({ slug }) => ({ slug }));
-}
 
 export async function generateMetadata({
   params,
@@ -31,13 +28,26 @@ export default async function SelfDiscoveryToolPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  // A per-request render lets Next apply the CSP nonce to its client scripts.
+  // Static prerendering would leave the assessment visible but non-interactive.
+  await connection();
   const { slug } = await params;
   if (!isSelfDiscoveryToolSlug(slug)) notFound();
+
+  if (slug === "vakad") {
+    const content = await getPublicSelfDiscoveryContent(slug);
+    return <><link rel="stylesheet" href="/assets/vendor/fonts/fonts.css" /><ToolExperience slug={slug} content={content} /></>;
+  }
+  if (slug === "ngon-ngu-yeu-thuong") {
+    const content = await getPublicSelfDiscoveryContent(slug);
+    return <><link rel="stylesheet" href="/assets/vendor/fonts/fonts.css" /><ToolExperience slug={slug} content={content} /></>;
+  }
+  const content = await getPublicSelfDiscoveryContent(slug);
 
   return (
     <>
       <link rel="stylesheet" href="/assets/vendor/fonts/fonts.css" />
-      <ToolExperience slug={slug as SelfDiscoveryToolSlug} />
+      <ToolExperience slug={slug} content={content} />
     </>
   );
 }
