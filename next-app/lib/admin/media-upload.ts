@@ -1,7 +1,6 @@
 import "server-only";
 
 import { randomUUID } from "node:crypto";
-import sharp from "sharp";
 import { createServiceServerClient } from "@/lib/supabase/server";
 
 const BUCKET = "content-images";
@@ -80,6 +79,9 @@ export async function uploadContentImage({
   let uploadMime: AllowedMime = mime;
   let extension = MIME_EXTENSIONS[mime];
   if (webp) {
+    // Keep the native image runtime out of read-only admin page renders. Vercel
+    // only needs to load Sharp when an upload actually requests a WebP variant.
+    const { default: sharp } = await import("sharp");
     uploadBytes = new Uint8Array(await sharp(bytes, { failOn: "warning" })
       .rotate()
       .resize({
