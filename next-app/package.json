@@ -68,6 +68,7 @@
     "test:admin-numerology": "node --experimental-strip-types --test ../qa/nextjs-admin-numerology-tests.mjs",
     "test:admin-reports": "node --test ../qa/admin-customer-report-tests.mjs",
     "test:public-quiz": "node --experimental-strip-types --test ../qa/public-quiz-tests.mjs",
+    "test:self-discovery": "node --experimental-strip-types --test ../qa/self-discovery-tools-tests.mjs",
     "test:booking-calendar": "node --test ../qa/booking-calendar-integration-tests.mjs",
     "test:rls": "node ../qa/run-supabase-rls-isolated.mjs",
     "test:schema": "node --test ../qa/supabase-schema-tests.mjs",

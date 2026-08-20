@@ -22,6 +22,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.8,
     },
+    ...["vakad", "ngon-ngu-yeu-thuong", "banh-xe-cuoc-doi"].map((slug) => ({
+      url: new URL(`/quiz/cong-cu/${slug}`, siteUrl).href,
+      changeFrequency: "monthly" as const,
+      priority: 0.72,
+    })),
     ...posts.map((post) => ({
       url: new URL(`/blog?id=${encodeURIComponent(post.id)}`, siteUrl).href,
       lastModified: post.date,

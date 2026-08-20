@@ -5,8 +5,8 @@ import { getPublicPackages } from "@/lib/supabase/public-packages";
 import { getPublicQuizQuestions } from "@/lib/supabase/public-quiz-questions";
 
 export const metadata: Metadata = {
-  title: "Quiz chọn gói tư vấn phù hợp | Clow Cat Patronus",
-  description: "Trả lời bộ câu hỏi chuyên sâu để tìm gói tư vấn nhân số học phù hợp với nhu cầu hiện tại của bạn.",
+  title: "Quiz & công cụ hiểu mình | Clow Cat Patronus",
+  description: "Quiz chọn gói tư vấn, VAKAd, Ngôn ngữ yêu thương và Bánh xe cuộc đời với biểu đồ cùng luận giải trực quan.",
   alternates: { canonical: "/quiz" },
 };
 

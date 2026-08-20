@@ -6,6 +6,7 @@ import { landingPlainText } from "@/lib/landing-text";
 import type { PublicPackage } from "@/lib/packages";
 import { QUIZ_QUESTIONS, recommendPackages, type QuizQuestion } from "@/lib/package-quiz";
 import { ClowGlint } from "@/components/ui/clow-glint";
+import { SELF_DISCOVERY_TOOLS } from "@/lib/self-discovery-tools";
 
 const mysticNumbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "11/2", "22/4", "33/6", "4", "5", "6"];
 
@@ -176,6 +177,25 @@ export default function QuizExperience({
               <span><strong>01</strong>Gợi ý chính</span>
               <span><strong>0</strong>Dữ liệu cá nhân</span>
             </div>
+          </div>
+        </section>
+
+        <section className={styles.toolGateway} aria-labelledby="self-discovery-tools">
+          <div className={styles.toolGatewayHeading}>
+            <span><ClowGlint size="xs" /> Bộ công cụ hiểu mình</span>
+            <h2 id="self-discovery-tools">Ba góc nhìn mới bên cạnh Quiz chọn gói</h2>
+            <p>Làm từng bài độc lập, xem điểm, biểu đồ và phần luận giải ngay trên trình duyệt. Không cần nhập tên, email hoặc ngày sinh.</p>
+          </div>
+          <div className={styles.toolCards}>
+            {SELF_DISCOVERY_TOOLS.map((tool) => (
+              <a href={`/quiz/cong-cu/${tool.slug}`} key={tool.slug} style={{ "--tool-card-accent": tool.accent } as CSSProperties}>
+                <span>{tool.number}</span>
+                <small>{tool.meta}</small>
+                <h3>{tool.title}</h3>
+                <p>{tool.subtitle}</p>
+                <strong>Khám phá ngay →</strong>
+              </a>
+            ))}
           </div>
         </section>
 
