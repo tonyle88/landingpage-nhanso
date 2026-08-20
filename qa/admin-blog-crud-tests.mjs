@@ -80,6 +80,17 @@ test("editor and HTML modes share a canonical value without render overwrite", (
   assert.doesNotMatch(editor, /dangerouslySetInnerHTML/);
 });
 
+test("full visual and HTML editors keep the same large working height", () => {
+  assert.match(
+    adminStyles,
+    /\.editorCanvas, \.editorSource \{[^}]*height: 520px;[^}]*min-height: 520px;/,
+  );
+  assert.match(
+    adminStyles,
+    /\.richEditorCompact \.editorCanvas, \.richEditorCompact \.editorSource \{[^}]*height: 180px;/,
+  );
+});
+
 test("editor supports safe semantic font sizes and readable article defaults", () => {
   assert.match(editor, /aria-label=\{`Cỡ chữ \$\{label\.toLowerCase\(\)\}`\}/);
   assert.match(editor, /Nhỏ/);
