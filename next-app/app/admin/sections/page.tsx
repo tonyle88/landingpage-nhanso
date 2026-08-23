@@ -8,6 +8,7 @@ import { SectionForm } from "./section-form";
 import { ContentItemForm, type AdminLandingContentItem } from "./content-item-form";
 import styles from "../admin.module.css";
 import { AdminToast } from "../admin-toast";
+import { landingContentCatalog } from "@/lib/landing-content-catalog";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -58,7 +59,7 @@ export default async function AdminSectionsPage({
       .toLocaleLowerCase("vi")
       .includes(normalizedQuery);
   });
-  const contentItems = (settings || []).flatMap((item) => {
+  const storedContentItems = (settings || []).flatMap((item) => {
     if (!item.value || typeof item.value !== "object" || Array.isArray(item.value)) return [];
     return [{
       key: item.key,
@@ -66,6 +67,20 @@ export default async function AdminSectionsPage({
       value: item.value as AdminLandingContentItem["value"],
     } satisfies AdminLandingContentItem];
   });
+  const storedContentByKey = new Map(storedContentItems.map((item) => [item.key, item]));
+  const catalogKeys = new Set(landingContentCatalog.map((item) => item.key));
+  const contentItems: AdminLandingContentItem[] = [
+    ...landingContentCatalog.map((fallback) => {
+      const stored = storedContentByKey.get(fallback.key);
+      if (!stored) return fallback;
+      return {
+        ...fallback,
+        description: stored.description || fallback.description,
+        value: { ...fallback.value, ...stored.value },
+      };
+    }),
+    ...storedContentItems.filter((item) => !catalogKeys.has(item.key)),
+  ];
   const contentGroups = new Map<string, AdminLandingContentItem[]>();
   contentItems.forEach((item) => {
     const group = item.key.replace("landing.content.", "").split(".")[0] || "other";

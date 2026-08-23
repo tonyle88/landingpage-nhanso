@@ -249,10 +249,11 @@ export function PainPointsSection() {
                 marginRight: "8px",
               }}
               aria-hidden="true"
-            />{" "}
-            <strong>Nhân Số Học</strong> là tấm bản đồ giúp bạn hiểu rõ bản
-            thân, tính cách, điểm mạnh, điểm yếu và hành trình phát triển của
-            chính mình.
+            />
+            <strong className="pain-conclusion-title">Nhân Số Học</strong>
+            <span className="pain-conclusion-text">
+              là tấm bản đồ giúp bạn hiểu rõ bản thân, tính cách, điểm mạnh, điểm yếu và hành trình phát triển của chính mình.
+            </span>
           </p>
         </div>
       </div>
