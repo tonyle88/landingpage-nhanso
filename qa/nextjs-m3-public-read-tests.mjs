@@ -66,6 +66,22 @@ test("package cards and booking choices keep admin packages as the single source
   assert.match(packageRuntime, /offlinePrice: Number\(item\.offlinePrice \|\| onlinePrice\)/);
 });
 
+test("landing keeps four package cards visible on desktop with compact sections", async () => {
+  const [styles, packageRuntime] = await Promise.all([
+    read("public/style.css"),
+    read("app/use-packages.ts"),
+  ]);
+
+  assert.match(styles, /--section-padding: 76px 0/);
+  assert.match(styles, /\.section-header \{[^}]*margin-bottom: 42px/);
+  assert.match(
+    styles,
+    /\.packages-carousel-enabled \.package-card \{[^}]*flex: 0 0 calc\(\(100% - 72px\) \/ 4\)/,
+  );
+  assert.match(styles, /grid-template-areas:\s*"number title"\s*"icon description"/);
+  assert.match(packageRuntime, /controls\.hidden = maxStartIndex\(\) === 0/);
+});
+
 test("testimonials use the same bounded server read and Google fallback", async () => {
   const [page, query, runtime, content] = await Promise.all([
     read("app/page.tsx"),
