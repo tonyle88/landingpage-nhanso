@@ -265,6 +265,7 @@ export function usePackages(initialPackages: PublicPackage[] = []) {
             Math.min(Math.round(grid.scrollLeft / getStep()), maxStartIndex()),
           );
           const end = Math.min(packages.length, activeIndex + visibleCount());
+          controls.hidden = maxStartIndex() === 0;
           range.textContent = `${activeIndex + 1}${end > activeIndex + 1 ? `-${end}` : ""} / ${packages.length}`;
           previous.disabled = activeIndex <= 0;
           next.disabled = activeIndex >= maxStartIndex();
