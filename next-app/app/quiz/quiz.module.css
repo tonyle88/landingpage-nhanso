@@ -211,7 +211,7 @@
 .toolIcon svg { width: 56px; height: 56px; overflow: visible; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .toolCards small { color: var(--tool-card-accent); font-size: .57rem; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
 .toolCards h3 { margin: 0; overflow: hidden; font-family: "Playfair Display", Georgia, serif; font-size: clamp(1.18rem, 1.3vw, 1.4rem); line-height: 1.16; letter-spacing: -.018em; white-space: nowrap; text-overflow: clip; }
-.toolCards p { margin: 0; color: rgb(255 255 255 / 84%); font-size: .78rem; line-height: 1.68; }
+.toolCards p { margin: 0; color: rgb(255 255 255 / 84%); font-size: .78rem; line-height: 1.68; text-align: justify; text-align-last: left; }
 .toolCards ul { display: grid; gap: 8px; margin: 2px 0 0; padding: 14px 0 0; border-top: 1px solid color-mix(in srgb, var(--tool-card-accent) 22%, transparent); list-style: none; }
 .toolCards li { position: relative; padding-left: 16px; color: rgb(255 255 255 / 72%); font-size: .68rem; line-height: 1.55; }
 .toolCards li::before { position: absolute; top: .6em; left: 0; content: ""; width: 6px; height: 6px; transform: rotate(45deg); background: var(--tool-card-accent); box-shadow: 0 0 10px var(--tool-card-accent); }
