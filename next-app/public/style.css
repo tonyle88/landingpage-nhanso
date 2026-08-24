@@ -2707,6 +2707,26 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   font-weight: 900;
 }
 
+.compare-table th:not(:first-child) {
+  min-width: 220px;
+}
+
+.compare-package-name {
+  display: block;
+  color: var(--color-gold-light);
+  font-size: 1.04rem;
+  line-height: 1.35;
+}
+
+.compare-table th small {
+  display: block;
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
 .compare-table td:first-child {
   width: 22%;
   color: #fff;
@@ -2720,6 +2740,53 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
 .compare-table tr:last-child td {
   border-bottom: 0;
+}
+
+.compare-feature-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compare-feature-list li {
+  position: relative;
+  padding-left: 15px;
+}
+
+.compare-feature-list li::before {
+  position: absolute;
+  top: 0.65em;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  content: "";
+  transform: rotate(45deg);
+  background: var(--color-gold-light);
+  box-shadow: 0 0 9px rgba(240, 201, 106, 0.55);
+}
+
+.compare-package-cta {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border: 1px solid rgba(240, 201, 106, 0.42);
+  border-radius: 999px;
+  color: #071f23;
+  background: linear-gradient(110deg, #f0c96a, #ef8a4c);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.compare-table-empty {
+  margin: 0;
+  padding: 38px 24px;
+  color: rgba(255, 255, 255, 0.72);
+  text-align: center;
 }
 
 /* ===== FAQ ===== */

@@ -80,7 +80,7 @@ export default async function LandingPage() {
           <BenefitsSection />
           <TestimonialsSection />
           <PackagesSection packages={publicPackages.packages} />
-          <PackageComparisonSection />
+          <PackageComparisonSection packages={publicPackages.packages} />
           <MethodsSection />
           <ProcessSection />
           <FaqSection />
