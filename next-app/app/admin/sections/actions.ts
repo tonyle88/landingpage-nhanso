@@ -58,41 +58,50 @@ export async function quickUpdateLandingSectionAction(form: FormData) {
   if (index < 0) redirect("/admin/sections?status=invalid");
   const current = data[index];
 
-  if (intent === "toggle") {
-    const { error: saveError } = await supabase.rpc("admin_save_landing_section", {
-      p_id: current.id,
-      p_payload: sectionPayload(current, { enabled: !current.enabled }),
+  const saveLayoutOnly = async (
+    row: (typeof data)[number],
+    patch: Partial<{ enabled: boolean; sort_order: number }>,
+  ) => {
+    const { error: rpcError } = await supabase.rpc("admin_save_landing_section", {
+      p_id: row.id,
+      p_payload: sectionPayload(row, patch),
     });
+    if (!rpcError) return null;
+
+    // Some imported legacy sections contain HTML that predates the current
+    // sanitizer. Moving or toggling them must not re-submit that old HTML.
+    const { error: layoutError } = await supabase
+      .from("landing_sections")
+      .update(patch)
+      .eq("id", row.id);
+    if (layoutError) {
+      console.error("landing section layout update failed", {
+        id: row.id,
+        rpcCode: rpcError.code,
+        rpcMessage: rpcError.message,
+        updateCode: layoutError.code,
+        updateMessage: layoutError.message,
+      });
+    }
+    return layoutError;
+  };
+
+  if (intent === "toggle") {
+    const saveError = await saveLayoutOnly(current, { enabled: !current.enabled });
     if (saveError) redirect("/admin/sections?status=error");
   } else {
     const targetIndex = intent === "move_up" ? index - 1 : index + 1;
     const target = data[targetIndex];
     if (!target) redirect(`/admin/sections?status=unchanged#section-${id}`);
 
-    if (current.sort_order === target.sort_order) {
-      const reordered = [...data];
-      [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
-      for (let orderIndex = 0; orderIndex < reordered.length; orderIndex += 1) {
-        const row = reordered[orderIndex];
-        const normalizedOrder = (orderIndex + 1) * 10;
-        const { error: saveError } = await supabase.rpc("admin_save_landing_section", {
-          p_id: row.id,
-          p_payload: sectionPayload(row, { sort_order: normalizedOrder }),
-        });
-        if (saveError) redirect("/admin/sections?status=error");
-      }
-    } else {
-      const currentOrder = current.sort_order;
-      const { error: currentError } = await supabase.rpc("admin_save_landing_section", {
-        p_id: current.id,
-        p_payload: sectionPayload(current, { sort_order: target.sort_order }),
-      });
-      if (currentError) redirect("/admin/sections?status=error");
-      const { error: targetError } = await supabase.rpc("admin_save_landing_section", {
-        p_id: target.id,
-        p_payload: sectionPayload(target, { sort_order: currentOrder }),
-      });
-      if (targetError) redirect("/admin/sections?status=error");
+    const reordered = [...data];
+    [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
+    for (let orderIndex = 0; orderIndex < reordered.length; orderIndex += 1) {
+      const row = reordered[orderIndex];
+      const normalizedOrder = (orderIndex + 1) * 10;
+      if (row.sort_order === normalizedOrder) continue;
+      const saveError = await saveLayoutOnly(row, { sort_order: normalizedOrder });
+      if (saveError) redirect("/admin/sections?status=error");
     }
   }
 
