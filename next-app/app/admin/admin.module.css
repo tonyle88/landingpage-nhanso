@@ -791,8 +791,61 @@
 .recordSummary strong,
 .recordSummary span { display: block; }
 .recordSummary div span { margin-top: 4px; color: var(--muted); font-size: .84rem; }
-.recordCard details { margin-top: 14px; }
-.recordCard summary { color: var(--gold-soft); cursor: pointer; font-weight: 800; }
+.sectionOrderHint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgb(240 201 106 / 24%);
+  border-radius: 8px;
+  background: linear-gradient(105deg, rgb(240 201 106 / 8%), rgb(42 95 107 / 12%));
+  color: rgb(255 255 255 / 72%);
+}
+.sectionOrderHint span { color: var(--gold-soft); font-size: 1rem; }
+.sectionOrderHint p { margin: 0; font-size: .8rem; line-height: 1.5; }
+.sectionOrderCard {
+  padding: 0;
+  overflow: hidden;
+  border-color: rgb(240 201 106 / 18%);
+  background: linear-gradient(100deg, rgb(5 24 28 / 92%), rgb(10 34 38 / 88%));
+  transition: opacity .18s ease, border-color .18s ease, background .18s ease;
+}
+.sectionOrderCard:hover { border-color: rgb(240 201 106 / 38%); background: linear-gradient(100deg, rgb(7 30 34 / 96%), rgb(13 42 46 / 92%)); }
+.sectionOrderCardDisabled { opacity: .56; }
+.sectionOrderCardDisabled:hover { opacity: .78; }
+.sectionOrderCard .recordSummary { min-height: 70px; align-items: center; padding: 12px 14px; }
+.sectionOrderIdentity { min-width: 0; display: flex; align-items: center; gap: 12px; }
+.sectionOrderIdentity > div { min-width: 0; }
+.sectionGrip { flex: 0 0 auto; color: var(--gold-soft) !important; font-size: 1.35rem !important; line-height: 1; opacity: .72; }
+.sectionOrderIdentity strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sectionQuickArea { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.sectionQuickArea > span { margin: 0; white-space: nowrap; }
+.sectionQuickActions { display: inline-flex; align-items: center; gap: 6px; }
+.sectionQuickActions button {
+  min-width: 36px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgb(240 201 106 / 30%);
+  border-radius: 7px;
+  cursor: pointer;
+  background: rgb(240 201 106 / 9%);
+  color: var(--gold-soft);
+  font: inherit;
+  font-size: .86rem;
+  font-weight: 900;
+}
+.sectionQuickActions button:hover:not(:disabled) { border-color: rgb(240 201 106 / 58%); background: rgb(240 201 106 / 17%); }
+.sectionQuickActions button:disabled { cursor: not-allowed; opacity: .32; }
+.sectionQuickActions .sectionToggleButton { min-width: 48px; padding: 0; border: 0; background: transparent; }
+.sectionQuickActions .sectionToggleButton:hover:not(:disabled) { border: 0; background: transparent; }
+.sectionToggleTrack { position: relative; width: 46px; height: 26px; display: block; border-radius: 999px; background: rgb(255 255 255 / 16%); transition: background .18s ease; }
+.sectionToggleTrack > span { position: absolute; top: 4px; left: 4px; width: 18px; height: 18px; display: block; border-radius: 50%; background: rgb(255 255 255 / 68%); box-shadow: 0 2px 7px rgb(0 0 0 / 34%); transition: transform .18s ease, background .18s ease; }
+.sectionToggleButton[aria-pressed="true"] .sectionToggleTrack { background: linear-gradient(135deg, var(--gold), var(--orange)); }
+.sectionToggleButton[aria-pressed="true"] .sectionToggleTrack > span { transform: translateX(20px); background: #fff; }
+.sectionTypeBadge { padding: 5px 9px; border-radius: 999px; color: rgb(255 255 255 / 68%); background: rgb(255 255 255 / 8%); font-size: .7rem; font-weight: 850; }
+.sectionOrderCard details { margin: 0; padding: 0 14px 14px; border-top: 1px solid rgb(255 255 255 / 7%); }
+.sectionOrderCard summary { width: fit-content; padding-top: 12px; color: var(--gold-soft); cursor: pointer; font-size: .8rem; font-weight: 800; }
 .recordCard details > .editorForm { margin-top: 20px; }
 
 .bookingOverview { display: grid; grid-template-columns: 1fr .8fr 1.2fr; gap: 8px; margin-top: 12px; }
@@ -3288,6 +3341,10 @@
   .sectionManager { grid-template-columns: 1fr; }
   .sectionIndex { position: static; height: auto; }
   .sectionIndex nav { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 260px; }
+  .sectionOrderCard .recordSummary { gap: 12px; }
+  .sectionOrderIdentity { width: 100%; }
+  .sectionQuickArea { width: 100%; justify-content: flex-end; }
+  .sectionQuickActions { width: 100%; justify-content: flex-end; }
 
   .shell { place-items: start center; padding: 14px 10px 28px; }
   .dashboard { padding: 24px 17px; }
@@ -3390,6 +3447,10 @@
 }
 
 @media (max-width: 520px) {
+  .sectionOrderHint { align-items: flex-start; }
+  .sectionOrderCard .recordSummary { padding: 12px; }
+  .sectionQuickActions { justify-content: space-between; }
+  .sectionQuickActions .sectionToggleButton { margin-right: auto; }
   .numerologyHistoryPanel { padding: 18px 14px; }
   .numerologyHistoryHeader,
   .numerologyHistoryFooter { align-items: stretch; flex-direction: column; }

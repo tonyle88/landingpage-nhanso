@@ -16,6 +16,91 @@ async function requireContentManager() {
   }
 }
 
+type SectionQuickAction = "move_up" | "move_down" | "toggle";
+
+function sectionPayload(
+  row: {
+    display_name: string;
+    title: string | null;
+    eyebrow: string | null;
+    content_html: string | null;
+    enabled: boolean;
+    sort_order: number;
+  },
+  patch: Partial<{ enabled: boolean; sort_order: number }> = {},
+) {
+  return {
+    display_name: row.display_name,
+    title: row.title || "",
+    eyebrow: row.eyebrow || "",
+    content_html: row.content_html || "",
+    enabled: patch.enabled ?? row.enabled,
+    sort_order: patch.sort_order ?? row.sort_order,
+  };
+}
+
+export async function quickUpdateLandingSectionAction(form: FormData) {
+  await requireContentManager();
+  const id = optionalUuid(form.get("id"));
+  const intent = String(form.get("intent") || "") as SectionQuickAction;
+  const allowed: SectionQuickAction[] = ["move_up", "move_down", "toggle"];
+  if (!id || !allowed.includes(intent)) redirect("/admin/sections?status=invalid");
+
+  const supabase = await createAuthServerClient();
+  const { data, error } = await supabase
+    .from("landing_sections")
+    .select("id,display_name,title,eyebrow,content_html,enabled,sort_order,section_key")
+    .order("sort_order")
+    .order("section_key");
+  if (error || !data) redirect("/admin/sections?status=error");
+
+  const index = data.findIndex((row) => row.id === id);
+  if (index < 0) redirect("/admin/sections?status=invalid");
+  const current = data[index];
+
+  if (intent === "toggle") {
+    const { error: saveError } = await supabase.rpc("admin_save_landing_section", {
+      p_id: current.id,
+      p_payload: sectionPayload(current, { enabled: !current.enabled }),
+    });
+    if (saveError) redirect("/admin/sections?status=error");
+  } else {
+    const targetIndex = intent === "move_up" ? index - 1 : index + 1;
+    const target = data[targetIndex];
+    if (!target) redirect(`/admin/sections?status=unchanged#section-${id}`);
+
+    if (current.sort_order === target.sort_order) {
+      const reordered = [...data];
+      [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
+      for (let orderIndex = 0; orderIndex < reordered.length; orderIndex += 1) {
+        const row = reordered[orderIndex];
+        const normalizedOrder = (orderIndex + 1) * 10;
+        const { error: saveError } = await supabase.rpc("admin_save_landing_section", {
+          p_id: row.id,
+          p_payload: sectionPayload(row, { sort_order: normalizedOrder }),
+        });
+        if (saveError) redirect("/admin/sections?status=error");
+      }
+    } else {
+      const currentOrder = current.sort_order;
+      const { error: currentError } = await supabase.rpc("admin_save_landing_section", {
+        p_id: current.id,
+        p_payload: sectionPayload(current, { sort_order: target.sort_order }),
+      });
+      if (currentError) redirect("/admin/sections?status=error");
+      const { error: targetError } = await supabase.rpc("admin_save_landing_section", {
+        p_id: target.id,
+        p_payload: sectionPayload(target, { sort_order: currentOrder }),
+      });
+      if (targetError) redirect("/admin/sections?status=error");
+    }
+  }
+
+  revalidatePath("/admin/sections");
+  revalidatePath("/");
+  redirect(`/admin/sections?status=${intent}#section-${id}`);
+}
+
 export async function saveLandingSectionAction(form: FormData) {
   await requireContentManager();
   let id;

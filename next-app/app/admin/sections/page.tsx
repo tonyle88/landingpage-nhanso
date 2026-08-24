@@ -9,6 +9,7 @@ import { ContentItemForm, type AdminLandingContentItem } from "./content-item-fo
 import styles from "../admin.module.css";
 import { AdminToast } from "../admin-toast";
 import { landingContentCatalog } from "@/lib/landing-content-catalog";
+import { quickUpdateLandingSectionAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -18,6 +19,10 @@ export const metadata: Metadata = {
 
 const notices: Record<string, string> = {
   saved: "Đã lưu section và ghi audit log.",
+  move_up: "Đã đưa section lên một vị trí.",
+  move_down: "Đã đưa section xuống một vị trí.",
+  toggle: "Đã cập nhật trạng thái hiển thị của section.",
+  unchanged: "Section đã ở vị trí ngoài cùng.",
   invalid: "Nội dung section chưa hợp lệ hoặc chứa HTML nguy hiểm.",
   error: "Không thể lưu section.",
 };
@@ -59,6 +64,8 @@ export default async function AdminSectionsPage({
       .toLocaleLowerCase("vi")
       .includes(normalizedQuery);
   });
+  const sectionPosition = new Map((sections || []).map((item, index) => [item.id, index]));
+  const lastSectionIndex = Math.max(0, (sections || []).length - 1);
   const storedContentItems = (settings || []).flatMap((item) => {
     if (!item.value || typeof item.value !== "object" || Array.isArray(item.value)) return [];
     return [{
@@ -122,6 +129,10 @@ export default async function AdminSectionsPage({
           <Link className={styles.viewSiteLink} href="/" target="_blank">Xem landing page ↗</Link>
         </aside>
         <div className={styles.sectionWorkspace}>
+          <div className={styles.sectionOrderHint}>
+            <span aria-hidden="true">ⓘ</span>
+            <p>Dùng các mũi tên để sắp xếp thứ tự hiển thị. Thay đổi được áp dụng ngay trên trang chủ.</p>
+          </div>
           <div className={styles.sectionStats}>
             <div><strong>{rows.length}</strong><span>section</span></div>
             <div><strong>{rows.filter((item) => item.enabled).length}</strong><span>đang bật</span></div>
@@ -131,12 +142,45 @@ export default async function AdminSectionsPage({
               <p className={styles.message}>Không tìm thấy section phù hợp.</p>
             ) : null}
             {rows.map((item) => (
-              <article className={styles.recordCard} id={`section-${item.id}`} key={item.id}>
+              <article className={`${styles.recordCard} ${styles.sectionOrderCard} ${item.enabled ? "" : styles.sectionOrderCardDisabled}`} id={`section-${item.id}`} key={item.id}>
                 <div className={styles.recordSummary}>
-                  <div><strong>{item.display_name}</strong><span>{item.section_key} · {item.section_type}</span></div>
-                  <span className={item.enabled ? styles.active : styles.inactive}>
-                    {item.enabled ? "Đang hiển thị" : "Đang ẩn"}
-                  </span>
+                  <div className={styles.sectionOrderIdentity}>
+                    <span className={styles.sectionGrip} aria-hidden="true">⠿</span>
+                    <div><strong>{item.display_name}</strong><span>{item.section_key}</span></div>
+                  </div>
+                  <div className={styles.sectionQuickArea}>
+                    <form className={styles.sectionQuickActions} action={quickUpdateLandingSectionAction}>
+                      <input type="hidden" name="id" value={item.id} />
+                      <button
+                        className={styles.sectionToggleButton}
+                        type="submit"
+                        name="intent"
+                        value="toggle"
+                        aria-label={item.enabled ? `Ẩn ${item.display_name}` : `Hiện ${item.display_name}`}
+                        aria-pressed={item.enabled}
+                        title={item.enabled ? "Đang hiển thị · bấm để ẩn" : "Đang ẩn · bấm để hiện"}
+                      >
+                        <span className={styles.sectionToggleTrack} aria-hidden="true"><span /></span>
+                      </button>
+                      <span className={styles.sectionTypeBadge}>{item.section_type === "builtin" ? "Gốc" : "Tùy chỉnh"}</span>
+                      <button
+                        type="submit"
+                        name="intent"
+                        value="move_up"
+                        disabled={sectionPosition.get(item.id) === 0}
+                        aria-label={`Đưa ${item.display_name} lên`}
+                        title="Đưa lên"
+                      >↑</button>
+                      <button
+                        type="submit"
+                        name="intent"
+                        value="move_down"
+                        disabled={sectionPosition.get(item.id) === lastSectionIndex}
+                        aria-label={`Đưa ${item.display_name} xuống`}
+                        title="Đưa xuống"
+                      >↓</button>
+                    </form>
+                  </div>
                 </div>
                 <details>
                   <summary>Chỉnh sửa nội dung</summary>
