@@ -22,6 +22,8 @@ export function ContentItemForm({ item }: { item: AdminLandingContentItem }) {
     ? landingPlainText(valueWithoutLegacyGlints).trim()
     : valueWithoutLegacyGlints;
   const multiline = type === "html" || displayValue.length > 100 || displayValue.includes("\n");
+  const friendlyType = type === "html" ? "Có định dạng" : "Văn bản";
+  const technicalKey = item.key.replace("landing.content.", "");
 
   return (
     <form className={styles.contentItemForm} action={saveLandingContentItemAction}>
@@ -31,11 +33,11 @@ export function ContentItemForm({ item }: { item: AdminLandingContentItem }) {
       <input type="hidden" name="type" value={type} />
       <input type="hidden" name="attribute" value={String(item.value.attribute || "")} />
       <div className={styles.contentItemMeta}>
-        <code>{item.key.replace("landing.content.", "")}</code>
-        <span>{type === "html" ? "Văn bản định dạng" : type}</span>
+        <strong>{item.description || "Nội dung hiển thị"}</strong>
+        <span>{friendlyType}</span>
       </div>
       <label className={styles.field}>
-        {item.description || "Nội dung"}
+        <span className={styles.visuallyHidden}>{item.description || "Nội dung"}</span>
         {multiline ? (
           <textarea name="value" rows={type === "html" ? 5 : 3} defaultValue={displayValue} />
         ) : (
@@ -44,11 +46,17 @@ export function ContentItemForm({ item }: { item: AdminLandingContentItem }) {
       </label>
       <div className={styles.contentItemFooter}>
         <label className={styles.compactCheck}>
-          <input name="enabled" type="checkbox" defaultChecked={item.value.enabled !== false} /> Bật
+          <input name="enabled" type="checkbox" defaultChecked={item.value.enabled !== false} /> Hiển thị nội dung này
         </label>
-        <small title={String(item.value.selector || "")}>{String(item.value.selector || "")}</small>
         <button className={styles.smallSubmit} type="submit">Lưu mục</button>
       </div>
+      <details className={styles.contentTechnicalDetails}>
+        <summary>Thông tin kỹ thuật</summary>
+        <dl>
+          <div><dt>Mã trường</dt><dd><code>{technicalKey}</code></dd></div>
+          <div><dt>Vị trí CSS</dt><dd><code>{String(item.value.selector || "—")}</code></dd></div>
+        </dl>
+      </details>
     </form>
   );
 }
