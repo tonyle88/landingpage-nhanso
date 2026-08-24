@@ -6,7 +6,7 @@ import { landingPlainText } from "@/lib/landing-text";
 import type { PublicPackage } from "@/lib/packages";
 import { QUIZ_QUESTIONS, recommendPackages, type QuizQuestion } from "@/lib/package-quiz";
 import { ClowGlint } from "@/components/ui/clow-glint";
-import { SELF_DISCOVERY_TOOLS } from "@/lib/self-discovery-tools";
+import { SELF_DISCOVERY_TOOLS, type SelfDiscoveryToolSlug } from "@/lib/self-discovery-tools";
 
 const mysticNumbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "11/2", "22/4", "33/6", "4", "5", "6"];
 
@@ -50,12 +50,70 @@ function darkenHex(value: string, fallback: string) {
   return `#${channels.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
 }
 
+type QuizHubIconName = "package" | SelfDiscoveryToolSlug;
+
+function QuizHubIcon({ name }: { name: QuizHubIconName }) {
+  if (name === "package") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 96 96">
+        <circle cx="48" cy="48" r="31" />
+        <path d="M48 17v10M48 69v10M17 48h10M69 48h10" />
+        <path d="m48 30 8 18-8 18-8-18 8-18Z" />
+        <circle cx="48" cy="48" r="5" />
+      </svg>
+    );
+  }
+  if (name === "vakad") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 96 96">
+        <circle cx="48" cy="48" r="8" />
+        <circle cx="48" cy="17" r="7" /><circle cx="79" cy="48" r="7" />
+        <circle cx="48" cy="79" r="7" /><circle cx="17" cy="48" r="7" />
+        <path d="M48 24v16M72 48H56M48 56v16M24 48h16" />
+        <path d="m33 33 15 15 15-15M33 63l15-15 15 15" />
+      </svg>
+    );
+  }
+  if (name === "ngon-ngu-yeu-thuong") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 96 96">
+        <path d="M48 75S19 58 19 36c0-11 8-18 18-18 6 0 10 3 11 8 2-5 6-8 12-8 10 0 17 7 17 18 0 22-29 39-29 39Z" />
+        <path d="M48 28v34M31 42h34" />
+        <circle cx="48" cy="13" r="3" /><circle cx="82" cy="43" r="3" />
+        <circle cx="65" cy="77" r="3" /><circle cx="31" cy="77" r="3" /><circle cx="14" cy="43" r="3" />
+      </svg>
+    );
+  }
+  return (
+    <svg aria-hidden="true" viewBox="0 0 96 96">
+      <circle cx="48" cy="48" r="32" /><circle cx="48" cy="48" r="9" />
+      <path d="M48 16v23M48 57v23M16 48h23M57 48h23M25 25l16 16M55 55l16 16M71 25 55 41M41 55 25 71" />
+      <circle cx="48" cy="16" r="3" /><circle cx="80" cy="48" r="3" />
+      <circle cx="48" cy="80" r="3" /><circle cx="16" cy="48" r="3" />
+    </svg>
+  );
+}
+
+const PACKAGE_QUIZ_CARD = {
+  slug: "chon-goi",
+  number: "01",
+  title: "Trắc nghiệm chọn gói",
+  subtitle: "Xác định hình thức tư vấn phù hợp với nhu cầu hiện tại",
+  meta: "12 câu · khoảng 3–4 phút",
+  accent: "#f28b52",
+  meaning: "Làm rõ điều bạn đang vướng, mức độ chuyên sâu mong muốn và loại góc nhìn bạn cần trước khi đặt lịch.",
+  measures: "Nhu cầu · phạm vi · độ sâu",
+  outcome: "Một gói phù hợp nhất kèm lý do và lựa chọn kế tiếp.",
+} as const;
+
 export default function QuizExperience({
   packages,
   questions = QUIZ_QUESTIONS,
+  mode = "hub",
 }: {
   packages: PublicPackage[];
   questions?: QuizQuestion[];
+  mode?: "hub" | "assessment";
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [step, setStep] = useState(0);
@@ -71,6 +129,13 @@ export default function QuizExperience({
     [answers, packages, questions],
   );
   const recommendation = recommendations[0];
+  const packageConclusion = recommendation ? [
+    `${landingPlainText(recommendation.item.name)} là lựa chọn khớp nhất với phạm vi, độ sâu và ưu tiên bạn vừa thể hiện trong bài trắc nghiệm.`,
+    recommendation.reason,
+    `Giá trị chính bạn sẽ nhận được gồm ${recommendation.item.features.slice(0, 2).map(landingPlainText).join(" và ").toLowerCase()}.`,
+    recommendations[1] ? `${landingPlainText(recommendations[1].item.name)} là phương án kế tiếp nếu bạn muốn thay đổi phạm vi hoặc cách tiếp cận.` : "Bạn có thể trao đổi trực tiếp với Clow Cat nếu muốn điều chỉnh phạm vi trước buổi tư vấn.",
+    "Trước khi đặt lịch, hãy xác định một câu hỏi quan trọng nhất bạn muốn làm rõ để buổi tư vấn đi đúng trọng tâm ngay từ đầu.",
+  ] : [];
   const progress = finished ? 100 : Math.round(((step + 1) / questions.length) * 100);
   const mysticNumber = mysticNumbers[step] || "∞";
   const fallbackTheme = questionThemes[step % questionThemes.length];
@@ -80,6 +145,7 @@ export default function QuizExperience({
     "--question-rgb": hexToRgbChannels(accent, fallbackTheme.rgb),
     "--question-deep": darkenHex(accent, fallbackTheme.deep),
   };
+  const isHub = mode === "hub";
 
   useEffect(() => () => {
     if (transitionTimer.current) clearTimeout(transitionTimer.current);
@@ -151,6 +217,54 @@ export default function QuizExperience({
       </header>
 
       <main className={styles.main}>
+        {isHub ? (
+          <>
+            <section className={`${styles.intro} ${styles.hubIntro}`}>
+              <div className={styles.introCopy}>
+                <span className={styles.kicker}>4 công cụ tự khám phá · miễn phí</span>
+                <h1>Chọn một cánh cửa để <em>hiểu mình rõ hơn</em></h1>
+                <p>
+                  Mỗi công cụ soi chiếu một khía cạnh khác nhau: nhu cầu tư vấn, cách tiếp nhận
+                  thông tin, cách cảm nhận tình yêu và mức cân bằng trong tám vùng cuộc sống.
+                  Chọn đúng khối bên dưới để bắt đầu bài riêng của bạn.
+                </p>
+              </div>
+              <div className={styles.hubMandala} aria-hidden="true">
+                <span>4</span><small>góc nhìn</small>
+                <i /><i /><i /><i />
+              </div>
+            </section>
+
+            <section className={`${styles.toolGateway} ${styles.hubGateway}`} aria-labelledby="self-discovery-tools">
+              <div className={styles.toolGatewayHeading}>
+                <span><ClowGlint size="xs" /> Kho công cụ hiểu mình</span>
+                <h2 id="self-discovery-tools">Bốn bài trắc nghiệm, bốn lớp thông tin riêng biệt</h2>
+                <p>Mỗi khối mở một trang độc lập, có hướng dẫn, câu hỏi, biểu đồ và luận giải ngay trên trình duyệt. Không yêu cầu tên, email hoặc ngày sinh.</p>
+              </div>
+              <div className={styles.toolCards}>
+                <a href="/quiz/chon-goi" style={{ "--tool-card-accent": PACKAGE_QUIZ_CARD.accent } as CSSProperties}>
+                  <span className={styles.toolIcon}><QuizHubIcon name="package" /></span>
+                  <small>{PACKAGE_QUIZ_CARD.meta}</small>
+                  <h3>{PACKAGE_QUIZ_CARD.title}</h3>
+                  <p>{PACKAGE_QUIZ_CARD.meaning}</p>
+                  <ul><li>{PACKAGE_QUIZ_CARD.measures}</li><li>{PACKAGE_QUIZ_CARD.outcome}</li></ul>
+                  <strong>Bắt đầu chọn gói →</strong>
+                </a>
+                {SELF_DISCOVERY_TOOLS.map((tool) => (
+                  <a href={`/quiz/cong-cu/${tool.slug}`} key={tool.slug} style={{ "--tool-card-accent": tool.accent } as CSSProperties}>
+                    <span className={styles.toolIcon}><QuizHubIcon name={tool.slug} /></span>
+                    <small>{tool.meta}</small>
+                    <h3>{tool.title}</h3>
+                    <p>{tool.meaning}</p>
+                    <ul><li>{tool.measures}</li><li>{tool.outcome}</li></ul>
+                    <strong>Khám phá công cụ →</strong>
+                  </a>
+                ))}
+              </div>
+            </section>
+          </>
+        ) : (
+          <>
         <section className={styles.intro}>
           <div className={styles.introCopy}>
             <span className={styles.kicker}>Quiz chọn gói · khoảng 3–4 phút</span>
@@ -177,25 +291,6 @@ export default function QuizExperience({
               <span><strong>01</strong>Gợi ý chính</span>
               <span><strong>0</strong>Dữ liệu cá nhân</span>
             </div>
-          </div>
-        </section>
-
-        <section className={styles.toolGateway} aria-labelledby="self-discovery-tools">
-          <div className={styles.toolGatewayHeading}>
-            <span><ClowGlint size="xs" /> Bộ công cụ hiểu mình</span>
-            <h2 id="self-discovery-tools">Ba góc nhìn mới bên cạnh Quiz chọn gói</h2>
-            <p>Làm từng bài độc lập, xem điểm, biểu đồ và phần luận giải ngay trên trình duyệt. Không cần nhập tên, email hoặc ngày sinh.</p>
-          </div>
-          <div className={styles.toolCards}>
-            {SELF_DISCOVERY_TOOLS.map((tool) => (
-              <a href={`/quiz/cong-cu/${tool.slug}`} key={tool.slug} style={{ "--tool-card-accent": tool.accent } as CSSProperties}>
-                <span>{tool.number}</span>
-                <small>{tool.meta}</small>
-                <h3>{tool.title}</h3>
-                <p>{tool.subtitle}</p>
-                <strong>Khám phá ngay →</strong>
-              </a>
-            ))}
           </div>
         </section>
 
@@ -288,6 +383,9 @@ export default function QuizExperience({
                 <p>Kết quả dành cho bạn</p>
                 <h2>{landingPlainText(recommendation.item.name)}</h2>
                 <p className={styles.resultReason}>{recommendation.reason}</p>
+                <ol className={styles.resultConclusion}>
+                  {packageConclusion.map((line, index) => <li key={`${index}-${line}`}><span>{String(index + 1).padStart(2, "0")}</span><p>{line}</p></li>)}
+                </ol>
               </div>
               <div className={styles.resultPackage}>
                 {recommendation.item.badge ? <span>{landingPlainText(recommendation.item.badge)}</span> : <span>Phù hợp nhất</span>}
@@ -333,6 +431,8 @@ export default function QuizExperience({
           <span>02</span><p><strong>Độ sâu</strong> Bạn cần định hướng nhanh, chỉ số cốt lõi hay bản đồ dài hạn?</p>
           <span>03</span><p><strong>Góc nhìn</strong> Một hệ thống hay nhiều phương pháp cùng soi chiếu?</p>
         </section>
+          </>
+        )}
       </main>
 
       <footer className={styles.footer}>

@@ -31,6 +31,40 @@ const SCALE_COLORS = [
   "#bfc962", "#9ed16c", "#7fd47b", "#63d392", "#55d5b7",
 ];
 
+const TOOL_GUIDES: Record<SelfDiscoveryToolSlug, {
+  eyebrow: string;
+  description: string;
+  points: ReadonlyArray<{ title: string; text: string }>;
+}> = {
+  vakad: {
+    eyebrow: "Bản đồ cách tiếp nhận thông tin",
+    description: "VAKAd không xếp bạn vào một kiểu người cố định. Công cụ so sánh bốn kênh mà bạn thường ưu tiên khi học, giao tiếp và ra quyết định: Thị giác (V), Thính giác (A), Cảm giác–vận động (K) và Phân tích–đối thoại nội tâm (Ad).",
+    points: [
+      { title: "Công cụ đo gì?", text: "Mức độ ưu tiên tương đối của bốn kênh V, A, K và Ad qua 15 tình huống gần với đời sống." },
+      { title: "Bạn nhận được gì?", text: "Biểu đồ radar, tỷ trọng từng kênh, thứ tự nổi trội và gợi ý ứng dụng riêng cho mỗi kênh." },
+      { title: "Dùng kết quả thế nào?", text: "Điều chỉnh cách học, trình bày, ghi nhớ và trao đổi để thông tin đi vào tự nhiên, ít mệt hơn." },
+    ],
+  },
+  "ngon-ngu-yeu-thuong": {
+    eyebrow: "Bản đồ cách trao và nhận sự quan tâm",
+    description: "Ngôn ngữ yêu thương giúp gọi tên cách bạn dễ cảm nhận tình cảm nhất. Kết quả không đánh giá mức độ yêu thương, mà cho thấy hình thức biểu đạt nào khiến sự quan tâm trở nên rõ ràng và có ý nghĩa với bạn.",
+    points: [
+      { title: "Công cụ đo gì?", text: "Mức ưu tiên giữa lời khẳng định, thời gian chất lượng, quà tặng, hành động giúp đỡ và tiếp xúc cơ thể." },
+      { title: "Bạn nhận được gì?", text: "Thứ tự năm ngôn ngữ, biểu đồ tỷ trọng và diễn giải nhu cầu cụ thể phía sau từng kết quả." },
+      { title: "Dùng kết quả thế nào?", text: "Nói rõ điều mình cần, quan sát ngôn ngữ của người thân và tránh mặc định rằng ai cũng cảm nhận giống mình." },
+    ],
+  },
+  "banh-xe-cuoc-doi": {
+    eyebrow: "Bản đồ cân bằng tám vùng cuộc sống",
+    description: "Bánh xe cuộc đời là ảnh chụp toàn cảnh ở thời điểm hiện tại. Việc chấm điểm tám vùng giúp bạn thấy độ cân bằng, nhận diện nguồn lực đang nâng đỡ và chọn đúng một vùng ưu tiên thay vì cố thay đổi mọi thứ cùng lúc.",
+    points: [
+      { title: "Công cụ đo gì?", text: "Mức hài lòng chủ quan trong tám vùng quan trọng, từ sự nghiệp, phát triển bản thân đến sức khỏe và quan hệ." },
+      { title: "Bạn nhận được gì?", text: "Điểm trung bình, biểu đồ tám cạnh, vùng cao nhất, vùng thấp nhất và mức chênh lệch tổng thể." },
+      { title: "Dùng kết quả thế nào?", text: "Chọn một hành động nhỏ, có thể thực hiện trong 7–30 ngày cho vùng ưu tiên rồi đánh giá lại định kỳ." },
+    ],
+  },
+};
+
 function ToolHeader({ slug }: { slug: SelfDiscoveryToolSlug }) {
   const [open, setOpen] = useState(false);
   return (
@@ -44,7 +78,8 @@ function ToolHeader({ slug }: { slug: SelfDiscoveryToolSlug }) {
       </button>
       <nav className={`${styles.navLinks}${open ? ` ${styles.navLinksOpen}` : ""}`} aria-label="Điều hướng chính">
         <a href="/">Trang chủ</a>
-        <a href="/quiz">Quiz chọn gói</a>
+        <a href="/quiz">Kho công cụ</a>
+        <a href="/quiz/chon-goi">Quiz chọn gói</a>
         {SELF_DISCOVERY_TOOLS.map((tool) => (
           <a className={tool.slug === slug ? styles.activeNav : ""} href={`/quiz/cong-cu/${tool.slug}`} key={tool.slug}>{tool.title}</a>
         ))}
@@ -167,6 +202,15 @@ function ResultShell({ children, onRestart }: { children: ReactNode; onRestart: 
   );
 }
 
+function ConclusionPanel({ lines }: { lines: ReadonlyArray<string> }) {
+  return (
+    <section className={styles.conclusionPanel} aria-labelledby="tool-conclusion-title">
+      <div><span>Kết luận dành cho bạn</span><h2 id="tool-conclusion-title">Hiểu kết quả và bắt đầu từ điều thực tế</h2></div>
+      <ol>{lines.map((line, index) => <li key={`${index}-${line}`}><span>{String(index + 1).padStart(2, "0")}</span><p>{line}</p></li>)}</ol>
+    </section>
+  );
+}
+
 function VakadAssessment({ questions }: { questions: ReadonlyArray<VakadQuestion> }) {
   const [step, setStep] = useState(0);
   const [finished, setFinished] = useState(false);
@@ -198,10 +242,20 @@ function VakadAssessment({ questions }: { questions: ReadonlyArray<VakadQuestion
 
   if (finished) {
     const balanceText = spread <= 5 ? "Bốn kênh của bạn khá cân bằng" : spread <= 12 ? "Bạn có xu hướng phối hợp nhiều kênh" : "Bạn có một xu hướng tiếp nhận khá rõ";
+    const topLabel = topKeys.map((key) => VAKAD_DIMENSIONS[key].label).join(" và ");
+    const second = ordered[1];
+    const conclusion = [
+      `${topLabel} đang là kênh nổi trội, vì vậy bạn thường hiểu nhanh hơn khi thông tin được trình bày đúng theo đặc tính của kênh này.`,
+      spread <= 5 ? "Bốn kênh khá cân bằng; bạn có khả năng đổi cách tiếp nhận linh hoạt theo tình huống." : `Khoảng chênh ${spread} điểm cho thấy xu hướng ưu tiên tương đối rõ, nhưng đây không phải một giới hạn cố định.`,
+      `Khi học hoặc làm việc, hãy dùng kênh chính trước rồi bổ sung ${second.label.toLowerCase()} để kiểm tra và ghi nhớ thông tin sâu hơn.`,
+      "Trong giao tiếp, hãy nói rõ bạn cần nhìn thấy, nghe giải thích, trực tiếp trải nghiệm hay có thời gian phân tích để người đối diện dễ phối hợp.",
+      "Hãy quan sát lại kết quả sau một giai đoạn thay đổi môi trường; thói quen và kỹ năng được rèn luyện có thể làm tỷ trọng các kênh dịch chuyển.",
+    ];
     return (
       <ResultShell onRestart={restart}>
         <div className={styles.resultHeading}><span>VAKAd của bạn</span><h1>{topKeys.map((key) => VAKAD_DIMENSIONS[key].label).join(" & ")}</h1><p>{balanceText}. Hãy xem đây là cách ưu tiên tự nhiên, không phải giới hạn cố định.</p></div>
         <div className={styles.chartGrid}><RadarChart items={items} max={60} /><DonutChart items={items} /><ScoreBars items={ordered} max={60} /></div>
+        <ConclusionPanel lines={conclusion} />
         <div className={styles.insightGrid}>
           {ordered.map((item, index) => {
             const detail = VAKAD_DIMENSIONS[item.key as VakadDimension];
@@ -245,10 +299,20 @@ function LoveLanguageAssessment({ questions }: { questions: ReadonlyArray<LoveLa
 
   function restart() { setStep(0); setFinished(false); setAnswers({}); }
   if (finished) {
+    const topLabel = topKeys.map((key) => LOVE_LANGUAGES[key].label).join(" và ");
+    const second = ordered[1];
+    const conclusion = [
+      `${topLabel} là cách bạn dễ nhận biết tình cảm nhất trong những lựa chọn hiện tại; nhu cầu cốt lõi là được quan tâm theo cách đủ cụ thể để bạn cảm nhận được.`,
+      `${second.label} là ngôn ngữ hỗ trợ quan trọng và có thể trở nên nổi bật hơn tùy mối quan hệ hoặc hoàn cảnh sống.`,
+      "Bạn nên chia sẻ kết quả bằng một lời đề nghị rõ ràng, tích cực, thay vì chờ người khác tự đoán điều khiến mình cảm thấy được yêu thương.",
+      "Ngôn ngữ của người đối diện có thể khác bạn; hãy hỏi và quan sát cách họ thường trao đi sự quan tâm trước khi kết luận họ thiếu tình cảm.",
+      "Trong tuần tới, hãy chủ động trao một hành động theo ngôn ngữ của người thân và đề nghị nhận lại một hành động nhỏ theo ngôn ngữ của bạn.",
+    ];
     return (
       <ResultShell onRestart={restart}>
         <div className={styles.resultHeading}><span>Ngôn ngữ nổi trội</span><h1>{topKeys.map((key) => LOVE_LANGUAGES[key].label).join(" & ")}</h1><p>Điểm cao cho thấy cách bạn dễ nhận biết tình cảm nhất. Điểm thấp không có nghĩa là bạn không cần hình thức đó.</p></div>
         <div className={styles.chartGrid}><RadarChart items={items} max={12} /><DonutChart items={items} suffix=" / 12" /><ScoreBars items={ordered} max={12} suffix=" / 12" /></div>
+        <ConclusionPanel lines={conclusion} />
         <div className={styles.insightGrid}>
           {ordered.map((item, index) => { const detail = LOVE_LANGUAGES[item.key as LoveLanguageCode]; return <article className={index === 0 ? styles.primaryInsight : ""} key={item.key} style={{ "--insight-accent": detail.color } as CSSProperties}><span>{index === 0 ? "Ngôn ngữ chính" : `Vị trí ${index + 1}`}</span><h2>{detail.label} · {item.value}</h2><p>{detail.description}</p><strong>Gợi ý:</strong><p>{detail.suggestion}</p></article>; })}
         </div>
@@ -286,13 +350,22 @@ function LifeWheelAssessment({ categories }: { categories: ReadonlyArray<WheelCa
     const low = ordered[ordered.length - 1];
     const high = ordered[0];
     const lowCategory = categories.find((item) => item.id === low.key)!;
+    const highCategory = categories.find((item) => item.id === high.key)!;
     const balance = high.value - low.value;
+    const conclusion = [
+      `Mức cân bằng chung ${overall.toFixed(1)}/10 cho thấy bức tranh hiện tại của bạn; đây là dữ liệu để ưu tiên, không phải điểm số đánh giá giá trị bản thân.`,
+      `${highCategory.label} (${high.value}/10) đang là vùng nguồn lực; hãy tận dụng sự ổn định ở đây để tạo năng lượng cho những thay đổi tiếp theo.`,
+      `${lowCategory.label} (${low.value}/10) là vùng nên được chú ý trước, đặc biệt vì khoảng chênh toàn bánh xe hiện là ${balance.toFixed(1)} điểm.`,
+      `Bước khởi đầu phù hợp: ${lowCategory.action}`,
+      "Chỉ chọn một hành động nhỏ trong 7 ngày, ghi nhận tiến triển và chấm lại bánh xe sau 30 ngày để nhìn thấy chuyển động thực tế.",
+    ];
     return (
       <ResultShell onRestart={restart}>
         <div className={styles.resultHeading}><span>Mức cân bằng hiện tại</span><h1>{overall.toFixed(1)} / 10</h1><p>{balance <= 2 ? "Bánh xe của bạn tương đối cân bằng." : balance <= 4 ? "Một vài vùng đang chênh lệch và cần được chăm sóc có chủ đích." : "Bánh xe có độ chênh lớn; hãy bắt đầu từ vùng thấp nhất bằng bước nhỏ, thực tế."}</p></div>
         <div className={styles.chartGrid}><RadarChart items={items} max={10} /><DonutChart items={items} suffix=" / 10" /><ScoreBars items={ordered} max={10} suffix=" / 10" /></div>
+        <ConclusionPanel lines={conclusion} />
         <div className={styles.wheelSummary}>
-          <article style={{ "--insight-accent": high.color } as CSSProperties}><span>Vùng đang nâng đỡ bạn</span><h2>{categories.find((item) => item.id === high.key)?.label} · {high.value}</h2><p>Đây có thể là nguồn lực giúp bạn cải thiện các vùng còn lại.</p></article>
+          <article style={{ "--insight-accent": high.color } as CSSProperties}><span>Vùng đang nâng đỡ bạn</span><h2>{highCategory.label} · {high.value}</h2><p>Đây có thể là nguồn lực giúp bạn cải thiện các vùng còn lại.</p></article>
           <article className={styles.priorityCard} style={{ "--insight-accent": low.color } as CSSProperties}><span>Vùng ưu tiên</span><h2>{lowCategory.label} · {low.value}</h2><p>{lowCategory.action}</p></article>
         </div>
         <div className={styles.insightGrid}>
@@ -328,13 +401,27 @@ type ToolExperienceProps =
 export default function ToolExperience(props: ToolExperienceProps) {
   const { slug } = props;
   const tool = SELF_DISCOVERY_TOOLS.find((item) => item.slug === slug)!;
+  const guide = TOOL_GUIDES[slug];
   return (
     <div className={styles.page} style={{ "--tool-accent": tool.accent } as CSSProperties}>
       <div className={styles.cosmicField} aria-hidden="true"><span>1</span><span>3</span><span>6</span><span>9</span><span>11/2</span><span>22/4</span><i /><i /></div>
       <ToolHeader slug={slug} />
       <main className={styles.main}>
-        <div className={styles.toolCrumbs}><a href="/quiz">Quiz</a><span>→</span><strong>{tool.title}</strong></div>
-        {props.slug === "vakad" ? <VakadAssessment questions={props.content} /> : props.slug === "ngon-ngu-yeu-thuong" ? <LoveLanguageAssessment questions={props.content} /> : <LifeWheelAssessment categories={props.content} />}
+        <div className={styles.toolCrumbs}><a href="/quiz">Kho công cụ</a><span>→</span><strong>{tool.title}</strong></div>
+        <section className={styles.toolOverview}>
+          <div className={styles.overviewLead}>
+            <span>{guide.eyebrow}</span>
+            <h1>{tool.title}</h1>
+            <p>{guide.description}</p>
+            <a href="#bat-dau">Bắt đầu làm bài ↓</a>
+          </div>
+          <div className={styles.overviewPoints}>
+            {guide.points.map((point, index) => <article key={point.title}><span>{String(index + 1).padStart(2, "0")}</span><h2>{point.title}</h2><p>{point.text}</p></article>)}
+          </div>
+        </section>
+        <div className={styles.assessmentAnchor} id="bat-dau">
+          {props.slug === "vakad" ? <VakadAssessment questions={props.content} /> : props.slug === "ngon-ngu-yeu-thuong" ? <LoveLanguageAssessment questions={props.content} /> : <LifeWheelAssessment categories={props.content} />}
+        </div>
         <section className={styles.otherTools}>
           <span>Khám phá thêm</span>
           <div>{SELF_DISCOVERY_TOOLS.filter((item) => item.slug !== slug).map((item) => <a href={`/quiz/cong-cu/${item.slug}`} key={item.slug}><small>{item.number}</small><strong>{item.title}</strong><p>{item.subtitle}</p></a>)}</div>

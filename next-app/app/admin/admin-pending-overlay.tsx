@@ -6,7 +6,8 @@ import { AdminModalPortal } from "./admin-modal-portal";
 import styles from "./admin-pending-overlay.module.css";
 
 const FALLBACK_LABEL = "Đang xử lý yêu cầu…";
-const SAFETY_TIMEOUT_MS = 45_000;
+const OVERLAY_DELAY_MS = 300;
+const SAFETY_TIMEOUT_MS = 15_000;
 
 export function AdminPendingOverlay() {
   const pathname = usePathname();
@@ -16,6 +17,7 @@ export function AdminPendingOverlay() {
   const [pending, setPending] = useState(false);
   const pendingRef = useRef(false);
   const timerRef = useRef<number | null>(null);
+  const showTimerRef = useRef<number | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
   const disabledControlsRef = useRef<
     Array<HTMLButtonElement | HTMLInputElement>
@@ -27,7 +29,9 @@ export function AdminPendingOverlay() {
 
   const reset = useCallback(() => {
     if (timerRef.current) window.clearTimeout(timerRef.current);
+    if (showTimerRef.current) window.clearTimeout(showTimerRef.current);
     timerRef.current = null;
+    showTimerRef.current = null;
     pendingRef.current = false;
     formRef.current?.removeAttribute("aria-busy");
     formRef.current = null;
@@ -81,7 +85,10 @@ export function AdminPendingOverlay() {
         formRef.current = form;
         form.setAttribute("aria-busy", "true");
         setMessage(pendingLabel);
-        setPending(true);
+        showTimerRef.current = window.setTimeout(() => {
+          showTimerRef.current = null;
+          if (pendingRef.current) setPending(true);
+        }, OVERLAY_DELAY_MS);
 
         disabledControlsRef.current = Array.from(
           form.querySelectorAll<HTMLButtonElement | HTMLInputElement>(
@@ -93,7 +100,7 @@ export function AdminPendingOverlay() {
           return true;
         });
 
-        if (submitter) {
+        if (submitter && submitter.dataset.pendingPreserve !== "true") {
           submitterRef.current = submitter;
           originalLabelRef.current = originalLabel;
           if (submitter instanceof HTMLInputElement) {
@@ -115,6 +122,7 @@ export function AdminPendingOverlay() {
       document.removeEventListener("submit", handleSubmit);
       window.removeEventListener("pageshow", reset);
       if (timerRef.current) window.clearTimeout(timerRef.current);
+      if (showTimerRef.current) window.clearTimeout(showTimerRef.current);
     };
   }, [reset]);
 

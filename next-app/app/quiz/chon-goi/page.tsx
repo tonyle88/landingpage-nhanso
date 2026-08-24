@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import QuizExperience from "./quiz-experience";
+import QuizExperience from "../quiz-experience";
 import { getPublicPackages } from "@/lib/supabase/public-packages";
 import { getPublicQuizQuestions } from "@/lib/supabase/public-quiz-questions";
 
 export const metadata: Metadata = {
-  title: "Quiz & công cụ hiểu mình | Clow Cat Patronus",
-  description: "Quiz chọn gói tư vấn, VAKAd, Ngôn ngữ yêu thương và Bánh xe cuộc đời với biểu đồ cùng luận giải trực quan.",
-  alternates: { canonical: "/quiz" },
+  title: "Trắc nghiệm chọn gói tư vấn | Clow Cat Patronus",
+  description: "Trả lời các câu hỏi chuyên sâu để nhận gợi ý gói tư vấn phù hợp với nhu cầu hiện tại.",
+  alternates: { canonical: "/quiz/chon-goi" },
 };
 
-export default async function QuizPage() {
+export default async function PackageQuizPage() {
   await connection();
   const [{ packages }, questions] = await Promise.all([
     getPublicPackages(),
@@ -20,7 +20,7 @@ export default async function QuizPage() {
   return (
     <>
       <link rel="stylesheet" href="/assets/vendor/fonts/fonts.css" />
-      <QuizExperience packages={packages} questions={questions} mode="hub" />
+      <QuizExperience packages={packages} questions={questions} mode="assessment" />
     </>
   );
 }

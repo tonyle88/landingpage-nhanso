@@ -158,6 +158,8 @@ export default async function AdminSectionsPage({
                         value="toggle"
                         aria-label={item.enabled ? `Ẩn ${item.display_name}` : `Hiện ${item.display_name}`}
                         aria-pressed={item.enabled}
+                        data-pending-label="Đang cập nhật trạng thái section…"
+                        data-pending-preserve="true"
                         title={item.enabled ? "Đang hiển thị · bấm để ẩn" : "Đang ẩn · bấm để hiện"}
                       >
                         <span className={styles.sectionToggleTrack} aria-hidden="true"><span /></span>
@@ -169,6 +171,8 @@ export default async function AdminSectionsPage({
                         value="move_up"
                         disabled={sectionPosition.get(item.id) === 0}
                         aria-label={`Đưa ${item.display_name} lên`}
+                        data-pending-label="Đang đưa section lên…"
+                        data-pending-preserve="true"
                         title="Đưa lên"
                       >↑</button>
                       <button
@@ -177,6 +181,8 @@ export default async function AdminSectionsPage({
                         value="move_down"
                         disabled={sectionPosition.get(item.id) === lastSectionIndex}
                         aria-label={`Đưa ${item.display_name} xuống`}
+                        data-pending-label="Đang đưa section xuống…"
+                        data-pending-preserve="true"
                         title="Đưa xuống"
                       >↓</button>
                     </form>
