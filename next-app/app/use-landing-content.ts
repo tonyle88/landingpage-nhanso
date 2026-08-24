@@ -15,6 +15,19 @@ const CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 9000;
 const LOADING_MAX_MS = 1600;
 const RETRY_COUNT = 2;
+const BUILTIN_SECTION_IDS = [
+  "pain-points",
+  "mini-report",
+  "about",
+  "benefits",
+  "testimonials",
+  "packages",
+  "package-compare",
+  "methods",
+  "process",
+  "faq",
+  "contact",
+] as const;
 
 type RuntimeLandingContentItem = Omit<LandingContentItem, "key" | "value"> & {
   key?: string;
@@ -196,6 +209,15 @@ function applySectionsLayout(layout: LandingSection[]) {
   const container = document.querySelector<HTMLElement>("#dynamic-layout");
   if (!container) return;
   container.querySelectorAll(".generic-section").forEach((element) => element.remove());
+
+  // The public role intentionally cannot read disabled rows. Start with all
+  // built-in sections hidden, then reveal only the enabled layout returned by
+  // Supabase so the Admin toggle is still authoritative without exposing
+  // disabled custom content.
+  BUILTIN_SECTION_IDS.forEach((id) => {
+    const element = document.getElementById(id);
+    if (element) element.style.display = "none";
+  });
 
   layout.forEach((section) => {
     if (section.type === "builtin") {
