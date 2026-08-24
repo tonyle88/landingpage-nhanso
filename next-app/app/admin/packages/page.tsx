@@ -46,9 +46,12 @@ export default async function AdminPackagesPage({
         <div>
           <p className={styles.eyebrow}>Admin Console · {principal.role}</p>
           <h1>Gói dịch vụ</h1>
-          <p>Thay đổi được kiểm tra ở server, enforce bằng RLS và ghi audit log.</p>
+          <p>Mỗi gói đang bật sẽ tự xuất hiện ở bảng giá, bảng so sánh và Quiz chọn gói.</p>
         </div>
-        <Link className={styles.secondaryLink} href="/admin">Tổng quan</Link>
+        <div className={styles.headerActions}>
+          <Link className={styles.secondaryLink} href="/#package-compare" target="_blank">Xem bảng so sánh ↗</Link>
+          <Link className={styles.secondaryLink} href="/admin">Tổng quan</Link>
+        </div>
       </header>
       <AdminToast
         message={status ? notices[status] : undefined}

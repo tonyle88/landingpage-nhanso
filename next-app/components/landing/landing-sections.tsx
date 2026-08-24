@@ -704,14 +704,14 @@ export function PackagesSection({ packages = [] }: { packages?: PublicPackage[] 
   );
 }
 
-function comparisonPrice(value: number, currency: string, unit: string) {
+function comparisonPrice(value: number, currency: string) {
   const currencyLabel = currency.toUpperCase() === "VND" ? "đ" : currency.toUpperCase();
-  return `${value.toLocaleString("vi-VN")}${currencyLabel}${unit ? ` ${unit}` : ""}`;
+  return `${value.toLocaleString("vi-VN")}${currencyLabel}`;
 }
 
 export function PackageComparisonSection({ packages = [] }: { packages?: PublicPackage[] }) {
   const visiblePackages = packages.filter((item) => item.enabled);
-  const tableMinWidth = Math.max(760, 190 + visiblePackages.length * 230);
+  const tableMinWidth = visiblePackages.length > 6 ? 150 + visiblePackages.length * 185 : undefined;
 
   return (
     <section className="package-compare section" id="package-compare">
@@ -738,31 +738,40 @@ export function PackageComparisonSection({ packages = [] }: { packages?: PublicP
             </thead>
             <tbody>
               <tr>
-                <td>Giá tư vấn online</td>
-                {visiblePackages.map((item) => <td key={item.code}>{comparisonPrice(item.onlinePrice, item.currency, item.unit)}</td>)}
+                <td>Mức phí tham khảo</td>
+                {visiblePackages.map((item) => (
+                  <td key={item.code}>
+                    <div className="compare-prices">
+                      <span><small>Online</small><strong>{comparisonPrice(item.onlinePrice, item.currency)}</strong></span>
+                      <span><small>Offline</small><strong>{comparisonPrice(item.offlinePrice, item.currency)}</strong></span>
+                      {item.unit ? <em>{landingPlainText(item.unit)}</em> : null}
+                    </div>
+                  </td>
+                ))}
               </tr>
               <tr>
-                <td>Giá tư vấn offline</td>
-                {visiblePackages.map((item) => <td key={item.code}>{comparisonPrice(item.offlinePrice, item.currency, item.unit)}</td>)}
-              </tr>
-              <tr>
-                <td>Thông tin &amp; quyền lợi</td>
+                <td>Quyền lợi nổi bật</td>
                 {visiblePackages.map((item) => (
                   <td key={item.code}>
                     {item.features.length ? (
                       <ul className="compare-feature-list">
-                        {item.features.map((feature, index) => (
+                        {item.features.slice(0, 4).map((feature, index) => (
                           <li key={`${item.code}-compare-${index}`}>{landingPlainText(feature)}</li>
                         ))}
+                        {item.features.length > 4 ? <li className="compare-more">+{item.features.length - 4} quyền lợi khác</li> : null}
                       </ul>
                     ) : "Đang cập nhật"}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td>Lựa chọn nổi bật</td>
+                <td>Định vị gói</td>
                 {visiblePackages.map((item) => (
-                  <td key={item.code}>{item.featured ? "Gói được đề xuất" : "Lựa chọn linh hoạt"}</td>
+                  <td key={item.code}>
+                    <span className={`compare-position${item.featured ? " is-featured" : ""}`}>
+                      {item.badge ? landingPlainText(item.badge) : item.featured ? "Gói được đề xuất" : "Lựa chọn linh hoạt"}
+                    </span>
+                  </td>
                 ))}
               </tr>
               <tr>

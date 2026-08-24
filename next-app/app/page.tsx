@@ -57,7 +57,7 @@ export default async function LandingPage() {
         rel="stylesheet"
         href="/assets/vendor/fontawesome/css/all.min.css"
       />
-      <link rel="stylesheet" href="/style.css?v=20260801-admin-packages" />
+      <link rel="stylesheet" href="/style.css?v=20260824-package-compare" />
 
       <LandingRuntime
         initialPackages={publicPackages.packages}
