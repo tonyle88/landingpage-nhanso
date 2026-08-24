@@ -704,13 +704,14 @@ export function PackagesSection({ packages = [] }: { packages?: PublicPackage[] 
   );
 }
 
-export function PackageComparisonSection() {
-  const comparisonRows = [
-    ["Phù hợp nếu bạn", "Muốn định hướng 6-12 tháng tới", "Muốn hiểu tính cách lõi", "Muốn bản đồ cá nhân sâu để dùng lâu dài"],
-    ["Chỉ số phân tích", "Năm cá nhân và chu kỳ hiện tại", "Chủ đạo, linh hồn, sứ mệnh", "7 chỉ số cốt lõi, chu kỳ, đỉnh cao"],
-    ["Đầu ra chính", "Gợi ý hành động theo năm", "Hiểu điểm mạnh, động lực và hướng phát triển", "Lộ trình phân tích đầy đủ kèm PDF tóm tắt"],
-    ["Mức độ chuyên sâu", "Cơ bản", "Trung bình", "Chuyên sâu nhất"],
-  ];
+function comparisonPrice(value: number, currency: string, unit: string) {
+  const currencyLabel = currency.toUpperCase() === "VND" ? "đ" : currency.toUpperCase();
+  return `${value.toLocaleString("vi-VN")}${currencyLabel}${unit ? ` ${unit}` : ""}`;
+}
+
+export function PackageComparisonSection({ packages = [] }: { packages?: PublicPackage[] }) {
+  const visiblePackages = packages.filter((item) => item.enabled);
+  const tableMinWidth = Math.max(760, 190 + visiblePackages.length * 230);
 
   return (
     <section className="package-compare section" id="package-compare">
@@ -723,25 +724,59 @@ export function PackageComparisonSection() {
           </div>
         </div>
         <div className="compare-table-wrap reveal">
-          <table className="compare-table">
+          {visiblePackages.length ? <table className="compare-table" style={{ minWidth: tableMinWidth }}>
             <thead>
               <tr>
                 <th>Tiêu chí</th>
-                <th>Năm cá nhân</th>
-                <th>BIG 3</th>
-                <th>Toàn diện</th>
+                {visiblePackages.map((item) => (
+                  <th key={item.code}>
+                    <span className="compare-package-name">{landingPlainText(item.name)}</span>
+                    {item.badge ? <small>{landingPlainText(item.badge)}</small> : null}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {comparisonRows.map((row) => (
-                <tr key={row[0]}>
-                  {row.map((cell) => (
-                    <td key={cell}>{cell}</td>
-                  ))}
-                </tr>
-              ))}
+              <tr>
+                <td>Giá tư vấn online</td>
+                {visiblePackages.map((item) => <td key={item.code}>{comparisonPrice(item.onlinePrice, item.currency, item.unit)}</td>)}
+              </tr>
+              <tr>
+                <td>Giá tư vấn offline</td>
+                {visiblePackages.map((item) => <td key={item.code}>{comparisonPrice(item.offlinePrice, item.currency, item.unit)}</td>)}
+              </tr>
+              <tr>
+                <td>Thông tin &amp; quyền lợi</td>
+                {visiblePackages.map((item) => (
+                  <td key={item.code}>
+                    {item.features.length ? (
+                      <ul className="compare-feature-list">
+                        {item.features.map((feature, index) => (
+                          <li key={`${item.code}-compare-${index}`}>{landingPlainText(feature)}</li>
+                        ))}
+                      </ul>
+                    ) : "Đang cập nhật"}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td>Lựa chọn nổi bật</td>
+                {visiblePackages.map((item) => (
+                  <td key={item.code}>{item.featured ? "Gói được đề xuất" : "Lựa chọn linh hoạt"}</td>
+                ))}
+              </tr>
+              <tr>
+                <td>Đặt lịch</td>
+                {visiblePackages.map((item) => (
+                  <td key={item.code}>
+                    <a className="compare-package-cta" href="#contact" data-package-code={item.code}>
+                      {landingPlainText(item.buttonText)}
+                    </a>
+                  </td>
+                ))}
+              </tr>
             </tbody>
-          </table>
+          </table> : <p className="compare-table-empty">Đang đồng bộ thông tin các gói tư vấn…</p>}
         </div>
       </div>
     </section>

@@ -38,6 +38,8 @@ export async function savePackageAction(form: FormData) {
   updateTag("public-packages");
   revalidatePath("/admin/packages");
   revalidatePath("/");
+  revalidatePath("/quiz");
+  revalidatePath("/quiz/chon-goi");
   redirect("/admin/packages?status=saved");
 }
 
@@ -70,5 +72,7 @@ export async function deletePackageAction(form: FormData) {
   updateTag("public-packages");
   revalidatePath("/admin/packages");
   revalidatePath("/");
+  revalidatePath("/quiz");
+  revalidatePath("/quiz/chon-goi");
   redirect("/admin/packages?status=deleted");
 }
