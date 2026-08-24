@@ -18,7 +18,7 @@
     #021419;
   font-family: "Montserrat", Arial, sans-serif;
 }
-.page::before { position: fixed; inset: 0; z-index: -1; content: ""; opacity: .55; background-image: radial-gradient(circle, rgb(255 245 204 / 75%) 0 1px, transparent 1.5px), radial-gradient(circle, rgb(74 222 211 / 60%) 0 1px, transparent 1.5px); background-position: 0 0, 37px 59px; background-size: 91px 91px, 137px 137px; mask-image: linear-gradient(to bottom, #000, transparent 90%); animation: starVeil 28s linear infinite; }
+.page::before { position: fixed; inset: 0; z-index: -1; content: ""; opacity: .55; background-image: radial-gradient(circle, rgb(255 245 204 / 75%) 0 1px, transparent 1.5px), radial-gradient(circle, rgb(74 222 211 / 60%) 0 1px, transparent 1.5px); background-position: 0 0, 37px 59px; background-size: 91px 91px, 137px 137px; -webkit-mask-image: linear-gradient(to bottom, #000, transparent 90%); mask-image: linear-gradient(to bottom, #000, transparent 90%); animation: starVeil 28s linear infinite; }
 .page::after { width: 54vw; height: 54vw; position: fixed; top: 18%; left: 50%; z-index: -1; content: ""; transform: translateX(-50%); border-radius: 50%; opacity: .35; background: conic-gradient(from 0deg, transparent, rgb(240 201 106 / 12%), transparent 23%, rgb(41 199 190 / 10%), transparent 51%, rgb(239 106 46 / 10%), transparent 75%); filter: blur(35px); animation: orbitTurn 80s linear infinite; }
 .cosmicField { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .cosmicField > span { position: absolute; color: rgb(240 201 106 / 9%); font-family: "Playfair Display", Georgia, serif; font-size: clamp(2.5rem, 5vw, 5.5rem); animation: numberDrift 14s ease-in-out infinite alternate; }
@@ -53,6 +53,7 @@
   padding: 14px clamp(24px, 5vw, 76px);
   border-bottom: 1px solid rgb(240 201 106 / 18%);
   background: rgb(3 24 29 / 93%);
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
 }
 .brand { display: flex; align-items: center; gap: 13px; color: var(--gold); text-decoration: none; font-weight: 800; letter-spacing: .04em; }
@@ -91,13 +92,13 @@
 .portalNumberSix { bottom: 2%; left: 48%; }
 .portalNumberNine { top: 48%; left: 1%; }
 .mysticPortal .portalMaster { right: 0; bottom: 20%; left: 0; color: rgb(74 218 207 / 72%); font-size: .55rem; letter-spacing: .13em; text-align: center; }
-.trustNotes { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: rgb(255 255 255 / 4%); backdrop-filter: blur(12px); }
+.trustNotes { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: rgb(255 255 255 / 4%); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
 .trustNotes::before { width: 170px; height: 170px; position: absolute; top: -115px; right: -62px; content: ""; border: 1px solid rgb(240 201 106 / 16%); border-radius: 50%; box-shadow: 0 0 55px rgb(240 201 106 / 7%); }
 .trustNotes span { min-height: 112px; display: grid; place-items: center; align-content: center; gap: 7px; padding: 16px 8px; border-right: 1px solid var(--line); color: rgb(255 255 255 / 55%); font-size: .6rem; font-weight: 800; letter-spacing: .06em; text-align: center; text-transform: uppercase; }
 .trustNotes span:last-child { border-right: 0; }
 .trustNotes strong { color: var(--peach); font-family: "Playfair Display", Georgia, serif; font-size: 1.7rem; }
 
-.quizShell { --question-accent: #f4c75b; --question-rgb: 244 199 91; --question-deep: #6d3c0c; margin-top: 56px; position: relative; padding: clamp(22px, 4vw, 46px); overflow: hidden; border: 1px solid rgb(var(--question-rgb) / 42%); border-radius: 22px; background: radial-gradient(circle at 88% 5%, rgb(var(--question-rgb) / 18%), transparent 31%), radial-gradient(circle at 10% 92%, rgb(var(--question-rgb) / 9%), transparent 34%), linear-gradient(145deg, rgb(8 43 47 / 96%), rgb(3 24 29 / 99%)); box-shadow: 0 34px 100px rgb(0 0 0 / 40%), inset 0 1px rgb(255 255 255 / 4%), 0 0 52px rgb(var(--question-rgb) / 8%); backdrop-filter: blur(18px); transition: border-color .55s ease, box-shadow .55s ease, background .55s ease; }
+.quizShell { --question-accent: #f4c75b; --question-rgb: 244 199 91; --question-deep: #6d3c0c; margin-top: 56px; position: relative; padding: clamp(22px, 4vw, 46px); overflow: hidden; border: 1px solid rgb(var(--question-rgb) / 42%); border-radius: 22px; background: radial-gradient(circle at 88% 5%, rgb(var(--question-rgb) / 18%), transparent 31%), radial-gradient(circle at 10% 92%, rgb(var(--question-rgb) / 9%), transparent 34%), linear-gradient(145deg, rgb(8 43 47 / 96%), rgb(3 24 29 / 99%)); box-shadow: 0 34px 100px rgb(0 0 0 / 40%), inset 0 1px rgb(255 255 255 / 4%), 0 0 52px rgb(var(--question-rgb) / 8%); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); transition: border-color .55s ease, box-shadow .55s ease, background .55s ease; }
 .quizShell::before { width: 460px; height: 460px; position: absolute; top: -330px; right: -190px; content: ""; border: 1px solid rgb(var(--question-rgb) / 25%); border-radius: 50%; box-shadow: 0 0 75px rgb(var(--question-rgb) / 11%), inset 0 0 48px rgb(var(--question-rgb) / 5%); transition: border-color .55s ease, box-shadow .55s ease; }
 .quizShell::after { width: 300px; height: 300px; position: absolute; bottom: -235px; left: -130px; content: ""; border: 1px dashed rgb(var(--question-rgb) / 20%); border-radius: 50%; transition: border-color .55s ease; }
 .progressHeader { display: flex; justify-content: space-between; color: rgb(255 255 255 / 56%); font-size: .69rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }

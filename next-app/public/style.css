@@ -111,6 +111,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   text-transform: uppercase;
   border: 1px solid rgba(212, 168, 67, 0.3);
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   pointer-events: none;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   transition: opacity 0.3s ease;
@@ -630,6 +631,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .hero {
   position: relative;
   min-height: 100vh;
+  min-height: 100svh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1145,7 +1147,9 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .pain-conclusion {
   position: relative;
   text-align: center;
-  padding: 20px 28px;
+  min-height: 0;
+  height: auto;
+  padding: 14px 28px 16px;
   border-radius: var(--border-radius-lg);
   background: rgba(27, 65, 73, 0.3);
   border: 1px solid rgba(232, 168, 120, 0.2);
@@ -1162,16 +1166,19 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .pain-conclusion p {
   position: relative;
   display: grid;
-  gap: 5px;
+  align-content: center;
+  gap: 3px;
+  min-height: 0;
+  padding: 0;
   font-size: 1.04rem;
   line-height: 1.5;
   color: var(--color-white-80);
   max-width: none;
   margin: 0 auto;
 }
-.pain-conclusion-title {
+#pain-points .pain-conclusion .pain-conclusion-title {
   display: block;
-  color: var(--color-gold-light);
+  color: var(--color-sunburst-light) !important;
   font-size: 1.12rem;
   line-height: 1.3;
 }
@@ -1185,7 +1192,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 
 @media (max-width: 600px) {
-  .pain-conclusion { padding: 20px 18px; }
+  .pain-conclusion { padding: 16px 18px 18px; }
   .pain-conclusion p { font-size: 0.96rem; }
 }
 
@@ -3060,6 +3067,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   }
   .hero,
   .section {
+    overflow-x: hidden;
     overflow-x: clip;
   }
   .hero-bg-image {
@@ -3133,6 +3141,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     top: 70px; left: 0; right: 0;
     background: rgba(9, 28, 32, 0.97);
     backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     padding: 24px;
     gap: 8px;
     border-bottom: 1px solid rgba(232, 168, 120, 0.15);
@@ -3302,6 +3311,22 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   .testimonial-image-wrap img {
     height: min(380px, 96vw);
   }
+}
+
+/* Safari/iOS: viewport động, safe-area và lớp kính mờ ổn định. */
+@supports (-webkit-touch-callout: none) {
+  .hero { min-height: 100svh; }
+  .navbar { padding-top: max(16px, env(safe-area-inset-top)); }
+  .navbar.scrolled { padding-top: max(10px, env(safe-area-inset-top)); }
+  .mobile-sticky-cta { bottom: max(16px, env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 640px) {
+  .pain-grid { margin-bottom: 18px; }
+  .pain-conclusion { padding: 13px 16px 15px; }
+  .pain-conclusion p { gap: 4px; line-height: 1.48; }
+  #pain-points .pain-conclusion .pain-conclusion-title { font-size: 1.06rem; }
+  .pain-conclusion-text { font-size: 0.93rem; }
 }
 
 @media (max-width: 640px) {
