@@ -4,6 +4,7 @@
   --gold: #f0c96a;
   --orange: #ef6a2e;
   min-height: 100vh;
+  min-height: 100svh;
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -16,13 +17,18 @@
   font-family: "Montserrat", Arial, sans-serif;
 }
 .page::before { position: fixed; inset: 0; z-index: -1; content: ""; opacity: .44; pointer-events: none; background-image: radial-gradient(circle, rgb(255 244 202 / 70%) 0 1px, transparent 1.6px), radial-gradient(circle, color-mix(in srgb, var(--tool-accent) 70%, transparent) 0 1px, transparent 1.7px); background-position: 0 0, 43px 61px; background-size: 103px 103px, 149px 149px; animation: starDrift 32s linear infinite; }
+
+@supports (-webkit-touch-callout: none) {
+  .page { background-attachment: scroll; }
+  .navbar { padding-top: max(12px, env(safe-area-inset-top)); }
+}
 .cosmicField { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
 .cosmicField span { position: absolute; color: color-mix(in srgb, var(--tool-accent) 11%, transparent); font-family: "Playfair Display", Georgia, serif; font-size: clamp(3rem, 8vw, 8rem); animation: floatNumber 13s ease-in-out infinite alternate; }
 .cosmicField span:nth-child(1) { top: 18%; left: 3%; }.cosmicField span:nth-child(2) { top: 47%; right: 5%; animation-delay: -4s; }.cosmicField span:nth-child(3) { bottom: 3%; left: 22%; animation-delay: -8s; }.cosmicField span:nth-child(4) { top: 9%; right: 28%; animation-delay: -5s; }.cosmicField span:nth-child(5) { top: 67%; left: 4%; font-size: 3rem; }.cosmicField span:nth-child(6) { bottom: 14%; right: 10%; font-size: 3rem; }
 .cosmicField i { width: min(62vw, 840px); aspect-ratio: 1; position: absolute; top: -35%; right: -20%; border: 1px solid color-mix(in srgb, var(--tool-accent) 10%, transparent); border-radius: 50%; animation: orbit 75s linear infinite; }
 .cosmicField i:last-child { top: auto; right: auto; bottom: -55%; left: -22%; animation-direction: reverse; }
 
-.navbar { min-height: 88px; display: flex; align-items: center; justify-content: space-between; gap: 32px; position: relative; z-index: 10; padding: 12px clamp(22px, 5vw, 76px); border-bottom: 1px solid rgb(240 201 106 / 16%); background: rgb(2 19 23 / 86%); backdrop-filter: blur(18px); }
+.navbar { min-height: 88px; display: flex; align-items: center; justify-content: space-between; gap: 32px; position: relative; z-index: 10; padding: 12px clamp(22px, 5vw, 76px); border-bottom: 1px solid rgb(240 201 106 / 16%); background: rgb(2 19 23 / 86%); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
 .brand { display: flex; align-items: center; gap: 13px; color: var(--gold); font-size: .87rem; font-weight: 850; letter-spacing: .08em; text-decoration: none; white-space: nowrap; }.brand img { object-fit: contain; }
 .navLinks { display: flex; align-items: center; justify-content: flex-end; gap: clamp(12px, 2vw, 28px); }.navLinks a { position: relative; padding: 10px 0; color: rgb(255 255 255 / 67%); font-size: .68rem; font-weight: 720; text-decoration: none; }.navLinks a:hover, .navLinks .activeNav { color: #fff; }.navLinks .activeNav::after { height: 2px; position: absolute; right: 0; bottom: 1px; left: 0; content: ""; background: var(--tool-accent); box-shadow: 0 0 13px var(--tool-accent); }
 .menuButton { width: 44px; height: 44px; display: none; place-items: center; padding: 10px; border: 1px solid rgb(255 255 255 / 15%); border-radius: 50%; background: rgb(255 255 255 / 4%); }.menuButton span { width: 18px; height: 2px; display: block; margin: 3px; background: #fff; }
