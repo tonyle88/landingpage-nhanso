@@ -18,27 +18,6 @@ async function requireContentManager() {
 
 type SectionQuickAction = "move_up" | "move_down" | "toggle";
 
-function sectionPayload(
-  row: {
-    display_name: string;
-    title: string | null;
-    eyebrow: string | null;
-    content_html: string | null;
-    enabled: boolean;
-    sort_order: number;
-  },
-  patch: Partial<{ enabled: boolean; sort_order: number }> = {},
-) {
-  return {
-    display_name: row.display_name,
-    title: row.title || "",
-    eyebrow: row.eyebrow || "",
-    content_html: row.content_html || "",
-    enabled: patch.enabled ?? row.enabled,
-    sort_order: patch.sort_order ?? row.sort_order,
-  };
-}
-
 export async function quickUpdateLandingSectionAction(form: FormData) {
   await requireContentManager();
   const id = optionalUuid(form.get("id"));
@@ -49,7 +28,7 @@ export async function quickUpdateLandingSectionAction(form: FormData) {
   const supabase = await createAuthServerClient();
   const { data, error } = await supabase
     .from("landing_sections")
-    .select("id,display_name,title,eyebrow,content_html,enabled,sort_order,section_key")
+    .select("id,enabled,sort_order,section_key")
     .order("sort_order")
     .order("section_key");
   if (error || !data) redirect("/admin/sections?status=error");
@@ -59,49 +38,51 @@ export async function quickUpdateLandingSectionAction(form: FormData) {
   const current = data[index];
 
   const saveLayoutOnly = async (
-    row: (typeof data)[number],
+    rowId: string,
     patch: Partial<{ enabled: boolean; sort_order: number }>,
   ) => {
-    const { error: rpcError } = await supabase.rpc("admin_save_landing_section", {
-      p_id: row.id,
-      p_payload: sectionPayload(row, patch),
-    });
-    if (!rpcError) return null;
-
-    // Some imported legacy sections contain HTML that predates the current
-    // sanitizer. Moving or toggling them must not re-submit that old HTML.
-    const { error: layoutError } = await supabase
+    const { data: updatedRows, error: layoutError } = await supabase
       .from("landing_sections")
       .update(patch)
-      .eq("id", row.id);
-    if (layoutError) {
+      .eq("id", rowId)
+      .select("id");
+    if (layoutError || updatedRows?.length !== 1) {
       console.error("landing section layout update failed", {
-        id: row.id,
-        rpcCode: rpcError.code,
-        rpcMessage: rpcError.message,
-        updateCode: layoutError.code,
-        updateMessage: layoutError.message,
+        id: rowId,
+        updateCode: layoutError?.code,
+        updateMessage: layoutError?.message,
+        updatedRows: updatedRows?.length || 0,
       });
     }
-    return layoutError;
+    return layoutError || (updatedRows?.length === 1 ? null : new Error("section not updated"));
   };
 
   if (intent === "toggle") {
-    const saveError = await saveLayoutOnly(current, { enabled: !current.enabled });
+    const saveError = await saveLayoutOnly(current.id, { enabled: !current.enabled });
     if (saveError) redirect("/admin/sections?status=error");
   } else {
     const targetIndex = intent === "move_up" ? index - 1 : index + 1;
     const target = data[targetIndex];
     if (!target) redirect(`/admin/sections?status=unchanged#section-${id}`);
 
-    const reordered = [...data];
-    [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
-    for (let orderIndex = 0; orderIndex < reordered.length; orderIndex += 1) {
-      const row = reordered[orderIndex];
-      const normalizedOrder = (orderIndex + 1) * 10;
-      if (row.sort_order === normalizedOrder) continue;
-      const saveError = await saveLayoutOnly(row, { sort_order: normalizedOrder });
-      if (saveError) redirect("/admin/sections?status=error");
+    if (current.sort_order !== target.sort_order) {
+      const [currentError, targetError] = await Promise.all([
+        saveLayoutOnly(current.id, { sort_order: target.sort_order }),
+        saveLayoutOnly(target.id, { sort_order: current.sort_order }),
+      ]);
+      if (currentError || targetError) redirect("/admin/sections?status=error");
+    } else {
+      const reordered = [...data];
+      [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
+      const results = await Promise.all(
+        reordered.map((row, orderIndex) => {
+          const normalizedOrder = (orderIndex + 1) * 10;
+          return row.sort_order === normalizedOrder
+            ? Promise.resolve(null)
+            : saveLayoutOnly(row.id, { sort_order: normalizedOrder });
+        }),
+      );
+      if (results.some(Boolean)) redirect("/admin/sections?status=error");
     }
   }
 

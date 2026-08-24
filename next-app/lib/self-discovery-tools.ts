@@ -31,6 +31,9 @@ export const SELF_DISCOVERY_TOOLS = [
     subtitle: "Nhận diện kênh tiếp nhận và xử lý thông tin nổi trội",
     meta: "15 câu · xếp hạng 4–3–2–1",
     accent: "#69dcd2",
+    meaning: "VAKAd giúp bạn nhận ra cách bộ não ưu tiên tiếp nhận và xử lý thông tin qua hình ảnh, âm thanh, cảm giác–vận động hoặc phân tích nội tâm.",
+    measures: "Đo 4 kênh: V · A · K · Ad",
+    outcome: "Biểu đồ tỷ trọng cùng cách học, giao tiếp và ra quyết định phù hợp.",
   },
   {
     slug: "ngon-ngu-yeu-thuong",
@@ -39,14 +42,20 @@ export const SELF_DISCOVERY_TOOLS = [
     subtitle: "Hiểu cách bạn cảm nhận và trao đi sự quan tâm",
     meta: "30 cặp lựa chọn",
     accent: "#f08ab8",
+    meaning: "Công cụ làm rõ hình thức quan tâm khiến bạn cảm thấy được yêu thương rõ nhất, đồng thời giúp bạn diễn đạt nhu cầu trong mối quan hệ.",
+    measures: "Đo 5 ngôn ngữ yêu thương",
+    outcome: "Thứ tự ưu tiên và gợi ý kết nối thực tế cho từng ngôn ngữ.",
   },
   {
     slug: "banh-xe-cuoc-doi",
     number: "03",
     title: "Bánh xe cuộc đời",
     subtitle: "Nhìn mức độ cân bằng của tám vùng quan trọng",
-    meta: "27 câu · thang điểm 1–10",
+    meta: "8 vùng · 27 câu · thang điểm 1–10",
     accent: "#f0c96a",
+    meaning: "Bánh xe cuộc đời cho bạn nhìn toàn cảnh tám vùng quan trọng để thấy nơi đang nâng đỡ mình và nơi cần ưu tiên chăm sóc.",
+    measures: "Đánh giá 8 vùng cuộc sống",
+    outcome: "Biểu đồ cân bằng, vùng mạnh, vùng ưu tiên và hành động khởi đầu.",
   },
 ] as const satisfies ReadonlyArray<{
   slug: SelfDiscoveryToolSlug;
@@ -55,6 +64,9 @@ export const SELF_DISCOVERY_TOOLS = [
   subtitle: string;
   meta: string;
   accent: string;
+  meaning: string;
+  measures: string;
+  outcome: string;
 }>;
 
 export const VAKAD_DIMENSIONS: Record<VakadDimension, {
