@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
 import { parseQuizQuestions, QUIZ_SETTING_KEY } from "@/lib/quiz-question-schema";
+import { parseQuizHubContent, QUIZ_HUB_SETTING_KEY } from "@/lib/quiz-hub-content";
 import {
   LIFE_WHEEL_SETTING_KEY,
   LOVE_LANGUAGE_SETTING_KEY,
@@ -94,6 +95,42 @@ export async function saveQuizQuestionsAction(form: FormData) {
   revalidatePath("/admin/quiz");
   revalidatePath("/quiz");
   redirect("/admin/quiz?status=saved");
+}
+
+export async function saveQuizHubContentAction(form: FormData) {
+  const principal = await getAdminPrincipal();
+  if (!principal || !can(principal.role, "manage_content")) {
+    redirect("/admin/login?reason=unauthorized");
+  }
+
+  const content = parseQuizHubContent({
+    kicker: form.get("kicker"),
+    titleBeforeAccent: form.get("titleBeforeAccent"),
+    titleAccent: form.get("titleAccent"),
+    intro: form.get("intro"),
+    sectionKicker: form.get("sectionKicker"),
+    sectionTitle: form.get("sectionTitle"),
+    sectionDescription: form.get("sectionDescription"),
+  });
+  if (!content) redirect("/admin/quiz?status=invalid-hub");
+
+  const supabase = await createAuthServerClient();
+  const { error } = await supabase.rpc("admin_save_site_setting", {
+    p_key: QUIZ_HUB_SETTING_KEY,
+    p_payload: {
+      value: { content },
+      description: "Tiêu đề và nội dung trang kho Quiz",
+      is_public: true,
+    },
+  });
+  if (error) {
+    console.error("admin_save_quiz_hub_content failed", { code: error.code, message: error.message });
+    redirect("/admin/quiz?status=error-hub");
+  }
+
+  revalidatePath("/admin/quiz");
+  revalidatePath("/quiz");
+  redirect("/admin/quiz?status=saved-hub");
 }
 
 export async function saveVakadQuestionsAction(form: FormData) {

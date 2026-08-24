@@ -7,6 +7,7 @@ import type { PublicPackage } from "@/lib/packages";
 import { QUIZ_QUESTIONS, recommendPackages, type QuizQuestion } from "@/lib/package-quiz";
 import { ClowGlint } from "@/components/ui/clow-glint";
 import { SELF_DISCOVERY_TOOLS, type SelfDiscoveryToolSlug } from "@/lib/self-discovery-tools";
+import { QUIZ_HUB_CONTENT, type QuizHubContent } from "@/lib/quiz-hub-content";
 
 const mysticNumbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "11/2", "22/4", "33/6", "4", "5", "6"];
 
@@ -110,10 +111,12 @@ export default function QuizExperience({
   packages,
   questions = QUIZ_QUESTIONS,
   mode = "hub",
+  hubContent = QUIZ_HUB_CONTENT,
 }: {
   packages: PublicPackage[];
   questions?: QuizQuestion[];
   mode?: "hub" | "assessment";
+  hubContent?: QuizHubContent;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [step, setStep] = useState(0);
@@ -221,13 +224,9 @@ export default function QuizExperience({
           <>
             <section className={`${styles.intro} ${styles.hubIntro}`}>
               <div className={styles.introCopy}>
-                <span className={styles.kicker}>4 công cụ tự khám phá · miễn phí</span>
-                <h1>Chọn một cánh cửa để <em>hiểu mình rõ hơn</em></h1>
-                <p>
-                  Mỗi công cụ soi chiếu một khía cạnh khác nhau: nhu cầu tư vấn, cách tiếp nhận
-                  thông tin, cách cảm nhận tình yêu và mức cân bằng trong tám vùng cuộc sống.
-                  Chọn đúng khối bên dưới để bắt đầu bài riêng của bạn.
-                </p>
+                <span className={styles.kicker}>{hubContent.kicker}</span>
+                <h1>{hubContent.titleBeforeAccent} <em>{hubContent.titleAccent}</em></h1>
+                <p>{hubContent.intro}</p>
               </div>
               <div className={styles.hubMandala} aria-hidden="true">
                 <span>4</span><small>góc nhìn</small>
@@ -237,9 +236,9 @@ export default function QuizExperience({
 
             <section className={`${styles.toolGateway} ${styles.hubGateway}`} aria-labelledby="self-discovery-tools">
               <div className={styles.toolGatewayHeading}>
-                <span><ClowGlint size="xs" /> Kho công cụ hiểu mình</span>
-                <h2 id="self-discovery-tools">Bốn bài trắc nghiệm, bốn lớp thông tin riêng biệt</h2>
-                <p>Mỗi khối mở một trang độc lập, có hướng dẫn, câu hỏi, biểu đồ và luận giải ngay trên trình duyệt. Không yêu cầu tên, email hoặc ngày sinh.</p>
+                <span><ClowGlint size="xs" /> {hubContent.sectionKicker}</span>
+                <h2 id="self-discovery-tools">{hubContent.sectionTitle}</h2>
+                <p>{hubContent.sectionDescription}</p>
               </div>
               <div className={styles.toolCards}>
                 <a href="/quiz/chon-goi" style={{ "--tool-card-accent": PACKAGE_QUIZ_CARD.accent } as CSSProperties}>

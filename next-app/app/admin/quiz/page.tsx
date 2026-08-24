@@ -6,6 +6,11 @@ import { can } from "@/lib/auth/roles";
 import { QUIZ_QUESTIONS } from "@/lib/package-quiz";
 import { parseQuizQuestions, QUIZ_SETTING_KEY } from "@/lib/quiz-question-schema";
 import {
+  parseQuizHubContent,
+  QUIZ_HUB_CONTENT,
+  QUIZ_HUB_SETTING_KEY,
+} from "@/lib/quiz-hub-content";
+import {
   LIFE_WHEEL_SETTING_KEY,
   LOVE_LANGUAGE_QUESTIONS,
   LOVE_LANGUAGE_SETTING_KEY,
@@ -22,6 +27,7 @@ import styles from "../admin.module.css";
 import {
   saveLifeWheelQuestionsAction,
   saveLoveLanguageQuestionsAction,
+  saveQuizHubContentAction,
   saveQuizQuestionsAction,
   saveVakadQuestionsAction,
 } from "./actions";
@@ -38,6 +44,9 @@ const notices: Record<string, string> = {
   saved: "Đã lưu bộ câu hỏi Quiz. Trang công khai đã được cập nhật.",
   invalid: "Bộ câu hỏi chưa hợp lệ. Hãy giữ 10–15 câu, mỗi câu có từ 2–6 đáp án và điền đủ nội dung.",
   error: "Không thể lưu bộ câu hỏi Quiz.",
+  "saved-hub": "Đã lưu tiêu đề và nội dung trang kho Quiz.",
+  "invalid-hub": "Nội dung trang kho Quiz chưa hợp lệ. Hãy điền đầy đủ các trường.",
+  "error-hub": "Không thể lưu nội dung trang kho Quiz.",
   "saved-vakad": "Đã lưu riêng bộ câu hỏi VAKAd và cập nhật trang công khai.",
   "invalid-vakad": "Câu hỏi VAKAd chưa hợp lệ. Hãy điền đủ 15 câu và 4 lựa chọn mỗi câu.",
   "error-vakad": "Không thể lưu bộ câu hỏi VAKAd.",
@@ -63,8 +72,9 @@ export default async function AdminQuizPage({
   const { data, error } = await supabase
     .from("site_settings")
     .select("key,value")
-    .in("key", [QUIZ_SETTING_KEY, VAKAD_SETTING_KEY, LOVE_LANGUAGE_SETTING_KEY, LIFE_WHEEL_SETTING_KEY]);
+    .in("key", [QUIZ_HUB_SETTING_KEY, QUIZ_SETTING_KEY, VAKAD_SETTING_KEY, LOVE_LANGUAGE_SETTING_KEY, LIFE_WHEEL_SETTING_KEY]);
   const settings = new Map((data || []).map((setting) => [setting.key, setting.value]));
+  const hubContent = (!error ? parseQuizHubContent(settings.get(QUIZ_HUB_SETTING_KEY)) : null) || QUIZ_HUB_CONTENT;
   const questions = (!error ? parseQuizQuestions(settings.get(QUIZ_SETTING_KEY)) : null) || QUIZ_QUESTIONS;
   const vakadQuestions = (!error ? parseVakadQuestions(settings.get(VAKAD_SETTING_KEY)) : null) || VAKAD_QUESTIONS;
   const loveQuestions = (!error ? parseLoveLanguageQuestions(settings.get(LOVE_LANGUAGE_SETTING_KEY)) : null) || LOVE_LANGUAGE_QUESTIONS;
@@ -95,10 +105,49 @@ export default async function AdminQuizPage({
         <div><strong>3</strong><span>Công cụ tự khám phá</span></div>
         <p>Mỗi phần có nút lưu riêng. Các mã chấm điểm được khóa để bạn thoải mái sửa câu chữ mà không làm sai công thức kết quả.</p>
       </section>
+      <section className={styles.toolEditorSection} id="quiz-hub">
+        <header className={styles.toolEditorHeader}>
+          <span>TT</span>
+          <div>
+            <h2>Tiêu đề trang chung của Quiz</h2>
+            <p>Chỉnh phần giới thiệu và tiêu đề của trang chứa bốn công cụ.</p>
+          </div>
+          <Link href="/quiz" target="_blank">Xem trang ↗</Link>
+        </header>
+        <form action={saveQuizHubContentAction} className={styles.quizEditor}>
+          <div className={styles.formGrid}>
+            <label className={styles.field}>Nhãn mở đầu
+              <input name="kicker" defaultValue={hubContent.kicker} maxLength={100} required />
+            </label>
+            <label className={styles.field}>Tiêu đề chính
+              <input name="titleBeforeAccent" defaultValue={hubContent.titleBeforeAccent} maxLength={120} required />
+            </label>
+            <label className={styles.field}>Phần tiêu đề nhấn màu
+              <input name="titleAccent" defaultValue={hubContent.titleAccent} maxLength={100} required />
+            </label>
+            <label className={styles.field}>Nhãn khu công cụ
+              <input name="sectionKicker" defaultValue={hubContent.sectionKicker} maxLength={100} required />
+            </label>
+            <label className={styles.field}>Tiêu đề khu công cụ
+              <input name="sectionTitle" defaultValue={hubContent.sectionTitle} maxLength={180} required />
+            </label>
+          </div>
+          <label className={styles.field}>Mô tả mở đầu
+            <textarea name="intro" defaultValue={hubContent.intro} maxLength={700} required />
+          </label>
+          <label className={styles.field}>Mô tả khu công cụ
+            <textarea name="sectionDescription" defaultValue={hubContent.sectionDescription} maxLength={500} required />
+          </label>
+          <div className={styles.quizSaveBar}>
+            <span>Nội dung sau khi lưu sẽ cập nhật trên trang `/quiz`.</span>
+            <button type="submit">Lưu tiêu đề trang Quiz</button>
+          </div>
+        </form>
+      </section>
       <section className={styles.toolEditorSection} id="quiz-chon-goi">
         <header className={styles.toolEditorHeader}>
           <span>00</span><div><h2>Quiz chọn gói tư vấn</h2><p>Bộ câu hỏi gợi ý dịch vụ đang dùng trên trang Quiz chính.</p></div>
-          <Link href="/quiz" target="_blank">Xem Quiz ↗</Link>
+          <Link href="/quiz/chon-goi" target="_blank">Xem Quiz ↗</Link>
         </header>
         <QuizEditor action={saveQuizQuestionsAction} questions={questions} />
       </section>
