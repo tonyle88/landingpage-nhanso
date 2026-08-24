@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { landingContentPayloadFromForm } from "@/lib/admin/landing-content-item-input";
 import { landingSectionPayloadFromForm } from "@/lib/admin/landing-section-input";
@@ -98,6 +98,7 @@ export async function quickUpdateLandingSectionAction(form: FormData) {
 
   revalidatePath("/admin/sections");
   revalidatePath("/");
+  updateTag("public-landing-content");
   redirect(`/admin/sections?status=${intent}#section-${id}`);
 }
 
@@ -128,6 +129,7 @@ export async function saveLandingSectionAction(form: FormData) {
 
   revalidatePath("/admin/sections");
   revalidatePath("/");
+  updateTag("public-landing-content");
   redirect("/admin/sections?status=saved");
 }
 
@@ -153,5 +155,6 @@ export async function saveLandingContentItemAction(form: FormData) {
   }
   revalidatePath("/admin/sections");
   revalidatePath("/");
+  updateTag("public-landing-content");
   redirect("/admin/sections?content_status=saved#homepage-content");
 }
