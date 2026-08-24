@@ -44,7 +44,6 @@ async function queryPublicLandingContent(): Promise<PublicLandingContentResult> 
       client
         .from("landing_sections")
         .select("*")
-        .eq("enabled", true)
         .order("sort_order", { ascending: true })
         .order("section_key", { ascending: true })
         .abortSignal(controller.signal),

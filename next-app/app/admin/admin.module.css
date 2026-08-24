@@ -837,12 +837,55 @@
 }
 .sectionQuickActions button:hover:not(:disabled) { border-color: rgb(240 201 106 / 58%); background: rgb(240 201 106 / 17%); }
 .sectionQuickActions button:disabled { cursor: not-allowed; opacity: .32; }
-.sectionQuickActions .sectionToggleButton { min-width: 48px; padding: 0; border: 0; background: transparent; }
+.sectionQuickActions .sectionToggleButton { min-width: 38px; padding: 0; border: 0; background: transparent; }
 .sectionQuickActions .sectionToggleButton:hover:not(:disabled) { border: 0; background: transparent; }
-.sectionToggleTrack { position: relative; width: 46px; height: 26px; display: block; border-radius: 999px; background: rgb(255 255 255 / 16%); transition: background .18s ease; }
-.sectionToggleTrack > span { position: absolute; top: 4px; left: 4px; width: 18px; height: 18px; display: block; border-radius: 50%; background: rgb(255 255 255 / 68%); box-shadow: 0 2px 7px rgb(0 0 0 / 34%); transition: transform .18s ease, background .18s ease; }
-.sectionToggleButton[aria-pressed="true"] .sectionToggleTrack { background: linear-gradient(135deg, var(--gold), var(--orange)); }
-.sectionToggleButton[aria-pressed="true"] .sectionToggleTrack > span { transform: translateX(20px); background: #fff; }
+.sectionToggleTrack {
+  position: relative;
+  width: 30px;
+  height: 42px;
+  display: block;
+  border: 1px solid rgb(240 201 106 / 38%);
+  border-radius: 9px;
+  background: rgb(0 0 0 / 22%);
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 3%);
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+.sectionToggleTrack::before,
+.sectionToggleTrack::after {
+  position: absolute;
+  left: 50%;
+  color: rgb(255 255 255 / 36%);
+  font-size: .45rem;
+  line-height: 1;
+  transform: translateX(-50%);
+}
+.sectionToggleTrack::before { top: 4px; content: "▲"; }
+.sectionToggleTrack::after { bottom: 4px; content: "▼"; }
+.sectionToggleTrack > span {
+  position: absolute;
+  z-index: 1;
+  top: 22px;
+  left: 5px;
+  width: 18px;
+  height: 14px;
+  display: block;
+  margin: 0 !important;
+  border-radius: 5px;
+  background: linear-gradient(135deg, rgb(255 255 255 / 42%), rgb(255 255 255 / 22%));
+  box-shadow: 0 2px 6px rgb(0 0 0 / 35%);
+  transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+}
+.sectionToggleButton[aria-pressed="true"] .sectionToggleTrack {
+  border-color: rgb(240 201 106 / 72%);
+  background: rgb(240 201 106 / 10%);
+  box-shadow: inset 0 0 10px rgb(240 201 106 / 8%), 0 0 10px rgb(240 201 106 / 8%);
+}
+.sectionToggleButton[aria-pressed="true"] .sectionToggleTrack::before { color: var(--gold-soft); }
+.sectionToggleButton[aria-pressed="true"] .sectionToggleTrack > span {
+  transform: translateY(-17px);
+  background: linear-gradient(135deg, var(--gold-soft), var(--orange));
+  box-shadow: 0 2px 8px rgb(240 125 47 / 34%);
+}
 .sectionTypeBadge { padding: 5px 9px; border-radius: 999px; color: rgb(255 255 255 / 68%); background: rgb(255 255 255 / 8%); font-size: .7rem; font-weight: 850; }
 .sectionOrderCard details { margin: 0; padding: 0 14px 14px; border-top: 1px solid rgb(255 255 255 / 7%); }
 .sectionOrderCard summary { width: fit-content; padding-top: 12px; color: var(--gold-soft); cursor: pointer; font-size: .8rem; font-weight: 800; }
