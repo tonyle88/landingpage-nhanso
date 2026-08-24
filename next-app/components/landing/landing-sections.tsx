@@ -290,7 +290,7 @@ export function MiniReportSection() {
               ].map((point) => (
                 <span key={point}>
                   <i className="fa-solid fa-circle-check" aria-hidden="true" />{" "}
-                  {point}
+                  <span className="mini-report-point-label">{point}</span>
                 </span>
               ))}
             </div>

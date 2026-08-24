@@ -33,12 +33,62 @@ const contentNotices: Record<string, string> = {
   error: "Không thể lưu nội dung trang chủ.",
 };
 
-const sectionLabels: Record<string, string> = {
-  meta: "SEO & chia sẻ", nav: "Điều hướng", hero: "Mở đầu", pain: "Nỗi đau khách hàng",
-  about: "Giới thiệu mentor", benefits: "Lợi ích", methods: "Phương pháp", mini_report: "Tra cứu thử",
-  compare: "Bảng so sánh", testimonials: "Testimonials", packages: "Gói dịch vụ", process: "Quy trình",
-  contact: "Liên hệ & đặt lịch", footer: "Chân trang", social: "Mạng xã hội",
+type SectionGuide = {
+  title: string;
+  location: string;
+  description: string;
+  anchor?: string;
 };
+
+const sectionGuide: Record<string, SectionGuide> = {
+  meta: { title: "SEO & chia sẻ mạng xã hội", location: "Dùng chung", description: "Tiêu đề, mô tả và ảnh khi chia sẻ website." },
+  nav: { title: "Thanh điều hướng", location: "Dùng chung · đầu trang", description: "Logo, các liên kết menu và nút đặt lịch." },
+  hero: { title: "Mở đầu trang chủ", location: "Trang chủ · đầu tiên", description: "Thông điệp chính, số liệu nổi bật và nút kêu gọi hành động.", anchor: "#hero" },
+  pain: { title: "Câu hỏi khách hàng đang gặp", location: "Trang chủ · sau mở đầu", description: "Bốn vấn đề thường gặp và đoạn giới thiệu Nhân Số Học.", anchor: "#pain-points" },
+  mini_report: { title: "Tra cứu thử miễn phí", location: "Trang chủ · công cụ xem nhanh", description: "Tiêu đề, mô tả và hướng dẫn tra cứu sơ bộ.", anchor: "#mini-report" },
+  about: { title: "Về chúng tôi & người hướng dẫn", location: "Trang chủ · giới thiệu", description: "Thông tin hai người hướng dẫn và kinh nghiệm nổi bật.", anchor: "#about" },
+  benefits: { title: "Sau buổi tư vấn, bạn sẽ", location: "Trang chủ · lợi ích", description: "Bốn kết quả khách hàng nhận được sau buổi tư vấn.", anchor: "#benefits" },
+  testimonials: { title: "Khách hàng nghĩ gì", location: "Trang chủ · cảm nhận", description: "Tiêu đề section và thư viện ảnh phản hồi khách hàng.", anchor: "#testimonials" },
+  packages: { title: "Gói tư vấn & bảng giá", location: "Trang chủ · bảng giá", description: "Các gói dịch vụ, mức phí và quyền lợi đi kèm.", anchor: "#packages" },
+  compare: { title: "So sánh các gói tư vấn", location: "Trang chủ · sau bảng giá", description: "Bảng so sánh được đồng bộ tự động từ danh sách gói.", anchor: "#package-compare" },
+  methods: { title: "Gói tư vấn linh hoạt 3 trong 1", location: "Trang chủ · phương pháp", description: "Ba lăng kính Bài Clow, Chiêm tinh và Nhân số.", anchor: "#methods" },
+  process: { title: "Hành trình 3 bước", location: "Trang chủ · quy trình", description: "Các bước đặt lịch, chia sẻ và nhận định hướng.", anchor: "#process" },
+  faq: { title: "Câu hỏi thường gặp", location: "Trang chủ · trước liên hệ", description: "Các giải đáp quan trọng trước khi khách đặt lịch.", anchor: "#faq" },
+  contact: { title: "Liên hệ & đặt lịch", location: "Trang chủ · cuối trang", description: "Thông tin liên hệ và biểu mẫu đặt lịch tư vấn.", anchor: "#contact" },
+  footer: { title: "Chân trang", location: "Dùng chung · cuối trang", description: "Thông tin thương hiệu và liên kết cuối trang." },
+  social: { title: "Mạng xã hội", location: "Dùng chung", description: "Các liên kết Facebook, Instagram, TikTok và YouTube." },
+};
+
+const contentGroupGuide: Record<string, SectionGuide & { order: number }> = {
+  hero: { ...sectionGuide.hero, order: 10 },
+  pain: { ...sectionGuide.pain, order: 20 },
+  mini_report: { ...sectionGuide.mini_report, order: 30 },
+  about: { ...sectionGuide.about, order: 40 },
+  benefits: { ...sectionGuide.benefits, order: 50 },
+  testimonials: { ...sectionGuide.testimonials, order: 60 },
+  packages: { ...sectionGuide.packages, order: 70 },
+  compare: { ...sectionGuide.compare, order: 80 },
+  methods: { ...sectionGuide.methods, order: 90 },
+  process: { ...sectionGuide.process, order: 100 },
+  faq: { ...sectionGuide.faq, order: 110 },
+  contact: { ...sectionGuide.contact, order: 120 },
+  meta: { ...sectionGuide.meta, order: 200 },
+  nav: { ...sectionGuide.nav, order: 210 },
+  footer: { ...sectionGuide.footer, order: 220 },
+  social: { ...sectionGuide.social, order: 230 },
+};
+
+function normalizeSectionKey(value: string) {
+  return value.trim().toLocaleLowerCase("vi").replaceAll("-", "_");
+}
+
+function getSectionGuide(sectionKey: string, fallback: string): SectionGuide {
+  return sectionGuide[normalizeSectionKey(sectionKey)] || {
+    title: fallback,
+    location: "Trang chủ · section tùy chỉnh",
+    description: "Section bổ sung được tạo trong hệ thống quản trị.",
+  };
+}
 
 export default async function AdminSectionsPage({
   searchParams,
@@ -60,7 +110,8 @@ export default async function AdminSectionsPage({
   const normalizedQuery = query.toLocaleLowerCase("vi");
   const rows = (sections || []).filter((item) => {
     if (!normalizedQuery) return true;
-    return `${item.section_key} ${item.display_name}`
+    const guide = getSectionGuide(item.section_key, item.display_name);
+    return `${item.section_key} ${item.display_name} ${guide.title} ${guide.location} ${guide.description}`
       .toLocaleLowerCase("vi")
       .includes(normalizedQuery);
   });
@@ -88,20 +139,34 @@ export default async function AdminSectionsPage({
     }),
     ...storedContentItems.filter((item) => !catalogKeys.has(item.key)),
   ];
+  const filteredContentItems = contentItems.filter((item) => {
+    if (!normalizedQuery) return true;
+    const key = item.key.replace("landing.content.", "");
+    const group = key.split(".")[0] || "other";
+    const guide = contentGroupGuide[group];
+    return `${key} ${item.description || ""} ${guide?.title || ""} ${guide?.description || ""}`
+      .toLocaleLowerCase("vi")
+      .includes(normalizedQuery);
+  });
   const contentGroups = new Map<string, AdminLandingContentItem[]>();
-  contentItems.forEach((item) => {
+  filteredContentItems.forEach((item) => {
     const group = item.key.replace("landing.content.", "").split(".")[0] || "other";
     if (!contentGroups.has(group)) contentGroups.set(group, []);
     contentGroups.get(group)?.push(item);
+  });
+  const orderedContentGroups = Array.from(contentGroups.entries()).sort(([groupA], [groupB]) => {
+    const orderA = contentGroupGuide[groupA]?.order ?? 999;
+    const orderB = contentGroupGuide[groupB]?.order ?? 999;
+    return orderA - orderB || groupA.localeCompare(groupB, "vi");
   });
 
   return (
     <main className={styles.adminShell}>
       <header className={styles.pageHeader}>
         <div>
-          <p className={styles.eyebrow}>Landing page content · {principal.role}</p>
-          <h1>Quản trị section</h1>
-          <p>Chọn section, chỉnh nội dung và thứ tự hiển thị như buồng lái cũ.</p>
+          <p className={styles.eyebrow}>Nội dung website · {principal.role}</p>
+          <h1>Bố cục & nội dung website</h1>
+          <p>Sắp xếp Trang chủ, sửa đúng nội dung khách nhìn thấy và chuyển nhanh sang khu vực Blog.</p>
         </div>
         <Link className={styles.secondaryLink} href="/admin">Tổng quan</Link>
       </header>
@@ -111,27 +176,52 @@ export default async function AdminSectionsPage({
         cleanHref={query ? `/admin/sections?q=${encodeURIComponent(query)}` : "/admin/sections"}
       />
       {error ? <AdminToast message="Không thể tải danh sách section." tone="error" cleanHref="/admin/sections" /> : null}
-      <section className={styles.sectionManager}>
+
+      <nav className={styles.contentAdminHub} aria-label="Khu vực quản trị nội dung">
+        <a href="#homepage-layout">
+          <span>01</span><strong>Bố cục Trang chủ</strong><small>Ẩn, hiện và đổi thứ tự section</small>
+        </a>
+        <a href="#homepage-content">
+          <span>02</span><strong>Nội dung Trang chủ</strong><small>Sửa tiêu đề, mô tả và các thẻ</small>
+        </a>
+        <Link href="/admin/packages">
+          <span>03</span><strong>Gói tư vấn & bảng giá</strong><small>Quản lý giá, quyền lợi và so sánh gói</small>
+        </Link>
+        <Link href="/admin/blog">
+          <span>04</span><strong>Bài viết Blog</strong><small>Soạn bài, chủ đề và trạng thái xuất bản</small>
+        </Link>
+      </nav>
+
+      <section className={styles.sectionManager} id="homepage-layout">
         <aside className={styles.sectionIndex}>
-          <p className={styles.eyebrow}>Tất cả section</p>
+          <div>
+            <p className={styles.eyebrow}>Bố cục Trang chủ</p>
+            <h2>Thứ tự hiển thị</h2>
+            <small>Chọn tên bên dưới để đi nhanh đến section.</small>
+          </div>
           <form className={styles.sectionSearch} method="get">
-            <input name="q" defaultValue={query} placeholder="Tìm section…" />
+            <input name="q" defaultValue={query} placeholder="Tìm section hoặc nội dung…" />
             <button type="submit" aria-label="Tìm">Tìm</button>
           </form>
           <nav aria-label="Danh sách section">
-            {rows.map((item) => (
-              <a key={item.id} href={`#section-${item.id}`}>
-                <span>{item.display_name}</span>
+            {rows.map((item) => {
+              const guide = getSectionGuide(item.section_key, item.display_name);
+              return <a key={item.id} href={`#section-${item.id}`}>
+                <span>{guide.title}</span>
                 <small>{item.sort_order}</small>
-              </a>
-            ))}
+              </a>;
+            })}
           </nav>
-          <Link className={styles.viewSiteLink} href="/" target="_blank">Xem landing page ↗</Link>
+          <Link className={styles.viewSiteLink} href="/" target="_blank">Xem Trang chủ ↗</Link>
         </aside>
         <div className={styles.sectionWorkspace}>
+          <div className={styles.workspaceHeading}>
+            <div><p className={styles.eyebrow}>01 · Bố cục Trang chủ</p><h2>Ẩn, hiện & sắp xếp section</h2></div>
+            <p>Nội dung chữ được sửa ở khu vực số 02 bên dưới. Phần này chỉ dùng để điều khiển vị trí và trạng thái hiển thị.</p>
+          </div>
           <div className={styles.sectionOrderHint}>
             <span aria-hidden="true">ⓘ</span>
-            <p>Dùng các mũi tên để sắp xếp thứ tự hiển thị. Thay đổi được áp dụng ngay trên trang chủ.</p>
+            <p>Dùng mũi tên ↑ ↓ để đổi vị trí. Nút gạt dọc dùng để bật hoặc ẩn section. Thay đổi được áp dụng ngay trên Trang chủ.</p>
           </div>
           <div className={styles.sectionStats}>
             <div><strong>{rows.length}</strong><span>section</span></div>
@@ -141,12 +231,17 @@ export default async function AdminSectionsPage({
             {!error && rows.length === 0 ? (
               <p className={styles.message}>Không tìm thấy section phù hợp.</p>
             ) : null}
-            {rows.map((item) => (
-              <article className={`${styles.recordCard} ${styles.sectionOrderCard} ${item.enabled ? "" : styles.sectionOrderCardDisabled}`} id={`section-${item.id}`} key={item.id}>
+            {rows.map((item) => {
+              const guide = getSectionGuide(item.section_key, item.display_name);
+              return <article className={`${styles.recordCard} ${styles.sectionOrderCard} ${item.enabled ? "" : styles.sectionOrderCardDisabled}`} id={`section-${item.id}`} key={item.id}>
                 <div className={styles.recordSummary}>
                   <div className={styles.sectionOrderIdentity}>
                     <span className={styles.sectionGrip} aria-hidden="true">⠿</span>
-                    <div><strong>{item.display_name}</strong><span>{item.section_key}</span></div>
+                    <div>
+                      <strong>{guide.title}</strong>
+                      <span>{guide.location}</span>
+                      <small>{guide.description}</small>
+                    </div>
                   </div>
                   <div className={styles.sectionQuickArea}>
                     <form className={styles.sectionQuickActions} action={quickUpdateLandingSectionAction}>
@@ -189,33 +284,63 @@ export default async function AdminSectionsPage({
                   </div>
                 </div>
                 <details>
-                  <summary>Chỉnh sửa nội dung</summary>
+                  <summary>Cài đặt section nâng cao</summary>
                   <SectionForm item={item} />
                 </details>
-              </article>
-            ))}
+              </article>;
+            })}
           </div>
         </div>
       </section>
       <section className={styles.homepageContent} id="homepage-content">
         <div className={styles.sectionHeading}>
           <div>
-            <p className={styles.eyebrow}>Toàn bộ trường đang dùng trên trang chủ</p>
-            <h2>Nội dung chi tiết</h2>
-            <p>Quản lý tiêu đề, mô tả, nút, form, liên kết và SEO. Trường văn bản cũ có thẻ thừa sẽ tự được làm sạch khi lưu.</p>
+            <p className={styles.eyebrow}>02 · Nội dung Trang chủ</p>
+            <h2>Sửa đúng phần khách nhìn thấy</h2>
+            <p>Mỗi nhóm bên dưới ghi rõ vị trí hiển thị. Mở nhóm cần sửa, thay nội dung rồi bấm “Lưu mục”; không cần thao tác với mã kỹ thuật.</p>
           </div>
-          <strong>{contentItems.length} trường</strong>
+          <strong>{filteredContentItems.length} trường</strong>
         </div>
         {settingsError ? <p className={styles.message}>Không thể tải nội dung trang chủ.</p> : null}
+        {normalizedQuery && filteredContentItems.length === 0 ? (
+          <p className={styles.message}>Không tìm thấy trường nội dung phù hợp với “{query}”.</p>
+        ) : null}
         <div className={styles.contentGroups}>
-          {Array.from(contentGroups.entries()).map(([group, items], index) => (
+          {orderedContentGroups.map(([group, items], index) => {
+            const guide = contentGroupGuide[group] || {
+              title: group,
+              location: "Nội dung bổ sung",
+              description: "Nhóm nội dung được thêm từ dữ liệu cũ.",
+              order: 999,
+            };
+            return (
             <details className={styles.contentGroup} key={group} open={index === 0}>
-              <summary><span>{sectionLabels[group] || group}</span><small>{items.length} trường</small></summary>
+              <summary>
+                <span><strong>{guide.title}</strong><small>{guide.location}</small></span>
+                <em>{items.length} trường</em>
+              </summary>
+              <div className={styles.contentGroupIntro}>
+                <p>{guide.description}</p>
+                {guide.anchor ? <Link href={`/${guide.anchor}`} target="_blank">Xem vị trí trên Trang chủ ↗</Link> : null}
+              </div>
               <div className={styles.contentItemGrid}>
                 {items.map((item) => <ContentItemForm item={item} key={item.key} />)}
               </div>
             </details>
-          ))}
+            );
+          })}
+        </div>
+      </section>
+
+      <section className={styles.contentDestinations} aria-labelledby="specialized-content-title">
+        <div className={styles.sectionHeading}>
+          <div><p className={styles.eyebrow}>Nội dung có màn hình riêng</p><h2 id="specialized-content-title">Quản lý dữ liệu chuyên biệt</h2></div>
+        </div>
+        <div>
+          <Link href="/admin/packages"><strong>Gói tư vấn & bảng giá</strong><span>Thêm gói, sửa giá, quyền lợi và nội dung dùng trong bảng so sánh/Quiz.</span></Link>
+          <Link href="/admin/testimonials"><strong>Ảnh phản hồi khách hàng</strong><span>Tải ảnh, sắp xếp và bật/ẩn nội dung trong section “Khách hàng nghĩ gì”.</span></Link>
+          <Link href="/admin/blog"><strong>Bài viết Blog</strong><span>Soạn bài, sửa ảnh bìa, phân loại chủ đề và quản lý trạng thái xuất bản.</span></Link>
+          <Link href="/admin/quiz"><strong>Quiz & công cụ hiểu mình</strong><span>Sửa tiêu đề, câu hỏi, đáp án và luận giải của các công cụ trắc nghiệm.</span></Link>
         </div>
       </section>
     </main>
