@@ -11,7 +11,8 @@ type AdminNavIconName =
   | "payments"
   | "numerology"
   | "reports"
-  | "members";
+  | "members"
+  | "status";
 
 export function AdminNavIcon({ name }: { name: AdminNavIconName }) {
   const paths: Record<AdminNavIconName, ReactNode> = {
@@ -84,6 +85,13 @@ export function AdminNavIcon({ name }: { name: AdminNavIconName }) {
         <circle cx="9" cy="8" r="3" />
         <path d="M3.5 19c.6-3.6 2.4-5.4 5.5-5.4s4.9 1.8 5.5 5.4" />
         <path d="M17 8v6M14 11h6" />
+      </>
+    ),
+    status: (
+      <>
+        <path d="M4 18V6M4 18h16" />
+        <path d="m7 14 3-3 3 2 4-5" />
+        <circle cx="17" cy="8" r="1.5" />
       </>
     ),
   };
