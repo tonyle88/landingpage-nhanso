@@ -95,19 +95,30 @@ export default async function AdminSystemStatusPage({
 
   const supabase = await createAuthServerClient();
   const startedAt = performance.now();
-  const [usageResult, limitResult] = await Promise.all([
+  const [usageResult, settingsResult] = await Promise.all([
     supabase.rpc("admin_get_system_usage"),
     supabase
       .from("site_settings")
-      .select("value")
-      .eq("key", "system.capacity_limits")
-      .maybeSingle(),
+      .select("key,value")
+      .in("key", ["system.capacity_limits", "system.capacity_snapshot"]),
   ]);
   const responseTimeMs = Math.max(1, Math.round(performance.now() - startedAt));
-  const usage = usageResult.error ? null : parseSystemUsage(usageResult.data);
-  const limits = parseCapacityLimits(limitResult.data?.value);
+  const settingValues = new Map(
+    (settingsResult.data || []).map((setting) => [setting.key, setting.value]),
+  );
+  const liveUsage = usageResult.error
+    ? null
+    : parseSystemUsage(usageResult.data);
+  const snapshotUsage = parseSystemUsage(
+    settingValues.get("system.capacity_snapshot"),
+  );
+  const usage = liveUsage || snapshotUsage;
+  const usingSnapshot = !liveUsage && Boolean(snapshotUsage);
+  const limits = parseCapacityLimits(
+    settingValues.get("system.capacity_limits"),
+  );
   const migrationMissing = Boolean(
-    usageResult.error &&
+    !usage && usageResult.error &&
       ["42883", "PGRST202"].includes(usageResult.error.code || ""),
   );
   const databaseMetric = usage
@@ -160,10 +171,17 @@ export default async function AdminSystemStatusPage({
         </div>
       ) : null}
 
+      {usingSnapshot ? (
+        <div className={styles.systemSnapshotNotice} role="status">
+          <strong>Số liệu dự phòng đang hoạt động</strong>
+          <span>Supabase tự cập nhật ảnh chụp dung lượng mỗi 15 phút trong lúc REST API làm mới schema cache.</span>
+        </div>
+      ) : null}
+
       <section className={styles.systemOverview} aria-label="Tổng quan trạng thái">
         <div className={styles.systemHealthCard}>
           <span className={usage ? styles.systemHealthOnline : styles.systemHealthWarning} />
-          <div><strong>{usage ? "Supabase đang phản hồi" : "Supabase cần kiểm tra"}</strong><small>{responseTimeMs} ms · lần đọc hiện tại</small></div>
+          <div><strong>{usage ? "Supabase đang phản hồi" : "Supabase cần kiểm tra"}</strong><small>{usingSnapshot ? "Ảnh chụp tối đa 15 phút trước" : `${responseTimeMs} ms · lần đọc hiện tại`}</small></div>
         </div>
         <div className={styles.systemHealthCard}>
           <span className={vercelActive ? styles.systemHealthOnline : styles.systemHealthNeutral} />

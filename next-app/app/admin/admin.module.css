@@ -1030,6 +1030,31 @@
   font-size: .88rem;
 }
 
+.systemSnapshotNotice {
+  align-items: center;
+  background: rgba(82, 218, 190, 0.08);
+  border: 1px solid rgba(82, 218, 190, 0.34);
+  border-radius: 18px;
+  color: rgba(236, 255, 250, 0.82);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 16px 20px;
+}
+
+.systemSnapshotNotice strong {
+  color: #7ee8ce;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .systemSnapshotNotice {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+
 .notice { border: 1px solid rgb(240 201 106 / 35%); background: rgb(240 201 106 / 9%); color: var(--gold-soft); }
 .noticeSuccess { border-color: rgb(115 217 178 / 45%); background: rgb(115 217 178 / 10%); color: #9ce9ca; }
 .alertPanel { display: grid; gap: 4px; border: 1px solid rgb(255 138 128 / 45%); background: rgb(255 138 128 / 9%); color: #ffb0aa; }
