@@ -50,6 +50,12 @@ const toolNavigation = [
 
 const systemNavigation = [
   {
+    href: "/admin/system-status",
+    icon: "status" as const,
+    title: "Trạng thái hệ thống",
+    description: "Theo dõi dung lượng Supabase và môi trường triển khai Vercel.",
+  },
+  {
     href: "/admin/members",
     icon: "members" as const,
     title: "Quản lý thành viên",
@@ -143,7 +149,7 @@ export default async function AdminPage() {
           <div className={styles.dashboardSection}>
             <div className={styles.dashboardSectionHeading}>
               <div><span>04</span><h2>Hệ thống</h2></div>
-              <p>Quản lý người có quyền truy cập trang admin.</p>
+              <p>Theo dõi hạ tầng và quản lý quyền truy cập Admin.</p>
             </div>
             <nav className={styles.adminNav} aria-label="Quản trị hệ thống">
               {systemNavigation.map((item) => (

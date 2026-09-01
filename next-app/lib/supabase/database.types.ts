@@ -801,6 +801,10 @@ export type Database = {
         Args: { p_enabled: boolean }
         Returns: boolean
       }
+      admin_get_system_usage: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       reserve_numerology_report_number: {
         Args: Record<PropertyKey, never>
         Returns: number
