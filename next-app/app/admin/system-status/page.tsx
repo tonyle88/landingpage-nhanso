@@ -164,7 +164,7 @@ export default async function AdminSystemStatusPage({
           <strong>Chưa có bộ đo dung lượng</strong>
           <span>Cần áp dụng migration 202609010001_admin_system_usage.sql rồi tải lại trang.</span>
         </div>
-      ) : usageResult.error || !usage ? (
+      ) : !usage ? (
         <div className={styles.alertPanel} role="alert">
           <strong>Chưa đọc được số liệu Supabase</strong>
           <span>Hệ thống không hiển thị số ước đoán. Vui lòng thử lại hoặc kiểm tra quyền owner.</span>

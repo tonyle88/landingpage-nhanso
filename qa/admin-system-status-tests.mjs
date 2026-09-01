@@ -32,6 +32,7 @@ test("system status page stays owner-only and renders honest provider states", a
   assert.match(page, /admin_get_system_usage/);
   assert.match(page, /system\.capacity_snapshot/);
   assert.match(page, /Số liệu dự phòng đang hoạt động/);
+  assert.match(page, /\) : !usage \? \(/);
   assert.match(page, /Vercel chưa cung cấp một con số/);
   assert.doesNotMatch(page, /SUPABASE_SECRET_KEY|SUPABASE_SERVICE_ROLE_KEY|VERCEL_API_TOKEN/);
 });
