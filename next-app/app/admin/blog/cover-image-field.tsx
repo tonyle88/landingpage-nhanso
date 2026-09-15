@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { prepareCoverImage } from "./prepare-cover-image";
 import styles from "../admin.module.css";
 
 export function CoverImageField({
@@ -12,7 +13,9 @@ export function CoverImageField({
 }) {
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
+  const [uploadMessage, setUploadMessage] = useState("");
   const [failedPreview, setFailedPreview] = useState<string | null>(null);
+  const preparationId = useRef(0);
   const fileInputId = useId();
 
   useEffect(() => {
@@ -37,11 +40,49 @@ export function CoverImageField({
             name="cover_file"
             type="file"
             accept="image/jpeg,image/png,image/webp"
-            onChange={(event) => {
-              const file = event.currentTarget.files?.[0];
-              setFileName(file?.name || "");
+            aria-busy={uploadMessage === "Đang tối ưu ảnh…"}
+            onChange={async (event) => {
+              const input = event.currentTarget;
+              const file = input.files?.[0];
+              const currentPreparation = preparationId.current + 1;
+              preparationId.current = currentPreparation;
               setFailedPreview(null);
-              setLocalPreview(file ? URL.createObjectURL(file) : null);
+              setUploadMessage("");
+              input.setCustomValidity("");
+              if (!file) {
+                setFileName("");
+                setLocalPreview(null);
+                return;
+              }
+
+              input.setCustomValidity("Đang tối ưu ảnh, vui lòng chờ.");
+              setFileName(file.name);
+              setUploadMessage("Đang tối ưu ảnh…");
+              try {
+                const titleField = input.form?.elements.namedItem("title");
+                const title = titleField instanceof HTMLInputElement ? titleField.value : "";
+                const prepared = await prepareCoverImage(file, title);
+                if (preparationId.current !== currentPreparation) return;
+                const transfer = new DataTransfer();
+                transfer.items.add(prepared);
+                input.files = transfer.files;
+                input.setCustomValidity("");
+                setFileName(prepared.name);
+                setLocalPreview(URL.createObjectURL(prepared));
+                setUploadMessage("Ảnh đã được tối ưu và sẵn sàng tải lên.");
+              } catch (error) {
+                if (preparationId.current !== currentPreparation) return;
+                const message = error instanceof Error
+                  ? error.message
+                  : "Không thể xử lý ảnh này.";
+                input.value = "";
+                input.setCustomValidity(message);
+                input.reportValidity();
+                input.setCustomValidity("");
+                setFileName("");
+                setLocalPreview(null);
+                setUploadMessage(message);
+              }
             }}
           />
           <span className={styles.uploadIcon} aria-hidden="true">
@@ -52,9 +93,9 @@ export function CoverImageField({
           <span className={styles.uploadCopy}>
             <strong>{fileName || "Chọn ảnh bìa"}</strong>
             <small>
-              {fileName
+              {uploadMessage || (fileName
                 ? "Ảnh đã sẵn sàng để tải lên khi lưu bài viết."
-                : "JPEG, PNG hoặc WebP · tối đa 5 MB"}
+                : "JPEG, PNG hoặc WebP · tối đa 5 MB")}
             </small>
           </span>
           <span className={styles.uploadButton}>Chọn tệp</span>

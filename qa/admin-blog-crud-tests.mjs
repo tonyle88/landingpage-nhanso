@@ -19,6 +19,9 @@ const pendingOverlay = await read(
   "next-app/app/admin/admin-pending-overlay.tsx",
 );
 const coverField = await read("next-app/app/admin/blog/cover-image-field.tsx");
+const imagePreparation = await read(
+  "next-app/app/admin/blog/prepare-cover-image.ts",
+);
 const actions = await read("next-app/app/admin/blog/actions.ts");
 const editor = await read("next-app/app/admin/blog/rich-text-editor.tsx");
 const adminStyles = await read("next-app/app/admin/admin.module.css");
@@ -29,6 +32,9 @@ const adminPage = await read("next-app/app/admin/blog/page.tsx");
 const publicPosts = await read("next-app/lib/supabase/public-blog-posts.ts");
 const packageJson = JSON.parse(await read("next-app/package.json"));
 const nextConfig = await read("next-app/next.config.ts");
+const { safeMediaFileStem } = await import(
+  new URL("next-app/lib/admin/media-file-name.ts", root)
+);
 
 test("blog RPCs enforce roles, transactional audit and grants", () => {
   assert.match(migration, /admin_save_blog_post/);
@@ -71,6 +77,29 @@ test("one cover upload derives compressed WebP cover and thumbnail", () => {
   assert.match(nextConfig, /"\.\/node_modules\/@img\/sharp-libvips-linux-x64\/\*\*\/\*"/);
   assert.match(mediaUpload, /uploadMime = "image\/webp"/);
   assert.match(mediaUpload, /mime_type: uploadMime/);
+});
+
+test("cover images are optimized below the hosting request limit before submit", () => {
+  assert.match(imagePreparation, /MAX_SOURCE_IMAGE_BYTES = 5 \* 1024 \* 1024/);
+  assert.match(imagePreparation, /MAX_FORM_IMAGE_BYTES = 4 \* 1024 \* 1024/);
+  assert.match(imagePreparation, /createImageBitmap/);
+  assert.match(imagePreparation, /canvas\.toBlob/);
+  assert.match(coverField, /prepareCoverImage/);
+  assert.match(coverField, /new DataTransfer\(\)/);
+  assert.match(nextConfig, /bodySizeLimit: "4\.5mb"/);
+});
+
+test("stored blog images receive a short safe name based on the post title", () => {
+  assert.match(mediaUpload, /safeMediaFileStem\(/);
+  assert.match(mediaUpload, /\$\{safeStem\}-\$\{randomUUID\(\)\}/);
+  assert.match(actions, /fileNameStem: `\$\{title\}-anh-bia`/);
+  assert.match(actions, /fileNameStem: `\$\{title\}-thumbnail`/);
+  assert.equal(
+    safeMediaFileStem("Ý nghĩa Số Đường Đời 11/2"),
+    "y-nghia-so-duong-doi-11-2",
+  );
+  assert.equal(safeMediaFileStem("   !!!   "), "anh-bai-viet");
+  assert.ok(safeMediaFileStem("Bài viết rất dài ".repeat(20)).length <= 72);
 });
 
 test("editor and HTML modes share a canonical value without render overwrite", () => {
