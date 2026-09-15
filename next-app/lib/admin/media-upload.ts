@@ -1,6 +1,7 @@
 import "server-only";
 
 import { randomUUID } from "node:crypto";
+import { safeMediaFileStem } from "@/lib/admin/media-file-name";
 import { createServiceServerClient } from "@/lib/supabase/server";
 
 const BUCKET = "content-images";
@@ -53,12 +54,14 @@ export async function uploadContentImage({
   folder,
   altText,
   uploadedBy,
+  fileNameStem,
   webp,
 }: {
   file: File;
   folder: "blog" | "testimonials";
   altText: string;
   uploadedBy: string;
+  fileNameStem?: string;
   webp?: {
     width: number;
     height: number;
@@ -99,7 +102,10 @@ export async function uploadContentImage({
   const supabase = createServiceServerClient();
   if (!supabase) throw new Error("storage is not configured");
 
-  const objectPath = `${folder}/${randomUUID()}.${extension}`;
+  const safeStem = safeMediaFileStem(
+    fileNameStem || file.name.replace(/\.[^.]+$/, ""),
+  );
+  const objectPath = `${folder}/${safeStem}-${randomUUID()}.${extension}`;
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
     .upload(objectPath, uploadBytes, {
@@ -160,7 +166,7 @@ export async function removeStoredMediaById(id: string | null | undefined) {
   if (
     !data ||
     data.bucket !== BUCKET ||
-    !/^(blog|testimonials)\/[0-9a-f-]+\.(jpg|png|webp)$/.test(data.object_path)
+    !/^(blog|testimonials)\/[a-z0-9-]+\.(jpg|png|webp)$/.test(data.object_path)
   ) {
     return;
   }

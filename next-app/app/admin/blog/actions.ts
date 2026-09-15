@@ -69,18 +69,21 @@ export async function saveBlogPostAction(form: FormData) {
     const file = form.get("cover_file");
     if (file instanceof File && file.size > 0) {
       phase = "upload";
+      const title = String(form.get("title") || "");
       upload = await uploadContentImage({
         file,
         folder: "blog",
-        altText: String(form.get("title") || ""),
+        altText: title,
         uploadedBy: principal.userId,
+        fileNameStem: `${title}-anh-bia`,
         webp: { width: 1600, height: 1200, fit: "inside", quality: 70 },
       });
       thumbnailUpload = await uploadContentImage({
         file,
         folder: "blog",
-        altText: `Thumbnail ${String(form.get("title") || "")}`,
+        altText: `Thumbnail ${title}`,
         uploadedBy: principal.userId,
+        fileNameStem: `${title}-thumbnail`,
         webp: { width: 640, height: 360, fit: "cover", quality: 70 },
       });
       if (upload && thumbnailUpload) {
