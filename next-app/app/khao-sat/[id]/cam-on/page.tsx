@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { surveyCopyWithDefaults } from "@/lib/survey";
+import { createServiceServerClient } from "@/lib/supabase/server";
 import styles from "../../survey.module.css";
 
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Cảm ơn em đã chia sẻ | Clow Cat Patronus",
   robots: { index: false, follow: false },
 };
 
-export default function SurveyThanksPage() {
+export default async function SurveyThanksPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const supabase = createServiceServerClient();
+  const { data: survey } = supabase && /^[0-9a-f-]{36}$/i.test(id)
+    ? await supabase.from("service_surveys").select("display_copy").eq("id", id).maybeSingle()
+    : { data: null };
+  const copy = surveyCopyWithDefaults(survey?.display_copy);
   return (
     <main className={`${styles.page} ${styles.thanksPage}`}>
       <div className={styles.ambient} aria-hidden="true">✦</div>
@@ -20,10 +29,10 @@ export default function SurveyThanksPage() {
       </header>
       <section className={styles.thanksCard}>
         <div className={styles.thanksSymbol} aria-hidden="true">✦</div>
-        <span className={styles.kicker}>ĐÃ GỬI ĐÁNH GIÁ</span>
-        <h1>Biết ơn em đã chia sẻ.</h1>
-        <p>Những điều em viết là món quà quý giá để anh tiếp tục hoàn thiện nội dung và cách đồng hành cùng mỗi người trên hành trình hiểu mình.</p>
-        <Link href="/">Trở về trang chủ <span aria-hidden="true">↗</span></Link>
+        <span className={styles.kicker}>{copy.thanksEyebrow}</span>
+        <h1>{copy.thanksTitle}</h1>
+        <p>{copy.thanksDescription}</p>
+        <Link href="/">{copy.thanksBackLabel} <span aria-hidden="true">↗</span></Link>
       </section>
     </main>
   );

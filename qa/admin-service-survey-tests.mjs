@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const root = new URL("../", import.meta.url);
-const { parseSurveyQuestions, parseSurveyAnswers, DEFAULT_SURVEY_QUESTIONS } = await import(
+const { parseSurveyQuestions, parseSurveyAnswers, parseSurveyCopy, surveyCopyWithDefaults, DEFAULT_SURVEY_COPY, DEFAULT_SURVEY_QUESTIONS } = await import(
   new URL("next-app/lib/survey.ts", root)
 );
 
@@ -31,6 +31,14 @@ test("survey rejects duplicate ids, empty answers, excess questions and oversize
   assert.equal(parseSurveyAnswers(form, DEFAULT_SURVEY_QUESTIONS), null);
   form.set("answer_goc-nhin", "x".repeat(2001));
   assert.equal(parseSurveyAnswers(form, DEFAULT_SURVEY_QUESTIONS), null);
+});
+
+test("survey display text is editable while missing legacy values keep defaults", () => {
+  const copy = { ...DEFAULT_SURVEY_COPY, experienceTitle: "Trải nghiệm của bạn", ratingLabel: "Bạn hài lòng với buổi tư vấn ở mức nào?" };
+  assert.deepEqual(parseSurveyCopy(copy), copy);
+  assert.equal(surveyCopyWithDefaults({ experienceTitle: "Trải nghiệm của bạn" }).ratingLabel, DEFAULT_SURVEY_COPY.ratingLabel);
+  assert.equal(parseSurveyCopy({ ...copy, ratingLabel: " " }), null);
+  assert.equal(parseSurveyCopy({ ...copy, ratingLabel: "x".repeat(161) }), null);
 });
 
 test("unlisted survey links are resolved on the server and responses stay private", async () => {

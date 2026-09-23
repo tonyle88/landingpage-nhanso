@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
-import { parseSurveyQuestions, type SurveyAnswer } from "@/lib/survey";
+import { parseSurveyQuestions, surveyCopyWithDefaults, type SurveyAnswer } from "@/lib/survey";
 import { AdminToast } from "../admin-toast";
 import adminStyles from "../admin.module.css";
 import { createSurveyAction } from "./actions";
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 const notices: Record<string, string> = {
   created: "Đã tạo khảo sát mới và link gửi khách hàng.",
   saved: "Đã lưu thay đổi khảo sát.",
-  invalid: "Nội dung chưa hợp lệ. Hãy điền đủ tiêu đề, lời mở đầu và 1–10 câu hỏi.",
+  invalid: "Nội dung chưa hợp lệ. Hãy điền đủ các dòng chữ hiển thị và 1–10 câu hỏi.",
   error: "Không thể lưu khảo sát. Hãy kiểm tra migration và thử lại.",
 };
 
@@ -45,7 +45,7 @@ export default async function AdminSurveysPage({
   const supabase = await createAuthServerClient();
   const { data: surveys, error: surveysError } = await supabase
     .from("service_surveys")
-    .select("id,title,intro,questions,active,created_at,updated_at")
+    .select("id,title,intro,questions,display_copy,active,created_at,updated_at")
     .order("created_at", { ascending: false })
     .limit(100);
   const selected = surveys?.find((survey) => survey.id === params.id) || surveys?.[0];
@@ -107,7 +107,7 @@ export default async function AdminSurveysPage({
             <>
               <section className={styles.panel}>
                 <div className={styles.panelHeader}><span>01 · NỘI DUNG & LINK</span><h2>Chỉnh sửa khảo sát</h2><p>Link này có thể gửi trực tiếp cho khách sau khi lưu nội dung.</p></div>
-                <SurveyEditor key={selected.id} survey={selected} questions={questions} />
+                <SurveyEditor key={selected.id} survey={selected} questions={questions} copy={surveyCopyWithDefaults(selected.display_copy)} />
               </section>
               <section className={styles.panel}>
                 <div className={styles.panelHeader}><span>02 · PHẢN HỒI</span><h2>Đánh giá của khách hàng</h2><p>{totalCount ?? 0} phản hồi đã lưu. Hiển thị tối đa 100 phản hồi mỗi trang.</p></div>
