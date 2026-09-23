@@ -19,7 +19,7 @@ export const DEFAULT_SURVEY_COPY = {
   sharingDescription: "Cứ viết thật lòng, không có câu trả lời đúng hay sai.",
   answerPlaceholder: "Em chia sẻ suy nghĩ của mình ở đây…",
   privacyNote: "Phản hồi của em chỉ được dùng để cải thiện chất lượng tư vấn và được lưu trong hệ thống quản trị.",
-  submitLabel: "Gửi đánh giá của em",
+  submitLabel: "Gửi đánh giá",
   bottomNote: "Clow Cat Patronus · Đồng hành cùng hành trình hiểu mình",
   thanksEyebrow: "ĐÃ GỬI ĐÁNH GIÁ",
   thanksTitle: "Biết ơn em đã chia sẻ.",
