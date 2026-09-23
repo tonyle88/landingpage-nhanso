@@ -1,0 +1,27 @@
+.env*
+.vercel
+/.staging-import
+/.agents
+/.git
+/Pdf create
+/Pdf files
+/admin
+/api
+/assets
+/qa
+/blog.html
+/blog.js
+/google-apps-script*
+/index.html
+/nhac.mp3
+/script.js
+/style.css
+/CLOUDFLARE_DEPLOYMENT.md
+/GOOGLE_APPS_SCRIPT_CALENDAR_SETUP.md
+/NEXTJS_SUPABASE_MIGRATION_PLAN.md
+/vercel.json
+next-app/.env*
+next-app/.next
+next-app/.vercel
+next-app/node_modules
+next-app/tsconfig.tsbuildinfo

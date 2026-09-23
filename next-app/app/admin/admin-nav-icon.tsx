@@ -4,6 +4,7 @@ type AdminNavIconName =
   | "sections"
   | "packages"
   | "testimonials"
+  | "surveys"
   | "blog"
   | "settings"
   | "bookings"
@@ -33,6 +34,13 @@ export function AdminNavIcon({ name }: { name: AdminNavIconName }) {
       <>
         <path d="M5 18.5 3.5 21v-5A7.5 7.5 0 1 1 8 19" />
         <path d="M8 10h.01M12 10h.01M16 10h.01" />
+      </>
+    ),
+    surveys: (
+      <>
+        <path d="M6 4h12a2 2 0 0 1 2 2v14H4V6a2 2 0 0 1 2-2Z" />
+        <path d="M8 9h8M8 13h5M8 17h8" />
+        <path d="m15.5 13.5 1 1 2-2" />
       </>
     ),
     blog: (
