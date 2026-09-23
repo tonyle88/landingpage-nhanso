@@ -1,0 +1,61 @@
+.layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 22px; align-items: start; }
+.sidebar, .panel { border: 1px solid rgb(240 201 106 / 21%); border-radius: 15px; background: linear-gradient(145deg, rgb(10 44 49 / 94%), rgb(4 27 32 / 97%)); box-shadow: 0 18px 45px rgb(0 0 0 / 17%); }
+.sidebar { position: sticky; top: 16px; overflow: hidden; }
+.sidebarTop { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 21px; border-bottom: 1px solid rgb(255 255 255 / 10%); }
+.sidebarTop span, .panelHeader > span, .shareBox span { color: #f0c96a; font-size: .65rem; font-weight: 850; letter-spacing: .12em; }
+.sidebarTop h2, .panelHeader h2 { margin: 5px 0 0; color: #fffaf2; font-family: "Playfair Display", Georgia, serif; font-size: 1.5rem; }
+.sidebarTop button, .saveButton { min-height: 39px; padding: 0 13px; border: 0; border-radius: 8px; color: #061f24; background: linear-gradient(110deg, #f0c96a, #f4b785, #ef6a2e); font: inherit; font-size: .72rem; font-weight: 850; cursor: pointer; }
+.surveyItem { display: grid; gap: 6px; padding: 17px 21px; border-bottom: 1px solid rgb(255 255 255 / 7%); color: #fff; text-decoration: none; }
+.surveyItem:hover, .selected { background: rgb(240 201 106 / 10%); }
+.selected { border-left: 3px solid #f0c96a; }
+.surveyItem strong { font-size: .82rem; line-height: 1.45; }
+.surveyItem span { color: #82d9ba; font-size: .68rem; }
+.mainColumn { min-width: 0; display: grid; gap: 21px; }
+.panel { padding: clamp(20px, 3vw, 31px); }
+.panelHeader { margin-bottom: 22px; }
+.panelHeader h2 { margin-top: 7px; font-size: 1.9rem; }
+.panelHeader p { margin: 7px 0 0; color: rgb(255 255 255 / 63%); font-size: .79rem; line-height: 1.6; }
+.editorWrap { display: grid; gap: 23px; }
+.shareBox { display: flex; align-items: center; gap: 10px; padding: 16px; border: 1px solid rgb(240 201 106 / 27%); border-radius: 11px; background: rgb(240 201 106 / 7%); }
+.shareBox > div { min-width: 0; flex: 1; display: grid; gap: 6px; }
+.shareBox code { overflow-wrap: anywhere; color: #fff; font-size: .75rem; }
+.shareBox button, .shareBox a, .questionHeading button, .questionEditor button { min-height: 36px; padding: 0 12px; border: 1px solid rgb(240 201 106 / 37%); border-radius: 8px; color: #f0c96a; background: rgb(240 201 106 / 8%); font: inherit; font-size: .69rem; font-weight: 800; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.shareBox a { display: inline-flex; align-items: center; }
+.editorForm { display: grid; gap: 18px; }
+.editorForm > label:not(.activeToggle), .questionEditor label { display: grid; gap: 8px; color: rgb(255 255 255 / 79%); font-size: .75rem; font-weight: 750; }
+.editorForm input:not([type="checkbox"]), .editorForm textarea { width: 100%; padding: 12px 13px; border: 1px solid rgb(255 255 255 / 16%); border-radius: 8px; outline: 0; color: #10272a; background: #fff; font: inherit; font-size: .81rem; font-weight: 600; line-height: 1.5; }
+.editorForm textarea { resize: vertical; }
+.editorForm input:focus, .editorForm textarea:focus { border-color: #f0c96a; box-shadow: 0 0 0 3px rgb(240 201 106 / 18%); }
+.questionHeading { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-top: 6px; padding-top: 20px; border-top: 1px solid rgb(255 255 255 / 10%); }
+.questionHeading h3 { margin: 0; color: #fff; font-family: "Playfair Display", Georgia, serif; font-size: 1.3rem; }
+.questionHeading p { margin: 5px 0 0; color: rgb(255 255 255 / 60%); font-size: .71rem; line-height: 1.5; }
+.questionHeading button:disabled, .questionEditor button:disabled { opacity: .38; cursor: not-allowed; }
+.questionEditor { display: grid; grid-template-columns: 35px minmax(0, 1fr) auto; align-items: start; gap: 12px; padding: 15px; border: 1px solid rgb(255 255 255 / 10%); border-radius: 10px; background: rgb(255 255 255 / 4%); }
+.questionEditor > span { width: 31px; height: 31px; display: grid; place-items: center; border: 1px solid rgb(240 201 106 / 42%); border-radius: 50%; color: #f0c96a; font-family: Georgia, serif; font-size: .72rem; }
+.questionEditor button { align-self: end; color: #ff9b8f; border-color: rgb(255 120 109 / 26%); background: rgb(255 120 109 / 5%); }
+.activeToggle { display: flex; align-items: center; gap: 10px; color: rgb(255 255 255 / 82%); font-size: .79rem; }
+.activeToggle input { width: 17px; height: 17px; accent-color: #f0c96a; }
+.saveButton { min-height: 46px; justify-self: end; padding: 0 20px; }
+.ratingOverview { display: grid; grid-template-columns: 180px minmax(0, 1fr); align-items: center; gap: 28px; margin-bottom: 20px; padding: 20px; border: 1px solid rgb(240 201 106 / 22%); border-radius: 11px; background: rgb(240 201 106 / 6%); }
+.ratingOverview > div:first-child { display: grid; gap: 5px; }
+.ratingOverview strong { color: #f0c96a; font-family: Georgia, serif; font-size: 3rem; line-height: 1; }
+.ratingOverview span { color: rgb(255 255 255 / 66%); font-size: .69rem; }
+.ratingBars { display: grid; gap: 7px; }
+.ratingBars > div { display: grid; grid-template-columns: 35px minmax(0, 1fr) 24px; align-items: center; gap: 9px; }
+.ratingBars meter { width: 100%; height: 10px; accent-color: #f0c96a; }
+.ratingBars em { color: rgb(255 255 255 / 65%); font-size: .7rem; font-style: normal; text-align: right; }
+.responseList { display: grid; gap: 14px; }
+.responseCard { padding: 20px; border: 1px solid rgb(255 255 255 / 10%); border-radius: 12px; background: rgb(255 255 255 / 4%); }
+.responseHead { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 18px; }
+.responseHead > div { display: grid; gap: 6px; }
+.responseHead strong { color: #fff; font-size: .88rem; }
+.responseHead time { color: rgb(255 255 255 / 53%); font-size: .68rem; }
+.responseHead > span { color: #f0c96a; font-size: 1.2rem; white-space: nowrap; }
+.answer { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgb(255 255 255 / 8%); }
+.answer small { color: #f0c96a; font-size: .72rem; line-height: 1.5; }
+.answer p { margin: 6px 0 0; color: rgb(255 255 255 / 86%); font-size: .8rem; line-height: 1.7; white-space: pre-wrap; }
+.empty { margin: 0; padding: 20px; color: rgb(255 255 255 / 60%); font-size: .78rem; line-height: 1.6; }
+.pagination { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 18px; color: rgb(255 255 255 / 65%); font-size: .74rem; }
+.pagination a { color: #f0c96a; text-decoration: none; }
+@media (max-width: 850px) { .layout { grid-template-columns: 1fr; } .sidebar { position: static; } }
+@media (max-width: 620px) { .shareBox, .questionHeading, .responseHead { align-items: stretch; flex-direction: column; } .shareBox a, .shareBox button { justify-content: center; } .questionEditor { grid-template-columns: 30px minmax(0, 1fr); } .questionEditor button { grid-column: 2; justify-self: end; } .ratingOverview { grid-template-columns: 1fr; } }

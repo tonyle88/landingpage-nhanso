@@ -56,6 +56,7 @@
     "test:admin-packages": "node --test ../qa/admin-package-crud-tests.mjs",
     "test:admin-testimonials": "node --test ../qa/admin-testimonial-crud-tests.mjs",
     "test:admin-blog": "node --test ../qa/admin-blog-crud-tests.mjs",
+    "test:admin-surveys": "node --experimental-strip-types --test ../qa/admin-service-survey-tests.mjs",
     "test:admin-blog-categories": "node --test ../qa/admin-blog-category-crud-tests.mjs",
     "test:admin-settings": "node --test ../qa/admin-site-setting-crud-tests.mjs",
     "test:booking-foundation": "node --test ../qa/booking-m5-foundation-tests.mjs",

@@ -659,6 +659,111 @@ export type Database = {
           },
         ]
       }
+      service_surveys: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          intro: string
+          questions: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intro: string
+          questions: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intro?: string
+          questions?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_surveys_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_survey_responses: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          rating: number
+          respondent_name: string
+          survey_id: string
+        }
+        Insert: {
+          answers: Json
+          created_at?: string
+          id?: string
+          rating: number
+          respondent_name: string
+          survey_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          rating?: number
+          respondent_name?: string
+          survey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_survey_responses_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "service_surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_survey_rate_limits: {
+        Row: {
+          attempt_count: number
+          bucket_start: string
+          ip_hash: string
+          survey_id: string
+        }
+        Insert: {
+          attempt_count?: number
+          bucket_start: string
+          ip_hash: string
+          survey_id: string
+        }
+        Update: {
+          attempt_count?: number
+          bucket_start?: string
+          ip_hash?: string
+          survey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_survey_rate_limits_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "service_surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       testimonials: {
         Row: {
           alt_text: string
@@ -878,6 +983,10 @@ export type Database = {
           p_phone?: string | null
         }
         Returns: Json
+      }
+      consume_service_survey_rate_limit: {
+        Args: { p_survey_id: string; p_ip_hash: string }
+        Returns: boolean
       }
       list_booking_unavailable_slots: {
         Args: { p_from: string; p_to: string }
