@@ -10,6 +10,12 @@
 .selected { border-left: 3px solid #f0c96a; }
 .surveyItem strong { font-size: .82rem; line-height: 1.45; }
 .surveyItem span { color: #82d9ba; font-size: .68rem; }
+.responsesNav { display: grid; gap: 7px; margin: 16px 12px 12px; padding: 16px; border: 1px solid rgb(240 201 106 / 29%); border-radius: 11px; color: #fff; background: rgb(240 201 106 / 6%); text-decoration: none; }
+.responsesNav:hover { background: rgb(240 201 106 / 13%); }
+.responsesNav.selected { border-left: 3px solid #f0c96a; background: rgb(240 201 106 / 13%); }
+.responsesNav span { color: #f0c96a; font-size: .64rem; font-weight: 850; letter-spacing: .1em; }
+.responsesNav strong { font-size: .85rem; line-height: 1.4; }
+.responsesNav small { color: rgb(255 255 255 / 59%); font-size: .68rem; }
 .mainColumn { min-width: 0; display: grid; gap: 21px; }
 .panel { padding: clamp(20px, 3vw, 31px); }
 .panelHeader { margin-bottom: 22px; }
@@ -49,6 +55,10 @@
 .activeToggle { display: flex; align-items: center; gap: 10px; color: rgb(255 255 255 / 82%); font-size: .79rem; }
 .activeToggle input { width: 17px; height: 17px; accent-color: #f0c96a; }
 .saveButton { min-height: 46px; justify-self: end; padding: 0 20px; }
+.responseFilter { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 22px; padding: 15px; border: 1px solid rgb(255 255 255 / 12%); border-radius: 10px; background: rgb(255 255 255 / 4%); }
+.responseFilter label { color: rgb(255 255 255 / 75%); font-size: .75rem; font-weight: 750; }
+.responseFilter select { flex: 1; min-width: 170px; padding: 10px 12px; border: 1px solid rgb(255 255 255 / 20%); border-radius: 8px; color: #10272a; background: #fff; font: inherit; font-size: .77rem; }
+.responseFilter button { min-height: 39px; padding: 0 14px; border: 1px solid rgb(240 201 106 / 45%); border-radius: 8px; color: #f0c96a; background: rgb(240 201 106 / 10%); font: inherit; font-size: .72rem; font-weight: 800; cursor: pointer; }
 .ratingOverview { display: grid; grid-template-columns: 180px minmax(0, 1fr); align-items: center; gap: 28px; margin-bottom: 20px; padding: 20px; border: 1px solid rgb(240 201 106 / 22%); border-radius: 11px; background: rgb(240 201 106 / 6%); }
 .ratingOverview > div:first-child { display: grid; gap: 5px; }
 .ratingOverview strong { color: #f0c96a; font-family: Georgia, serif; font-size: 3rem; line-height: 1; }
@@ -60,10 +70,18 @@
 .responseList { display: grid; gap: 14px; }
 .responseCard { padding: 20px; border: 1px solid rgb(255 255 255 / 10%); border-radius: 12px; background: rgb(255 255 255 / 4%); }
 .responseHead { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 18px; }
-.responseHead > div { display: grid; gap: 6px; }
+.responsePerson { display: grid; align-content: start; gap: 6px; }
 .responseHead strong { color: #fff; font-size: .88rem; }
 .responseHead time { color: rgb(255 255 255 / 53%); font-size: .68rem; }
-.responseHead > span { color: #f0c96a; font-size: 1.2rem; white-space: nowrap; }
+.responseMeta { display: grid; justify-items: end; align-content: start; gap: 8px; }
+.responseStars { color: #f0c96a; font-size: 1.2rem; white-space: nowrap; }
+.deleteButton, .deleteForm button { min-height: 32px; padding: 0 10px; border: 1px solid rgb(255 133 123 / 39%); border-radius: 7px; color: #ffaaa1; background: rgb(255 120 109 / 9%); font: inherit; font-size: .68rem; font-weight: 750; cursor: pointer; }
+.deleteButton:hover, .deleteForm button:hover { background: rgb(255 120 109 / 17%); }
+.deleteForm { width: min(290px, 100%); padding: 12px; border: 1px solid rgb(255 133 123 / 38%); border-radius: 8px; background: #1d3032; }
+.deleteForm p { margin: 0 0 10px; color: #fff; font-size: .71rem; line-height: 1.5; }
+.deleteForm > div { display: flex; justify-content: flex-end; gap: 8px; }
+.deleteForm .confirmDelete { color: #132326; background: #ffaaa1; }
+.deleteForm button:disabled { cursor: progress; opacity: .65; }
 .answer { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgb(255 255 255 / 8%); }
 .answer small { color: #f0c96a; font-size: .72rem; line-height: 1.5; }
 .answer p { margin: 6px 0 0; color: rgb(255 255 255 / 86%); font-size: .8rem; line-height: 1.7; white-space: pre-wrap; }
@@ -71,4 +89,4 @@
 .pagination { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 18px; color: rgb(255 255 255 / 65%); font-size: .74rem; }
 .pagination a { color: #f0c96a; text-decoration: none; }
 @media (max-width: 850px) { .layout { grid-template-columns: 1fr; } .sidebar { position: static; } }
-@media (max-width: 620px) { .shareBox, .questionHeading, .responseHead { align-items: stretch; flex-direction: column; } .saveBar { align-items: stretch; flex-direction: column; } .saveBar .saveButton { width: 100%; } .shareBox a, .shareBox button { justify-content: center; } .copyGrid { grid-template-columns: 1fr; } .questionEditor { grid-template-columns: 30px minmax(0, 1fr); } .questionEditor button { grid-column: 2; justify-self: end; } .ratingOverview { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .shareBox, .questionHeading, .responseHead { align-items: stretch; flex-direction: column; } .responseMeta { justify-items: start; } .saveBar { align-items: stretch; flex-direction: column; } .saveBar .saveButton { width: 100%; } .shareBox a, .shareBox button { justify-content: center; } .copyGrid { grid-template-columns: 1fr; } .questionEditor { grid-template-columns: 30px minmax(0, 1fr); } .questionEditor button { grid-column: 2; justify-self: end; } .ratingOverview { grid-template-columns: 1fr; } }
