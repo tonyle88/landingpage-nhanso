@@ -664,6 +664,7 @@ export type Database = {
           active: boolean
           created_at: string
           created_by: string | null
+          display_copy: Json
           id: string
           intro: string
           questions: Json
@@ -674,6 +675,7 @@ export type Database = {
           active?: boolean
           created_at?: string
           created_by?: string | null
+          display_copy?: Json
           id?: string
           intro: string
           questions: Json
@@ -684,6 +686,7 @@ export type Database = {
           active?: boolean
           created_at?: string
           created_by?: string | null
+          display_copy?: Json
           id?: string
           intro?: string
           questions?: Json

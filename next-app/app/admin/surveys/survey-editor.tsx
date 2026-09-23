@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { SurveyQuestion } from "@/lib/survey";
+import { SURVEY_COPY_FIELDS, type SurveyCopy, type SurveyQuestion } from "@/lib/survey";
 import { saveSurveyAction } from "./actions";
 import styles from "./surveys.module.css";
 
 export function SurveyEditor({
   survey,
   questions: initialQuestions,
+  copy,
 }: {
   survey: { id: string; title: string; intro: string; active: boolean };
   questions: SurveyQuestion[];
+  copy: SurveyCopy;
 }) {
   const [questions, setQuestions] = useState(initialQuestions);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
@@ -46,6 +48,26 @@ export function SurveyEditor({
         <label>Lời mở đầu
           <textarea name="intro" defaultValue={survey.intro} minLength={10} maxLength={1200} rows={4} required />
         </label>
+        <div className={styles.copyHeading}>
+          <h3>Chữ hiển thị trên trang khảo sát</h3>
+          <p>Chỉnh cách xưng hô, lời hướng dẫn và trang cảm ơn. Số câu hỏi luôn được tính tự động.</p>
+        </div>
+        {["Đầu trang", "Trải nghiệm và đánh giá", "Câu hỏi và nút gửi", "Trang cảm ơn"].map((group, index) => (
+          <details className={styles.copyGroup} key={group} open={index < 2}>
+            <summary>{group}</summary>
+            <div className={styles.copyGrid}>
+              {SURVEY_COPY_FIELDS.filter((field) => field.group === group).map((field) => (
+                <label key={field.key}>{field.label}
+                  {field.maxLength > 180 ? (
+                    <textarea name={`copy_${field.key}`} defaultValue={copy[field.key]} maxLength={field.maxLength} rows={2} required />
+                  ) : (
+                    <input name={`copy_${field.key}`} defaultValue={copy[field.key]} maxLength={field.maxLength} required />
+                  )}
+                </label>
+              ))}
+            </div>
+          </details>
+        ))}
         <div className={styles.questionHeading}>
           <div><h3>Câu hỏi khảo sát</h3><p>Thêm tối đa 10 câu. Các câu trả lời cũ vẫn giữ nguyên câu hỏi đã dùng lúc gửi.</p></div>
           <button type="button" disabled={questions.length >= 10} onClick={() => setQuestions((current) => [

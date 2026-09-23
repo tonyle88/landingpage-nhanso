@@ -22,10 +22,18 @@
 .shareBox button, .shareBox a, .questionHeading button, .questionEditor button { min-height: 36px; padding: 0 12px; border: 1px solid rgb(240 201 106 / 37%); border-radius: 8px; color: #f0c96a; background: rgb(240 201 106 / 8%); font: inherit; font-size: .69rem; font-weight: 800; text-decoration: none; white-space: nowrap; cursor: pointer; }
 .shareBox a { display: inline-flex; align-items: center; }
 .editorForm { display: grid; gap: 18px; }
-.editorForm > label:not(.activeToggle), .questionEditor label { display: grid; gap: 8px; color: rgb(255 255 255 / 79%); font-size: .75rem; font-weight: 750; }
+.editorForm > label:not(.activeToggle), .questionEditor label, .copyGrid label { display: grid; gap: 8px; color: rgb(255 255 255 / 79%); font-size: .75rem; font-weight: 750; }
 .editorForm input:not([type="checkbox"]), .editorForm textarea { width: 100%; padding: 12px 13px; border: 1px solid rgb(255 255 255 / 16%); border-radius: 8px; outline: 0; color: #10272a; background: #fff; font: inherit; font-size: .81rem; font-weight: 600; line-height: 1.5; }
 .editorForm textarea { resize: vertical; }
 .editorForm input:focus, .editorForm textarea:focus { border-color: #f0c96a; box-shadow: 0 0 0 3px rgb(240 201 106 / 18%); }
+.copyHeading { padding-top: 20px; border-top: 1px solid rgb(255 255 255 / 10%); }
+.copyHeading h3 { margin: 0; color: #fff; font-family: "Playfair Display", Georgia, serif; font-size: 1.3rem; }
+.copyHeading p { margin: 6px 0 0; color: rgb(255 255 255 / 60%); font-size: .71rem; line-height: 1.5; }
+.copyGroup { border: 1px solid rgb(240 201 106 / 20%); border-radius: 10px; background: rgb(255 255 255 / 4%); }
+.copyGroup summary { padding: 13px 16px; color: #f0c96a; font-size: .78rem; font-weight: 800; cursor: pointer; }
+.copyGroup[open] summary { border-bottom: 1px solid rgb(255 255 255 / 10%); }
+.copyGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 17px; }
+.copyGrid label:has(textarea) { grid-column: 1 / -1; }
 .questionHeading { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-top: 6px; padding-top: 20px; border-top: 1px solid rgb(255 255 255 / 10%); }
 .questionHeading h3 { margin: 0; color: #fff; font-family: "Playfair Display", Georgia, serif; font-size: 1.3rem; }
 .questionHeading p { margin: 5px 0 0; color: rgb(255 255 255 / 60%); font-size: .71rem; line-height: 1.5; }
@@ -58,4 +66,4 @@
 .pagination { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 18px; color: rgb(255 255 255 / 65%); font-size: .74rem; }
 .pagination a { color: #f0c96a; text-decoration: none; }
 @media (max-width: 850px) { .layout { grid-template-columns: 1fr; } .sidebar { position: static; } }
-@media (max-width: 620px) { .shareBox, .questionHeading, .responseHead { align-items: stretch; flex-direction: column; } .shareBox a, .shareBox button { justify-content: center; } .questionEditor { grid-template-columns: 30px minmax(0, 1fr); } .questionEditor button { grid-column: 2; justify-self: end; } .ratingOverview { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .shareBox, .questionHeading, .responseHead { align-items: stretch; flex-direction: column; } .shareBox a, .shareBox button { justify-content: center; } .copyGrid { grid-template-columns: 1fr; } .questionEditor { grid-template-columns: 30px minmax(0, 1fr); } .questionEditor button { grid-column: 2; justify-self: end; } .ratingOverview { grid-template-columns: 1fr; } }
