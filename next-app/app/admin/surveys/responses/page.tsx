@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   title: "Đánh giá của khách hàng | Clow Cat Patronus",
   robots: { index: false, follow: false },
 };
+const RESPONSES_PER_PAGE = 20;
 
 function validAnswers(value: unknown): SurveyAnswer[] {
   if (!Array.isArray(value)) return [];
@@ -48,16 +49,16 @@ export default async function SurveyResponsesPage({
           .select("id,respondent_name,rating,answers,created_at")
           .eq("survey_id", selected.id)
           .order("created_at", { ascending: false })
-          .range((page - 1) * 100, page * 100 - 1),
+          .range((page - 1) * RESPONSES_PER_PAGE, page * RESPONSES_PER_PAGE - 1),
         supabase.from("service_survey_responses")
           .select("id", { count: "exact", head: true })
           .eq("survey_id", selected.id),
       ])
     : [{ data: [], error: null }, { count: 0, error: null }];
   const loadError = Boolean(surveysError || responsesError || countError);
-  if (selected && !loadError && page > Math.max(1, Math.ceil((totalCount || 0) / 100))) {
+  if (selected && !loadError && page > Math.max(1, Math.ceil((totalCount || 0) / RESPONSES_PER_PAGE))) {
     const status = params.status === "deleted" ? "&status=deleted" : "";
-    redirect(`/admin/surveys/responses?id=${selected.id}&p=${Math.max(1, Math.ceil((totalCount || 0) / 100))}${status}`);
+    redirect(`/admin/surveys/responses?id=${selected.id}&p=${Math.max(1, Math.ceil((totalCount || 0) / RESPONSES_PER_PAGE))}${status}`);
   }
   const ratingCounts = [1, 2, 3, 4, 5].map((rating) =>
     (responses || []).filter((response) => response.rating === rating).length,
@@ -79,7 +80,7 @@ export default async function SurveyResponsesPage({
         <div className={styles.panelHeader}>
           <span>02 · PHẢN HỒI</span>
           <h2>Đánh giá của khách hàng</h2>
-          <p>{selected ? `${totalCount ?? 0} phản hồi đã lưu. Hiển thị tối đa 100 phản hồi mỗi trang.` : "Chọn một khảo sát để xem phản hồi."}</p>
+          <p>{selected ? `${totalCount ?? 0} phản hồi đã lưu. Hiển thị tối đa ${RESPONSES_PER_PAGE} phản hồi mỗi trang.` : "Chọn một khảo sát để xem phản hồi."}</p>
         </div>
         {surveys?.length ? (
           <form className={styles.responseFilter} action="/admin/surveys/responses" method="get">
@@ -116,11 +117,11 @@ export default async function SurveyResponsesPage({
                 ))}
               </article>
             ))}</div>
-            {(totalCount || 0) > 100 && selected ? (
+            {(totalCount || 0) > RESPONSES_PER_PAGE && selected ? (
               <nav className={styles.pagination} aria-label="Trang phản hồi">
                 {page > 1 ? <Link href={`/admin/surveys/responses?id=${selected.id}&p=${page - 1}`}>← Trang trước</Link> : <span />}
-                <span>Trang {page} / {Math.ceil((totalCount || 0) / 100)}</span>
-                {page * 100 < (totalCount || 0) ? <Link href={`/admin/surveys/responses?id=${selected.id}&p=${page + 1}`}>Trang sau →</Link> : <span />}
+                <span>Trang {page} / {Math.ceil((totalCount || 0) / RESPONSES_PER_PAGE)}</span>
+                {page * RESPONSES_PER_PAGE < (totalCount || 0) ? <Link href={`/admin/surveys/responses?id=${selected.id}&p=${page + 1}`}>Trang sau →</Link> : <span />}
               </nav>
             ) : null}
           </>
