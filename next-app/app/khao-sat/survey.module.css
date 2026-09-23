@@ -54,6 +54,7 @@
 .formFooter p { max-width: 440px; margin: 0; color: rgb(255 255 255 / 56%); font-size: .74rem; line-height: 1.7; }
 .formFooter button, .thanksCard a { min-height: 51px; display: inline-flex; justify-content: center; align-items: center; gap: 20px; padding: 0 22px; border: 0; border-radius: 999px; color: #062228; background: linear-gradient(110deg, #f0c96a, #f4b785, #ef6a2e); box-shadow: 0 10px 25px rgb(239 106 46 / 19%); font: inherit; font-size: .8rem; font-weight: 850; text-decoration: none; white-space: nowrap; cursor: pointer; }
 .formFooter button:hover, .thanksCard a:hover { filter: brightness(1.08); }
+.formFooter button:disabled { cursor: progress; opacity: .72; filter: none; }
 .bottomNote { margin: 24px 0 0; color: rgb(255 255 255 / 46%); font-size: .72rem; text-align: center; }
 .error { margin: 0; padding: 12px 15px; border: 1px solid rgb(255 128 115 / 42%); border-radius: 10px; color: #ffb6ac; background: rgb(120 29 25 / 18%); font-size: .82rem; }
 .honeypot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

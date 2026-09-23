@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { DEFAULT_SURVEY_TITLE, parseSurveyQuestions, surveyCopyWithDefaults } from "@/lib/survey";
 import { createServiceServerClient } from "@/lib/supabase/server";
 import { submitSurveyAction } from "./actions";
+import { SurveySubmitButton } from "./submit-button";
 import styles from "../survey.module.css";
 
 export const dynamic = "force-dynamic";
@@ -98,7 +99,7 @@ export default async function SurveyPage({
           ))}
           <div className={styles.formFooter}>
             <p>{copy.privacyNote}</p>
-            <button type="submit">{copy.submitLabel} <span aria-hidden="true">↗</span></button>
+            <SurveySubmitButton label={copy.submitLabel} />
           </div>
         </form>
         <p className={styles.bottomNote}>{copy.bottomNote}</p>
