@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { parseSurveyQuestions, surveyCopyWithDefaults } from "@/lib/survey";
+import { DEFAULT_SURVEY_TITLE, parseSurveyQuestions, surveyCopyWithDefaults } from "@/lib/survey";
 import { createServiceServerClient } from "@/lib/supabase/server";
 import { submitSurveyAction } from "./actions";
 import styles from "../survey.module.css";
@@ -61,7 +61,7 @@ export default async function SurveyPage({
       <div className={styles.container}>
         <div className={styles.intro}>
           <span className={styles.kicker}>{copy.eyebrow}</span>
-          <h1>{survey.title}</h1>
+          <h1 className={survey.title === DEFAULT_SURVEY_TITLE ? styles.singleLineTitle : undefined}>{survey.title}</h1>
           <p>{survey.intro}</p>
           <div className={styles.meta}><span>✦ &nbsp; {questions.length} {copy.questionCountUnit}</span><span>✦ &nbsp; {copy.durationText}</span></div>
         </div>

@@ -22,6 +22,7 @@
 .intro { max-width: 750px; margin: 0 0 38px; }
 .kicker { display: inline-flex; padding: 9px 13px; border: 1px solid rgb(240 201 106 / 40%); border-radius: 999px; color: #f0c96a; font-size: .66rem; font-weight: 850; letter-spacing: .14em; }
 .intro h1, .thanksCard h1 { margin: 19px 0 16px; color: #fffaf2; font-family: "Playfair Display", Georgia, serif; font-size: clamp(2.45rem, 5.8vw, 4.4rem); line-height: 1.1; text-wrap: balance; }
+.intro h1.singleLineTitle { font-size: clamp(1.2rem, 4.6vw, 3.2rem); white-space: nowrap; }
 .intro > p { max-width: 740px; color: rgb(255 255 255 / 78%); font-size: clamp(.95rem, 1.7vw, 1.08rem); line-height: 1.85; white-space: pre-wrap; }
 .meta { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 25px; color: #f4b785; font-size: .73rem; font-weight: 750; }
 .form { display: grid; gap: 23px; padding: clamp(22px, 4vw, 44px); border: 1px solid rgb(240 201 106 / 31%); border-radius: 22px; background: radial-gradient(circle at 95% 0%, rgb(240 201 106 / 10%), transparent 27%), linear-gradient(145deg, rgb(8 43 47 / 96%), rgb(3 24 29 / 98%)); box-shadow: 0 26px 80px rgb(0 0 0 / 25%); }

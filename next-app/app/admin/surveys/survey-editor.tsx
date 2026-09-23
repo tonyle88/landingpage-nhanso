@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SURVEY_COPY_FIELDS, type SurveyCopy, type SurveyQuestion } from "@/lib/survey";
-import { saveSurveyAction } from "./actions";
+import { saveSurveyContentAction, saveSurveyQuestionsAction } from "./actions";
 import styles from "./surveys.module.css";
 
 export function SurveyEditor({
@@ -39,9 +39,12 @@ export function SurveyEditor({
         }}>{copyStatus === "copied" ? "Đã sao chép" : copyStatus === "error" ? "Hãy chọn link để sao chép" : "Sao chép link"}</button>
         <a href={publicPath} target="_blank" rel="noreferrer">Xem trang ↗</a>
       </div>
-      <form action={saveSurveyAction} className={styles.editorForm}>
+      <form action={saveSurveyContentAction} className={styles.editorForm}>
         <input type="hidden" name="id" value={survey.id} />
-        <input type="hidden" name="questions" value={JSON.stringify(questions)} />
+        <div className={styles.saveBar}>
+          <div><h3>Nội dung trang khảo sát</h3><p>Tiêu đề, lời giới thiệu, các dòng chữ hiển thị và trạng thái link.</p></div>
+          <button className={styles.saveButton} type="submit">Lưu nội dung trang</button>
+        </div>
         <label>Tiêu đề khảo sát
           <input name="title" defaultValue={survey.title} minLength={5} maxLength={160} required />
         </label>
@@ -68,6 +71,11 @@ export function SurveyEditor({
             </div>
           </details>
         ))}
+        <label className={styles.activeToggle}><input type="checkbox" name="active" defaultChecked={survey.active} />Cho phép khách truy cập và gửi khảo sát</label>
+      </form>
+      <form action={saveSurveyQuestionsAction} className={styles.editorForm}>
+        <input type="hidden" name="id" value={survey.id} />
+        <input type="hidden" name="questions" value={JSON.stringify(questions)} />
         <div className={styles.questionHeading}>
           <div><h3>Câu hỏi khảo sát</h3><p>Thêm tối đa 10 câu. Các câu trả lời cũ vẫn giữ nguyên câu hỏi đã dùng lúc gửi.</p></div>
           <button type="button" disabled={questions.length >= 10} onClick={() => setQuestions((current) => [
@@ -84,8 +92,7 @@ export function SurveyEditor({
             <button type="button" disabled={questions.length <= 1} onClick={() => setQuestions((current) => current.filter((item) => item.id !== question.id))}>Xóa</button>
           </div>
         ))}
-        <label className={styles.activeToggle}><input type="checkbox" name="active" defaultChecked={survey.active} />Cho phép khách truy cập và gửi khảo sát</label>
-        <button className={styles.saveButton} type="submit">Lưu nội dung khảo sát</button>
+        <button className={styles.saveButton} type="submit">Lưu câu hỏi</button>
       </form>
     </div>
   );
