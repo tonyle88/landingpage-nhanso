@@ -24,5 +24,4 @@ next-app/.env*
 next-app/.next
 next-app/.vercel
 next-app/node_modules
-next-app/supabase
 next-app/tsconfig.tsbuildinfo
