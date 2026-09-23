@@ -22,6 +22,11 @@
 .shareBox button, .shareBox a, .questionHeading button, .questionEditor button { min-height: 36px; padding: 0 12px; border: 1px solid rgb(240 201 106 / 37%); border-radius: 8px; color: #f0c96a; background: rgb(240 201 106 / 8%); font: inherit; font-size: .69rem; font-weight: 800; text-decoration: none; white-space: nowrap; cursor: pointer; }
 .shareBox a { display: inline-flex; align-items: center; }
 .editorForm { display: grid; gap: 18px; }
+.editorForm + .editorForm { padding-top: 23px; border-top: 1px solid rgb(255 255 255 / 12%); }
+.saveBar { position: sticky; top: 8px; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 13px 16px; border: 1px solid rgb(240 201 106 / 30%); border-radius: 10px; background: #102f33; box-shadow: 0 10px 22px rgb(0 0 0 / 20%); }
+.saveBar h3 { margin: 0; color: #fffaf2; font-family: "Playfair Display", Georgia, serif; font-size: 1.15rem; }
+.saveBar p { margin: 4px 0 0; color: rgb(255 255 255 / 63%); font-size: .7rem; line-height: 1.5; }
+.saveBar .saveButton { flex: none; }
 .editorForm > label:not(.activeToggle), .questionEditor label, .copyGrid label { display: grid; gap: 8px; color: rgb(255 255 255 / 79%); font-size: .75rem; font-weight: 750; }
 .editorForm input:not([type="checkbox"]), .editorForm textarea { width: 100%; padding: 12px 13px; border: 1px solid rgb(255 255 255 / 16%); border-radius: 8px; outline: 0; color: #10272a; background: #fff; font: inherit; font-size: .81rem; font-weight: 600; line-height: 1.5; }
 .editorForm textarea { resize: vertical; }
@@ -66,4 +71,4 @@
 .pagination { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 18px; color: rgb(255 255 255 / 65%); font-size: .74rem; }
 .pagination a { color: #f0c96a; text-decoration: none; }
 @media (max-width: 850px) { .layout { grid-template-columns: 1fr; } .sidebar { position: static; } }
-@media (max-width: 620px) { .shareBox, .questionHeading, .responseHead { align-items: stretch; flex-direction: column; } .shareBox a, .shareBox button { justify-content: center; } .copyGrid { grid-template-columns: 1fr; } .questionEditor { grid-template-columns: 30px minmax(0, 1fr); } .questionEditor button { grid-column: 2; justify-self: end; } .ratingOverview { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .shareBox, .questionHeading, .responseHead { align-items: stretch; flex-direction: column; } .saveBar { align-items: stretch; flex-direction: column; } .saveBar .saveButton { width: 100%; } .shareBox a, .shareBox button { justify-content: center; } .copyGrid { grid-template-columns: 1fr; } .questionEditor { grid-template-columns: 30px minmax(0, 1fr); } .questionEditor button { grid-column: 2; justify-self: end; } .ratingOverview { grid-template-columns: 1fr; } }

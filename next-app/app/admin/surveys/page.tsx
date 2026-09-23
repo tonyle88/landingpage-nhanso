@@ -19,9 +19,13 @@ export const metadata: Metadata = {
 
 const notices: Record<string, string> = {
   created: "Đã tạo khảo sát mới và link gửi khách hàng.",
-  saved: "Đã lưu thay đổi khảo sát.",
-  invalid: "Nội dung chưa hợp lệ. Hãy điền đủ các dòng chữ hiển thị và 1–10 câu hỏi.",
-  error: "Không thể lưu khảo sát. Hãy kiểm tra migration và thử lại.",
+  content_saved: "Đã lưu nội dung trang khảo sát.",
+  questions_saved: "Đã lưu câu hỏi khảo sát.",
+  invalid_content: "Nội dung trang chưa hợp lệ. Hãy điền đủ tiêu đề, lời mở đầu và các dòng chữ hiển thị.",
+  invalid_questions: "Câu hỏi chưa hợp lệ. Hãy điền từ 1 đến 10 câu hỏi.",
+  content_error: "Không thể lưu nội dung trang. Vui lòng thử lại.",
+  questions_error: "Không thể lưu câu hỏi. Vui lòng thử lại.",
+  error: "Không thể tạo khảo sát. Vui lòng thử lại.",
 };
 
 function validAnswers(value: unknown): SurveyAnswer[] {
@@ -84,7 +88,7 @@ export default async function AdminSurveysPage({
       </header>
       <AdminToast
         message={params.status ? notices[params.status] : surveysError ? "Chưa tải được khảo sát. Hãy áp dụng migration trước." : undefined}
-        tone={["invalid", "error"].includes(params.status || "") || Boolean(surveysError) ? "error" : "success"}
+        tone={["invalid_content", "invalid_questions", "content_error", "questions_error", "error"].includes(params.status || "") || Boolean(surveysError) ? "error" : "success"}
         cleanHref={selected ? `/admin/surveys?id=${selected.id}` : "/admin/surveys"}
       />
       <div className={styles.layout}>

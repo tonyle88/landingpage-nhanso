@@ -33,7 +33,7 @@ export async function createSurveyAction() {
   redirect(`/admin/surveys?id=${data.id}&status=created`);
 }
 
-export async function saveSurveyAction(form: FormData) {
+export async function saveSurveyContentAction(form: FormData) {
   await requireSurveyManager();
   const id = String(form.get("id") || "");
   const title = String(form.get("title") || "").trim();
@@ -42,27 +42,49 @@ export async function saveSurveyAction(form: FormData) {
   const displayCopy = parseSurveyCopy(Object.fromEntries(
     SURVEY_COPY_FIELDS.map(({ key }) => [key, form.get(`copy_${key}`)]),
   ));
+  if (!UUID.test(id) || title.length < 5 || title.length > 160 || intro.length < 10 || intro.length > 1200 || !displayCopy) {
+    redirect(`/admin/surveys?${UUID.test(id) ? `id=${id}&` : ""}status=invalid_content`);
+  }
+
+  const supabase = await createAuthServerClient();
+  const { data, error } = await supabase.from("service_surveys")
+    .update({ title, intro, display_copy: displayCopy, active })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) {
+    console.error("save service survey content failed", { code: error?.code, message: error?.message });
+    redirect(`/admin/surveys?id=${id}&status=content_error`);
+  }
+  revalidatePath("/admin/surveys");
+  revalidatePath(`/khao-sat/${id}`);
+  revalidatePath(`/khao-sat/${id}/cam-on`);
+  redirect(`/admin/surveys?id=${id}&status=content_saved`);
+}
+
+export async function saveSurveyQuestionsAction(form: FormData) {
+  await requireSurveyManager();
+  const id = String(form.get("id") || "");
   let questions = null;
   try {
     const raw = String(form.get("questions") || "");
     if (raw.length <= 10000) questions = parseSurveyQuestions(JSON.parse(raw));
   } catch { /* invalid questions are handled below */ }
-  if (!UUID.test(id) || title.length < 5 || title.length > 160 || intro.length < 10 || intro.length > 1200 || !questions || !displayCopy) {
-    redirect(`/admin/surveys?${UUID.test(id) ? `id=${id}&` : ""}status=invalid`);
+  if (!UUID.test(id) || !questions) {
+    redirect(`/admin/surveys?${UUID.test(id) ? `id=${id}&` : ""}status=invalid_questions`);
   }
 
   const supabase = await createAuthServerClient();
   const { data, error } = await supabase.from("service_surveys")
-    .update({ title, intro, questions, display_copy: displayCopy, active })
+    .update({ questions })
     .eq("id", id)
     .select("id")
     .maybeSingle();
   if (error || !data) {
-    console.error("save service survey failed", { code: error?.code, message: error?.message });
-    redirect(`/admin/surveys?id=${id}&status=error`);
+    console.error("save service survey questions failed", { code: error?.code, message: error?.message });
+    redirect(`/admin/surveys?id=${id}&status=questions_error`);
   }
   revalidatePath("/admin/surveys");
   revalidatePath(`/khao-sat/${id}`);
-  revalidatePath(`/khao-sat/${id}/cam-on`);
-  redirect(`/admin/surveys?id=${id}&status=saved`);
+  redirect(`/admin/surveys?id=${id}&status=questions_saved`);
 }
