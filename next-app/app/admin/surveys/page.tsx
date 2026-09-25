@@ -5,6 +5,7 @@ import { can } from "@/lib/auth/roles";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
 import { parseSurveyQuestions, surveyCopyWithDefaults } from "@/lib/survey";
 import { AdminToast } from "../admin-toast";
+import { DeleteSurveyControl } from "./delete-survey-control";
 import { SurveyAdminShell } from "./survey-admin-shell";
 import { SurveyEditor } from "./survey-editor";
 import styles from "./surveys.module.css";
@@ -19,10 +20,14 @@ const notices: Record<string, string> = {
   created: "Đã tạo khảo sát mới và link gửi khách hàng.",
   content_saved: "Đã lưu nội dung trang khảo sát.",
   questions_saved: "Đã lưu câu hỏi khảo sát.",
+  deleted: "Đã xóa khảo sát và các đánh giá liên quan.",
   invalid_content: "Nội dung trang chưa hợp lệ. Hãy điền đủ tiêu đề, lời mở đầu và các dòng chữ hiển thị.",
   invalid_questions: "Câu hỏi chưa hợp lệ. Hãy điền từ 1 đến 10 câu hỏi.",
   content_error: "Không thể lưu nội dung trang. Vui lòng thử lại.",
   questions_error: "Không thể lưu câu hỏi. Vui lòng thử lại.",
+  invalid_delete: "Tên khảo sát xác nhận chưa đúng. Chưa có dữ liệu nào bị xóa.",
+  delete_error: "Không thể xóa khảo sát. Vui lòng thử lại.",
+  delete_database: "Chưa thể xóa khảo sát có đánh giá. Cần áp dụng migration database mới.",
   error: "Không thể tạo khảo sát. Vui lòng thử lại.",
 };
 
@@ -44,18 +49,23 @@ export default async function AdminSurveysPage({
     .limit(100);
   const selected = surveys?.find((survey) => survey.id === params.id) || surveys?.[0];
   const questions = parseSurveyQuestions(selected?.questions);
+  const canDelete = can(principal.role, "manage_operations");
+  const { count: responseCount } = selected && canDelete
+    ? await supabase.from("service_survey_responses").select("id", { count: "exact", head: true }).eq("survey_id", selected.id)
+    : { count: null };
 
   return (
     <SurveyAdminShell role={principal.role} surveys={surveys || []} selectedId={selected?.id} view="editor">
       <AdminToast
         message={params.status ? notices[params.status] : surveysError ? "Chưa tải được khảo sát. Hãy áp dụng migration trước." : undefined}
-        tone={["invalid_content", "invalid_questions", "content_error", "questions_error", "error"].includes(params.status || "") || Boolean(surveysError) ? "error" : "success"}
+        tone={["invalid_content", "invalid_questions", "content_error", "questions_error", "invalid_delete", "delete_error", "delete_database", "error"].includes(params.status || "") || Boolean(surveysError) ? "error" : "success"}
         cleanHref={selected ? `/admin/surveys?id=${selected.id}` : "/admin/surveys"}
       />
       {selected && questions ? (
         <section className={styles.panel}>
           <div className={styles.panelHeader}><span>01 · NỘI DUNG & LINK</span><h2>Chỉnh sửa khảo sát</h2><p>Link này có thể gửi trực tiếp cho khách sau khi lưu nội dung.</p></div>
           <SurveyEditor key={selected.id} survey={selected} questions={questions} copy={surveyCopyWithDefaults(selected.display_copy)} />
+          {canDelete ? <DeleteSurveyControl key={`delete-${selected.id}`} id={selected.id} title={selected.title} responseCount={responseCount} /> : null}
         </section>
       ) : surveysError ? null : <section className={styles.panel}><p className={styles.empty}>Chọn một khảo sát để chỉnh sửa.</p></section>}
     </SurveyAdminShell>

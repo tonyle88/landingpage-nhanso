@@ -37,15 +37,18 @@ export function SurveyAdminShell({
             <div><span>QUẢN LÝ LINK</span><h2>Khảo sát</h2></div>
             <form action={createSurveyAction}><button type="submit">+ Tạo mới</button></form>
           </div>
-          {surveys.map((survey) => (
+          {surveys.map((survey, index) => (
             <Link
               className={`${styles.surveyItem} ${view === "editor" && selectedId === survey.id ? styles.selected : ""}`}
               href={`/admin/surveys?id=${survey.id}`}
               aria-current={view === "editor" && selectedId === survey.id ? "page" : undefined}
               key={survey.id}
             >
-              <strong>{survey.title}</strong>
-              <span>{survey.active ? "● Đang mở" : "○ Đã đóng"}</span>
+              <span className={styles.surveyItemTitle}>
+                <span className={styles.surveyNumber}>{String(index + 1).padStart(2, "0")}</span>
+                <strong>{survey.title}</strong>
+              </span>
+              <span className={styles.surveyStatus}>{survey.active ? "● Đang mở" : "○ Đã đóng"}</span>
             </Link>
           ))}
           {!surveys.length ? <p className={styles.empty}>Chưa có khảo sát. Nhấn “Tạo mới” để bắt đầu.</p> : null}

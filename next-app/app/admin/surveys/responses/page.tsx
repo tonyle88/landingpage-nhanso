@@ -86,7 +86,7 @@ export default async function SurveyResponsesPage({
           <form className={styles.responseFilter} action="/admin/surveys/responses" method="get">
             <label htmlFor="response-survey">Phản hồi của khảo sát</label>
             <select id="response-survey" name="id" defaultValue={selected?.id}>
-              {surveys.map((survey) => <option key={survey.id} value={survey.id}>{survey.title}</option>)}
+              {surveys.map((survey, index) => <option key={survey.id} value={survey.id}>{String(index + 1).padStart(2, "0")} · {survey.title}</option>)}
             </select>
             <button type="submit">Xem đánh giá</button>
           </form>
