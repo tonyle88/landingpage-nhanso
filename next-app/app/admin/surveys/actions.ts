@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
+import { createServiceServerClient } from "@/lib/supabase/server";
 import { DEFAULT_SURVEY_COPY, DEFAULT_SURVEY_INTRO, DEFAULT_SURVEY_QUESTIONS, DEFAULT_SURVEY_TITLE, SURVEY_COPY_FIELDS, parseSurveyCopy, parseSurveyQuestions } from "@/lib/survey";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -87,4 +88,38 @@ export async function saveSurveyQuestionsAction(form: FormData) {
   revalidatePath("/admin/surveys");
   revalidatePath(`/khao-sat/${id}`);
   redirect(`/admin/surveys?id=${id}&status=questions_saved`);
+}
+
+export async function deleteSurveyAction(form: FormData) {
+  const principal = await requireSurveyManager();
+  if (!can(principal.role, "manage_operations")) redirect("/admin");
+
+  const id = String(form.get("id") || "");
+  const confirmation = String(form.get("confirmation") || "").trim();
+  if (!UUID.test(id)) redirect("/admin/surveys?status=invalid_delete");
+  const returnPath = `/admin/surveys?id=${id}`;
+
+  const supabase = createServiceServerClient();
+  if (!supabase) redirect(`${returnPath}&status=delete_error`);
+  const { data: survey, error: lookupError } = await supabase.from("service_surveys")
+    .select("title")
+    .eq("id", id)
+    .maybeSingle();
+  if (lookupError || !survey) redirect(`${returnPath}&status=delete_error`);
+  if (confirmation !== survey.title) redirect(`${returnPath}&status=invalid_delete`);
+
+  const { data, error } = await supabase.from("service_surveys")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) {
+    console.error("delete service survey failed", { code: error?.code, message: error?.message });
+    redirect(`${returnPath}&status=${error?.code === "23503" ? "delete_database" : "delete_error"}`);
+  }
+  revalidatePath("/admin/surveys");
+  revalidatePath("/admin/surveys/responses");
+  revalidatePath(`/khao-sat/${id}`);
+  revalidatePath(`/khao-sat/${id}/cam-on`);
+  redirect("/admin/surveys?status=deleted");
 }

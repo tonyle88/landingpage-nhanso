@@ -10,6 +10,10 @@
 .selected { border-left: 3px solid #f0c96a; }
 .surveyItem strong { font-size: .82rem; line-height: 1.45; }
 .surveyItem span { color: #82d9ba; font-size: .68rem; }
+.surveyItem .surveyItemTitle { display: flex; align-items: flex-start; gap: 10px; min-width: 0; color: #fff; }
+.surveyItemTitle strong { min-width: 0; overflow-wrap: anywhere; }
+.surveyItemTitle .surveyNumber { flex: none; display: inline-grid; place-items: center; width: 25px; height: 25px; border: 1px solid rgb(240 201 106 / 43%); border-radius: 7px; color: #f0c96a; font-size: .63rem; font-weight: 850; }
+.surveyStatus { padding-left: 35px; }
 .responsesNav { display: grid; gap: 7px; margin: 16px 12px 12px; padding: 16px; border: 1px solid rgb(240 201 106 / 29%); border-radius: 11px; color: #fff; background: rgb(240 201 106 / 6%); text-decoration: none; }
 .responsesNav:hover { background: rgb(240 201 106 / 13%); }
 .responsesNav.selected { border-left: 3px solid #f0c96a; background: rgb(240 201 106 / 13%); }
@@ -55,6 +59,18 @@
 .activeToggle { display: flex; align-items: center; gap: 10px; color: rgb(255 255 255 / 82%); font-size: .79rem; }
 .activeToggle input { width: 17px; height: 17px; accent-color: #f0c96a; }
 .saveButton { min-height: 46px; justify-self: end; padding: 0 20px; }
+.surveyDangerZone { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-top: 28px; padding: 20px; border: 1px solid rgb(255 133 123 / 32%); border-radius: 11px; background: rgb(135 45 39 / 9%); }
+.surveyDangerZone h3 { margin: 0; color: #ffb0a7; font-family: "Playfair Display", Georgia, serif; font-size: 1.18rem; }
+.surveyDangerZone p { max-width: 560px; margin: 6px 0 0; color: rgb(255 255 255 / 68%); font-size: .75rem; line-height: 1.6; }
+.openSurveyDelete, .surveyDeleteForm button { min-height: 38px; padding: 0 13px; border: 1px solid rgb(255 133 123 / 47%); border-radius: 8px; color: #ffb0a7; background: rgb(255 120 109 / 9%); font: inherit; font-size: .73rem; font-weight: 800; cursor: pointer; }
+.surveyDeleteForm { display: grid; width: 100%; gap: 13px; padding-top: 15px; border-top: 1px solid rgb(255 133 123 / 20%); }
+.surveyDeleteForm label { display: grid; gap: 8px; color: rgb(255 255 255 / 78%); font-size: .75rem; font-weight: 750; }
+.surveyDeleteForm label strong { color: #fff; overflow-wrap: anywhere; }
+.surveyDeleteForm input:not([type="hidden"]) { width: min(100%, 560px); padding: 11px 12px; border: 1px solid rgb(255 255 255 / 23%); border-radius: 8px; outline: 0; color: #10272a; background: #fff; font: inherit; }
+.surveyDeleteForm input:focus { border-color: #ffaaa1; box-shadow: 0 0 0 3px rgb(255 133 123 / 16%); }
+.surveyDeleteForm > div { display: flex; flex-wrap: wrap; gap: 10px; }
+.surveyDeleteForm .confirmSurveyDelete { color: #132326; background: #ffaaa1; }
+.surveyDeleteForm button:disabled { cursor: not-allowed; opacity: .45; }
 .responseFilter { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 22px; padding: 15px; border: 1px solid rgb(255 255 255 / 12%); border-radius: 10px; background: rgb(255 255 255 / 4%); }
 .responseFilter label { color: rgb(255 255 255 / 75%); font-size: .75rem; font-weight: 750; }
 .responseFilter select { flex: 1; min-width: 170px; padding: 10px 12px; border: 1px solid rgb(255 255 255 / 20%); border-radius: 8px; color: #10272a; background: #fff; font: inherit; font-size: .77rem; }
