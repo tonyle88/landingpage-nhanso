@@ -48,7 +48,9 @@ let activeArticleRequest = 0;
 let blogSearchState = {
   query: '',
   categoryId: 'ALL',
+  order: 'GROUPED',
 };
+let originalBlogCardPositions = [];
 
 function readInitialBlogData() {
   try {
@@ -81,7 +83,6 @@ function chooseBlogArticles(fallbackArticles) {
 
 async function initializeBlogPage() {
   setupNavbar();
-  setupMusic();
   initParticles();
   setupBlogHistoryNavigation();
   setupScrollTopButton();
@@ -236,70 +237,6 @@ function setupScrollTopButton() {
 }
 
 // ============================================
-// BACKGROUND MUSIC TOGGLE
-// ============================================
-function setupMusic() {
-  const bgMusic = document.getElementById('bg-music');
-  const musicToggleBtn = document.getElementById('musicToggleBtn');
-  if (!bgMusic || !musicToggleBtn) return;
-
-  const interactionEvents = ['pointerdown', 'touchstart', 'keydown', 'scroll'];
-  let shouldPlayMusic = true;
-  let isWaitingForInteraction = false;
-
-  const setMusicButtonState = (isPlaying) => {
-    musicToggleBtn.innerHTML = isPlaying
-      ? '<i class="fa-solid fa-volume-high"></i>'
-      : '<i class="fa-solid fa-volume-xmark"></i>';
-    musicToggleBtn.classList.toggle('playing', isPlaying);
-    musicToggleBtn.setAttribute('aria-label', isPlaying ? 'Tắt nhạc' : 'Bật nhạc');
-    musicToggleBtn.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
-  };
-
-  const removeAutoplayListeners = () => {
-    interactionEvents.forEach(e => document.removeEventListener(e, handleFirstInteraction));
-    isWaitingForInteraction = false;
-  };
-  const addAutoplayListeners = () => {
-    if (isWaitingForInteraction) return;
-    isWaitingForInteraction = true;
-    interactionEvents.forEach(e => document.addEventListener(e, handleFirstInteraction, { passive: true }));
-  };
-
-  const tryPlayMusic = () => {
-    if (!shouldPlayMusic) return Promise.resolve();
-    return bgMusic.play()
-      .then(() => { setMusicButtonState(true); removeAutoplayListeners(); })
-      .catch(() => { setMusicButtonState(false); addAutoplayListeners(); });
-  };
-
-  function handleFirstInteraction(event) {
-    if (musicToggleBtn.contains(event.target)) return;
-    removeAutoplayListeners();
-    tryPlayMusic();
-  }
-
-  bgMusic.volume = 0.35;
-  setMusicButtonState(true);
-  tryPlayMusic();
-
-  bgMusic.addEventListener('play', () => { setMusicButtonState(true); removeAutoplayListeners(); });
-  bgMusic.addEventListener('pause', () => { setMusicButtonState(false); });
-
-  musicToggleBtn.addEventListener('click', () => {
-    if (bgMusic.paused) {
-      shouldPlayMusic = true;
-      tryPlayMusic();
-    } else {
-      shouldPlayMusic = false;
-      bgMusic.pause();
-      removeAutoplayListeners();
-      setMusicButtonState(false);
-    }
-  });
-}
-
-// ============================================
 // PARTICLES
 // ============================================
 function initParticles() {
@@ -397,6 +334,13 @@ function renderBlogHome() {
             ${categoryOptions}
           </select>
         </label>
+        <label class="blog-category-select-wrap" for="blog-order-filter">
+          <i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i>
+          <select id="blog-order-filter" aria-label="Sắp xếp bài viết">
+            <option value="GROUPED">Theo chủ đề</option>
+            <option value="NEWEST">Bài mới nhất</option>
+          </select>
+        </label>
       </div>
       <div class="blog-search-meta">
         <span id="blog-search-count">Đang hiển thị ${totalArticles} bài viết</span>
@@ -455,7 +399,7 @@ function renderBlogHome() {
         a.title,
       ].join(' '));
       html += `
-        <a href="?id=${a.id}" class="blog-card-link" data-blog-category="${escapeAttribute(cat.id)}" data-blog-search="${escapeAttribute(searchText)}" style="display: flex; flex-direction: column; background: linear-gradient(160deg, rgba(26,16,6,0.95) 0%, rgba(20,13,5,0.98) 100%); border: 1px solid rgba(212,168,67,0.25); border-radius: 16px; overflow: hidden; text-decoration: none; color: inherit; position: relative; transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s ease, border-color 0.3s ease;"
+        <a href="?id=${a.id}" class="blog-card-link" data-blog-category="${escapeAttribute(cat.id)}" data-blog-search="${escapeAttribute(searchText)}" data-blog-date="${escapeAttribute(a.date || '')}" style="display: flex; flex-direction: column; background: linear-gradient(160deg, rgba(26,16,6,0.95) 0%, rgba(20,13,5,0.98) 100%); border: 1px solid rgba(212,168,67,0.25); border-radius: 16px; overflow: hidden; text-decoration: none; color: inherit; position: relative; transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s ease, border-color 0.3s ease;"
           onmouseover="this.style.transform='translateY(-8px)'; this.style.boxShadow='0 20px 60px rgba(212,168,67,0.25), 0 0 20px rgba(212,168,67,0.1)'; this.style.borderColor='rgba(212,168,67,0.7)';"
           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='rgba(212,168,67,0.25)';">
           <!-- Corner accents -->
@@ -509,6 +453,10 @@ function renderBlogHome() {
   
   html += `
     </div>
+    <section id="blog-latest-section" class="blog-latest-section" hidden>
+      <h2>Bài viết mới nhất</h2>
+      <div id="blog-latest-list" class="blog-latest-list"></div>
+    </section>
     <div id="blog-search-empty" class="blog-search-empty" hidden>
       <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
       <h2>Không tìm thấy bài viết phù hợp</h2>
@@ -528,11 +476,16 @@ function renderBlogHome() {
 function setupBlogSearch() {
   const input = document.getElementById('blog-search-input');
   const select = document.getElementById('blog-category-filter');
+  const orderSelect = document.getElementById('blog-order-filter');
   const clearBtn = document.getElementById('blog-search-clear');
-  if (!input || !select) return;
+  if (!input || !select || !orderSelect) return;
+
+  originalBlogCardPositions = [...document.querySelectorAll('.blog-carousel-track .blog-card-link')]
+    .map(card => ({ card, track: card.parentElement }));
 
   input.value = blogSearchState.query;
   select.value = blogSearchState.categoryId;
+  orderSelect.value = blogSearchState.order;
 
   input.addEventListener('input', () => {
     blogSearchState.query = input.value;
@@ -544,10 +497,16 @@ function setupBlogSearch() {
     applyBlogFilters();
   });
 
+  orderSelect.addEventListener('change', () => {
+    blogSearchState.order = orderSelect.value;
+    applyBlogFilters();
+  });
+
   clearBtn?.addEventListener('click', () => {
-    blogSearchState = { query: '', categoryId: 'ALL' };
+    blogSearchState = { query: '', categoryId: 'ALL', order: 'GROUPED' };
     input.value = '';
     select.value = 'ALL';
+    orderSelect.value = 'GROUPED';
     applyBlogFilters();
     input.focus();
   });
@@ -558,12 +517,25 @@ function setupBlogSearch() {
 function applyBlogFilters() {
   const query = normalizeSearchText(blogSearchState.query);
   const selectedCategory = blogSearchState.categoryId;
+  const showNewest = blogSearchState.order === 'NEWEST';
+  const latestSection = document.getElementById('blog-latest-section');
+  const latestList = document.getElementById('blog-latest-list');
   const sections = document.querySelectorAll('.blog-category-section');
   const cards = document.querySelectorAll('.blog-card-link[data-blog-search]');
   const countEl = document.getElementById('blog-search-count');
   const clearBtn = document.getElementById('blog-search-clear');
   const emptyEl = document.getElementById('blog-search-empty');
   let visibleCount = 0;
+
+  if (latestList) {
+    const positions = showNewest
+      ? [...originalBlogCardPositions].sort((a, b) =>
+          (Date.parse(b.card.dataset.blogDate) || 0) - (Date.parse(a.card.dataset.blogDate) || 0))
+      : originalBlogCardPositions;
+    positions.forEach(({ card, track }) => {
+      (showNewest ? latestList : track).appendChild(card);
+    });
+  }
 
   cards.forEach(card => {
     const matchesQuery = !query || card.dataset.blogSearch.includes(query);
@@ -575,8 +547,10 @@ function applyBlogFilters() {
 
   sections.forEach(section => {
     const hasVisibleCards = !!section.querySelector('.blog-card-link:not([hidden])');
-    section.hidden = !hasVisibleCards;
+    section.hidden = showNewest || !hasVisibleCards;
   });
+
+  if (latestSection) latestSection.hidden = !showNewest || visibleCount === 0;
 
   document.querySelectorAll('.blog-carousel-track').forEach(track => {
     track.scrollLeft = 0;
@@ -589,7 +563,7 @@ function applyBlogFilters() {
   }
 
   if (clearBtn) {
-    clearBtn.hidden = !query && selectedCategory === 'ALL';
+    clearBtn.hidden = !query && selectedCategory === 'ALL' && !showNewest;
   }
 
   if (emptyEl) {
