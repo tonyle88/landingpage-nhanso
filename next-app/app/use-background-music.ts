@@ -80,9 +80,14 @@ export function useBackgroundMusic() {
       if (!shouldPlayMusic) return;
       try {
         await backgroundMusic.play();
+        if (!shouldPlayMusic) {
+          backgroundMusic.pause();
+          return;
+        }
         setMusicButtonState(true);
         removeAutoplayListeners();
       } catch {
+        if (!shouldPlayMusic) return;
         setMusicButtonState(false);
         addAutoplayListeners();
       }
@@ -100,6 +105,10 @@ export function useBackgroundMusic() {
     }
 
     const handleMusicPlay = () => {
+      if (!shouldPlayMusic) {
+        backgroundMusic.pause();
+        return;
+      }
       setMusicButtonState(true);
       removeAutoplayListeners();
     };
