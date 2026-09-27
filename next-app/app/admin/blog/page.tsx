@@ -46,6 +46,7 @@ const categoryNotices: Record<string, string> = {
   saved: "Đã lưu danh mục và ghi audit log.",
   deleted: "Đã xóa danh mục và ghi audit log.",
   invalid: "Dữ liệu danh mục chưa hợp lệ.",
+  duplicate: "Slug này đã được một danh mục khác sử dụng. Hãy để trống để hệ thống tự tạo duy nhất.",
   confirm: "Hãy nhập XOA để xác nhận danh mục.",
   in_use: "Không thể xóa danh mục đang được bài viết sử dụng.",
   error: "Không thể thực hiện thay đổi danh mục.",

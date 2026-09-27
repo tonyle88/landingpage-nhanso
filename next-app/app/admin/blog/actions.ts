@@ -43,6 +43,26 @@ async function ensureUniqueGeneratedSlug(
   throw new Error("slug namespace exhausted");
 }
 
+async function ensureUniqueGeneratedCategorySlug(
+  supabase: Awaited<ReturnType<typeof createAuthServerClient>>,
+  baseSlug: string,
+) {
+  const { data, error } = await supabase
+    .from("blog_categories")
+    .select("slug")
+    .like("slug", `${baseSlug.slice(0, 95)}%`)
+    .limit(500);
+  if (error) throw new Error("category slug lookup failed");
+
+  const occupied = new Set((data || []).map((category) => category.slug));
+  if (!occupied.has(baseSlug)) return baseSlug;
+  for (let suffix = 2; suffix <= 500; suffix += 1) {
+    const candidate = `${baseSlug.slice(0, 99 - String(suffix).length).replace(/-+$/g, "")}-${suffix}`;
+    if (!occupied.has(candidate)) return candidate;
+  }
+  throw new Error("category slug namespace exhausted");
+}
+
 export async function saveBlogPostAction(form: FormData) {
   const principal = await requireContentManager();
   const supabase = await createAuthServerClient();
@@ -177,15 +197,34 @@ export async function deleteBlogPostAction(form: FormData) {
 
 export async function saveBlogCategoryAction(form: FormData) {
   await requireContentManager();
+  const supabase = await createAuthServerClient();
   let id;
   let payload;
+  let phase: "input" | "slug" = "input";
   try {
     id = optionalUuid(form.get("id"));
+    const requestedSlug = String(form.get("slug") || "").trim();
+    if (id && !requestedSlug) {
+      const { data: previous, error } = await supabase
+        .from("blog_categories")
+        .select("slug")
+        .eq("id", id)
+        .maybeSingle();
+      if (error) throw new Error("category slug lookup failed");
+      if (previous?.slug) form.set("slug", previous.slug);
+    }
     payload = blogCategoryPayloadFromForm(form);
-  } catch {
-    redirect("/admin/blog?view=categories&category_status=invalid");
+    if (!id && !requestedSlug) {
+      phase = "slug";
+      payload.slug = await ensureUniqueGeneratedCategorySlug(supabase, payload.slug);
+    }
+  } catch (error) {
+    console.error("blog category preparation failed", {
+      phase,
+      message: error instanceof Error ? error.message : "unknown error",
+    });
+    redirect(`/admin/blog?view=categories&category_status=${phase === "slug" ? "error" : "invalid"}`);
   }
-  const supabase = await createAuthServerClient();
   const { error } = await supabase.rpc("admin_save_blog_category", {
     p_id: id,
     p_payload: payload,
@@ -195,7 +234,7 @@ export async function saveBlogCategoryAction(form: FormData) {
       code: error.code,
       message: error.message,
     });
-    redirect("/admin/blog?view=categories&category_status=error");
+    redirect(`/admin/blog?view=categories&category_status=${error.code === "23505" ? "duplicate" : "error"}`);
   }
   revalidatePath("/admin/blog");
   revalidatePath("/blog");
