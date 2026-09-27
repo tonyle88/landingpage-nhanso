@@ -10,7 +10,11 @@ export function CategoryForm({ item }: { item?: BlogCategory }) {
       {item ? <input type="hidden" name="id" value={item.id} /> : null}
       <div className={styles.formGrid}>
         <label className={styles.field}>Slug
-          <input name="slug" defaultValue={item?.slug || ""} required />
+          <input name="slug" defaultValue={item?.slug || ""}
+            placeholder="Để trống để tự tạo từ tên danh mục" />
+          <small className={styles.slugHint}>
+            Danh mục mới sẽ tự sinh slug không dấu từ tên. Slug của danh mục đã lưu được giữ ổn định.
+          </small>
         </label>
         <label className={styles.field}>Tên danh mục
           <input name="name" maxLength={120} defaultValue={item?.name || ""} required />
