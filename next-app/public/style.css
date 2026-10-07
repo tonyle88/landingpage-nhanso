@@ -1791,6 +1791,8 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   max-width: min(1440px, calc(100vw - 48px));
   overflow-x: auto;
   overflow-y: visible;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
   scroll-snap-type: x mandatory;
   scroll-padding: 4px;
   padding: 6px 4px 18px;
@@ -1801,7 +1803,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   display: none;
 }
 .packages-carousel-enabled .package-card {
-  flex: 0 0 calc((100% - 72px) / 4);
+  flex: 0 0 calc((100% - 48px) / 3);
   min-width: 0;
   scroll-snap-align: start;
 }
