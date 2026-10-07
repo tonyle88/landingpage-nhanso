@@ -19,6 +19,9 @@ node_modules/
 # Local migration, QA and production snapshot artifacts
 .staging-import/
 
+# Local database backups contain private customer data; never commit them.
+/backups/
+
 # Supabase CLI local link/cache state
 next-app/supabase/.temp/
 next-app/supabase/.branches/
