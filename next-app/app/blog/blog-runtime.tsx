@@ -2,12 +2,13 @@
 
 import { useEffect } from "react";
 import { useBackgroundMusic } from "../use-background-music";
+import { useParticlesCanvas } from "../use-particles-canvas";
 
 export default function BlogRuntime() {
   useBackgroundMusic();
+  useParticlesCanvas();
 
   useEffect(() => {
-    document.body.classList.add("landing-content-loading");
     return () => {
       document.body.classList.remove("landing-content-loading");
     };

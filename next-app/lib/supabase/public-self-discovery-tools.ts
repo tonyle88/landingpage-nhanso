@@ -15,7 +15,7 @@ import {
   type VakadQuestion,
   type WheelCategory,
 } from "@/lib/self-discovery-tools";
-import { createPublicServerClient } from "./server";
+import { getPublicSiteSetting } from "./public-site-setting";
 
 const toolSettings = {
   vakad: {
@@ -44,26 +44,6 @@ type ToolContentMap = {
 export async function getPublicSelfDiscoveryContent<T extends SelfDiscoveryToolSlug>(slug: T): Promise<ToolContentMap[T]> {
   const setting = toolSettings[slug];
   const fallback = setting.fallback as ToolContentMap[T];
-  const client = createPublicServerClient();
-  if (!client) return fallback;
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 4_000);
-  try {
-    const { data, error } = await client
-      .from("site_settings")
-      .select("value")
-      .eq("key", setting.key)
-      .eq("is_public", true)
-      .abortSignal(controller.signal)
-      .maybeSingle();
-    if (error || !data) return fallback;
-    if (slug === "vakad") return (parseVakadQuestions(data.value) || VAKAD_QUESTIONS) as unknown as ToolContentMap[T];
-    if (slug === "ngon-ngu-yeu-thuong") return (parseLoveLanguageQuestions(data.value) || LOVE_LANGUAGE_QUESTIONS) as unknown as ToolContentMap[T];
-    return (parseWheelCategories(data.value) || WHEEL_CATEGORIES) as unknown as ToolContentMap[T];
-  } catch {
-    return fallback;
-  } finally {
-    clearTimeout(timeout);
-  }
+  const value = await getPublicSiteSetting(setting.key);
+  return (setting.parse(value) || fallback) as ToolContentMap[T];
 }

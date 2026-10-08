@@ -1,8 +1,3 @@
-import type { Database } from "@/lib/supabase/database.types";
-
-export type CustomerSummary =
-  Database["public"]["Functions"]["admin_list_booking_customers"]["Returns"][number];
-
 export const CUSTOMER_PAGE_SIZE = 10;
 export const CUSTOMER_EXPORT_LIMIT = 5000;
 export const CUSTOMER_MONTHS = [

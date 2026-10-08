@@ -392,9 +392,17 @@ export function useLandingContent(
       document.body.classList.remove("landing-content-loading");
     };
     const loaderTimer = window.setTimeout(finishLoading, LOADING_MAX_MS);
+    const settleLoading = () => {
+      if (controller.signal.aborted) return;
+      window.clearTimeout(loaderTimer);
+      window.ClowLandingContentSettled = true;
+      window.dispatchEvent(new Event("clow-landing-content-settled"));
+      finishLoading();
+    };
 
     const load = async () => {
       const bridge = await waitForBridge(controller.signal);
+      if (controller.signal.aborted) return;
       if (initialContent && (preferSupabaseItems || preferSupabaseSections)) {
         applyReactContent(
           initialContent,
@@ -407,6 +415,16 @@ export function useLandingContent(
           fromCache: true,
           preferSupabasePackages,
         });
+      }
+      if (
+        initialContent &&
+        preferSupabaseItems &&
+        preferSupabaseSections &&
+        preferSupabasePackages &&
+        preferSupabaseTestimonials
+      ) {
+        settleLoading();
+        return;
       }
       const cachedPayload = readCache();
       if (cachedPayload) {
@@ -449,15 +467,16 @@ export function useLandingContent(
           );
         }
       } finally {
-        if (!controller.signal.aborted) {
-          window.ClowLandingContentSettled = true;
-          window.dispatchEvent(new Event("clow-landing-content-settled"));
-          finishLoading();
-        }
+        settleLoading();
       }
     };
 
-    void load();
+    void load().catch((error) => {
+      if (!controller.signal.aborted) {
+        console.warn("Không khởi tạo được nội dung trang.", error);
+        settleLoading();
+      }
+    });
 
     return () => {
       controller.abort();

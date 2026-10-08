@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { createFrameScheduler } from "@/lib/browser-animation";
 import { useBookingApiClient } from "./use-booking-api-client";
 import { useBookingCalendar } from "./use-booking-calendar";
 import { useBookingFormState } from "./use-booking-form-state";
@@ -99,8 +100,11 @@ export default function LandingRuntime({
 
     updateNavbar();
     updateScrollTopButton();
-    window.addEventListener("scroll", updateNavbar, { passive: true });
-    window.addEventListener("scroll", updateScrollTopButton, { passive: true });
+    const scrollUpdates = createFrameScheduler(() => {
+      updateNavbar();
+      updateScrollTopButton();
+    });
+    window.addEventListener("scroll", scrollUpdates.schedule, { passive: true });
     hamburger?.addEventListener("click", toggleMenu);
     navLinkItems.forEach((link) => link.addEventListener("click", closeMenu));
     methodCards.forEach((card) => {
@@ -111,8 +115,8 @@ export default function LandingRuntime({
     scrollTopButton?.addEventListener("click", scrollToTop);
 
     return () => {
-      window.removeEventListener("scroll", updateNavbar);
-      window.removeEventListener("scroll", updateScrollTopButton);
+      scrollUpdates.cancel();
+      window.removeEventListener("scroll", scrollUpdates.schedule);
       hamburger?.removeEventListener("click", toggleMenu);
       navLinkItems.forEach((link) =>
         link.removeEventListener("click", closeMenu),

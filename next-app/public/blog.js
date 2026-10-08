@@ -82,11 +82,20 @@ function chooseBlogArticles(fallbackArticles) {
 }
 
 async function initializeBlogPage() {
+  document.body.classList.add('landing-content-loading');
   setupNavbar();
-  initParticles();
   setupBlogHistoryNavigation();
   setupScrollTopButton();
   
+  // Supabase already supplied both slices; no Google refresh or browser cache is needed.
+  if (initialBlogArticles.length && initialBlogCategories.length) {
+    blogCategories = initialBlogCategories;
+    blogArticles = initialBlogArticles;
+    await renderCurrentBlogView();
+    document.body.classList.remove('landing-content-loading');
+    return;
+  }
+
   const CACHE_KEY = 'blog_landing_cache_v2';
   const CACHE_TTL = 5 * 60 * 1000; // 5 phút
   let renderedFromCache = false;
@@ -100,10 +109,7 @@ async function initializeBlogPage() {
       if (Date.now() - ts < CACHE_TTL) {
         blogCategories = chooseBlogCategories(data.blogCategories);
         blogArticles = chooseBlogArticles(data.blogArticles);
-        const urlParams = new URLSearchParams(window.location.search);
-        const articleId = urlParams.get('id');
-        if (articleId) await renderArticleDetail(articleId);
-        else renderBlogHome();
+        await renderCurrentBlogView();
         renderedFromCache = true;
         document.body.classList.remove('landing-content-loading');
       }
@@ -113,9 +119,7 @@ async function initializeBlogPage() {
   if (!renderedFromCache && initialBlogArticles.length) {
     blogCategories = chooseBlogCategories([]);
     blogArticles = initialBlogArticles;
-    const articleId = new URLSearchParams(window.location.search).get('id');
-    if (articleId) await renderArticleDetail(articleId);
-    else renderBlogHome();
+    await renderCurrentBlogView();
     renderedFromCache = true;
     document.body.classList.remove('landing-content-loading');
   }
@@ -144,11 +148,7 @@ async function initializeBlogPage() {
 
     blogCategories = mergedData.blogCategories;
     blogArticles = mergedData.blogArticles;
-    const urlParams = new URLSearchParams(window.location.search);
-    const articleId = urlParams.get('id');
-
-    if (articleId) await renderArticleDetail(articleId);
-    else renderBlogHome();
+    await renderCurrentBlogView();
 
     document.body.classList.remove('landing-content-loading');
   } catch (error) {
@@ -156,6 +156,12 @@ async function initializeBlogPage() {
     else console.warn('Không cập nhật được dữ liệu blog, tiếp tục dùng cache:', error);
     document.body.classList.remove('landing-content-loading');
   }
+}
+
+async function renderCurrentBlogView() {
+  const articleId = new URLSearchParams(window.location.search).get('id');
+  if (articleId) await renderArticleDetail(articleId);
+  else renderBlogHome();
 }
 
 if (document.readyState === 'loading') {
@@ -234,77 +240,6 @@ function setupScrollTopButton() {
   });
   window.addEventListener('scroll', updateScrollTopVisibility, { passive: true });
   updateScrollTopVisibility();
-}
-
-// ============================================
-// PARTICLES
-// ============================================
-function initParticles() {
-  const canvas = document.getElementById('particles-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  let W = window.innerWidth, H = window.innerHeight;
-  canvas.width = W; canvas.height = H;
-
-  // Giảm số hạt trên mobile để tăng hiệu suất
-  const isMobile = W < 768;
-  const particleCount = isMobile ? 30 : 55;
-
-  const colors = [
-    'rgba(217, 78, 31, alpha)',
-    'rgba(212, 168, 67, alpha)',
-    'rgba(232, 168, 120, alpha)',
-    'rgba(27, 97, 107, alpha)',
-  ];
-  const particles = [];
-  for (let i = 0; i < particleCount; i++) {
-    particles.push({
-      x: Math.random() * W, y: Math.random() * H,
-      r: Math.random() * 2.5 + 0.5,
-      dx: (Math.random() - 0.5) * 0.4,
-      dy: (Math.random() - 0.5) * 0.4 - 0.1,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      alpha: Math.random() * 0.6 + 0.2,
-      pulse: Math.random() * Math.PI * 2,
-    });
-  }
-
-  let lastFrame = 0;
-  function animate(ts) {
-    // Giới hạn 40fps thay vì 60fps để giảm CPU
-    if (ts - lastFrame < 25) { requestAnimationFrame(animate); return; }
-    lastFrame = ts;
-    ctx.clearRect(0, 0, W, H);
-    particles.forEach(p => {
-      p.x += p.dx; p.y += p.dy; p.pulse += 0.02;
-      const alpha = p.alpha * (0.7 + 0.3 * Math.sin(p.pulse));
-      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
-      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = p.color.replace('alpha', alpha);
-      ctx.fill();
-    });
-    // Bỏ vẽ đường kết nối trên mobile để nhẹ hơn
-    if (!isMobile) {
-      particles.forEach((p, i) => {
-        particles.slice(i + 1, i + 4).forEach(q => {
-          const dist = Math.hypot(p.x - q.x, p.y - q.y);
-          if (dist < 100) {
-            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
-            ctx.strokeStyle = `rgba(212, 168, 67, ${(1 - dist / 100) * 0.08})`;
-            ctx.lineWidth = 0.5; ctx.stroke();
-          }
-        });
-      });
-    }
-    requestAnimationFrame(animate);
-  }
-  requestAnimationFrame(animate);
-  window.addEventListener('resize', () => {
-    W = window.innerWidth; H = window.innerHeight;
-    canvas.width = W; canvas.height = H;
-  }, { passive: true });
 }
 
 function renderBlogHome() {

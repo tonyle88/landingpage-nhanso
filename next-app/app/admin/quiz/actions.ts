@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
@@ -59,6 +59,7 @@ async function saveToolQuestions(form: FormData, config: ToolSaveConfig) {
 
   revalidatePath("/admin/quiz");
   revalidatePath(config.publicPath);
+  updateTag("public-site-settings");
   redirect(`/admin/quiz?status=${config.savedStatus}`);
 }
 
@@ -94,6 +95,7 @@ export async function saveQuizQuestionsAction(form: FormData) {
 
   revalidatePath("/admin/quiz");
   revalidatePath("/quiz");
+  updateTag("public-site-settings");
   redirect("/admin/quiz?status=saved");
 }
 
@@ -130,6 +132,7 @@ export async function saveQuizHubContentAction(form: FormData) {
 
   revalidatePath("/admin/quiz");
   revalidatePath("/quiz");
+  updateTag("public-site-settings");
   redirect("/admin/quiz?status=saved-hub");
 }
 

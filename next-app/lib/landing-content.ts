@@ -35,7 +35,7 @@ function isJsonObject(
 }
 
 export function toLandingContentItem(
-  row: SiteSettingRow,
+  row: Pick<SiteSettingRow, "key" | "value" | "is_public">,
 ): LandingContentItem | null {
   if (!row.is_public) return null;
   const key = row.key.replace(/^landing\.content\./, "").trim();
@@ -66,7 +66,19 @@ export function toLandingContentItem(
   return { key, value: row.value, enabled: true };
 }
 
-export function toLandingSection(row: LandingSectionRow): LandingSection {
+export function toLandingSection(
+  row: Pick<
+    LandingSectionRow,
+    | "section_key"
+    | "section_type"
+    | "sort_order"
+    | "enabled"
+    | "eyebrow"
+    | "title"
+    | "display_name"
+    | "content_html"
+  >,
+): LandingSection {
   return {
     id: row.section_key,
     type: row.section_type === "builtin" ? "builtin" : "generic",

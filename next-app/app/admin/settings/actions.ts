@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { settingPayloadFromForm } from "@/lib/admin/site-setting-input";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
@@ -69,6 +69,8 @@ export async function saveSettingAction(form: FormData) {
   }
   revalidatePath("/admin/settings");
   revalidatePath("/");
+  updateTag("public-site-settings");
+  updateTag("public-landing-content");
   redirect("/admin/settings?status=saved");
 }
 
@@ -94,5 +96,7 @@ export async function deleteSettingAction(form: FormData) {
   }
   revalidatePath("/admin/settings");
   revalidatePath("/");
+  updateTag("public-site-settings");
+  updateTag("public-landing-content");
   redirect("/admin/settings?status=deleted");
 }

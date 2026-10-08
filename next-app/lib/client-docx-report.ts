@@ -1,5 +1,7 @@
 "use client";
 
+import { formatVietnameseName } from "@/lib/numerology";
+
 export type CustomerReportParagraph = {
   kind: "paragraph" | "subheading" | "list";
   text: string;
@@ -173,21 +175,6 @@ function parseTable(element: Element): CustomerReportTable {
     })
   ));
   return { kind: "table", rows: rows.filter((row) => row.some(Boolean)) };
-}
-
-function formatVietnameseName(value: string) {
-  return value
-    .trim()
-    .replace(/\s+/g, " ")
-    .toLocaleLowerCase("vi-VN")
-    .split(" ")
-    .map((word) => word
-      .split("-")
-      .map((part) => part
-        ? `${part[0].toLocaleUpperCase("vi-VN")}${part.slice(1)}`
-        : "")
-      .join("-"))
-    .join(" ");
 }
 
 function extractMetrics(sections: CustomerReportSection[]) {
