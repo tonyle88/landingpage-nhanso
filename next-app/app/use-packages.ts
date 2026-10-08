@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { createFrameScheduler } from "@/lib/browser-animation";
 import type { PublicPackage } from "@/lib/packages";
 import { landingPlainText } from "@/lib/landing-text";
 
@@ -159,6 +160,9 @@ export function usePackages(initialPackages: PublicPackage[] = []) {
     const render = (values: unknown[]) => {
       const packages = normalizePackages(values);
       if (!packages.length) return;
+      disposeRender();
+      const cleanupCallbacks: Array<() => void> = [];
+      const revealTimers: number[] = [];
       window.ClowCurrentPackages = packages;
       window.ClowBookingPackagesRuntime?.sync(packages);
 
@@ -169,7 +173,7 @@ export function usePackages(initialPackages: PublicPackage[] = []) {
         if (consultationType && packageSelect) {
           consultationType.value = consultationType.value || "online";
           consultationType.dispatchEvent(new Event("change", { bubbles: true }));
-          window.setTimeout(() => {
+          const selectTimer = window.setTimeout(() => {
             const hasOption = Array.from(packageSelect.options).some((option) => option.value === requestedCode);
             if (!hasOption) return;
             packageSelect.value = requestedCode;
@@ -178,16 +182,14 @@ export function usePackages(initialPackages: PublicPackage[] = []) {
             cleanUrl.searchParams.delete("package");
             window.history.replaceState({}, "", `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`);
           }, 0);
+          cleanupCallbacks.push(() => window.clearTimeout(selectTimer));
         }
       }
-      disposeRender();
       grid.replaceChildren();
       document.querySelector("#packages .package-carousel-controls")?.remove();
       grid.classList.toggle("packages-grid-3", packages.length === 3);
       grid.classList.toggle("packages-carousel-enabled", packages.length > 3);
 
-      const cleanupCallbacks: Array<() => void> = [];
-      const revealTimers: number[] = [];
       packages.forEach((item, index) => {
         const card = createPackageCard(item, index);
         const handlePointerMove = (event: MouseEvent) => {
@@ -260,15 +262,18 @@ export function usePackages(initialPackages: PublicPackage[] = []) {
         const maxStartIndex = () =>
           Math.max(0, packages.length - visibleCount());
         const update = () => {
+          const step = getStep();
+          const count = Math.max(1, Math.round(grid.clientWidth / step));
+          const maxIndex = Math.max(0, packages.length - count);
           activeIndex = Math.max(
             0,
-            Math.min(Math.round(grid.scrollLeft / getStep()), maxStartIndex()),
+            Math.min(Math.round(grid.scrollLeft / step), maxIndex),
           );
-          const end = Math.min(packages.length, activeIndex + visibleCount());
-          controls.hidden = maxStartIndex() === 0;
+          const end = Math.min(packages.length, activeIndex + count);
+          controls.hidden = maxIndex === 0;
           range.textContent = `${activeIndex + 1}${end > activeIndex + 1 ? `-${end}` : ""} / ${packages.length}`;
           previous.disabled = activeIndex <= 0;
-          next.disabled = activeIndex >= maxStartIndex();
+          next.disabled = activeIndex >= maxIndex;
           dots.querySelectorAll(".package-carousel-dot").forEach((dot, index) => {
             const active = index === activeIndex;
             dot.classList.toggle("is-active", active);
@@ -291,18 +296,20 @@ export function usePackages(initialPackages: PublicPackage[] = []) {
         });
         const showPrevious = () => scrollTo(activeIndex - 1);
         const showNext = () => scrollTo(activeIndex + 1);
+        const updates = createFrameScheduler(update);
         previous.addEventListener("click", showPrevious);
         next.addEventListener("click", showNext);
-        grid.addEventListener("scroll", update, { passive: true });
-        window.addEventListener("resize", update, { passive: true });
+        grid.addEventListener("scroll", updates.schedule, { passive: true });
+        window.addEventListener("resize", updates.schedule, { passive: true });
         const initialTimer = window.setTimeout(update, 120);
         cleanupCallbacks.push(() => {
           window.clearTimeout(initialTimer);
           window.clearTimeout(updateTimer);
+          updates.cancel();
           previous.removeEventListener("click", showPrevious);
           next.removeEventListener("click", showNext);
-          grid.removeEventListener("scroll", update);
-          window.removeEventListener("resize", update);
+          grid.removeEventListener("scroll", updates.schedule);
+          window.removeEventListener("resize", updates.schedule);
           controls.remove();
         });
       }

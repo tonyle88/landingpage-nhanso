@@ -37,13 +37,16 @@ async function queryPublicLandingContent(): Promise<PublicLandingContentResult> 
     const [settingsResult, sectionsResult] = await Promise.all([
       client
         .from("site_settings")
-        .select("*")
+        .select("key,value,is_public")
         .eq("is_public", true)
+        .like("key", "landing.content.%")
         .order("key", { ascending: true })
         .abortSignal(controller.signal),
       client
         .from("landing_sections")
-        .select("*")
+        .select(
+          "section_key,section_type,sort_order,enabled,eyebrow,title,display_name,content_html",
+        )
         .eq("enabled", true)
         .order("sort_order", { ascending: true })
         .order("section_key", { ascending: true })
@@ -76,7 +79,7 @@ async function queryPublicLandingContent(): Promise<PublicLandingContentResult> 
 
 const readCachedPublicLandingContent = unstable_cache(
   queryPublicLandingContent,
-  ["public-landing-content-v1"],
+  ["public-landing-content-v2"],
   { revalidate: 300, tags: ["public-landing-content"] },
 );
 

@@ -22,19 +22,27 @@ export function parseBookingStatus(value: string | null | undefined) {
 
 export function formatBookingDateTime(value: string | null) {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("vi-VN", {
-    timeZone: "Asia/Ho_Chi_Minh",
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return bookingDateTimeFormatter.format(new Date(value));
 }
 
+const bookingDateTimeFormatter = new Intl.DateTimeFormat("vi-VN", {
+  timeZone: "Asia/Ho_Chi_Minh",
+  dateStyle: "short",
+  timeStyle: "short",
+});
+const moneyFormatters = new Map<string, Intl.NumberFormat>();
+
 export function formatBookingMoney(amount: number, currency: string) {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  let formatter = moneyFormatters.get(currency);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    });
+    moneyFormatters.set(currency, formatter);
+  }
+  return formatter.format(amount);
 }
 
 export function reportFileStamp(date = new Date()) {
@@ -44,13 +52,4 @@ export function reportFileStamp(date = new Date()) {
     month: "2-digit",
     day: "2-digit",
   }).format(date);
-}
-
-export function escapeXml(value: unknown) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
 }

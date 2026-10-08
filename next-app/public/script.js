@@ -1,9 +1,5 @@
-/* =============================================
-   JAVASCRIPT FOR NHÂN SỐ HỌC LANDING PAGE
-   ============================================= */
+/* Booking and landing interactions for the Next.js page. */
 
-// Sheet cũ: đặt lịch, Calendar, Email, lưu booking.
-const BOOKING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbWZXF2iCsWsr0cWL0JVChANywEq7D7l_mCIvrvqZs78vSOsPej3PuXFgHbOiVNoKr/exec';
 const PACKAGE_OPTIONS = {
   online: {
     year: { label: 'Dự Đoán Năm Cá Nhân – 500.000 vnđ/buổi', price: 500000 },
@@ -86,8 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('clow-landing-content-settled', initStatCounters, { once: true });
   }
 
-  // ===== PACKAGE CARD GLOW ON HOVER =====
-  bindPackageCardGlow();
 });
 
 async function refreshPaymentSettingsBeforePayment() {
@@ -182,18 +176,6 @@ function handlePackageCtaClick(event) {
   if (packageSelect && getPackageOptions(selectedType)[packageValue]) {
     packageSelect.value = packageValue;
   }
-}
-
-function bindPackageCardGlow() {
-  document.querySelectorAll('.package-card').forEach(card => {
-    card.onmousemove = (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      card.style.setProperty('--mouse-x', `${x}%`);
-      card.style.setProperty('--mouse-y', `${y}%`);
-    };
-  });
 }
 
 function initYouTubeEmbeds() {
@@ -306,17 +288,6 @@ function initStatCounters() {
   statNumbers.forEach(el => counterObserver.observe(el));
 }
 
-function isConfiguredGoogleScriptUrl() {
-  return isConfiguredScriptUrl(BOOKING_SCRIPT_URL);
-}
-
-function isConfiguredScriptUrl(url) {
-  return Boolean(url)
-    && !url.includes('PASTE_')
-    && !url.includes('URL_MOI')
-    && /^https?:\/\//.test(url);
-}
-
 function getBookingDataObject() {
   const state = getBookingState();
   const transferContent = state.paymentOrderId || buildTransferContent(state.package, state.phone);
@@ -356,17 +327,6 @@ function buildTransferContent(packageCode, phone) {
   const cleanPackageCode = String(packageCode || '').trim().toUpperCase();
   const cleanPhone = String(phone || '').replace(/\s+/g, '');
   return `${cleanPackageCode} ${cleanPhone}`.trim();
-}
-
-function bookingDataToUrlParams(data, action) {
-  const params = new URLSearchParams();
-  params.append('action', action);
-  Object.entries(data).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      params.append(key, String(value));
-    }
-  });
-  return params;
 }
 
 async function postBookingAction(action, data) {
@@ -421,18 +381,6 @@ async function cancelBookingReservation() {
 async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
   const client = await getBookingApiClient();
   return client.fetchWithTimeout(url, options, timeoutMs);
-}
-
-async function logClientError(context, error, data = {}) {
-  if (!isConfiguredGoogleScriptUrl()) return;
-  const state = getBookingState();
-  const client = await getBookingApiClient();
-  return client.logError(context, error, {
-    ...data,
-    package: data.package || state.package || '',
-    phone: data.phone || state.phone || '',
-    email: data.email || state.email || '',
-  });
 }
 
 async function getBookingApiClient() {

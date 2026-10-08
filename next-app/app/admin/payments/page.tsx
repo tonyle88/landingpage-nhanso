@@ -3,6 +3,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
+import {
+  formatBookingDateTime as formatDateTime,
+  formatBookingMoney as formatMoney,
+} from "@/lib/admin/booking-report";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
 import styles from "../admin.module.css";
 
@@ -19,23 +23,6 @@ const reasonLabels: Record<string, string> = {
   booking_not_held: "Lịch hẹn không còn giữ chỗ",
   outbound_transfer: "Giao dịch chuyển ra",
 };
-
-function formatDateTime(value: string | null) {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat("vi-VN", {
-    timeZone: "Asia/Ho_Chi_Minh",
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
-function formatMoney(amount: number, currency: string) {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
 
 export default async function AdminPaymentsPage() {
   const principal = await getAdminPrincipal();

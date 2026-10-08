@@ -50,6 +50,7 @@
     "test:parity": "node --test ../qa/nextjs-m1-parity-tests.mjs",
     "test:music": "node --test ../qa/background-music-tests.mjs",
     "test:public-read": "node --test ../qa/nextjs-m3-public-read-tests.mjs",
+    "test:resources": "node --test ../qa/runtime-resource-tests.mjs",
     "test:public-import": "node --test ../qa/public-content-import-tests.mjs",
     "test:auth": "node --test ../qa/nextjs-m4-auth-tests.mjs",
     "test:owner-bootstrap": "node --test ../qa/owner-bootstrap-tests.mjs",

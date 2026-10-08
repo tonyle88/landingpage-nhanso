@@ -20,7 +20,7 @@ test("payment reconciliation page is role-gated and read-only", () => {
   assert.match(page, /getAdminPrincipal/);
   assert.match(page, /read_operations/);
   assert.doesNotMatch(page, /\.insert\(|\.update\(|\.delete\(|action=/);
-  assert.match(dashboard, /href="\/admin\/payments"/);
+  assert.match(dashboard, /href: "\/admin\/payments"/);
 });
 
 test("payment alerts expose safe metadata without raw webhook payload", () => {
