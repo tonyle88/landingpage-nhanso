@@ -1,6 +1,11 @@
 .env*
+**/.env*
+**/*.dump
+**/*.tar.gz
 .vercel
 /.staging-import
+/backups
+/.codex
 /.agents
 /.git
 /Pdf create
@@ -25,3 +30,5 @@ next-app/.next
 next-app/.vercel
 next-app/node_modules
 next-app/tsconfig.tsbuildinfo
+next-app/supabase/.temp
+next-app/supabase/.branches
