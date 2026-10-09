@@ -150,6 +150,11 @@ async function callCalendarBridge(
   }
 }
 
+/**
+ * Đồng bộ sự kiện Calendar cho lịch đã được xác nhận hoặc được đổi giờ.
+ * Đọc lịch từ DB, gọi bridge Calendar và ghi kết quả/audit để action có thể báo lỗi hoặc thử lại.
+ * Không dùng để tạo sự kiện cho giữ chỗ chưa được xác nhận.
+ */
 export async function syncBookingCalendarEvent(
   supabase: SupabaseClient<Database>,
   bookingId: string,
@@ -206,6 +211,10 @@ export async function syncBookingCalendarEvent(
   }
 }
 
+/**
+ * Xóa/hủy sự kiện Calendar gắn với lịch đã bị hủy và ghi kết quả đồng bộ.
+ * Được action hủy lịch hoặc bước phục hồi gọi; không tự thay trạng thái booking trong DB.
+ */
 export async function deleteBookingCalendarEvent(
   supabase: SupabaseClient<Database>,
   bookingId: string,

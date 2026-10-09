@@ -24,6 +24,15 @@ type LandingRuntimeProps = {
   preferSupabaseLandingSections?: boolean;
 };
 
+/**
+ * Điểm khởi tạo các tương tác của trang chính sau khi HTML server được hydrate.
+ * 1. BookingApi/Calendar/FormState đăng ký API và trạng thái biểu mẫu lên window.
+ * 2. Packages/Testimonials/MiniReport/Payment đăng ký renderer và dữ liệu nghiệp vụ.
+ * 3. LandingContent áp dụng dữ liệu Supabase, chỉ lấy Google fallback nếu thiếu nguồn.
+ * 4. LandingEffects/BackgroundMusic cùng navbar xử lý trình bày và tương tác.
+ * Các window.Clow* là cầu nối với public/script.js; không chứa secret của server.
+ * Mỗi hook tự dọn timer/listener của mình khi unmount; effect dưới đây dọn navbar/nút.
+ */
 export default function LandingRuntime({
   initialPackages = [],
   initialTestimonials = [],

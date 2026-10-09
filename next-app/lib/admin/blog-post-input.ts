@@ -1,4 +1,4 @@
-import { optionalUuid } from "./package-input";
+import { optionalUuid } from "./form-input";
 
 const unsafeHtml =
   /<\s*(script|iframe|object|embed|style)\b|on[a-z]+\s*=|javascript\s*:/i;

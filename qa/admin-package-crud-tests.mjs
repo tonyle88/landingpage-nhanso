@@ -10,6 +10,7 @@ const migration = await read(
 const actions = await read("next-app/app/admin/packages/actions.ts");
 const page = await read("next-app/app/admin/packages/page.tsx");
 const input = await read("next-app/lib/admin/package-input.ts");
+const sharedInput = await read("next-app/lib/admin/form-input.ts");
 
 test("package RPCs enforce content roles and write audit in the same function", () => {
   assert.match(migration, /admin_save_package/);
@@ -22,7 +23,8 @@ test("package RPCs enforce content roles and write audit in the same function", 
 });
 
 test("admin package UI gates permissions and uses server-side RPC actions", () => {
-  assert.match(actions, /can\(principal\.role, "manage_content"\)/);
+  assert.match(actions, /import \{ requireContentManager \} from "@\/lib\/auth\/admin-access"/);
+  assert.match(actions, /await requireContentManager\(\)/);
   assert.match(actions, /rpc\("admin_save_package"/);
   assert.match(actions, /rpc\("admin_delete_package"/);
   assert.equal(
@@ -38,8 +40,9 @@ test("admin package UI gates permissions and uses server-side RPC actions", () =
 test("package form parser bounds and validates untrusted fields", () => {
   assert.match(input, /Number\.isSafeInteger/);
   assert.match(input, /features[\s\S]+slice\(0, 30\)/);
-  assert.match(input, /sortOrder < 0 \|\| sortOrder > 10000/);
-  assert.match(input, /optionalUuid/);
+  assert.match(input, /parseSortOrder\(text\(form, "sort_order", 6\)/);
+  assert.match(sharedInput, /optionalUuid/);
+  assert.match(sharedInput, /order < 0 \|\| order > 10_000/);
 });
 
 test("package RPCs validate price, code, features and limit execution", () => {

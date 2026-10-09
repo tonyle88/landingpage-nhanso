@@ -27,6 +27,7 @@ import {
 } from "@/lib/admin/booking-report";
 import styles from "../admin.module.css";
 import { AdminToast } from "../admin-toast";
+import { parsePositivePage as parsePage } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -67,11 +68,6 @@ const nextStatuses: Partial<Record<BookingStatus, BookingStatus[]>> = {
   held: ["paid", "cancelled", "expired"],
   paid: ["confirmed"],
 };
-
-function parsePage(value: string | undefined) {
-  const page = Number.parseInt(value || "1", 10);
-  return Number.isSafeInteger(page) && page > 0 ? page : 1;
-}
 
 function bookingsHref(filter: BookingStatus | null, page: number) {
   const params = new URLSearchParams();

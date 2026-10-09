@@ -9,6 +9,11 @@ export type AdminPrincipal = {
   role: AdminRole;
 };
 
+/**
+ * Đọc claims của phiên Supabase rồi lấy vai trò hiện tại bằng RPC current_admin_role.
+ * Trả null nếu claims hoặc vai trò không hợp lệ; không tin vai trò gửi từ form/trình duyệt.
+ * Được dùng bởi trang/API quản trị và guard admin-access; không cache dùng chung giữa người dùng.
+ */
 export async function getAdminPrincipal(): Promise<AdminPrincipal | null> {
   const supabase = await createAuthServerClient();
   const { data: claimsData, error: claimsError } =

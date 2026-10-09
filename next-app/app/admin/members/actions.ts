@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { memberInvitePayloadFromForm } from "@/lib/admin/member-input";
-import { optionalUuid } from "@/lib/admin/package-input";
+import { optionalUuid } from "@/lib/admin/form-input";
 import { getAdminPrincipal } from "@/lib/auth/admin-principal";
 import { can } from "@/lib/auth/roles";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";

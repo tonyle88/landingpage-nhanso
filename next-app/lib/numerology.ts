@@ -144,6 +144,11 @@ function sumDigits(value: number) {
     .reduce((sum, digit) => sum + Number(digit), 0);
 }
 
+/**
+ * Rút gọn một số bằng cách cộng chữ số cho đến khi còn một chữ số.
+ * @param keepMasterNumbers Giữ 11, 22, 33 khi true; false luôn rút về một chữ số.
+ * Dùng chung cho chỉ số ngày sinh, họ tên, đỉnh cao và chu kỳ; không định dạng nhãn nợ nghiệp.
+ */
 export function reduceNumerologyNumber(
   value: number,
   keepMasterNumbers: boolean,
@@ -161,6 +166,11 @@ export function reduceNumerologyNumber(
   return number;
 }
 
+/**
+ * Hoàn thiện raw/value/display/karmicDebt cho một chỉ số.
+ * Ưu tiên nhãn nợ nghiệp của tổng gốc; nếu không có, dùng quy tắc số chủ và rút gọn.
+ * Giữ số dùng tính toán tách khỏi nhãn hiển thị để các phép tính tiếp theo không đọc chuỗi.
+ */
 function resolveFinalNumber(
   value: number,
   keepMasterNumbers = true,
@@ -185,6 +195,11 @@ function resolveFinalNumber(
   };
 }
 
+/**
+ * Chuẩn hóa họ tên thành chữ Latin thường để ánh xạ chữ cái Pitago.
+ * Bỏ dấu tiếng Việt, đổi đ thành d, lọc ký tự không phải a-z và gom khoảng trắng.
+ * Không dùng kết quả này làm tên hiển thị cho khách hàng; dùng formatVietnameseName cho UI.
+ */
 export function normalizeVietnameseName(name: string) {
   return String(name || "")
     .normalize("NFD")
@@ -197,6 +212,11 @@ export function normalizeVietnameseName(name: string) {
     .trim();
 }
 
+/**
+ * Chuẩn hóa cách viết họ tên để hiển thị trên màn hình, DOCX và các bản xuất.
+ * Giữ dấu tiếng Việt, gom khoảng trắng, viết hoa chữ đầu mỗi từ và mỗi phần nối bởi dấu gạch ngang.
+ * Không thay đổi ý nghĩa hoặc dùng để tính giá trị chữ cái Pitago.
+ */
 export function formatVietnameseName(name: string) {
   return String(name || "")
     .trim()
@@ -223,6 +243,11 @@ function isSoulVowel(chars: string[], index: number) {
   return !isBasicVowel(chars[index - 1]) && !isBasicVowel(chars[index + 1]);
 }
 
+/**
+ * Tính tổng chữ cái của một từ theo chế độ all/vowels/consonants.
+ * Được dùng để phân tích từng phần tên và cộng thành chỉ số sứ mệnh, linh hồn, nhân cách.
+ * Trả cả chữ đã chọn, tổng gốc và số rút gọn để UI/PDF có thể giải thích công thức.
+ */
 function calculateWordNumber(
   word: string,
   mode: "all" | "vowels" | "consonants",
@@ -307,6 +332,11 @@ function formatOperatingDate(day: number, month: number, year: number) {
   return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
 }
 
+/**
+ * Tính năm cá nhân từ ngày/tháng sinh và năm thế giới đã rút gọn.
+ * Tra bảng PERSONAL_YEAR_OPERATING_PERIODS để lấy mốc bắt đầu/kết thúc theo quy ước dự án.
+ * Không thay mốc vận hành bằng một năm dương lịch đầy đủ vì kết quả báo cáo đang dùng bảng này.
+ */
 function calculatePersonalYear(
   calendarYear: number,
   dayValue: number,
@@ -336,6 +366,14 @@ function calculatePersonalYear(
   };
 }
 
+/**
+ * Hàm tính trung tâm dùng cho calculator, mở lại hồ sơ và chuẩn bị báo cáo PDF/JPG.
+ * @param fullName Họ tên gốc; hàm tạo cả tên hiển thị và tên Latin dùng tính toán.
+ * @param isoDate Ngày sinh YYYY-MM-DD; từ chối ngày không tồn tại và ngày ở tương lai.
+ * @param referenceYear Năm dùng tính chu kỳ, mặc định là năm hiện tại.
+ * @returns Toàn bộ chỉ số, công thức, biểu đồ, tháp đỉnh cao/thử thách và chu kỳ cá nhân.
+ * Hàm không gọi API, không ghi DB và không cấp số hồ sơ; các trách nhiệm đó nằm ở caller.
+ */
 export function calculateNumerology(
   fullName: string,
   isoDate: string,

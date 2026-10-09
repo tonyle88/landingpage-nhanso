@@ -1,28 +1,7 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import test from "node:test";
 import vm from "node:vm";
-
-const require = createRequire(import.meta.url);
-const ts = require("../next-app/node_modules/typescript");
-const read = (path) => readFileSync(new URL(`../next-app/${path}`, import.meta.url), "utf8");
-
-function loadTs(path, dependencies = {}, globals = {}) {
-  const context = vm.createContext({
-    exports: {},
-    require(name) {
-      assert.ok(Object.hasOwn(dependencies, name), `Unexpected dependency: ${name}`);
-      return dependencies[name];
-    },
-    ...globals,
-  });
-  const { outputText } = ts.transpileModule(read(path), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  });
-  vm.runInContext(outputText, context, { filename: path });
-  return context;
-}
+import { loadTypeScript as loadTs, readNextSource as read } from "./lib/runtime-sandbox.mjs";
 
 function animationHarness() {
   const frames = new Map();
@@ -327,6 +306,10 @@ test("saving quiz content or changing a general setting invalidates the shared p
     "next/cache": { revalidatePath() {}, updateTag: (tag) => tags.push(tag) },
     "next/navigation": { redirect: (url) => { throw new Error(`REDIRECT ${url}`); } },
     "@/lib/auth/admin-principal": { getAdminPrincipal: async () => ({ role: "owner" }) },
+    "@/lib/auth/admin-access": {
+      requireContentManager: async () => ({ role: "owner" }),
+      requireAdminPermission: async () => ({ role: "owner" }),
+    },
     "@/lib/auth/roles": { can: () => true },
     "@/lib/supabase/auth-server": { createAuthServerClient: async () => ({ rpc: async () => ({ error: null }) }) },
     "@/lib/quiz-question-schema": { parseQuizQuestions: (value) => value, QUIZ_SETTING_KEY: "quiz.questions" },

@@ -1,4 +1,5 @@
 import type { Json } from "@/lib/supabase/database.types";
+import { formText as text, parseSortOrder } from "./form-input";
 
 export type PackagePayload = {
   code: string;
@@ -17,10 +18,10 @@ export type PackagePayload = {
   sort_order: number;
 };
 
-function text(form: FormData, name: string, max: number) {
-  return String(form.get(name) || "").trim().slice(0, max);
-}
-
+/**
+ * Đọc giá từ form gói và kiểm tra chuỗi số nguyên không âm có thể biểu diễn an toàn.
+ * Giữ kết quả dạng chuỗi để RPC xử lý numeric; chuỗi rỗng là chưa nhập giá, không phải giá 0.
+ */
 function price(form: FormData, name: string) {
   const value = text(form, name, 20);
   if (!value) return "";
@@ -30,13 +31,19 @@ function price(form: FormData, name: string) {
   return value;
 }
 
+/**
+ * Tạo payload RPC admin_save_package từ biểu mẫu tạo/sửa gói tư vấn.
+ * Chuẩn hóa mã, tiền tệ, hai mức giá, danh sách tối đa 30 tính năng và thứ tự hiển thị.
+ * Cắt các trường văn bản theo giới hạn hiện có; từ chối mã/giá/tiền tệ không hợp lệ.
+ * Không lấy giá từ lựa chọn đặt lịch của khách và không ghi DB trực tiếp.
+ */
 export function packagePayloadFromForm(form: FormData): PackagePayload {
   const code = text(form, "code", 64).toLowerCase();
   const name = text(form, "name", 160);
   const onlinePrice = price(form, "online_price");
   const offlinePrice = price(form, "offline_price");
   const currency = text(form, "currency", 3).toUpperCase() || "VND";
-  const sortOrder = Number(text(form, "sort_order", 6) || "0");
+  const sortOrder = parseSortOrder(text(form, "sort_order", 6) || "0", "invalid sort order");
   const features = text(form, "features", 4000)
     .split(/\r?\n/)
     .map((item) => item.trim())
@@ -50,9 +57,6 @@ export function packagePayloadFromForm(form: FormData): PackagePayload {
   if (name.length < 2) throw new Error("invalid name");
   if (!onlinePrice && !offlinePrice) throw new Error("missing price");
   if (!/^[A-Z]{3}$/.test(currency)) throw new Error("invalid currency");
-  if (!Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 10000) {
-    throw new Error("invalid sort order");
-  }
 
   return {
     code,
@@ -70,13 +74,4 @@ export function packagePayloadFromForm(form: FormData): PackagePayload {
     enabled: form.get("enabled") === "on",
     sort_order: sortOrder,
   };
-}
-
-export function optionalUuid(value: FormDataEntryValue | null) {
-  const id = String(value || "").trim();
-  if (!id) return null;
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
-    throw new Error("invalid id");
-  }
-  return id;
 }

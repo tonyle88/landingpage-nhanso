@@ -1,3 +1,4 @@
+import { formatBirthDate, formatArchiveBytes } from "@/lib/admin/display-format";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -36,11 +37,6 @@ function sanitizeSearch(value: string) {
     .slice(0, 80);
 }
 
-function formatBirthDate(value: string) {
-  const [year, month, day] = value.split("-");
-  return year && month && day ? `${day}/${month}/${year}` : value;
-}
-
 function formatUpdatedAt(value: string) {
   return new Intl.DateTimeFormat("vi-VN", {
     day: "2-digit",
@@ -50,11 +46,6 @@ function formatUpdatedAt(value: string) {
     minute: "2-digit",
     timeZone: "Asia/Ho_Chi_Minh",
   }).format(new Date(value));
-}
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function pageHref(page: number, query: string) {
@@ -154,13 +145,13 @@ export default async function NumerologyArchivePage({
               <article className={styles.numerologyArchiveRow} key={record.id}>
                 <div>
                   <span>{record.customer_name.charAt(0)}</span>
-                  <p><strong>{record.customer_name}</strong><small>Ngày sinh {formatBirthDate(record.birth_date)}</small></p>
+                  <p><strong>{record.customer_name}</strong><small>Ngày sinh {formatBirthDate(record.birth_date, "")}</small></p>
                 </div>
                 <strong>#{record.report_number}</strong>
                 <time dateTime={record.updated_at}>{formatUpdatedAt(record.updated_at)}</time>
                 <div className={styles.numerologyArchiveDownloads}>
-                  <a href={`/api/admin/numerology-records/${record.id}/download?type=pdf`}>PDF · {formatBytes(record.pdf_byte_size)}</a>
-                  <a href={`/api/admin/numerology-records/${record.id}/download?type=jpg`}>JPG · {formatBytes(record.image_byte_size)}</a>
+                  <a href={`/api/admin/numerology-records/${record.id}/download?type=pdf`}>PDF · {formatArchiveBytes(record.pdf_byte_size, "1 KB")}</a>
+                  <a href={`/api/admin/numerology-records/${record.id}/download?type=jpg`}>JPG · {formatArchiveBytes(record.image_byte_size, "1 KB")}</a>
                 </div>
                 {canDelete ? (
                   <ArchiveDeleteButton

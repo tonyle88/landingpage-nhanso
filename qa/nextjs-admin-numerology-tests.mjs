@@ -8,6 +8,19 @@ import {
   reduceNumerologyNumber,
 } from "../next-app/lib/numerology.ts";
 
+// Theo dõi cả UI lẫn module render đã tách để các kiểm tra bố cục/bản xuất vẫn đầy đủ.
+async function readNumerologyClientSources() {
+  const paths = [
+    "app/admin/numerology/numerology-calculator.tsx",
+    "lib/admin/numerology-export.ts",
+    "lib/admin/numerology-presentation.ts",
+  ];
+  const sources = await Promise.all(paths.map((path) =>
+    readFile(new URL("../next-app/" + path, import.meta.url), "utf8"),
+  ));
+  return sources.join("\n");
+}
+
 test("matches the handwritten Trần Minh Tú example", () => {
   const result = calculateNumerology("Trần Minh Tú", "1984-03-03", 2026);
 
@@ -197,13 +210,7 @@ test("applies the researched transition period for every personal year", () => {
 test("is integrated only into the Next.js admin", async () => {
   const [dashboard, calculator, styles] = await Promise.all([
     readFile(new URL("../next-app/app/admin/page.tsx", import.meta.url), "utf8"),
-    readFile(
-      new URL(
-        "../next-app/app/admin/numerology/numerology-calculator.tsx",
-        import.meta.url,
-      ),
-      "utf8",
-    ),
+    readNumerologyClientSources(),
     readFile(
       new URL("../next-app/app/admin/admin.module.css", import.meta.url),
       "utf8",
@@ -224,7 +231,7 @@ test("is integrated only into the Next.js admin", async () => {
     calculator,
     /CYCLE_POINT_Y = \[48, 79, 143, 160, 107, 58, 178, 130, 48\]/,
   );
-  assert.match(calculator, /Shared by the live chart, full PDF, customer PDF and A4 JPG/);
+  assert.match(calculator, /import\("@\/lib\/admin\/numerology-export"\)/);
   assert.match(calculator, /numerologySineCurrentPoint/);
   assert.match(calculator, /window\.print\(\)/);
   assert.match(calculator, /PDF khách · 1 trang A4/);
@@ -278,7 +285,7 @@ test("archives optimized PDF and A4 JPG files for configurable recent history", 
     styles,
   ] = await Promise.all([
     readFile(new URL("../next-app/app/admin/numerology/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../next-app/app/admin/numerology/numerology-calculator.tsx", import.meta.url), "utf8"),
+    readNumerologyClientSources(),
     readFile(new URL("../next-app/app/api/admin/numerology-records/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../next-app/app/api/admin/numerology-records/[id]/download/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../next-app/lib/admin/numerology-records.ts", import.meta.url), "utf8"),
@@ -322,7 +329,7 @@ test("archives optimized PDF and A4 JPG files for configurable recent history", 
 
 test("assigns a durable manual or automatic number to every numerology export", async () => {
   const [calculator, listRoute, numberRoute, recordsConfig, migration] = await Promise.all([
-    readFile(new URL("../next-app/app/admin/numerology/numerology-calculator.tsx", import.meta.url), "utf8"),
+    readNumerologyClientSources(),
     readFile(new URL("../next-app/app/api/admin/numerology-records/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../next-app/app/api/admin/numerology-records/report-number/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../next-app/lib/admin/numerology-records.ts", import.meta.url), "utf8"),
@@ -361,7 +368,7 @@ test("isolates numerology archives per signed-in user and exposes a guarded limi
     styles,
   ] = await Promise.all([
     readFile(new URL("../next-app/app/admin/numerology/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../next-app/app/admin/numerology/numerology-calculator.tsx", import.meta.url), "utf8"),
+    readNumerologyClientSources(),
     readFile(new URL("../next-app/app/api/admin/numerology-records/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../next-app/app/api/admin/numerology-records/report-number/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../next-app/app/api/admin/numerology-records/[id]/download/route.ts", import.meta.url), "utf8"),
@@ -393,7 +400,7 @@ test("isolates numerology archives per signed-in user and exposes a guarded limi
 test("adds a separate searchable numerology archive with owner-scoped deletion", async () => {
   const [dashboard, calculator, archivePage, archiveActions, deleteButton, styles] = await Promise.all([
     readFile(new URL("../next-app/app/admin/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../next-app/app/admin/numerology/numerology-calculator.tsx", import.meta.url), "utf8"),
+    readNumerologyClientSources(),
     readFile(new URL("../next-app/app/admin/numerology/archive/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../next-app/app/admin/numerology/archive/actions.ts", import.meta.url), "utf8"),
     readFile(new URL("../next-app/app/admin/numerology/archive/archive-delete-button.tsx", import.meta.url), "utf8"),

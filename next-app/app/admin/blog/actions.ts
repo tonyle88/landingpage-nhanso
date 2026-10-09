@@ -4,9 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { BlogPostInputError, blogPostPayloadFromForm } from "@/lib/admin/blog-post-input";
 import { blogCategoryPayloadFromForm } from "@/lib/admin/blog-category-input";
-import { optionalUuid } from "@/lib/admin/package-input";
-import { getAdminPrincipal } from "@/lib/auth/admin-principal";
-import { can } from "@/lib/auth/roles";
+import { optionalUuid } from "@/lib/admin/form-input";
+import { requireContentManager } from "@/lib/auth/admin-access";
 import {
   removeUploadedMedia,
   removeStoredMediaById,
@@ -14,14 +13,6 @@ import {
   type UploadedMedia,
 } from "@/lib/admin/media-upload";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
-
-async function requireContentManager() {
-  const principal = await getAdminPrincipal();
-  if (!principal || !can(principal.role, "manage_content")) {
-    redirect("/admin/login?reason=unauthorized");
-  }
-  return principal;
-}
 
 async function ensureUniqueGeneratedSlug(
   supabase: Awaited<ReturnType<typeof createAuthServerClient>>,

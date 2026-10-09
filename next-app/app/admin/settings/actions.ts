@@ -3,26 +3,11 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { settingPayloadFromForm } from "@/lib/admin/site-setting-input";
-import { getAdminPrincipal } from "@/lib/auth/admin-principal";
-import { can } from "@/lib/auth/roles";
+import { requireAdminPermission, requireContentManager } from "@/lib/auth/admin-access";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
 
-async function requireContentManager() {
-  const principal = await getAdminPrincipal();
-  if (!principal || !can(principal.role, "manage_content")) {
-    redirect("/admin/login?reason=unauthorized");
-  }
-}
-
-async function requireOperationsManager() {
-  const principal = await getAdminPrincipal();
-  if (!principal || !can(principal.role, "manage_operations")) {
-    redirect("/admin/login?reason=unauthorized");
-  }
-}
-
 export async function setSepayAutoConfirmationAction(form: FormData) {
-  await requireOperationsManager();
+  await requireAdminPermission("manage_operations");
   const enabled = String(form.get("enabled") || "") === "true";
   const supabase = await createAuthServerClient();
   const { error } = await supabase.rpc("admin_set_sepay_auto_confirmation", {

@@ -4,17 +4,9 @@ import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { landingContentPayloadFromForm } from "@/lib/admin/landing-content-item-input";
 import { landingSectionPayloadFromForm } from "@/lib/admin/landing-section-input";
-import { optionalUuid } from "@/lib/admin/package-input";
-import { getAdminPrincipal } from "@/lib/auth/admin-principal";
-import { can } from "@/lib/auth/roles";
+import { optionalUuid } from "@/lib/admin/form-input";
+import { requireContentManager } from "@/lib/auth/admin-access";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
-
-async function requireContentManager() {
-  const principal = await getAdminPrincipal();
-  if (!principal || !can(principal.role, "manage_content")) {
-    redirect("/admin/login?reason=unauthorized");
-  }
-}
 
 type SectionQuickAction = "move_up" | "move_down" | "toggle";
 

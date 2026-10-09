@@ -2,21 +2,10 @@
 
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { getAdminPrincipal } from "@/lib/auth/admin-principal";
-import { can } from "@/lib/auth/roles";
-import {
-  optionalUuid,
-  packagePayloadFromForm,
-} from "@/lib/admin/package-input";
+import { requireContentManager } from "@/lib/auth/admin-access";
+import { optionalUuid } from "@/lib/admin/form-input";
+import { packagePayloadFromForm } from "@/lib/admin/package-input";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
-
-async function requireContentManager() {
-  const principal = await getAdminPrincipal();
-  if (!principal || !can(principal.role, "manage_content")) {
-    redirect("/admin/login?reason=unauthorized");
-  }
-  return principal;
-}
 
 export async function savePackageAction(form: FormData) {
   await requireContentManager();

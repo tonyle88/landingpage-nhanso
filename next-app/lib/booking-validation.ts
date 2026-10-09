@@ -25,14 +25,26 @@ function text(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+/**
+ * Gom khoảng trắng trong tên khách trước khi kiểm tra form hoặc payload đặt lịch.
+ * Giữ nguyên dấu/chữ hoa để không tự thay đổi tên khách đã nhập.
+ */
 export function normalizeBookingName(value: string) {
   return value.trim().replace(/\s+/g, " ");
 }
 
+/**
+ * Trim và chuyển email sang chữ thường để frontend/backend đối chiếu cùng một dạng.
+ * Chỉ chuẩn hóa; validateBookingEmail chịu trách nhiệm kiểm tra cú pháp và độ dài.
+ */
 export function normalizeBookingEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
+/**
+ * Bỏ dấu phân cách và đổi đầu +84/84 thành 0 trước khi kiểm tra số di động Việt Nam.
+ * Không tự chấp nhận đầu số: validateBookingPhone kiểm tra mẫu 10 chữ số sau chuẩn hóa.
+ */
 export function normalizeVietnamesePhone(value: string) {
   let phone = value.trim().replace(/[\s().-]/g, "");
   if (phone.startsWith("+84")) phone = `0${phone.slice(3)}`;
@@ -40,6 +52,10 @@ export function normalizeVietnamesePhone(value: string) {
   return phone;
 }
 
+/**
+ * Kiểm tra tên khách có đủ chữ cái, dài tối đa 100 ký tự và dùng ký tự cho phép.
+ * Trả chuỗi rỗng khi hợp lệ, hoặc thông báo tiếng Việt để form/API hiển thị lỗi.
+ */
 export function validateBookingName(value: string) {
   const name = normalizeBookingName(value);
   const letterCount = (name.match(/\p{L}/gu) || []).length;
@@ -54,6 +70,10 @@ export function validateBookingName(value: string) {
   return "";
 }
 
+/**
+ * Kiểm tra ngày sinh ISO tồn tại, từ năm 1900 và không ở tương lai.
+ * Dùng chung giữa form đặt lịch và API; trả thông báo lỗi thay vì ném exception.
+ */
 export function validateBookingDob(value: string) {
   if (!value) return "Vui lòng nhập ngày tháng năm sinh.";
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -75,6 +95,10 @@ export function validateBookingDob(value: string) {
   return "";
 }
 
+/**
+ * Kiểm tra số di động Việt Nam sau khi chuẩn hóa +84/84 và dấu phân cách.
+ * Trả chuỗi rỗng khi hợp lệ, thông báo tiếng Việt khi thiếu hoặc sai đầu số/độ dài.
+ */
 export function validateBookingPhone(value: string) {
   if (!value.trim()) return "Vui lòng nhập số điện thoại / Zalo.";
   if (!VIETNAMESE_PHONE_PATTERN.test(normalizeVietnamesePhone(value))) {
@@ -83,6 +107,10 @@ export function validateBookingPhone(value: string) {
   return "";
 }
 
+/**
+ * Kiểm tra email sau trim/lowercase, có cấu trúc cơ bản và không quá 254 ký tự.
+ * Không xác minh hộp thư tồn tại hoặc gửi email; phần gửi thư thuộc booking-email.
+ */
 export function validateBookingEmail(value: string) {
   const email = normalizeBookingEmail(value);
   if (!email) return "Vui lòng nhập email.";
@@ -92,12 +120,22 @@ export function validateBookingEmail(value: string) {
   return "";
 }
 
+/**
+ * Giới hạn ghi chú/trăn trở của khách ở 2.000 ký tự.
+ * Không bắt buộc có nội dung; trả thông báo lỗi hoặc chuỗi rỗng để ghép với các validator khác.
+ */
 export function validateBookingConcern(value: string) {
   return value.length > 2000
     ? "Nội dung trăn trở không được vượt quá 2.000 ký tự."
     : "";
 }
 
+/**
+ * Cổng kiểm tra payload đặt lịch phía server, dùng lại các validator của frontend.
+ * Chuẩn hóa danh tính, kiểm tra loại tư vấn/gói/phương thức thanh toán và khoảng giờ tối đa 4 tiếng.
+ * Trả discriminated union {ok:true,value} hoặc {ok:false,message}; không tự tính giá.
+ * Tính khả dụng, số tiền chính thức và trạng thái giữ chỗ vẫn do RPC trong DB quyết định.
+ */
 export function validateBookingReservationPayload(
   payload: BookingPayload,
 ): ValidationResult {

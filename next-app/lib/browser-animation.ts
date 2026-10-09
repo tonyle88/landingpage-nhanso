@@ -1,3 +1,9 @@
+/**
+ * Gộp nhiều sự kiện scroll/resize thành tối đa một callback trong một khung hình.
+ * Dùng chung cho navbar, thanh tiến độ và carousel gói tư vấn.
+ * Trả schedule để gắn listener và cancel để dọn requestAnimationFrame khi component tháo khỏi DOM.
+ * Callback tự đọc trạng thái mới nhất của DOM; helper không lưu từng event trung gian.
+ */
 export function createFrameScheduler(callback: () => void) {
   let frame: number | null = null;
   return {
@@ -15,6 +21,12 @@ export function createFrameScheduler(callback: () => void) {
   };
 }
 
+/**
+ * Điều khiển vòng vẽ particles cho trang chính và blog, giới hạn số lần vẽ khoảng 30 FPS.
+ * Tạm dừng khi tab bị ẩn hoặc người dùng chọn reduced motion; tự tiếp tục khi điều kiện thay đổi.
+ * Callback nhận timestamp và elapsedMs; reset elapsed khi tiếp tục để tránh hạt nhảy xa.
+ * Trả hàm cleanup hủy frame và gỡ listener visibility/motion; caller phải gọi khi unmount.
+ */
 export function startVisibleAnimation(
   draw: (timestamp: number, elapsedMs: number) => void,
 ) {
