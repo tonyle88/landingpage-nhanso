@@ -861,6 +861,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      record_landing_visit: {
+        Args: { p_session_hash: string; p_network_hash: string; p_count_visit: boolean }
+        Returns: Json
+      }
       admin_save_landing_section: {
         Args: { p_id: string; p_payload: Json }
         Returns: Database["public"]["Tables"]["landing_sections"]["Row"]

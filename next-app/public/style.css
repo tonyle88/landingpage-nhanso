@@ -3586,6 +3586,72 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 
 /* ===== SCROLL TO TOP BUTTON ===== */
+/* Bộ đếm dành một vùng riêng; mũi tên xanh luôn nằm phía trên, không chồng lên số. */
+.landing-page-root .scroll-top-btn {
+  right: max(24px, env(safe-area-inset-right));
+  bottom: calc(124px + env(safe-area-inset-bottom));
+}
+
+.landing-visit-counter {
+  position: fixed;
+  right: max(24px, env(safe-area-inset-right));
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  z-index: 990;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 164px;
+  max-width: calc(100vw - 96px);
+  height: 72px;
+  padding: 12px 18px;
+  border: 1px solid rgba(212, 168, 67, 0.48);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(27, 65, 73, 0.96), rgba(9, 28, 32, 0.96));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(240, 201, 106, 0.08);
+  color: var(--color-gold-light);
+  pointer-events: none;
+}
+.landing-visit-counter-icon { width: 24px; height: 24px; flex: 0 0 auto; }
+.landing-visit-counter-content { display: flex; flex-direction: column; min-width: 0; }
+.landing-visit-counter-label { color: var(--color-white-80); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em; line-height: 1.5; }
+.landing-visit-counter-value {
+  font-family: var(--font-main);
+  font-size: clamp(0.88rem, 1.5vw, 1.2rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.45;
+  white-space: nowrap;
+  color: var(--color-gold-light);
+}
+.landing-visit-counter-sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+@media (max-width: 760px) {
+  .landing-visit-counter {
+    right: max(18px, env(safe-area-inset-right));
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    min-width: 136px;
+    height: 60px;
+    max-width: calc(100vw - 96px);
+    padding: 9px 12px;
+    gap: 8px;
+    border-radius: 14px;
+  }
+  .landing-visit-counter-icon { width: 20px; height: 20px; }
+  .landing-visit-counter-value { font-size: 1rem; }
+  .landing-page-root .scroll-top-btn {
+    right: max(18px, env(safe-area-inset-right));
+    bottom: calc(172px + env(safe-area-inset-bottom));
+  }
+}
+@media (max-height: 560px) and (min-width: 901px) {
+  /* Thanh mạng xã hội ở giữa cạnh phải: chuyển sang ngang khi chiều cao hạn chế. */
+  .landing-page-root .floating-socials { flex-direction: row; }
+}
+@media print { .landing-visit-counter { display: none; } }
+
 .scroll-top-btn {
   position: fixed;
   bottom: 30px;

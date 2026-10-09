@@ -1,3 +1,5 @@
+import VisitCounter from "./visit-counter";
+
 const socialLinks = [
   ["https://www.facebook.com/clowcatpatronus", "fb", "fab fa-facebook-f", "Facebook"],
   ["https://www.instagram.com/clow_cat_patronus/", "ig", "fab fa-instagram", "Instagram"],
@@ -8,6 +10,7 @@ const socialLinks = [
 export default function LandingUtilities() {
   return (
     <>
+      <VisitCounter />
       <div className="floating-socials">
         {socialLinks.map(([href, platform, icon, label]) => (
           <a
