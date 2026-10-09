@@ -27,6 +27,10 @@ const ROLE_PERMISSIONS: Record<AdminRole, readonly AdminPermission[]> = {
   auditor: ["read_operations", "read_audit"],
 };
 
+/**
+ * Kiểm tra giá trị RPC/claims có thuộc tập vai trò quản trị được hệ thống hỗ trợ.
+ * Là type guard giúp caller chỉ dùng vai trò đã kiểm tra để tra bảng quyền.
+ */
 export function isAdminRole(value: unknown): value is AdminRole {
   return (
     typeof value === "string" &&
@@ -34,6 +38,11 @@ export function isAdminRole(value: unknown): value is AdminRole {
   );
 }
 
+/**
+ * Tra quyền nghiệp vụ của owner/admin/editor/auditor theo bảng ROLE_PERMISSIONS.
+ * Trả false nếu không có vai trò; dùng cho UI và Server Actions.
+ * Không thay thế RLS/RPC ở cơ sở dữ liệu và không tự xác thực phiên đăng nhập.
+ */
 export function can(
   role: AdminRole | null,
   permission: AdminPermission,

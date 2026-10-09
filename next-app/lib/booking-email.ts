@@ -212,6 +212,11 @@ async function deliverOne({
   }
 }
 
+/**
+ * Gửi email xác nhận cho khách và người tư vấn của lịch đã xác nhận.
+ * Đọc dữ liệu chính thức từ DB; mỗi người nhận có action audit và idempotency key riêng.
+ * Trả kết quả từng người nhận để UI/webhook biết thư đã gửi, đã gửi trước đó hoặc cần phục hồi.
+ */
 export async function sendBookingEmailsForBookingId(
   supabase: SupabaseClient<Database>,
   bookingId: string,
@@ -284,6 +289,11 @@ export async function sendBookingEmailsForBookingId(
   return { configured: true, customer, owner };
 }
 
+/**
+ * Hoàn tất lượt đặt lịch ứng với giao dịch SePay paid rồi gửi thư xác nhận.
+ * Tra booking từ mã giao dịch chính thức; không áp dụng nếu giao dịch chưa paid hoặc không có booking.
+ * RPC giữ tính nhất quán trạng thái; hàm gửi thư dùng lại cơ chế chống gửi trùng.
+ */
 export async function finalizeAndEmailSepayBooking(
   supabase: SupabaseClient<Database>,
   providerTransactionId: string,
@@ -318,6 +328,11 @@ export async function finalizeAndEmailSepayBooking(
   );
 }
 
+/**
+ * Gửi thông báo đổi giờ/hủy lịch cho hai bên từ dữ liệu lịch đã lưu.
+ * @param change Phân biệt rescheduled và cancelled để chọn mẫu thư và khóa chống gửi trùng.
+ * Trả kết quả từng thư để action xử lý cảnh báo khi Calendar/DB đã cập nhật nhưng email chưa đủ.
+ */
 export async function sendBookingChangeEmailsForBookingId(
   supabase: SupabaseClient<Database>,
   bookingId: string,

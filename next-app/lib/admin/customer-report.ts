@@ -1,3 +1,6 @@
+import { formatBirthDate } from "./display-format";
+export { parsePositivePage as parseCustomerPage } from "../pagination";
+
 export const CUSTOMER_PAGE_SIZE = 10;
 export const CUSTOMER_EXPORT_LIMIT = 5000;
 export const CUSTOMER_MONTHS = [
@@ -15,13 +18,12 @@ export const CUSTOMER_MONTHS = [
   "Tháng 12",
 ] as const;
 
+/**
+ * Chuẩn hóa từ khóa tìm khách: trim và giới hạn 100 ký tự trước khi truyền RPC/query URL.
+ * Không đọc/lọc toàn bộ khách trong trình duyệt; việc tìm kiếm thực hiện tại DB.
+ */
 export function normalizeCustomerSearch(value: string | null | undefined) {
   return String(value || "").trim().slice(0, 100);
-}
-
-export function parseCustomerPage(value: string | null | undefined) {
-  const page = Number.parseInt(value || "1", 10);
-  return Number.isSafeInteger(page) && page > 0 ? page : 1;
 }
 
 function currentVietnamYear(date = new Date()) {
@@ -38,6 +40,11 @@ export function customerYearOptions(date = new Date()) {
   return Array.from({ length: 10 }, (_, index) => currentYear - index);
 }
 
+/**
+ * Đọc bộ lọc năm/tháng dùng chung giữa danh sách khách, bản in và file xuất Excel.
+ * Kiểm tra khoảng năm theo năm hiện tại tại Việt Nam và tháng 1..12; giá trị không hợp lệ thành null.
+ * Giữ một quy tắc lọc để dữ liệu người dùng nhìn thấy và dữ liệu xuất ra khớp nhau.
+ */
 export function parseCustomerPeriod(
   yearValue: string | null | undefined,
   monthValue: string | null | undefined,
@@ -82,6 +89,10 @@ function appendCustomerFilter(
   if (month) params.set("month", String(month));
 }
 
+/**
+ * Tạo URL phân trang khách từ tìm kiếm, năm, tháng và trang hiện tại.
+ * Dùng URLSearchParams để mã hóa từ khóa và giữ bộ lọc khi chuyển trang.
+ */
 export function customerDirectoryHref({
   search,
   year,
@@ -95,6 +106,10 @@ export function customerDirectoryHref({
   return query ? `/admin/customers?${query}` : "/admin/customers";
 }
 
+/**
+ * Tạo URL xuất Excel/bản in với cùng bộ lọc đang dùng trên màn danh sách khách.
+ * Chỉ đưa từ khóa và bộ lọc do admin chọn, không tuần tự hóa các bản ghi khách vào URL.
+ */
 export function customerExportHref(
   basePath: "/admin/customers/export" | "/admin/customers/report",
   filter: CustomerFilter,
@@ -105,8 +120,10 @@ export function customerExportHref(
   return query ? `${basePath}?${query}` : basePath;
 }
 
+/**
+ * Tên hàm theo nghiệp vụ báo cáo khách, dùng helper formatBirthDate chung.
+ * Giữ nhãn — khi không có ngày và tránh parse Date làm lệch ngày theo múi giờ.
+ */
 export function formatCustomerBirthDate(value: string | null) {
-  if (!value) return "—";
-  const [year, month, day] = value.split("-");
-  return year && month && day ? `${day}/${month}/${year}` : value;
+  return formatBirthDate(value);
 }

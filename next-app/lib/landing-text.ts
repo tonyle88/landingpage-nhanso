@@ -11,9 +11,10 @@ const ENTITIES: Record<string, string> = {
 };
 
 /**
- * Legacy content was sometimes saved by Quill as <p>...</p> while its target
- * was configured as plain text. Convert that markup to readable text instead
- * of exposing literal tags on the landing page.
+ * Đổi nội dung Quill/HTML thành văn bản đọc được cho trang chính và biểu mẫu admin.
+ * Giữ ngắt dòng của đoạn/danh sách, giải mã một số HTML entity và trim kết quả.
+ * Chuỗi không chứa thẻ HTML được giữ nguyên ngoài khoảng trắng hai đầu.
+ * Hàm này chuyển sang text; không thay thế bộ sanitize khi cần hiển thị HTML.
  */
 export function landingPlainText(value: unknown): string {
   const source = value == null ? "" : String(value);

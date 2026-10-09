@@ -112,6 +112,11 @@ async function enforceRateLimit(
   return supabase;
 }
 
+/**
+ * Đọc body JSON của API đặt lịch theo giới hạn kích thước để tránh cấp phát quá lớn.
+ * Kiểm tra cả Content-Length lẫn lượng byte thật đọc từ stream; từ chối JSON không hợp lệ.
+ * Dùng trước khi validate payload; không ghi log toàn bộ thông tin cá nhân trong body.
+ */
 async function readBoundedJson(
   request: Request,
   maximumBytes: number,
@@ -162,6 +167,10 @@ async function readBoundedJson(
   return parsed as Record<string, Json | undefined>;
 }
 
+/**
+ * Đọc khóa chống tạo/gửi thao tác lặp từ header của API đặt lịch.
+ * Khóa đi cùng booking qua reserve, status, xác nhận thủ công và cancel; không tự tạo khóa mới ở server.
+ */
 function readIdempotencyKey(request: Request) {
   const key = request.headers.get("idempotency-key")?.trim() ?? "";
   if (!UUID_PATTERN.test(key)) {
@@ -201,6 +210,11 @@ function handleError(error: unknown) {
   );
 }
 
+/**
+ * Xử lý API giữ chỗ: đọc/kiểm tra JSON, khóa idempotency và giới hạn tần suất.
+ * RPC xác định gói, giá và khung giờ còn trống; server không tin số tiền gửi từ trình duyệt.
+ * Trả JSON cho frontend đặt lịch; chưa gửi email xác nhận một lịch chưa thanh toán.
+ */
 export async function reserveBooking(request: Request) {
   try {
     const idempotencyKey = readIdempotencyKey(request);
@@ -268,6 +282,10 @@ export async function reserveBooking(request: Request) {
   }
 }
 
+/**
+ * Hủy một lượt giữ chỗ qua credential booking và idempotency của khách.
+ * Dùng RPC để kiểm tra trạng thái và quyền thao tác; không xóa trực tiếp bản ghi lịch hẹn.
+ */
 export async function cancelBooking(request: Request) {
   try {
     const idempotencyKey = readIdempotencyKey(request);
@@ -299,6 +317,10 @@ export async function cancelBooking(request: Request) {
   }
 }
 
+/**
+ * Trả các khoảng thời gian không thể chọn cho lịch đặt tư vấn công khai.
+ * Giới hạn truy vấn và chỉ gửi dữ liệu khung giờ cần thiết, không gửi tên/liên hệ của khách khác.
+ */
 export async function listUnavailableBookingSlots(request: Request) {
   try {
     const url = new URL(request.url);
@@ -347,6 +369,11 @@ async function readBookingCredential(
   return { idempotencyKey, payload, publicId };
 }
 
+/**
+ * Xử lý việc kiểm tra thanh toán/giữ chỗ của frontend bằng booking credential.
+ * Với SePay đã paid, thử hoàn tất lịch qua RPC; với confirmed, phục hồi email còn thiếu.
+ * Trả trạng thái cùng kết quả gửi thư; kiểm tra trạng thái cũng hỗ trợ hồi phục sau webhook chậm.
+ */
 export async function getBookingStatus(request: Request) {
   try {
     const { idempotencyKey, publicId } =
@@ -420,6 +447,10 @@ export async function getBookingStatus(request: Request) {
   }
 }
 
+/**
+ * Ghi nhận khách báo đã chuyển khoản bằng QR thủ công.
+ * Kiểm tra credential và trạng thái qua RPC; đây là yêu cầu kiểm tra, không tự xác nhận đã nhận tiền.
+ */
 export async function acknowledgeManualPayment(request: Request) {
   try {
     const { idempotencyKey, payload, publicId } =

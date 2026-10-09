@@ -2,9 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getAdminPrincipal } from "@/lib/auth/admin-principal";
-import { can } from "@/lib/auth/roles";
-import { optionalUuid } from "@/lib/admin/package-input";
+import { requireContentManager } from "@/lib/auth/admin-access";
+import { optionalUuid } from "@/lib/admin/form-input";
 import { testimonialPayloadFromForm } from "@/lib/admin/testimonial-input";
 import {
   removeUploadedMedia,
@@ -13,14 +12,6 @@ import {
   type UploadedMedia,
 } from "@/lib/admin/media-upload";
 import { createAuthServerClient } from "@/lib/supabase/auth-server";
-
-async function requireContentManager() {
-  const principal = await getAdminPrincipal();
-  if (!principal || !can(principal.role, "manage_content")) {
-    redirect("/admin/login?reason=unauthorized");
-  }
-  return principal;
-}
 
 export async function saveTestimonialAction(form: FormData) {
   const principal = await requireContentManager();

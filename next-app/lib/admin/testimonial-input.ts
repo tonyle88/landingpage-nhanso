@@ -1,10 +1,15 @@
-import { optionalUuid } from "./package-input";
+import { formText, optionalUuid, parseSortOrder } from "./form-input";
 
+/**
+ * Chuẩn bị payload feedback ảnh sau khi upload hoặc khi sửa metadata có sẵn.
+ * Kiểm tra URL HTTPS, UUID media tùy chọn, alt text và thứ tự; checkbox dùng giá trị on.
+ * Không upload hoặc xóa ảnh tại đây; action quản lý vòng đời media và rollback riêng.
+ */
 export function testimonialPayloadFromForm(form: FormData) {
-  const imageUrl = String(form.get("image_url") || "").trim();
+  const imageUrl = formText(form, "image_url");
   const mediaAssetId = optionalUuid(form.get("media_asset_id"));
-  const altText = String(form.get("alt_text") || "").trim().slice(0, 240);
-  const sortOrder = Number(String(form.get("sort_order") || "0"));
+  const altText = formText(form, "alt_text").slice(0, 240);
+  const sortOrder = parseSortOrder(form.get("sort_order") || "0");
   let parsed: URL;
   try {
     parsed = new URL(imageUrl);
@@ -15,9 +20,6 @@ export function testimonialPayloadFromForm(form: FormData) {
     throw new Error("invalid URL");
   }
   if (altText.length < 2) throw new Error("invalid alt");
-  if (!Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 10000) {
-    throw new Error("invalid order");
-  }
   return {
     media_asset_id: mediaAssetId,
     image_url: imageUrl,
