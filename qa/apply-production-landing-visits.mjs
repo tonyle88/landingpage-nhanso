@@ -7,7 +7,10 @@ const root = resolve(import.meta.dirname, "..");
 const require = createRequire(resolve(root, "next-app/package.json"));
 const { Client } = require("pg");
 const projectRef = "nuexmwyyibhkfcisaavw";
-const version = "202610090001";
+// --online chọn migration bổ sung presence; không sửa hoặc chạy lại migration tổng cũ.
+const online = process.argv.includes("--online");
+const version = online ? "202610100001" : "202610090001";
+const migrationName = online ? "site_visit_presence" : "landing_visit_counter";
 const apply = process.argv.includes("--apply");
 
 if ((process.env.PRODUCTION_PROJECT_REF !== projectRef && process.env.SUPABASE_PROJECT_REF !== projectRef)
@@ -17,7 +20,7 @@ if ((process.env.PRODUCTION_PROJECT_REF !== projectRef && process.env.SUPABASE_P
 }
 
 const migration = (await readFile(resolve(root,
-  `next-app/supabase/migrations/${version}_landing_visit_counter.sql`), "utf8"))
+  `next-app/supabase/migrations/${version}_${migrationName}.sql`), "utf8"))
   .replace(/^begin;\s*/i, "").replace(/\s*commit;\s*$/i, "");
 const ca = await readFile(process.env.SUPABASE_DB_SSL_CA_FILE, "utf8");
 const client = new Client({
@@ -67,6 +70,17 @@ async function inspect() {
   if (Object.values(rows[0]).some((value) => value !== true)) {
     throw new Error("Visit-counter schema/permission verification failed");
   }
+  if (online) {
+    const { rows: presenceRows } = await client.query(`select
+      (select relrowsecurity from pg_class where oid = 'public.site_visit_presence'::regclass) as presence_rls,
+      has_function_privilege('service_role', 'public.record_site_visit(text,text,text,boolean,boolean)', 'execute') as presence_service_can_execute,
+      not has_function_privilege('anon', 'public.record_site_visit(text,text,text,boolean,boolean)', 'execute') as presence_anon_cannot_execute,
+      not has_function_privilege('authenticated', 'public.record_site_visit(text,text,text,boolean,boolean)', 'execute') as presence_authenticated_cannot_execute,
+      not has_table_privilege('anon', 'public.site_visit_presence', 'select,insert,update,delete')
+        and not has_table_privilege('authenticated', 'public.site_visit_presence', 'select,insert,update,delete') as presence_no_browser_access`);
+    Object.assign(rows[0], presenceRows[0]);
+    if (Object.values(rows[0]).some(value => value !== true)) throw new Error("Presence permission verification failed");
+  }
   return rows[0];
 }
 
@@ -89,7 +103,7 @@ try {
       checks = await inspect();
       if (apply) {
         await client.query(`insert into supabase_migrations.schema_migrations(version, statements, name)
-          values ($1, $2::text[], $3)`, [version, [migration], "landing_visit_counter"]);
+          values ($1, $2::text[], $3)`, [version, [migration], migrationName]);
         await client.query("notify pgrst, 'reload schema'");
         await client.query("commit");
         mode = "applied";

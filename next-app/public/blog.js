@@ -406,6 +406,8 @@ function renderBlogHome() {
   container.innerHTML = html;
   setupBlogSearch();
   setupBlogCarousels();
+  // Bộ đếm dùng chung chỉ tạo lượt nếu URL bài/list vừa đổi, không đếm các lần render lại.
+  window.dispatchEvent(new Event('clow-blog-view-changed'));
 }
 
 function setupBlogSearch() {
@@ -718,6 +720,7 @@ async function renderArticleDetail(id) {
   
   container.innerHTML = html;
   setupRelatedArticleLinks(container);
+  window.dispatchEvent(new Event('clow-blog-view-changed'));
 }
 
 async function loadBlogArticleDetail(id) {

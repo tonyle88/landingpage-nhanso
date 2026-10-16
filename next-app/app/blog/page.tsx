@@ -7,6 +7,7 @@ import { serializeJsonForHtml } from "@/lib/blog";
 import { getPublicBlogCategories } from "@/lib/supabase/public-blog-categories";
 import { getPublicBlogPosts } from "@/lib/supabase/public-blog-posts";
 import { ClowGlint } from "@/components/ui/clow-glint";
+import VisitCounter from "@/components/landing/visit-counter";
 
 const navItems = [
   { href: "/#about", label: "Về Chúng Tôi" },
@@ -358,9 +359,11 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
 
       <div className="toast" id="toast" />
 
+      <VisitCounter />
+
       <button
         id="scrollTopBtn"
-        className="scroll-top-btn"
+        className="scroll-top-btn visit-counter-scroll-top"
         aria-label="Lên đầu trang"
       >
         <i className="fa-solid fa-arrow-up" aria-hidden="true" />
@@ -393,7 +396,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
       />
       <script src="/assets/js/sanitize-html.js" nonce={nonce} defer />
       <script
-        src="/blog.js?v=20260926-blog-order-music"
+        src="/blog.js?v=20261010-total-visits"
         nonce={nonce}
         defer
       />

@@ -35,9 +35,12 @@ function networkIdentity(request: Request) {
 }
 
 /**
- * Ghi nhận phiên trang chủ qua RPC nguyên tử, chống đếm lặp và mất lượt khi truy cập đồng thời.
+ * Ghi nhận lượt xem trang chủ/blog qua RPC nguyên tử, chống ghi trùng và mất lượt đồng thời.
  * Chỉ chạy trên production. Dev/preview và bot nhận diện được không tạo lượt mới.
- * Phiên và IP được HMAC với secret sẵn có; IP hash đổi mỗi ngày.
+ * UUID của từng lượt xem và IP được HMAC với secret sẵn có; IP hash đổi mỗi ngày.
+ * RPC presence dùng lại RPC/bảng tổng cũ: UUID mới khi mở/tải lại/chuyển bài; cửa sổ
+ * chống trùng chỉ áp dụng cho cùng lượt đó. Heartbeat không tăng tổng và giữ online 2 phút.
+ * HMAC visitor đổi mỗi ngày; nhiều tab có cùng visitor hash chỉ chiếm một dòng online.
  * RPC dọn dữ liệu tạm cũ hơn 24 giờ khi có request mới, vẫn giữ tổng lượt lịch sử.
  * RPC chỉ mở cho service_role, trình duyệt không được ghi trực tiếp vào bảng hoặc gửi số tổng.
  */
@@ -49,6 +52,9 @@ export async function recordLandingVisit(request: Request) {
   }
   const sessionId = request.headers.get("x-visit-id") || "";
   if (!UUID_PATTERN.test(sessionId)) return json({ ok: false }, 400);
+  const visitorId = request.headers.get("x-visitor-id") || "";
+  const mode = request.headers.get("x-visit-mode");
+  if (!UUID_PATTERN.test(visitorId) || (mode !== "view" && mode !== "heartbeat")) return json({ ok: false }, 400);
   if (process.env.NODE_ENV !== "production"
     || (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== "production")) {
     return json({ ok: false }, 503);
@@ -65,10 +71,13 @@ export async function recordLandingVisit(request: Request) {
   const hash = (value: string) => createHmac("sha256", secret).update(value).digest("hex");
 
   try {
-    const { data, error } = await supabase.rpc("record_landing_visit", {
-      p_session_hash: hash(`landing-session:${sessionId}`),
+    const isActive = !BOT_PATTERN.test(request.headers.get("user-agent") || "");
+    const { data, error } = await supabase.rpc("record_site_visit", {
+      p_view_hash: hash(`site-page-view:${sessionId}`),
+      p_visitor_hash: hash(`site-online:${new Date().toISOString().slice(0, 10)}:${visitorId}`),
       p_network_hash: hash(`landing-network:${new Date().toISOString().slice(0, 10)}:${ip}`),
-      p_count_visit: !BOT_PATTERN.test(request.headers.get("user-agent") || ""),
+      p_count_view: isActive && mode === "view",
+      p_is_active: isActive,
     }).abortSignal(AbortSignal.timeout(5_000));
     if (error || !data || typeof data !== "object" || Array.isArray(data)) {
       const code = error?.code && /^[A-Z0-9_]{1,16}$/.test(error.code) ? error.code : "RPC_RESULT_INVALID";
@@ -78,7 +87,8 @@ export async function recordLandingVisit(request: Request) {
     if (typeof data.total !== "string" || !/^\d{1,19}$/.test(data.total)) {
       return unavailable("TOTAL_FORMAT_INVALID");
     }
-    return json({ ok: true, total: data.total });
+    if (typeof data.online !== "string" || !/^\d{1,19}$/.test(data.online)) return unavailable("ONLINE_FORMAT_INVALID");
+    return json({ ok: true, total: data.total, online: data.online });
   } catch {
     // Never expose database errors, request identifiers or secrets in public responses/logs.
     return unavailable("RPC_REQUEST_FAILED");
