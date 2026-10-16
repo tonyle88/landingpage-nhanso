@@ -18,7 +18,7 @@ export default function BlogLayout({
         rel="stylesheet"
         href="/assets/vendor/fontawesome/css/all.min.css"
       />
-      <link rel="stylesheet" href="/style.css?v=20260926-blog-order-music" />
+      <link rel="stylesheet" href="/style.css?v=20261010-fading-visits" />
       {children}
     </>
   );
